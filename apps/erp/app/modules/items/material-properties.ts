@@ -5,7 +5,7 @@
 import { getMaterialDescription, getMaterialId } from "@carbon/utils";
 
 // The material properties panel's rules as pure decisions, shared by the
-// panel's route, upsertMaterial and updateMaterialProperties (MCP). The
+// panel's route, updateMaterial and updateMaterialProperties (MCP). The
 // service loads the rows these read and writes what they decide.
 
 export const materialPropertyFields = [
@@ -73,13 +73,13 @@ export type SentFields<T, K extends keyof T> = {
 };
 
 /**
- * The item columns a material update copies from its payload. With generated
- * IDs the name is derived from the properties and written to every revision,
- * so a sent name is ignored.
+ * The item columns a material update copies from its payload. A call that
+ * derives the name (generated IDs, a property changed) writes it to every
+ * revision instead, so the name is not copied.
  */
-export function materialItemUpdateFields(generatedIds: boolean) {
+export function materialItemUpdateFields(nameDerived: boolean) {
   return [
-    ...(generatedIds ? [] : (["name"] as const)),
+    ...(nameDerived ? [] : (["name"] as const)),
     "description",
     "mpn",
     "replenishmentSystem",
@@ -87,6 +87,29 @@ export function materialItemUpdateFields(generatedIds: boolean) {
     "itemTrackingType",
     "unitOfMeasureCode"
   ] as const;
+}
+
+/**
+ * The itemCost columns a material create or update writes: the item group
+ * (posting group) and the unit cost it was sent. A create writes a group only
+ * when one is named; an update (`clearsEmptyGroup`) also clears it when the
+ * key is present but empty, as a cleared form field is.
+ */
+export function materialCostFields(
+  material: { postingGroupId?: string | null; unitCost?: number | null },
+  { clearsEmptyGroup }: { clearsEmptyGroup: boolean }
+): { itemPostingGroupId?: string | null; unitCost?: number } {
+  const writesGroup = clearsEmptyGroup
+    ? "postingGroupId" in material
+    : !!material.postingGroupId;
+  return {
+    ...(writesGroup
+      ? { itemPostingGroupId: material.postingGroupId || null }
+      : {}),
+    ...(typeof material.unitCost === "number"
+      ? { unitCost: material.unitCost }
+      : {})
+  };
 }
 
 /** sentFields for the property ids, where an empty string clears like null. */
@@ -233,4 +256,72 @@ export function generateMaterialIdentity(
     readableId: getMaterialId(naming),
     name: getMaterialDescription(naming)
   };
+}
+
+/**
+ * The revisions a new material is created with: one per distinct size, a blank
+ * size left out, as an update adds sizes; with no size, the initial revision.
+ * A size listed twice would otherwise fail its second insert.
+ */
+export function newMaterialRevisions(
+  sizes: readonly string[] | undefined
+): string[] {
+  const distinct = [...new Set(sizes ?? [])].filter(Boolean);
+  return distinct.length > 0 ? distinct : ["0"];
+}
+
+export type NewMaterialIdentity =
+  | { readableId: string; name: string }
+  | { refusal: "validation" | "rule"; message: string };
+
+/**
+ * The ID and name an API caller's new material is created under, as the New
+ * Material form decides them. With generated IDs (`generated`) the form has
+ * no ID or name field, so a sent one that differs is refused rather than
+ * replaced; with typed IDs both are required.
+ */
+export function newMaterialIdentity(
+  generated: { readableId: string; name: string } | null,
+  sent: { id?: string; name?: string }
+): NewMaterialIdentity {
+  if (generated) {
+    const otherId = sent.id !== undefined && sent.id !== generated.readableId;
+    const otherName = sent.name !== undefined && sent.name !== generated.name;
+    if (otherId || otherName) {
+      return {
+        refusal: "rule",
+        message: `Material IDs are generated from the properties: this material is ${generated.readableId}, named ${generated.name}. Leave out id and name, or send these`
+      };
+    }
+    return generated;
+  }
+  if (!sent.id) {
+    return { refusal: "validation", message: "Material ID is required" };
+  }
+  if (!sent.name) {
+    return { refusal: "validation", message: "Short description is required" };
+  }
+  return { readableId: sent.id, name: sent.name };
+}
+
+/**
+ * Why an API caller's update of a material with generated IDs is refused, as
+ * the properties panel decides it; null when it is not. The panel has no ID
+ * field, so a sent ID other than the one the material ends up with is refused.
+ * Its name field writes the name, but a call that changes a property derives
+ * the name (`generated`), so a sent name that differs is refused there.
+ */
+export function generatedMaterialUpdateRefusal(
+  readableId: string,
+  generated: { readableId: string; name: string } | null,
+  sent: { readableId?: string | null; name?: string | null }
+): string | null {
+  const nextId = generated?.readableId ?? readableId;
+  const otherId = !!sent.readableId && sent.readableId !== nextId;
+  const otherName =
+    generated !== null && sent.name != null && sent.name !== generated.name;
+  if (!otherId && !otherName) return null;
+  return generated
+    ? `Material IDs are generated from the properties: this change makes the material ${generated.readableId}, named ${generated.name}. Leave out readableId and name, or send these; change the name in a call that changes no property`
+    : `Material IDs are generated from the properties: this material is ${readableId}. Leave out readableId, or send it`;
 }

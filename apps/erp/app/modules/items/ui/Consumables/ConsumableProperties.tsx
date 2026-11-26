@@ -51,6 +51,7 @@ import {
   FileBadge,
   ItemDescription,
   SourcingTypeProperty,
+  TaxableProperty,
   useIsComponentOfBuyAndMake
 } from "../Item";
 
@@ -96,6 +97,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
   // When `data` is injected (subassembly context), this hook won't match a
   // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     consumableSummary: ConsumableSummary;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -166,7 +168,6 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
       setTrackingRefusals((count) => count + 1);
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (
       field:
@@ -179,6 +180,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
         | "itemPostingGroupId"
         | "consumableId"
         | "active"
+        | "taxable"
         | "mpn"
         | "unitOfMeasureCode",
       value: string | null
@@ -197,10 +199,10 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
       );
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [itemId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
@@ -218,10 +220,10 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.consumableSummary?.readableId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -236,6 +238,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.consumableSummary?.readableId]
   );
 
@@ -369,7 +372,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
           id={itemId}
           table="item"
           value={assignee ?? ""}
-          isReadOnly={!permissions.can("update", "parts")}
+          isReadOnly={!permissions.has({ "parts.consumables": "Edit" })}
         />
       </VStack> */}
 
@@ -546,6 +549,11 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
           }}
         />
       </ValidatedForm>
+      <TaxableProperty
+        itemId={itemId}
+        taxable={routeDataFromRoute?.taxable}
+        onChange={(value) => onUpdate("taxable", value)}
+      />
       {routeData?.consumableSummary?.replenishmentSystem?.includes("Buy") && (
         <ValidatedForm
           defaultValues={{

@@ -6,7 +6,6 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getHolidayYears } from "~/modules/people/people.service";
 import { HolidaysTable } from "~/modules/people/ui/Holidays";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -22,8 +21,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, holidaysList, {
     dataKey: "holidays",
     bypassRls: true,
-    firstPage: async ({ client, companyId }) => {
-      const years = await getHolidayYears(client, companyId);
+    firstPage: async ({ api }) => {
+      const years = await api.people.getHolidayYears({});
       return {
         years:
           years.data?.map((d) => d.year as number).sort((a, b) => b - a) ?? []

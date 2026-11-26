@@ -13,7 +13,7 @@ import type { Database } from "@carbon/database";
 import { LEGACY_DOCUMENT_FAMILIES } from "@carbon/database/legacy-documents";
 import { formatPeriodLabel } from "@carbon/utils";
 import { sql } from "kysely";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import { repairLegacyJournals as journalLegacyDocuments, activateAccounting } from "../../../../app/modules/accounting/accounting.service";
 import { ACCOUNTING_NOT_STARTED } from "~/modules/shared/shared.service";
 import { databaseTest } from "../../fixtures/local-database";
@@ -35,6 +35,13 @@ import {
 } from "../../fixtures/activation";
 import { invokePosting } from "../../../../app/modules/shared/shared.service";
 import { handlesOf } from "../../fixtures/handles";
+
+// The posting's funds gate reads the purchase orders through the service-role
+// client, which a posting run from handles builds from `@carbon/env`.
+vi.mock("@carbon/env", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ...(await import("../../fixtures/local-supabase")).localServiceRoleEnv()
+}));
 
 type SourceType = Database["public"]["Enums"]["journalEntrySourceType"];
 

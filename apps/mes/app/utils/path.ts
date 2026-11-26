@@ -272,9 +272,18 @@ export const path = {
       generatePath(`${x}/rework-targets/${operationId}`),
     root: "/",
     scrap: `${x}/scrap`,
-    scrapEntity: (materialId: string, id: string, parentId?: string) => {
+    scrapEntity: (
+      materialId: string,
+      id: string,
+      parentId?: string,
+      operationId?: string
+    ) => {
       const basePath = generatePath(`${x}/entity/${materialId}/${id}/scrap`);
-      return parentId ? `${basePath}?parentId=${parentId}` : basePath;
+      const search = new URLSearchParams();
+      if (parentId) search.set("parentId", parentId);
+      if (operationId) search.set("operationId", operationId);
+      const query = search.toString();
+      return query ? `${basePath}?${query}` : basePath;
     },
     scrapParts: (operationId: string) =>
       generatePath(`${x}/scrap-parts/${operationId}`),

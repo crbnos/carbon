@@ -56,16 +56,8 @@ import {
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM
 } from "~/modules/production/production.models";
+import { applyPlanningActionsPermission } from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
-import {
-  isApplyablePlanningAction,
-  isNewSupplyAction,
-  PlanningActionLines,
-  PlanningActionsCell,
-  planningActionDot,
-  planningActionsExportValue,
-  usePlanningActionTypeOptions
-} from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   draftsOfRefusedOrders,
   openNewSupplyActions,
@@ -77,6 +69,15 @@ import {
   planningRowKey
 } from "~/modules/production/ui/Planning/planning-action-scope";
 import { splitOrdersByFence } from "~/modules/production/ui/Planning/planning-fence";
+import {
+  isApplyablePlanningAction,
+  isNewSupplyAction,
+  PlanningActionLines,
+  PlanningActionsCell,
+  planningActionDot,
+  planningActionsExportValue,
+  usePlanningActionTypeOptions
+} from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   type PlanningSegmentProject,
   planningColumns
@@ -175,7 +176,10 @@ const ProductionPlanningTable = ({
 
   // ── Planning actions (the MRP worklist) ──────────────────────────────────
   const user = useUser();
-  const canUpdateActions = permissions.can("update", "production");
+  const canUpdateActions = permissions.has({
+    "production.materialPlanning": "Edit"
+  });
+  const canApplyActions = permissions.has(applyPlanningActionsPermission);
   const actionTypeOptions = usePlanningActionTypeOptions("Make");
   const [people] = usePeople();
   const {
@@ -302,13 +306,12 @@ const ProductionPlanningTable = ({
     scope.delete(PLANNING_DRAWER_PARAM);
     return scope.toString();
   }, [searchParams]);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the scope string is the dependency
   useEffect(() => {
     setOrdersMap({});
   }, [pageScope]);
 
   const isDisabled =
-    !permissions.can("create", "production") ||
+    !permissions.has({ "production.materialPlanning": "Create" }) ||
     bulkUpdateFetcher.state !== "idle" ||
     mrpFetcher.state !== "idle";
 
@@ -338,7 +341,6 @@ const ProductionPlanningTable = ({
     [loadedRows, actionsByRowKey, locationToday]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onBulkUpdate = useCallback(
     (selectedRows: ProductionPlanningItem[], action: "order") => {
       const payload = {
@@ -400,6 +402,7 @@ const ProductionPlanningTable = ({
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [bulkUpdateFetcher, locationId, ordersMap, ordersByRowKey, timeFence]
   );
 
@@ -492,7 +495,6 @@ const ProductionPlanningTable = ({
   // The drawer's Open Orders rows carry the same Apply / Dismiss / Reopen /
   // Assign controls as the expanded row, through the same single fetcher.
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const columns = useMemo<ColumnDef<ProductionPlanningItem>[]>(() => {
     const shared = planningColumns<ProductionPlanningItem>({
       i18n,
@@ -689,6 +691,7 @@ const ProductionPlanningTable = ({
         }
       }
     ];
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [
     t,
     i18n,
@@ -732,7 +735,7 @@ const ProductionPlanningTable = ({
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={
-              !canUpdateActions || applyableIds.length === 0 || isActionsBusy
+              !canApplyActions || applyableIds.length === 0 || isActionsBusy
             }
             onSelect={() =>
               submitActions({
@@ -756,7 +759,7 @@ const ProductionPlanningTable = ({
       bulkUpdateFetcher.state,
       onBulkUpdate,
       visibleActionsByRowKey,
-      canUpdateActions,
+      canApplyActions,
       isActionsBusy,
       submitActions
     ]

@@ -10,24 +10,27 @@
     "baseline": "tsx src/scripts/generate-baseline.ts",
     "clean": "rimraf .turbo node_modules dist",
     "clobbers": "tsx src/scripts/check-clobbers.ts",
+    "guarded-code": "tsx src/scripts/guarded-code.ts",
     "invariants": "tsx src/scripts/run-invariants.ts",
     "license-headers": "tsx src/scripts/license-headers.ts",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "workflow-events": "tsx src/scripts/check-workflow-events.ts"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@carbon/database": "workspace:*",
     "@carbon/ee": "workspace:*",
     "@carbon/env": "workspace:*",
     "@types/node": "^22",
     "@types/pg": "8.15.6",
+    "libpg-query": "18.1.5",
+    "oxc-parser": "0.159.0",
     "pg": "8.20.0",
     "rimraf": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "typescript5": "npm:typescript@5.8.3",
     "vitest": "catalog:"
   }
 }

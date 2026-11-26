@@ -62,8 +62,8 @@ export function QuantityModal({
   parentIsBatch = false,
   requireTrackedMaterialsIssued = false,
   setupProductionEvent,
-  trackedEntityId,
-  trackedEntityReadableId,
+  trackedEntityId: selectedId,
+  trackedEntityReadableId: selectedSerial,
   type,
   returnFocusRef,
   open = true,
@@ -83,9 +83,9 @@ export function QuantityModal({
   // scanned in, so the warning becomes a block.
   requireTrackedMaterialsIssued?: boolean;
   setupProductionEvent: ProductionEvent | undefined;
-  trackedEntityId: string;
+  trackedEntityId?: string;
   // Serial parents: the selected unit's serial number, shown in the scrap
-  // confirmation so the operator knows exactly which unit is being scrapped.
+  // confirmation and the completion title so the operator knows which unit it is.
   trackedEntityReadableId?: string;
   type: "scrap" | "rework" | "complete" | "finish";
   // Where focus goes on close when the control that opened the modal is gone
@@ -111,6 +111,12 @@ export function QuantityModal({
       }
     }
   });
+  // Each opening mounts a new confirmation. Realtime can change the page's
+  // selected unit while this one is open, so bind its label and form together.
+  const [{ trackedEntityId, trackedEntityReadableId }] = useState(() => ({
+    trackedEntityId: selectedId,
+    trackedEntityReadableId: selectedSerial
+  }));
   const [quantity, setQuantity] = useState(parentIsSerial ? 1 : 0);
   const [confirmedUnissued, setConfirmedUnissued] = useState(false);
   const submitted = useRef(false);
@@ -130,7 +136,10 @@ export function QuantityModal({
   const titleMap = {
     scrap: t`Log scrap for ${operation.itemReadableId}`,
     rework: t`Log rework for ${operation.itemReadableId}`,
-    complete: t`Log completed for ${operation.itemReadableId}`,
+    complete:
+      parentIsSerial && trackedEntityReadableId
+        ? t`Log completed for ${trackedEntityReadableId}`
+        : t`Log completed for ${operation.itemReadableId}`,
     finish: t`Mark ${operation.itemReadableId} as Done`
   };
 

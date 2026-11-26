@@ -32,6 +32,7 @@ import {
 } from "./SourcingTypeProperty";
 import SupplierPartForm from "./SupplierPartForm";
 import SupplierParts from "./SupplierParts";
+import { TaxableProperty } from "./TaxableProperty";
 
 export {
   BillOfMaterial,
@@ -61,5 +62,6 @@ export {
   SourcingTypeProperty,
   SupplierPartForm,
   SupplierParts,
+  TaxableProperty,
   useIsComponentOfBuyAndMake
 };

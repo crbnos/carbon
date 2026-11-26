@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
@@ -26,7 +26,6 @@ import {
   getJobOperationForCompany,
   getJobOperationProcedure,
   getKanbanByJobId,
-  getNextIncompleteSerialEntity,
   getNonConformanceActions,
   getProductionEventsForBatch,
   getProductionEventsForJobOperation,
@@ -36,11 +35,13 @@ import {
   getTrackedEntitiesForOperation,
   getWorkCenter,
   isFirstOpenOperationOfMakeMethod,
-  isFirstOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
+import { readScreenUnitHolds } from "~/services/unit-hold.server";
+import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
 import { recordMeta } from "~/utils/meta";
+import { operationUnits } from "~/utils/workUnit";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -52,6 +53,7 @@ import {
   resolveOperationView
 } from "~/utils/operationView";
 import { path } from "~/utils/path";
+import { isUnitOnHold } from "~/utils/unitHold";
 
 export const handle: Handle = {
   realtime: [
@@ -116,7 +118,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, companyId } = await authorize(request, {});
 
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
@@ -180,6 +182,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const operationPromise = getJobOperationById(serviceRole, operationId);
+  const unitsPromise = jobMakeMethodId
+    ? getTrackedEntitiesForOperation(serviceRole, {
+        jobId,
+        includeSerialOutputs:
+          ownedOperation.data.jobMakeMethod?.requiresSerialTracking === true,
+        operationId,
+        jobMakeMethodId,
+        companyId
+      })
+    : null;
+  const makeMethodPromise = jobMakeMethodId
+    ? getJobMakeMethod(serviceRole, jobMakeMethodId)
+    : null;
   // The batch's events and material totals are used only once it is released.
   const batchPromise = batchId
     ? getJobOperationBatch(serviceRole, batchId, companyId)
@@ -207,7 +222,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     abilityWarning,
     isFirstOperation,
     isFirstOpenOperation,
-    materialItems
+    materialItems,
+    unitHolds
   ] = await Promise.all([
     getProductionEventsForJobOperation(serviceRole, {
       operationId,
@@ -236,14 +252,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         companyId
       )
     ),
-    jobMakeMethodId
-      ? getTrackedEntitiesForOperation(serviceRole, {
-          operationId,
-          jobMakeMethodId: jobMakeMethodId,
-          companyId
-        })
-      : null,
-    jobMakeMethodId ? getJobMakeMethod(serviceRole, jobMakeMethodId) : null,
+    unitsPromise,
+    makeMethodPromise,
     getKanbanByJobId(serviceRole, jobId),
     getJobMethodBomIdMap(serviceRole, jobId),
     getCompanySettings(serviceRole, companyId),
@@ -253,7 +263,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId
     }),
     jobMakeMethodId
-      ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
+      ? isFirstOperationOfMakeMethod(serviceRole, { companyId, operationId })
       : false,
     jobMakeMethodId
       ? isFirstOpenOperationOfMakeMethod(
@@ -269,7 +279,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .from("jobMaterial")
       .select("itemId")
       .eq("jobId", jobId)
-      .eq("companyId", companyId)
+      .eq("companyId", companyId),
+    // The units on hold for an open quality issue. Chained on the units and
+    // make method reads, so it stays in this wave.
+    Promise.all([unitsPromise, makeMethodPromise]).then(([units, makeMethod]) =>
+      readScreenUnitHolds(serviceRole, {
+        companyId,
+        operationId,
+        serial: !!makeMethod?.data?.requiresSerialTracking,
+        unitIds: (units?.data ?? []).map((unit) => unit.id)
+      })
+    )
   ]);
 
   if (job.error) {
@@ -413,8 +433,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     trackedEntities?.data &&
     trackedEntities?.data.length > 0
   ) {
-    const nextTrackedEntity = trackedEntities?.data.find((entity) =>
-      isSerialEntityIncompleteForOperation(entity, operationId)
+    // A unit on hold for an open quality issue is not the next unit.
+    const nextTrackedEntity = operationUnits(
+      trackedEntities.data,
+      op.operationQuantity,
+      jobMakeMethod?.data?.requiresSerialTracking
+        ? { operationId, holds: unitHolds }
+        : undefined
+    ).find(
+      (entity) =>
+        isSerialEntityIncompleteForOperation(entity, operationId) &&
+        !isUnitOnHold(unitHolds, entity.id)
     );
     if (nextTrackedEntity) {
       const redirectUrl = new URL(request.url);
@@ -459,14 +488,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null,
     materials: getJobMaterialsByOperationId(serviceRole, {
       operation: operation.data?.[0],
+      // A serial part shows a unit's inputs only for the unit in the URL; a
+      // batch part shows its lot's.
       trackedEntityId:
         trackedEntityId ??
-        getNextIncompleteSerialEntity(trackedEntities?.data ?? [], operationId)
-          ?.id,
+        (jobMakeMethod?.data?.requiresSerialTracking
+          ? undefined
+          : trackedEntities?.data?.find(
+              (entity) =>
+                entity.status !== "Consumed" && entity.status !== "Scrapped"
+            )?.id),
       requiresSerialTracking:
         jobMakeMethod?.data?.requiresSerialTracking ?? false
     }),
     trackedEntities: trackedEntities?.data ?? [],
+    unitHolds,
     isFirstOperation,
     isFirstOpenOperation,
     requireTrackedMaterialsIssued,
@@ -519,6 +555,7 @@ export default function OperationRoute() {
     thumbnailPath,
     correctionName,
     trackedEntities,
+    unitHolds,
     isFirstOperation,
     isFirstOpenOperation,
     requireTrackedMaterialsIssued,
@@ -543,6 +580,7 @@ export default function OperationRoute() {
       materials={materials}
       method={jobMakeMethod}
       trackedEntities={trackedEntities}
+      unitHolds={unitHolds}
       isFirstOperation={isFirstOperation}
       isFirstOpenOperation={isFirstOpenOperation}
       requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}

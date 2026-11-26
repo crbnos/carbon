@@ -19,7 +19,6 @@ export default function useDebounce<T extends (...args: any[]) => any>(
   const timeout = useRef<ReturnType<typeof setTimeout>>();
   const argsRef = useRef<Parameters<T>>();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     return () => {
       if (executeOnUnmount && timeout.current && argsRef.current) {
@@ -29,6 +28,7 @@ export default function useDebounce<T extends (...args: any[]) => any>(
         clearTimeout(timeout.current);
       }
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [executeOnUnmount]);
 
   return (...args: Parameters<T>) => {

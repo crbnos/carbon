@@ -18,12 +18,12 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { NO_ORIGIN } from "@carbon/api/service-fn.server";
 import { getUserScopedClient } from "@carbon/auth/client.server";
 import { today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import { getUserClaims } from "@carbon/auth/users.server";
-import { scopesFromPermissions } from "~/routes/api+/v1+/lib/base.server";
 import { callOperation } from "~/routes/api+/v1+/lib/call.server";
 import { OPERATIONS } from "~/routes/api+/v1+/lib/operations.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -204,7 +204,6 @@ describe("every read tool, against real data", () => {
 
     // The sweep user calls as an OAuth connector would: gated on their own permissions.
     const claims = await getUserClaims(userId, companyId);
-    const scopes = scopesFromPermissions(claims.permissions, companyId);
 
     const reads = OPERATIONS.filter((tool) => tool.classification === "READ");
     const filtersByTool = publishedParamFilters();
@@ -278,7 +277,9 @@ describe("every read tool, against real data", () => {
                 companyId,
                 companyGroupId,
                 authKind: "oauth",
-                scopes
+                permissions: claims.permissions,
+                role: "employee",
+                origin: NO_ORIGIN
               },
               args
             )

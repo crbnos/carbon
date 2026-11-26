@@ -349,7 +349,14 @@ export type Events = {
     data: {
       id: string;
       addOnly: boolean;
-      permissions: Record<
+      /** The overrides to apply, one level per module or page. */
+      grants?: {
+        module: string;
+        page: string | null;
+        level: "None" | "View" | "Create" | "Edit" | "Full";
+      }[];
+      /** The checkbox shape sent before grants; still read for a replay. */
+      permissions?: Record<
         string,
         { view: boolean; create: boolean; update: boolean; delete: boolean }
       >;
@@ -403,6 +410,11 @@ export type Events = {
           actorId?: string;
           // Source IP of the request that triggered the change (AU-3 source-of-event).
           ip?: string;
+          // Set by Revoke Invite: the invite's `revokedAt` it queued under.
+          // The job deactivates only while the invite still carries it and
+          // the person has no membership, so a resend accepted meanwhile
+          // keeps its account.
+          revokedAt?: string;
         }
       | {
           id: string;
@@ -410,6 +422,10 @@ export type Events = {
           location: string;
           ip: string;
           companyId: string;
+          // The invite's `revokedAt` when the resend was queued: the refresh
+          // clears that revocation only, never one saved while the event
+          // waited. An event from before this field matches the value read.
+          revokedAt?: string | null;
         };
   };
 

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -19,11 +19,9 @@ import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "settings",
-    role: "employee"
+  const { client, companyId } = await authorize(request, {
+    "settings.serialNumbers": "Create"
   });
-
   // Items that already have a sequence can't get a second one.
   const existing = await getItemSerialSequences(client, companyId, {
     search: null,
@@ -42,8 +40,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "settings"
+  const { client, companyId, userId } = await authorize(request, {
+    "settings.serialNumbers": "Create"
   });
 
   const validation = await validator(itemSerialSequenceValidator).validate(

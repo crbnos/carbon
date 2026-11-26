@@ -2,23 +2,39 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { flags } from "@carbon/env/flags.server";
 import { validator } from "@carbon/form";
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  useRouteDialog
+} from "@carbon/react";
 import { isInternalEmail, redirect } from "@carbon/utils";
+import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { subsidiaryValidator } from "~/modules/settings/settings.models";
+import {
+  companyDetailsValidator,
+  subsidiaryValidator
+} from "~/modules/settings/settings.models";
 import { getSubsidiary } from "~/modules/settings/settings.service";
-import { CompanyForm } from "~/modules/settings/ui";
+import { SubsidiaryCompanyForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
+const subsidiaryDetailsValidator = subsidiaryValidator.safeExtend({
+  keepRecordCurrencies: companyDetailsValidator.shape.keepRecordCurrencies
+});
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId, email, api } = await authorize(request, {
+    "settings.companies": "View"
   });
 
   // Multi-company management: Carbon staff, and the companies the
@@ -27,13 +43,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     !isInternalEmail(email) &&
     !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const { id } = params;
   if (!id) throw notFound("Subsidiary not found");
 
-  const subsidiary = await getSubsidiary(client, id);
+  const [subsidiary, change] = await Promise.all([
+    getSubsidiary(client, id),
+    api.settings.getBaseCurrencyChange({ companyId: id })
+  ]);
   if (subsidiary.error) {
     throw redirect(
       path.to.companies,
@@ -41,15 +60,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { subsidiary: subsidiary.data };
+  return {
+    subsidiary: subsidiary.data,
+    // Unknown blockers keep the base currency read-only.
+    baseCurrencyChange: change.error ? null : change.data
+  };
 }
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(subsidiaryValidator).request(args, {
+  const input = await validator(subsidiaryDetailsValidator).request(args, {
     params: ["id"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.settings.updateSubsidiaryDetails({
     ...input.data,
     id: input.params.id
@@ -60,9 +83,11 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function EditSubsidiaryRoute() {
-  const { subsidiary } = useLoaderData<typeof loader>();
+  const { subsidiary, baseCurrencyChange } = useLoaderData<typeof loader>();
+  const dialog = useRouteDialog(path.to.companies);
 
   const initialValues = {
+    id: subsidiary.id,
     name: subsidiary.name ?? "",
     taxId: subsidiary.taxId ?? "",
     addressLine1: subsidiary.addressLine1 ?? "",
@@ -79,5 +104,27 @@ export default function EditSubsidiaryRoute() {
     timezone: subsidiary.timezone ?? "UTC"
   };
 
-  return <CompanyForm company={initialValues} />;
+  return (
+    <Modal
+      open={dialog.open}
+      onOpenChange={(open) => {
+        if (!open) dialog.close();
+      }}
+    >
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>
+            <Trans>Edit company</Trans>
+          </ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <SubsidiaryCompanyForm
+            company={initialValues}
+            parentCompanyId={subsidiary.parentCompanyId ?? ""}
+            baseCurrencyChange={baseCurrencyChange}
+          />
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  );
 }

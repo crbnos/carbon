@@ -61,8 +61,8 @@ export default function StorageRuleForm({
 
   const isEditing = !!initialValues.id;
   const isDisabled = isEditing
-    ? !permissions.can("update", "inventory")
-    : !permissions.can("create", "inventory");
+    ? !permissions.has({ "inventory.storageRules": "Edit" })
+    : !permissions.has({ "inventory.storageRules": "Create" });
 
   const conditionAstInitial: ConditionAst = (initialValues.conditionAst as
     | ConditionAst

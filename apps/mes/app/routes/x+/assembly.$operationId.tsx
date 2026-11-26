@@ -3,10 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
+import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ComponentProps } from "react";
@@ -35,15 +35,17 @@ import {
   getToolsByOperationId,
   getTrackedEntitiesForOperation,
   getWorkCenter,
-  isFirstOpenOperationOfMakeMethod,
-  isFirstOperationOfMakeMethod
+  isFirstOpenOperationOfMakeMethod
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
+import { readScreenUnitHolds } from "~/services/unit-hold.server";
+import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
+import { operationUnits } from "~/utils/workUnit";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -76,11 +78,12 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, companyId, permissions } = await authorize(request);
 
-  // Manager-only "complete all steps" override is gated on the Production DELETE permission:
-  // operators hold view/create/update (they record steps) but not delete, so delete cleanly
+  // Manager-only "complete all steps" override is gated on Jobs at Full:
+  // operators hold Edit (they record steps) but not Full, so it cleanly
   // separates managers from operators regardless of how a company names its employee types.
+  // On a console it is the pinned operator's grants (`authorize`).
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
 
@@ -90,14 +93,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
 
   // Every read below is service-role: verify the operation is this company's.
-  const [claims, ownedOperation] = await Promise.all([
-    getUserClaims(userId, companyId),
-    getJobOperationForCompany(serviceRole, operationId, companyId)
-  ]);
-  const canOverrideComplete =
-    claims?.permissions?.production?.delete?.some(
-      (c) => c === "0" || c === companyId
-    ) ?? false;
+  const ownedOperation = await getJobOperationForCompany(
+    serviceRole,
+    operationId,
+    companyId
+  );
+  const canOverrideComplete = holdsGate(
+    permissions,
+    { "production.jobs": "Full" },
+    companyId
+  );
   if (!ownedOperation.data) {
     logger.warning("Operation not found in company", {
       companyId,
@@ -124,6 +129,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const operationPromise = getJobOperationById(serviceRole, operationId);
+  const unitsPromise = jobMakeMethodId
+    ? getTrackedEntitiesForOperation(serviceRole, {
+        jobId,
+        includeSerialOutputs:
+          ownedOperation.data.jobMakeMethod?.requiresSerialTracking === true,
+        operationId,
+        jobMakeMethodId,
+        companyId
+      })
+    : null;
+  const makeMethodPromise = jobMakeMethodId
+    ? getJobMakeMethod(serviceRole, jobMakeMethodId)
+    : null;
   const procedurePromise = getJobOperationProcedure(serviceRole, operationId);
   const [
     job,
@@ -146,7 +164,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     abilityWarning,
     openEvent,
     isFirstOperation,
-    isFirstOpenOperation
+    isFirstOpenOperation,
+    unitHolds
   ] = await Promise.all([
     getJob(serviceRole, jobId),
     operationPromise,
@@ -161,14 +180,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         companyId
       )
     ),
-    jobMakeMethodId
-      ? getTrackedEntitiesForOperation(serviceRole, {
-          operationId,
-          jobMakeMethodId: jobMakeMethodId,
-          companyId
-        })
-      : null,
-    jobMakeMethodId ? getJobMakeMethod(serviceRole, jobMakeMethodId) : null,
+    unitsPromise,
+    makeMethodPromise,
     procedurePromise,
     getToolsByOperationId(serviceRole, operationId),
     getNcrsByJobOperationId(serviceRole, operationId),
@@ -229,7 +242,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // label when completed at its first operation, so the first op flows unit-by-unit
     // (auto-select), and later ops scan/select (labels exist).
     jobMakeMethodId
-      ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
+      ? isFirstOperationOfMakeMethod(serviceRole, { companyId, operationId })
       : false,
     jobMakeMethodId
       ? isFirstOpenOperationOfMakeMethod(
@@ -238,7 +251,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           operationId,
           jobMakeMethodId
         )
-      : false
+      : false,
+    // The units on hold for an open quality issue. Chained on the units and
+    // make method reads, so it stays in this wave.
+    Promise.all([unitsPromise, makeMethodPromise]).then(([units, makeMethod]) =>
+      readScreenUnitHolds(serviceRole, {
+        companyId,
+        operationId,
+        serial: !!makeMethod?.data?.requiresSerialTracking,
+        unitIds: (units?.data ?? []).map((unit) => unit.id)
+      })
+    )
   ]);
 
   if (job.error)
@@ -311,13 +334,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // A rework or correction copy works only the units sent into it, so the
   // navigable units are those; each keeps its place in the full axis, which
   // keys its step records and issue stamps (AssemblyView does the same).
-  const scopedAxis = isParentTracked
-    ? allEntities
-        .map((entity, axisIndex) => ({ entity, axisIndex }))
-        .filter(({ entity }) => entity.inOperationScope !== false)
-        .slice(0, opQty)
+  const navEntities = isParentTracked
+    ? operationUnits(
+        allEntities,
+        opQty,
+        jobMakeMethod?.data?.requiresSerialTracking
+          ? { operationId, holds: unitHolds }
+          : undefined
+      )
     : [];
-  const navEntities = scopedAxis.map(({ entity }) => entity);
   const unitParam = Number.parseInt(url.searchParams.get("unit") ?? "", 10);
   const entityIndex = trackedEntityId
     ? navEntities.findIndex((te) => te.id === trackedEntityId)
@@ -353,7 +378,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiresSerialTracking:
       jobMakeMethod?.data?.requiresSerialTracking ?? false,
     requiresBatchTracking: jobMakeMethod?.data?.requiresBatchTracking ?? false,
-    unitIndex: scopedAxis[unitIndex]?.axisIndex ?? unitIndex
+    unitIndex: navEntities[unitIndex]
+      ? allEntities.indexOf(navEntities[unitIndex])
+      : unitIndex
   });
 
   return {
@@ -363,6 +390,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     thumbnailPath,
     correctionName,
     trackedEntities: trackedEntities?.data ?? [],
+    unitHolds,
     // The resolved entity for the current unit, or null for untracked units, so the
     // component falls back to the ?unit index instead of snapping back to unit 0.
     trackedEntityId: effectiveEntityId ?? null,
@@ -416,6 +444,12 @@ export default function AssemblyRoute() {
     typeof AssemblyView
   >["procedure"];
   return (
-    <AssemblyView {...data} procedure={procedure} operationId={operationId} />
+    // Keyed by operation: the unit the operator holds belongs to one operation.
+    <AssemblyView
+      key={operationId}
+      {...data}
+      procedure={procedure}
+      operationId={operationId}
+    />
   );
 }

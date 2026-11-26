@@ -8,6 +8,7 @@ import {
   layoutOperations,
   openingViewport,
   routePath,
+  sequenceOperations,
   windingColumns
 } from "./layout";
 
@@ -155,5 +156,71 @@ describe("graph viewport", () => {
 
   it("fits the whole graph no smaller than the phone floor", () => {
     expect(fitViewport(tall, { width: 390, height: 700 }, 0.6).zoom).toBe(0.6);
+  });
+});
+
+describe("operation list sequence", () => {
+  const op = (id: string, order: number) => ({ id, order });
+
+  it("lists an operation after the operations it depends on, ties by routing order", () => {
+    // A sub-assembly's operations (order 1-2) feed the parent's (order 1-2).
+    const operations = [op("p1", 1), op("p2", 2), op("s1", 1), op("s2", 2)];
+    const dependencies = [
+      { operationId: "s2", dependsOnId: "s1" },
+      { operationId: "p1", dependsOnId: "s2" },
+      { operationId: "p2", dependsOnId: "p1" }
+    ];
+    expect(
+      sequenceOperations(operations, dependencies).map(({ id }) => id)
+    ).toEqual(["s1", "s2", "p1", "p2"]);
+  });
+
+  it("lists tied orders the same way whatever order the rows arrive in", () => {
+    // Two parallel sub-assemblies (make methods A and B) both start at order 1.
+    const tied = (id: string, order: number, jobMakeMethodId: string) => ({
+      id,
+      order,
+      jobMakeMethodId
+    });
+    const operations = [
+      tied("b1", 1, "B"),
+      tied("a1", 1, "A"),
+      tied("a2", 2, "A"),
+      tied("b2", 2, "B"),
+      tied("x1", 1, "A")
+    ];
+    const dependencies = [
+      { operationId: "a2", dependsOnId: "a1" },
+      { operationId: "b2", dependsOnId: "b1" }
+    ];
+    const arrivals = [
+      operations,
+      [...operations].reverse(),
+      [
+        operations[2],
+        operations[4],
+        operations[0],
+        operations[3],
+        operations[1]
+      ]
+    ];
+    for (const rows of arrivals) {
+      expect(
+        sequenceOperations(rows!, [...dependencies].reverse()).map(
+          ({ id }) => id
+        )
+      ).toEqual(["a1", "x1", "b1", "a2", "b2"]);
+    }
+  });
+
+  it("keeps every operation when the dependencies form a cycle", () => {
+    const operations = [op("b", 2), op("a", 1), op("c", 3)];
+    const dependencies = [
+      { operationId: "a", dependsOnId: "b" },
+      { operationId: "b", dependsOnId: "a" }
+    ];
+    expect(
+      sequenceOperations(operations, dependencies).map(({ id }) => id)
+    ).toEqual(["c", "a", "b"]);
   });
 });

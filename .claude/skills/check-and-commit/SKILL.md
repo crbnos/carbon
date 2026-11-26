@@ -1,6 +1,6 @@
 ---
 name: check-and-commit
-description: Pre-commit verification gate — runs Carbon's validation gates in order (generate:types if schema changed, biome, scoped typecheck, scoped tests, build if needed, and /translate to fill missing i18n .po strings when UI/locale files changed), fixes straightforward failures, then commits the specific files with a conventional message. Use after /fix, after an /execute task, or after manual changes when the work should be committed. Commits only when every gate is green; pushes only if the branch already tracks a remote or the user asked.
+description: Pre-commit verification gate — runs Carbon's validation gates in order (generate:types if schema changed, oxlint, the @carbon/checks conformance gate, scoped typecheck, scoped tests, build if needed, and /translate to fill missing i18n .po strings when UI/locale files changed), fixes straightforward failures, then commits the specific files with a conventional message. Use after /fix, after an /execute task, or after manual changes when the work should be committed. Commits only when every gate is green; pushes only if the branch already tracks a remote or the user asked.
 ---
 <!-- Workflow pattern inspired by Open Mercato (MIT License)
      https://github.com/open-mercato/open-mercato
@@ -37,6 +37,8 @@ paths, derive:
   easy to miss — a schema change that adds a column the workflow engine surfaces
   breaks `check:workflow-catalog` even though nothing under `packages/workflows`
   was edited by hand.
+- `CONFORMANCE_RELEVANT` — any `.ts`, `.tsx` or `.sql` file under `apps/` or
+  `packages/`. When true, Gate 2b runs the `@carbon/checks` suite (the gate CI runs).
 - `I18N_RELEVANT` — the diff adds/edits UI source that can introduce new
   translatable strings (`apps/erp/app/**`, `apps/mes/app/**`,
   `packages/react/src/**`) **or** touches any `packages/locale/locales/**/*.po`.
@@ -74,7 +76,14 @@ pnpm run check:workflow-catalog             # must exit 0
 # code problem, not staleness — fix the source per its message, don't commit around it.
 
 # Gate 2 — format + lint (auto-fixes in place)
-pnpm exec biome check --write --no-errors-on-unmatched <changed paths>
+pnpm exec oxlint --fix --no-error-on-unmatched-pattern <changed paths>
+pnpm exec oxfmt --no-error-on-unmatched-pattern <changed paths>
+
+# Gate 2b — conformance checks (only if CONFORMANCE_RELEVANT; ~5 s)
+[ -f packages/config/dist/vitest.mjs ] || pnpm --filter @carbon/config build
+pnpm --filter @carbon/checks exec vitest run src/run.test.ts
+# Must exit 0. A violation prints as `<check-id>  <file>:<line>  <snippet>`; fix the code.
+# The pre-commit hook runs this same command.
 
 # Gate 3 — typecheck, one package at a time. NEVER whole-repo (`pnpm typecheck`
 # runs every package at once and OOMs the machine).
@@ -111,9 +120,10 @@ translations by invoking the **translate skill** (`/translate`), not by hand:
 
 | Failure | Action |
 |---------|--------|
-| Biome formatting/import order | Already fixed by `--write`; re-run to confirm clean |
+| oxfmt formatting/import order | Already fixed by `oxfmt`; re-run `pnpm exec oxfmt --check` to confirm clean |
 | Type error from stale generated types | Run Gate 1, re-run typecheck |
 | Type/test error caused by this change | Fix the code, re-run |
+| Conformance violation (Gate 2b) | Fix the code. Never add it to `packages/checks/src/conformance/baseline.json`; the baseline grandfathers old code only |
 | Pre-existing failure, unrelated to this change | Note in report; don't block, don't fix |
 | Anything unclear or still failing after **2** fix attempts | STOP — report BLOCKED |
 
@@ -155,7 +165,8 @@ git commit -m "<type>(<scope>): <description>"
 |------|--------|-------|
 | generate:types | PASS / SKIP | |
 | workflow-catalog | PASS / SKIP | <regenerated + check exit 0> |
-| biome | PASS | <files auto-fixed> |
+| oxlint | PASS | <files auto-fixed> |
+| conformance (@carbon/checks) | PASS / SKIP | <0 new violations> |
 | typecheck (<pkgs>) | PASS | |
 | test (<pkgs>) | PASS | <pre-existing failures noted> |
 | build | PASS / SKIP | |

@@ -42,8 +42,8 @@ const QualityDocumentForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "quality")
-    : !permissions.can("create", "quality");
+    ? !permissions.has({ "quality.qualityDocuments": "Edit" })
+    : !permissions.has({ "quality.qualityDocuments": "Create" });
 
   return (
     <ModalDrawerProvider type="modal">

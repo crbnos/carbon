@@ -243,7 +243,9 @@ const customFieldBlock = z.object({
   /** The custom field's id (key into the record's `customFields` JSON). */
   fieldId: z.string(),
   /** Display label — defaults to the field's name at insert time. */
-  label: z.string().default("")
+  label: z.string().default(""),
+  /** One document's own value in place of the record's; a template never keeps it (`withoutDocumentValues`). */
+  value: z.string().optional()
 });
 
 /** Faint full-page company watermark (uses the company's watermark logo). */
@@ -502,6 +504,17 @@ export interface StoredDocumentTemplateRow {
   footerSectionId?: string | null;
 }
 
+/** A template's blocks without what only one record's edit may set: a custom field's own value. */
+export function withoutDocumentValues(
+  blocks: DocumentBlock[]
+): DocumentBlock[] {
+  return blocks.map((block) => {
+    if (block.type !== "customField" || block.value === undefined) return block;
+    const { value: _, ...rest } = block;
+    return rest;
+  });
+}
+
 /**
  * Map a stored `documentTemplate` row to a `DocumentTemplate` (or null). The one
  * place the JSON columns are cast — callers (services + PDF/ZPL routes) use this
@@ -520,7 +533,9 @@ export function toDocumentTemplate(
   return {
     formatVersion: r.formatVersion ?? CURRENT_TEMPLATE_FORMAT_VERSION,
     documentType,
-    blocks: r.blocks as DocumentTemplate["blocks"],
+    blocks: Array.isArray(r.blocks)
+      ? withoutDocumentValues(r.blocks as DocumentBlock[])
+      : (r.blocks as DocumentTemplate["blocks"]),
     theme: r.theme as DocumentTemplate["theme"],
     settings: settings as DocumentTemplate["settings"],
     headerSectionId: r.headerSectionId ?? null,

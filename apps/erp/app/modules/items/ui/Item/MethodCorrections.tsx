@@ -41,7 +41,6 @@ import {
   Submit
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   correctionReturnTo,
@@ -50,6 +49,7 @@ import {
 } from "../../items.models";
 import BillOfMaterial from "./BillOfMaterial";
 import BillOfProcess from "./BillOfProcess";
+import { useMethodEditable } from "./useMethodEditable";
 
 type Correction = Database["public"]["Tables"]["methodCorrection"]["Row"];
 type CorrectionTrigger =
@@ -136,9 +136,7 @@ export default function MethodCorrections({
   releaseControl
 }: MethodCorrectionsProps) {
   const { t } = useLingui();
-  const permissions = usePermissions();
-  const isReadOnly =
-    !permissions.can("update", "parts") || makeMethod.status !== "Draft";
+  const isReadOnly = !useMethodEditable(makeMethod).isEditable;
 
   const formModal = useDisclosure();
   const [editing, setEditing] = useState<Correction | null>(null);

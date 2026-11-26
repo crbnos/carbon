@@ -100,12 +100,12 @@ export default function OnboardingTheme() {
     applyThemeColors(t);
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     const t = themes.find((t) => t.name === theme);
     if (t) {
       applyThemeColors(t);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [mode]);
 
   const { next, previous } = useOnboarding();

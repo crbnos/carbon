@@ -49,14 +49,14 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getItemById, INPUT_FORMAT } from "@carbon/utils";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "motion/react";
 import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuActivity,
@@ -132,12 +132,8 @@ import {
   StepLinkEditor
 } from "~/components/StepLinkEditor";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
-import {
-  useCurrencyDecimals,
-  useImageUpload,
-  usePermissions,
-  useUser
-} from "~/hooks";
+import { useCurrencyDecimals, useImageUpload, useUser } from "~/hooks";
+import { useProcessWorkCenter } from "~/hooks/useProcessWorkCenter";
 import { useTags } from "~/hooks/useTags";
 import type {
   SlideAnnotation,
@@ -174,6 +170,7 @@ import type {
 import { OperationRowDetails, OperationRowTitle } from "./MethodRow";
 import type { ReleaseLockProps } from "./ReleaseLockAlert";
 import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
+import { useMethodEditable } from "./useMethodEditable";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -276,18 +273,16 @@ const BillOfProcess = ({
   methodCorrectionId,
   title
 }: BillOfProcessProps) => {
-  const permissions = usePermissions();
   const { t } = useLingui();
   const { isProductionRevision, isReleaseLocked } = getReleaseLockFlags({
     revisionStatus,
     releaseControl
   });
   const { isPhone } = useViewport();
-  const isReadOnly =
-    permissions.can("update", "parts") === false ||
-    makeMethod.status !== "Draft" ||
-    isReleaseLocked ||
-    isDisabled;
+  const [allItems] = useItems();
+  const { methodItem, isEditable } = useMethodEditable(makeMethod);
+  const itemName = methodItem?.name;
+  const isReadOnly = !isEditable || isReleaseLocked || isDisabled;
 
   const makeMethodId = makeMethod.id;
 
@@ -295,9 +290,6 @@ const BillOfProcess = ({
   const sortOrderFetcher = useFetcher<{}>();
   const deleteOperationFetcher = useAction();
   const { id: userId } = useUser();
-
-  const [allItems] = useItems();
-  const itemName = getItemById(allItems, makeMethod.itemId)?.name;
 
   const materialItemIds = useMemo(
     () => new Set((materials ?? []).map((m) => m.itemId)),
@@ -1002,6 +994,8 @@ function OperationForm({
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
+  const formId = useId();
+  const keepForProcess = useProcessWorkCenter(formId);
 
   useEffect(() => {
     // Remove from temporary items after successful submission
@@ -1071,16 +1065,27 @@ function OperationForm({
 
   const onProcessChange = async (processId: string) => {
     if (!carbon || !processId) return;
-    const [process, supplierProcesses] = await Promise.all([
+    const [process, workCenters, supplierProcesses] = await Promise.all([
       carbon.from("process").select("*").eq("id", processId).single(),
+      carbon
+        .from("workCenterProcess")
+        .select("workCenter(id, locationId, active)")
+        .eq("processId", processId)
+        .eq("workCenter.active", true),
       carbon.from("supplierProcess").select("*").eq("processId", processId)
     ]);
 
     if (process.error) throw new Error(process.error.message);
+    if (workCenters.error) throw new Error(workCenters.error.message);
+
+    const nextWorkCenterId = keepForProcess(
+      workCenters.data.flatMap((wc) => (wc.workCenter ? [wc.workCenter] : []))
+    );
 
     setProcessData((p) => ({
       ...p,
       processId,
+      workCenterId: nextWorkCenterId,
       procedureId: "",
       description: process.data?.name ?? "",
       laborUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
@@ -1135,6 +1140,7 @@ function OperationForm({
           ? path.to.newMethodOperation
           : path.to.methodOperation(item.id!)
       }
+      id={formId}
       method="post"
       defaultValues={item.data}
       validator={methodOperationValidator}
@@ -2131,7 +2137,6 @@ function AttributesForm({
 
   // When the new step is created, attach any buffered slides to it, then revalidate so
   // they show on the step and reset the buffer for the next step.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftSlides.length === 0 || !carbon) return;
@@ -2162,10 +2167,10 @@ function AttributesForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   // When the new step is created, attach any buffered parts, then revalidate + reset.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftParts.length === 0 || !carbon) return;
@@ -2194,13 +2199,13 @@ function AttributesForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   // When the new step is created, attach any buffered tools, then revalidate + reset.
   // Goes through the step-tool route (not a direct insert) because the buffer holds
   // tool ITEM ids and the operation tool row may not exist yet — the route creates
   // it before linking. Sequential so a repeated tool never races its own creation.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftTools.length === 0 || !carbon) return;
@@ -2229,6 +2234,7 @@ function AttributesForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   if (isDisabled && temporaryItems[operationId]) {

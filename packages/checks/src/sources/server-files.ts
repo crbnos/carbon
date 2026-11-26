@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { SourceFile } from "../check";
+import { readSource } from "./read-source";
+import { isTest } from "./typescript";
 
 /**
  * Server-side TypeScript that must derive calendar days through the `datetime`
@@ -58,8 +60,7 @@ function walk(dir: string, out: string[], extensions: string[]): void {
       walk(path, out, extensions);
     } else if (
       extensions.some((ext) => entry.endsWith(ext)) &&
-      !entry.endsWith(".test.ts") &&
-      !entry.endsWith(".test.tsx")
+      !isTest(entry)
     ) {
       out.push(path);
     }
@@ -85,7 +86,7 @@ const isSingleLineDeclaration = (line: string): boolean =>
  * server half of a route module. Line numbering is preserved so violations
  * still point at the real line. A region runs from its declaration to the next
  * column-0 `}` or `)` (`}` for block bodies, `)` for paren-wrapped
- * expression-bodied arrows) — reliable because the repo is Biome-formatted, so
+ * expression-bodied arrows) — reliable because the repo is oxfmt-formatted, so
  * a top-level closer is never indented.
  */
 export function maskClientCode(contents: string): string {
@@ -143,7 +144,7 @@ export function loadServerFiles(root: string): SourceFile[] {
     .map((path) => ({ path, file: relative(root, path) }))
     .sort((a, b) => a.file.localeCompare(b.file))
     .map(({ path, file }) => {
-      const contents = readFileSync(path, "utf8");
+      const contents = readSource(path);
       return {
         file,
         contents: isRoute.has(path) ? maskClientCode(contents) : contents

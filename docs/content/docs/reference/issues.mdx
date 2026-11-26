@@ -67,7 +67,9 @@ The `issues` view computes a **containment status** from the action tasks. It re
 
 Action tasks run their own small lifecycle: **"Pending"** → **"In Progress"** → **"Completed"**, with **"Skipped"** as an off-path exit. Tasks start Pending and do *not* auto-start. Completing a task stamps its completed date. A completed or skipped task can be reopened back to Pending. Tasks can be reordered, given due dates, and tied to specific processes, and a supplier-facing action task can be shared externally as a **SCAR** (Supplier Corrective Action Request) report.
 
-The SCAR is a private, login-free link the supplier opens to respond. They see the non-conformance details, the current status, and the action tasks assigned to them — not the rest of the issue: dispositions, approvals, and closure stay internal. For each task the supplier can update the status and write notes in an editor that auto-saves as they type; entering notes on a **"Pending"** task promotes it to **"In Progress"** automatically. Once the issue is **"Closed"**, the SCAR locks and the supplier can no longer make changes. Whoever holds the URL can open it, so send it only to the supplier contact.
+The SCAR is a private, login-free link the supplier opens to respond. They see the issue's number, name and status, and the action tasks assigned to them. The rest of the issue stays internal, including its description, dispositions, assignees, approvals and closure, and the link sends none of it to the supplier's browser.
+
+For each task the supplier can update the status and write notes in an editor that auto-saves as they type; entering notes on a **"Pending"** task promotes it to **"In Progress"** automatically. Once the issue is **"Closed"**, the SCAR locks and the supplier can no longer make changes. Whoever holds the URL can open it, so send it only to the supplier contact.
 
 ## Approvals and the Material Review Board
 
@@ -79,11 +81,15 @@ Closing an issue is where the affected material gets resolved. Each `nonConforma
 
 <FieldTable>
   <Field name="Pending">Not yet decided. The default. **Blocks closing** the issue if the row has linked material.</Field>
-  <Field name="Return to Supplier">Send it back. On close, linked tracked entities flip to **Rejected** and a Negative Adjustment ledger entry is written.</Field>
-  <Field name="Rework">Fix it and use it. On close, linked entities return to **Available**.</Field>
-  <Field name="Scrap">Write it off. On close, linked entities flip to **Rejected** with a Negative Adjustment ledger entry.</Field>
-  <Field name="Use As Is">Accept the deviation. On close, linked entities return to **Available**.</Field>
+  <Field name="Return to Supplier">Reject the material and send it back to the supplier.</Field>
+  <Field name="Rework">Authorize corrective work on the affected material.</Field>
+  <Field name="Scrap">Reject the material and write off any affected quantity still in stock.</Field>
+  <Field name="Use As Is">Accept the deviation and authorize use of the material as it is.</Field>
 </FieldTable>
+
+**When can the operator work on the serial again?** With **Settings → Quality → Issues: Hold Units** enabled, closing an issue as **Use As Is** or **Rework** clears that issue's hold. If another open issue holds the same serial, the shop-floor picker shows its issue number. Once Quality clears the last hold, refresh the station and select the serial. A serial marked **Scrap** or **Return to Supplier** stays blocked after the issue closes. [See how holds appear on the shop floor](/docs/reference/mes#units-on-hold-for-a-quality-issue).
+
+**What happens to inventory?** If the serial never entered stock, closing the issue as **Scrap** or **Return to Supplier** records the rejection with zero stock movement. For a stocked serial, Carbon deducts the quantity still on hand. A quantity already shipped back to the supplier is deducted only once.
 
 <Callout type="warn" title="A Pending disposition on linked material blocks closing">
 `closeIssue` runs a preflight over every affected-item row that has linked tracked entities. It refuses to close — *"Cannot close: Disposition is still Pending"* — if any such row is still Pending, if the linked quantities don't sum to the row quantity, or if a linked entity is missing or already Consumed. Only once the plan is clean does it stamp each entity's outcome and set the issue **"Closed"**. A row with no linked material is not gated: you don't have to disposition what you never traced.

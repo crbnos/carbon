@@ -72,6 +72,7 @@ import {
   FileBadge,
   ItemDescription,
   SourcingTypeProperty,
+  TaxableProperty,
   useIsComponentOfBuyAndMake
 } from "../Item";
 
@@ -118,6 +119,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   // When `data` is injected (subassembly context), this hook won't match a
   // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     materialSummary: MaterialSummary;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -164,15 +166,6 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   const supplierParts = routeData?.supplierParts ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
 
-  // const optimisticAssignment = useOptimisticAssignment({
-  //   id: itemId,
-  //   table: "item",
-  // });
-  // const assignee =
-  //   optimisticAssignment !== undefined
-  //     ? optimisticAssignment
-  //     : routeData?.materialSummary?.assignee;
-
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       toastServiceError(data);
@@ -203,7 +196,6 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   const settings = useSettings();
   const allowLowercaseItemIds = settings.allowLowercaseItemIds === true;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (
       field:
@@ -215,6 +207,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         | "itemTrackingType"
         | "itemPostingGroupId"
         | "active"
+        | "taxable"
         | "unitOfMeasureCode"
         | "materialFormId"
         | "materialSubstanceId"
@@ -240,6 +233,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
       );
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [itemId]
   );
 
@@ -287,7 +281,6 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
     [confirmDisclosure, onUpdate, settings.materialGeneratedIds]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
@@ -304,10 +297,10 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.materialSummary?.readableId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -322,6 +315,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.materialSummary?.readableId]
   );
 
@@ -470,7 +464,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
           id={itemId}
           table="item"
           value={assignee ?? ""}
-          isReadOnly={!permissions.can("update", "parts")}
+          isReadOnly={!permissions.has({ "parts.materials": "Edit" })}
         />
       </VStack> */}
 
@@ -773,6 +767,11 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
             }}
           />
         </ValidatedForm>
+        <TaxableProperty
+          itemId={itemId}
+          taxable={routeDataFromRoute?.taxable}
+          onChange={(value) => onUpdate("taxable", value)}
+        />
         {routeData?.materialSummary?.replenishmentSystem?.includes("Buy") && (
           <ValidatedForm
             defaultValues={{

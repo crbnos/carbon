@@ -18,7 +18,7 @@
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },

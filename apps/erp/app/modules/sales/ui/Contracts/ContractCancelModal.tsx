@@ -97,9 +97,9 @@ const ContractCancelBody = ({
     setSubmittedDate(date);
     previewFetcher.submit(formData, { method: "post", action });
   }, 300);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the date is the only input; the debounced submitter is a new function each render
   useEffect(() => {
     if (endDate) submitPreview(endDate);
+    // oxlint-disable-next-line react/exhaustive-deps -- the date is the only input; the debounced submitter is a new function each render
   }, [endDate]);
 
   const isPreviewing =
@@ -110,7 +110,7 @@ const ContractCancelBody = ({
   const credit = preview ? currencyFormatter.format(preview.credit) : "";
   const removed = preview?.removedInvoices ?? 0;
   // The credit is a credit memo, which needs the invoicing permission.
-  const canCredit = permissions.can("create", "invoicing");
+  const canCredit = permissions.has({ "invoicing.creditMemos": "Create" });
 
   return (
     <ValidatedForm
@@ -196,7 +196,9 @@ const ContractCancelBody = ({
         <Submit
           variant="destructive"
           isDisabled={
-            !endDate || isRefused || !permissions.can("update", "sales")
+            !endDate ||
+            isRefused ||
+            !permissions.has({ "sales.serviceContracts": "Edit" })
           }
         >
           <Trans>Cancel Contract</Trans>

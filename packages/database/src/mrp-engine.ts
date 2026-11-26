@@ -372,26 +372,12 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
 
       const redirect = isCommon ? consumeFirstRedirect.get(itemId) : undefined;
       if (redirect) {
-        const weeks = (id: string) =>
-          round((leadTimeByItem.get(id) ?? 7) / 7, 0, RoundingMode.Up);
-        const currentPeriodIndex = periodIndexById.get(period.id) ?? 0;
-        const successorPeriodIndex = Math.max(
-          0,
-          Math.min(
-            currentPeriodIndex,
-            currentPeriodIndex + weeks(itemId) - weeks(redirect.to)
-          )
-        );
-        const successorPeriod = periods[successorPeriodIndex] ?? period;
+        // The successor is needed when the old part is: its own order
+        // sizing subtracts its lead time from this week.
         running = redirectConsumeFirstShortfall({
           itemId,
           periodKey,
-          successorKey: makeKey(
-            locationId,
-            successorPeriod.id,
-            redirect.to,
-            segmentId
-          ),
+          successorKey: makeKey(locationId, period.id, redirect.to, segmentId),
           factor: redirect.factor,
           grossQty,
           running,
@@ -414,6 +400,23 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
       // demandForecast / quantityToOrder via the caller.
       if (netRequirement <= 0 || effRepSys !== "Make") continue;
 
+      // The children are needed when the parent's order starts: its period
+      // less the PARENT's lead time. Each child's own order sizing subtracts
+      // the child's lead time from that date. Floored at period[0].
+      const parentLeadTimeWeeks = round(
+        (leadTimeByItem.get(itemId) ?? 7) / 7,
+        0,
+        RoundingMode.Up
+      );
+      const targetPeriod =
+        periods[
+          Math.max(
+            0,
+            (periodIndexById.get(period.id) ?? 0) - parentLeadTimeWeeks
+          )
+        ];
+      if (!targetPeriod) continue;
+
       const children = explodable.get(itemId) ?? [];
       for (const child of children) {
         const childEffRepSys = effectiveReplenishment(
@@ -426,18 +429,6 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
           child.methodType === "Make to Order" && childEffRepSys === "Make";
 
         const childQty = child.quantity * netRequirement;
-        const childLeadTimeDays = leadTimeByItem.get(child.itemId) ?? 7;
-        const childLeadTimeWeeks = Math.ceil(childLeadTimeDays / 7);
-
-        // Pull the child demand earlier by lead time so the order/job
-        // arrives in time for the parent's period; floor at period[0].
-        const currentPeriodIndex = periodIndexById.get(period.id) ?? 0;
-        const targetPeriodIndex = Math.max(
-          0,
-          currentPeriodIndex - childLeadTimeWeeks
-        );
-        const targetPeriod = periods[targetPeriodIndex];
-        if (!targetPeriod) continue;
 
         const childKey = makeKey(
           locationId,

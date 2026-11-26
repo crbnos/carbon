@@ -31,6 +31,7 @@ export function ScrapEntityModal({
   trackedEntityId,
   readableId,
   parentId,
+  operationId,
   isMakeToOrder,
   open = true,
   onClose
@@ -39,6 +40,8 @@ export function ScrapEntityModal({
   trackedEntityId: string;
   readableId?: string | null;
   parentId?: string;
+  /** The operation the scrap is made at; checks the parent is its unit. */
+  operationId?: string;
   isMakeToOrder: boolean;
   open?: boolean;
   onClose: () => void;
@@ -64,7 +67,12 @@ export function ScrapEntityModal({
     >
       <ModalContent>
         <ValidatedForm
-          action={path.to.scrapEntity(materialId, trackedEntityId, parentId)}
+          action={path.to.scrapEntity(
+            materialId,
+            trackedEntityId,
+            parentId,
+            operationId
+          )}
           method="post"
           validator={scrapTrackedEntityValidator}
           defaultValues={{

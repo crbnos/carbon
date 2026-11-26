@@ -5,6 +5,7 @@
 // Main package exports - only what app code needs
 
 export type { Events } from "./events.js";
+export { type InviteRefresh, refreshResentInvite } from "./invite-refresh.js";
 export {
   syncIssueFromJiraSchema,
   syncIssueFromLinearSchema

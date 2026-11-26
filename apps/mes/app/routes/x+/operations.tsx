@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
@@ -191,7 +191,7 @@ function collapseBatches(
 export const meta: MetaFunction = () => pageMeta("Schedule");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request, {});
   const serviceRole = getCarbonServiceRole();
 
   const url = new URL(request.url);
@@ -851,7 +851,7 @@ function useProgressByOperation(
   const {
     company: { id: companyId }
   } = useUser();
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   const { carbon, accessToken } = useCarbon();
 
   const [productionEventsByOperation, setProductionEventsByOperation] =
@@ -951,12 +951,12 @@ function useProgressByOperation(
     setProgressByOperation(progress);
   }, 5000);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (Object.keys(productionEventsByOperation).length > 0) {
       const { progress } = getProgress();
       setProgressByOperation(progress);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [productionEventsByOperation]);
 
   useChangedRows<{ id: string; workCenterId: string; priority: number }>({

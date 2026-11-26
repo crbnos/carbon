@@ -33,7 +33,7 @@
   "scripts": {
     "clean": "rimraf .cache .turbo node_modules dist build",
     "start": "react-router dev",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "types": "react-router typegen && tsc"
   },
   "sideEffects": false

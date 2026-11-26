@@ -2,13 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { shipmentValidator } from "~/modules/inventory/inventory.models";
+import { shipmentLinesFlash } from "~/modules/inventory/inventory.utils";
 import type { Shipment, ShipmentLine } from "~/modules/inventory/types";
 import {
   ShipmentForm,
@@ -25,16 +27,17 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { shipmentId } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.inventory.updateShipment({
     ...input.data,
     // The document in the URL is the one updated, whatever the form's id says.
     id: shipmentId,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return respond(args.request, result).redirect(path.to.shipment(shipmentId), {
-    message: "Updated shipment"
-  });
+  return respond(args.request, result).redirect(
+    path.to.shipment(shipmentId),
+    shipmentLinesFlash(result.data?.warnings ?? [], "Updated shipment")
+  );
 }
 
 export default function ShipmentDetailsRoute() {

@@ -59,7 +59,8 @@ type PaymentRow = Pick<
 
 /** A schedule month is on the books once the lease run posted it, or it is
  *  in an opening balance: both stamp `postedAt`. Its run rows are not read —
- *  they need accounting_view, and a purchasing-only viewer gets none. */
+ *  they need View on the Accounting Leases page, and a purchasing-only viewer
+ *  gets none. */
 export function isScheduleLinePosted(line: { postedAt: string | null }) {
   return Boolean(line.postedAt);
 }
@@ -425,7 +426,8 @@ export function leaseActivationGaps(args: {
 /** Whether `post-lease` would cancel the lease: an Active lease whose
  *  assets are all Active, with no Modify, Terminate or Purchase (no event),
  *  no invoiced payment and no month a lease run posted. A run holding its
- *  rows also refuses it, but run rows need accounting_view; the server says
+ *  rows also refuses it, but run rows need View on the Accounting Leases page;
+ *  the server says
  *  so. The run stamps the schedule line's journal (an opening balance does
  *  not). */
 export function canCancelLease(args: {

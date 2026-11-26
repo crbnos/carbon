@@ -1,0 +1,130 @@
+---
+title: "Line feed from shelf to station, serial travelers, buildable quantity, and journal imports"
+description: "A line feed from shelf to station, serial travelers, and buildable quantity. Plus journal imports, period reopening and card payments."
+date: "2026-11-23"
+tags: ["mes", "production", "accounting", "purchasing"]
+image: "/changelog/2026-11-23-line-feed-serial-travelers-buildable.svg"
+---
+
+The line could not see what each station was short, and nobody could tell how many of an item could be built now. This release maps what each station needs, follows each serial unit from the pick to the finished good, and shows how many of an item can be made today.
+
+<Callout type="warn" title="A change to know">
+Label templates set on a printer were not carried over. Set them again in `Settings → Printing → Label Templates`, per [label type and media size](/docs/reference/printing#label-templates).
+</Callout>
+
+## Line feed and material requests
+
+The MES **Line feed** page shows each station in routing order as Short, Bring, Waiting or Ready. A station shows its raw shelf, kit rack and station stock, and moves parts in one step. Operators ask for parts from a searchable list, and **Material requests** shows every open request at the location, live.
+
+## Serial travelers
+
+One serial traveler label follows a unit from the pick to the finished good. [Scanning](/docs/reference/mes#serial-units-on-later-operations) a kit or sub-assembly label claims it into the next unit that needs it. Turn on **Tracked parts must be scanned in** in `Settings → Production` to refuse a completion until every serial and batch part is scanned.
+
+## Scrap and issue from any operation
+
+**Scrap parts** is on every MES operation view. One [scrap](/docs/reference/scrap) can cover loose parts, a kit's contents, chosen serials or part of a batch, and asks for a replacement. Scanning an item label [issues](/docs/reference/mes#issuing-material) one piece per scan, never more than the job needs, and only from stock at the job's location.
+
+## How many can be made now
+
+A made item's Inventory tab shows its **Buildable Quantity** through every level of the bill of materials: on hand, ready to finish, waiting on parts, and the components that limit more. It also lists the jobs in production that are short of parts. The same answer is in the API and MCP.
+
+## Delivery date check on sales orders
+
+Set **Delivery Date Check** in `Settings → Sales` to check a promised date on a [sales order line](/docs/reference/sales-orders#delivery-date-check) against lead time, stock or capacity. A date that fails shows the earliest date that works, with a button to use it. Keeping the date anyway is recorded, and can start a workflow on the Business plan.
+
+## Operation time analysis
+
+`Production → Time Analysis` compares an item's operations in box plots, by setup time per run or by labor or machine time per unit. Drill into one operation by method version, month and operator. Runs far outside the usual range are set aside, with a toggle to include them.
+
+## Correct and close the books
+
+- [Import journal entries](/docs/reference/import-export#journal-entries) from a CSV as Draft or Posted. Each journal imports whole or not at all.
+- **Change GL Account** on a [posted invoice line](/docs/reference/invoices#changing-a-posted-lines-account) instead of voiding the invoice, and [reopen a closed period](/docs/reference/period-close#reopening).
+- Pay suppliers from a credit card account, and Ramp card bills post as a supplier payment from the card.
+- Payments post on their payment date, and Draft payments show as pending on invoices and aging.
+- **Adjust for Rounding** on a purchase invoice matches the total the supplier charged.
+
+## Supplier stages, shipping dates and quote requests
+
+[Suppliers](/docs/reference/suppliers-and-customers) get a Stage (Prospect, Sampling, Qualified, Production) beside their status. Purchase orders record [shipped and expected receipt dates](/docs/reference/purchase-orders#shipping-details). **Request Quote** on an item drafts one RFQ per supplier for the part or its whole bill of materials.
+
+## Admin force delete
+
+**Force Delete (Admin)** on a purchase order, invoice, receipt or payment asks for a reason and the document number. A second Admin approves it. Carbon then unapplies payments and reverses stock and recognized revenue before it deletes the document.
+
+## Label templates and document printers
+
+[Label templates](/docs/reference/printing#label-templates) are now set once per label type and media size, not per printer. Each printer has a [DPI setting](/docs/reference/printing#printer-routes), so labels print at their real size, and five more [label sizes](/docs/reference/printing#label-sizes) are available. Packing slips and sales invoices print to a location's Documents printer.
+
+<Accordion title="Improvements">
+
+- Once an NCR closes, **Put Away** moves the parts it kept Use As Is from the rejected bin to the shelf.
+- The operator's **Rework** dialog offers the part's corrections.
+- `Settings → Production → Line Flow` can create a job's picking list when the job is released.
+- Picking lists show the bins that hold each part now, and update live.
+- The MES has Unpick and Unissue buttons, and issue picks the lot when only one can be used.
+- Receipts from a purchase order can number batches from the order and the day received, set in `Settings → Inventory`.
+- Late [planning](/docs/reference/planning#the-order-drawer) suggestions reschedule from today, and a partly ordered week keeps its remainder.
+- Traceability, Priorities, Resource Planning and the scheduling boards open full width, with **Show menu** to bring the menu back.
+- The step editor says how many of an operation's tools show on every step.
+- MES open jobs filter by work center. A job opens on a list of its operations, and long operation graphs wind into rows.
+- MES choice lists with one option fill themselves in.
+- MES progress bars are green, red when over time or scrapped, and yellow when paused.
+- On a phone, MES material rows and receipt lines stack so nothing is cut off.
+- A PDF printer's media size can be left empty to print the full page.
+- [Onshape Government](/docs/integrations/cad#onshape-v2-government) connects through a private app your Enterprise owns, on the Business plan.
+- Purchase G/L lines can post to asset, liability and equity accounts.
+- The payment form has **Save and Post**.
+- Export AR and AP aging and the invoice lists to CSV or Excel.
+- Posting a sales invoice shows a summary of its lines and totals first.
+- `Settings → Purchasing` can [require a promised date](/docs/reference/purchase-orders#requiring-a-promised-date) to finalize a purchase order.
+- Finalize a purchase order from the list.
+- A customer who accepts a quote online gets the sales order PDF by email.
+- Remove a tax certificate from a customer or supplier.
+- [Sequences](/docs/reference/sequences#date-tokens) number weeks by ISO 8601 or US rules, set in `Settings → Company`.
+- Empty upload slots show **Upload** as the main action.
+- Add a security key, such as a YubiKey, as a passkey.
+- The API and MCP return download links for documents and record files.
+- `POST /api/v1/production/getDemandForecastReport` returns the demand forecast report, 100 rows per page.
+- Stripe Connect can no longer be installed. Existing installs keep working.
+- A failed save keeps the form open with what you typed.
+
+</Accordion>
+
+<Accordion title="Fixes">
+
+- Outside processing cost reaches the job's finished goods.
+- A job completed without a location receives into the job's location, and an outside operation records the quantity received.
+- Shipping from a partly built serial job ships only the finished units.
+- The job Complete dialog offers serial units issued before their own job was received.
+- An adjustment changes the lot and bin it names.
+- Every purchase order receipt line keeps its batch and serial tracking.
+- A pick fills in a missing lineside from the operation's work center instead of failing.
+- Partly rejected receipts stay in Inspection failed, and the Receipts link no longer opens that filter.
+- **Put Away** on a receipt opens its open put-away.
+- Inspection plan pickers no longer offer archived versions.
+- Printer API keys are stored encrypted and never reach the browser.
+- Supplier quote and SCAR share links no longer send internal notes.
+- API errors name the record, field and value, and the rate-limit response says it is plain text.
+- Purchase order PDFs title item lines with the supplier's part number.
+- A long PDF title moves below a wide logo.
+- The purchase invoice total is labelled Invoice Total.
+- A payment started from an invoice nets out the advances already held.
+- Adding a BOM item no longer clears an unsaved row.
+- Bills of process list consumables linked as operation tools.
+- Edit Revision returns to the revision instead of a missing page.
+- Search on the employees list filters again.
+- A console operator is not asked for their PIN while working, and can open assembly operations.
+- On a later step of a serial part, work waits until a unit is picked or scanned, and scanning a unit keeps you on the step.
+- A scanned kanban label opens its job even when printed from another address.
+- The MES job graph opens operations on tap and keeps its pan and zoom.
+- The MES assembly view shows recorded values in full and photos in step descriptions.
+- The job page stays usable on large serial jobs.
+- CAD previews no longer hang on models with a sliver face.
+- Pages no longer fail while a login renews.
+- Accepting an invite while signed in as someone else signs you out instead of showing an error.
+- The menu's hover card stays on its row through scrolls.
+- Hong Kong, Macao and Taiwan can be chosen as countries.
+- A fresh [self-hosted](/docs/platform/self-hosting/docker-caddy#install) install can sign in, `backup.sh` dumps from Postgres, and file links use the public address.
+
+</Accordion>

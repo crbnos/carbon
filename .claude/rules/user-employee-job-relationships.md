@@ -25,39 +25,56 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 - **`userToCompany`** — the membership join table. PK `(userId, companyId)`.
   `role "role"` where `CREATE TYPE "role" AS ENUM ('customer','employee','supplier')`.
   This is how a user belongs to multiple companies (one row per company, role can differ per company).
-- **`employee`** — per-company employee record. PK `(id, companyId)`; `id → user.id`.
+- **`employee`** — per-company employee record. PK `(id, companyId)`; `id` is the user's id (no FK to `user`).
   `employeeTypeId → employeeType.id` (RESTRICT), `companyId → company.id`,
   `active BOOLEAN DEFAULT FALSE`, `pin` (console mode). Added in `20241208004151_invites.sql`.
+  An API-role change to `employeeTypeId` is refused (BEFORE interceptor
+  `check_employee_type_change`): a person moves to another type through `writeAccessGrants`
+  (`convertConsoleOperatorToUser` too, with `{ keep: true }`). The same interceptor refuses an
+  API-role INSERT or DELETE of a row on the company's Admin type unless the caller is an Admin,
+  so a delete and re-insert cannot make an Admin. It also refuses an API-role change to a row's
+  `id` or `companyId`, and an INSERT naming another company's type; `writeAccessGrants` and `inviteEmployee`
+  apply the same rule in the app (`adminTypeChangeRefusal`, `@carbon/ee/permissions.server`).
 - **`employeeJob`** — job title / org placement. PK `(id, companyId)`; `id → user.id`.
   `title`, `startDate DATE`, `locationId → location.id`, `departmentId → department.id`,
   `shiftId → shift.id`, `managerId → user.id`, `tags TEXT[]`, `customFields` JSONB,
   `updatedAt`, `updatedBy → user.id`. Created `20230224035103_shifts.sql`; `departmentId`/`tags`
   added later. (`workCellId` existed briefly, then dropped in `20240819115702_work-centers.sql`.)
 - **`employeeType`** — per-company role definition. PK `id`. `name`, `companyId → company.id`,
-  `protected BOOLEAN`.
-- **`employeeTypePermission`** — permissions granted by an employee type. PK `(employeeTypeId, module)`.
-  `module "module"` (enum), and `view/create/update/delete TEXT[]` (each is an array of company IDs;
-  `"0"` = all companies). `employeeTypeId → employeeType.id`.
+  `protected BOOLEAN`, `systemType` (`'Admin'` / `'Console Operator'`, one each per company).
+  An API-role INSERT with a `systemType` or change to it is refused (BEFORE interceptor
+  `check_employee_type_system_type`): only the server (company seed, console provisioning,
+  datasets) sets it.
+- **`employeeTypePermission`** — LEGACY: an employee type's old permissions (PK
+  `(employeeTypeId, module)`, `view/create/update/delete TEXT[]` of company IDs). Converted to
+  `permission` grants by `20261110050003`; no permission check reads it, and it is dropped by transition item 3
+  (`packages/database/AGENTS.md`). A role's live permissions are its `permission` rows.
 - **`userPermission`** — the effective, flattened per-user permission set. PK `id` (`id → user.id`).
   `permissions JSONB DEFAULT '{}'` keyed like `<module>_<action>` → array of company IDs.
 
 ## How permissions / claims are derived
 
 1. Membership: `userToCompany` gives the user's `role` in a company.
-2. Grants: `employee.employeeTypeId → employeeType → employeeTypePermission` defines what each
-   employee type can do per module/action, scoped to company IDs.
-3. Flattened: those grants are materialized into `userPermission.permissions` (JSONB,
-   `<module>_<action>` → company-ID array).
-4. Claims: SQL `get_claims(uid, company)` (latest: `20260925121735_rpc-function-guards.sql`) reads `role` from
-   `userToCompany` and `permissions` from `userPermission`, then returns
-   `(jsonb_build_object('role', role) || permissions)`. Called through the API it answers only for
-   the caller's own `uid`, or for someone in a company where the caller holds `users_view` or
-   `users_update`; service role and direct connections are unrestricted. RLS helpers like
-   `get_companies_with_employee_role()`, and `get_companies_with_employee_permission('<module>_<action>')`
+2. Grants: one `permission` row per grant — a role's (`employeeTypeId`), a person's override
+   (`userId`) or an API key's (`apiKeyId`) — with a `module`, an optional `page` (NULL covers the
+   module) and a `level` (`None`/`View`/`Create`/`Edit`/`Full`). The Admin employee type
+   (`systemType = 'Admin'`) resolves to Full with no rows. Precedence: person page, person module,
+   role page, role module (a key has only its own). `util.access_level` (SQL) and `levelOf`
+   (`@carbon/database/access`) are the two copies, pinned to `access/cases.json`.
+3. `employeeTypePermission` and `userPermission` were converted to grants
+   (`20261110050003_convert-permissions-to-grants.sql`); `userPermission` is still read for
+   customer and supplier portal keys.
+4. Claims: SQL `get_claims(uid, company)` (`authz/helpers/get_claims.sql`) returns
+   `{ role, admin, grants, portal }` for that company; `portal` holds the `userPermission` keys
+   naming the company, for a portal account only. Called through the API it answers only for
+   the caller's own `uid`, or for someone in a company where the caller holds View or Edit on
+   Accounts (`users.accounts_view` / `users.accounts_update`); service role and direct connections are unrestricted. RLS helpers like
+   `get_companies_with_employee_role()`, and `get_companies_with_employee_permission('<page>_<action>')`
    enforce this in policies (helpers re-defined in later migrations — read the newest).
-5. App layer (`packages/auth/src/services/`): `getUserClaims()` caches claims in Redis at
-   `permissions:${userId}` (falls back to the RPC); `makePermissionsFromClaims()` (`users.ts`) parses
-   them into `{ permissions, role }`; `requirePermissions(request, { view?, create?, update?, delete?, role? })`
+5. App layer (`packages/auth/src/services/`): `getUserClaims()` caches claims in a Redis hash at
+   `getPermissionCacheKey(userId)`, one field per company (falls back to the RPC);
+   `claimsFor(json, companyId)` (`@carbon/database/access`) expands them into `{ permissions, role, … }`, and
+   `readClaimsFresh(client, userId, companyId)` (`users.ts`) reads them past the cache; `authorize(request, gate?)`
    in `auth.server.ts` is the route gate. Active company comes from a `companyId` cookie via
    `getCompanyId`/`setCompanyId` (`company.server.ts`).
 
@@ -92,12 +109,14 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   don't conflate "role" the enum with "role" the job title (`employeeJob.title`).
 - Permission company-ID array `"0"` means "all companies" — don't string-match a literal company id only.
 - Deactivating an employee (`deactivateEmployee` in `packages/auth/src/services/users.server.ts`)
-  removes the company from `userPermission.permissions`, deletes the `userToCompany` row and every
-  `membership` in groups owned by that company, and sets `employee.active = false`.
+  removes the company from `userPermission.permissions`, deletes the person's own `permission` rows
+  in the company (their overrides, so a re-invite starts from the employee type), deletes the
+  `userToCompany` row and every `membership` in groups owned by that company, and sets
+  `employee.active = false`.
   It does **not** clear `user.active`, delete the `employee` or `employeeJob` rows, or scrub stored
   userId references (assignee columns, `workCenterEmployee`, notification-group settings arrays).
 - **The claims cache is invalidated by the deactivate\* functions themselves**, not by their
-  callers. `deactivateEmployee`/`Customer`/`Supplier` each `redis.del(getPermissionCacheKey(userId))`
+  callers. `deactivateEmployee`/`Customer`/`Supplier` each clear the user's cached claims (`clearClaims`)
   on success, and `deactivateUser` deletes it again after delegating. That matters because
   `requirePermissions` reads the cache (1h TTL) before the database, and the `create*Account`
   rollback paths in the ERP call the role-specific functions directly rather than going through
@@ -115,6 +134,33 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   `TEXT REFERENCES "user"("id")`, so the database accepts any user's id, including another
   company's). A route saves one only after `isActiveCompanyEmployee(client, companyId, userId)`
   (`apps/erp/app/modules/shared/shared.service.ts`), which fails closed on a read error.
+- **Revoke Invite deactivates, so it takes only invites never accepted.** `revokeInvites`
+  (`users.server.ts`, gate `users.accounts` at Full, as the Employees, Customers and Suppliers
+  lists show Revoke Invite only at Full) stamps `revokedAt` on the invites still pending
+  (`acceptedAt` and `revokedAt` NULL), then deactivates the users whose invite it stamped and
+  those whose invite was revoked earlier (not re-stamped), directly for one and by job for
+  several. A deactivation that returns a failed account write clears the stamp; one that throws
+  after its writes is handed to the `carbon/user-admin` job, and a rejected queue send keeps the
+  invites revoked, since the batch may have been accepted: sending the revoke again finishes it.
+  `refuseUnlessPendingInvites` (`users.service.ts`) refuses unless every user has an unaccepted
+  invite in the company and no `userToCompany` row there; a user with neither is `notFound`.
+  The queued deactivate event carries the `revokedAt` it acts on, and the job deactivates only
+  while `revocationStands` (`packages/jobs/src/invite-refresh.ts`: that stamp, unaccepted, no
+  membership). `acceptInvite` and the SSO migration require `revokedAt IS NULL` under the
+  invite's row lock, so no acceptance lands after the stamp unless a resend clears it, which
+  that check covers. An active account goes through Deactivate instead.
+- **A resend clears only the revocation it read.** `resendInvites` and `queueInviteResends` capture
+  each invite's `revokedAt` when the resend is asked for, and the `carbon/user-admin` resend event
+  carries it; `refreshResentInvite` (`packages/jobs/src/invite-refresh.ts`) updates only while
+  `revokedAt` still holds that value, so a revoke saved while the resend waits stays in effect
+  (`revoked` failure, a `conflict` for the caller). The job refreshes in its own `refresh-invite`
+  step and delivers in `send-invite` only while the invite still holds the refreshed code
+  (`resendInvite`), so a retried delivery sends that code and never refreshes again.
+- An API key inviting an employee (`inviteEmployee`) also needs `users.accounts` at Edit and
+  `people.employees` at Create (`refuseKeyWithout`), the two the first-time insert needs under RLS
+  and the re-add checks (`canReAddDeactivatedEmployee`). The re-add reads the key creator's
+  claims, not the key's grants,
+  so without the refusal a narrow key could re-add through its creator.
 - Re-adding a deactivated person through Add Account (`createEmployeeAccount`) reuses the surviving
   rows rather than failing: it refuses only when the existing `employee` row is `active`. A person
   whose invite is still pending is re-added the same way, which issues a new code and invalidates
@@ -125,10 +171,10 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   row's employee type cannot diverge, and a failed write leaves no redeemable invite. It never
   inserts a first-time `employee` row; that stays under the caller's RLS client.
 - **The re-add writes outside RLS, so it checks what RLS would have.** The route requires only
-  `users_create`, but a first-time add inserts `employee` and `employeeJob` under the caller's
-  client, whose INSERT policies require `users_update` and `people_create`. Before the reuse
+  Create on Accounts, but a first-time add inserts `employee` and `employeeJob` under the caller's
+  client, whose INSERT policies require Edit on Accounts and Create on Employees. Before the reuse
   transaction, `createEmployeeAccount` reads the inviter's claims (`getUserClaims`) and refuses
-  unless both are held — otherwise a `users_create`-only admin could re-add someone they could
+  unless both are held — otherwise an admin with Create on Accounts alone could re-add someone they could
   never have added. The writes stamp the inviter in `updatedBy` (`employeeJob`, `invite`) because
   the Kysely connection has no `auth.uid()` for the audit log; `employee` has no audit columns.
 - **A re-used invite row restarts `createdAt`** (`insertInvite` and the reuse path both set it). The

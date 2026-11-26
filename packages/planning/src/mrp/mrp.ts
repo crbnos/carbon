@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { randomUUID } from "node:crypto";
-import { type Database, getCompanyTimeZone } from "@carbon/database";
+import {
+  type Database,
+  getCompanyTimeZone,
+  PERIOD_LOCK_KEY
+} from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import type { MethodType } from "@carbon/database/mrp-engine";
@@ -18,6 +22,11 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { z } from "zod";
+import {
+  databaseNow,
+  lastSavedMrpRunStartedAt,
+  newestRunSaves
+} from "../run-order.ts";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 import { activeMethodIdByItem, planCompany } from "./plan-company.ts";
 import { generatePlanningActions } from "./planning-actions.ts";
@@ -77,7 +86,11 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 export type MrpPayload = z.infer<typeof payloadValidator>;
-export type MrpResult = { success: true };
+/**
+ * `skipped`: a run that started later had already saved, so this run wrote
+ * nothing. That is a success: the saved plan is newer than this run's.
+ */
+export type MrpResult = { success: true; skipped: boolean };
 
 /**
  * The commercial functions a run uses for planning groups (PLANNING_GROUPS).
@@ -113,7 +126,10 @@ export async function runMrp(
   const parsedPayload = payloadValidator.parse(payload);
   const { type, companyId, userId } = parsedPayload;
 
-  logger.info("run started", { type, companyId, userId });
+  // Before any input is read: the run's place in the newest-read-wins order.
+  const runStartedAt = await databaseNow(db);
+
+  logger.info("run started", { type, companyId, userId, runStartedAt });
 
   const today = datetime.today(await getCompanyTimeZone(db, companyId));
   const ranges = getStartAndEndDates(today, "Week");
@@ -505,7 +521,31 @@ export async function runMrp(
       // between the delete and the inserts) saw planning data half-written —
       // fresh forecasts with empty actuals. All-or-nothing now; Kysely rolls
       // everything back on any throw.
-      await db.transaction().execute(async (trx) => {
+      const saved = await db.transaction().execute(async (trx) => {
+        // Two runs for one company overlap (the cron and the route-triggered
+        // runs): both would delete, then both insert, and demandForecastSource
+        // has no natural key, so its rows would double. The second run waits
+        // here for the first to commit. A key apart from the planning-actions
+        // lock, so the two transactions never wait on each other.
+        await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`mrp:${companyId}`}, 0))`.execute(
+          trx
+        );
+
+        // Read under the lock: a run that started later and saved first
+        // read newer inputs, and this older plan must not replace it.
+        const lastSavedStartedAt = await lastSavedMrpRunStartedAt(
+          trx,
+          companyId
+        );
+        if (!newestRunSaves(runStartedAt, lastSavedStartedAt)) {
+          return false;
+        }
+        await trx
+          .updateTable("companySettings")
+          .set({ lastMrpRunStartedAt: runStartedAt })
+          .where("id", "=", companyId)
+          .execute();
+
         // Delete existing MRP forecasts
         await trx
           .deleteFrom("demandForecast")
@@ -644,7 +684,17 @@ export async function runMrp(
               AND dp."consumedQuantity" IS DISTINCT FROM v."consumedQuantity"::numeric
           `.execute(trx);
         }
+
+        return true;
       });
+
+      if (!saved) {
+        logger.info("run skipped: a run that started later already saved", {
+          companyId,
+          runStartedAt
+        });
+        return { success: true, skipped: true };
+      }
 
       // Persist the planning action messages (spec §P1) in their own atomic
       // transaction AFTER the forecast/actual write commits — the planning
@@ -658,6 +708,7 @@ export async function runMrp(
       await generatePlanningActions(client, db, {
         companyId,
         userId,
+        runStartedAt,
         commonSurplusDraws,
         planningGroups,
         pegging:
@@ -682,7 +733,7 @@ export async function runMrp(
             : undefined
       });
 
-      return { success: true };
+      return { success: true, skipped: false };
     } catch (err) {
       logger.error("write phase failed", { companyId, error: err });
       throw err;
@@ -777,16 +828,31 @@ async function getOrCreateDemandPeriods(
     }));
   }
 
-  const existingPeriodMap = new Map(
-    existingPeriods.map((p) => [toIsoDate(p.startDate)!, p])
-  );
-
-  const periodsToCreate = periods.filter(
-    (period) => !existingPeriodMap.has(period.startDate)
-  );
-
-  const created = await db.transaction().execute(async (trx) => {
-    return await trx
+  // `period` is shared by every company with no unique key on a week: the
+  // missing weeks are read again and inserted under the one period lock, so a
+  // concurrent run or planning screen does not insert the same week.
+  const { existing, created } = await db.transaction().execute(async (trx) => {
+    await sql`SELECT pg_advisory_xact_lock(${PERIOD_LOCK_KEY}::bigint)`.execute(
+      trx
+    );
+    const existing = await trx
+      .selectFrom("period")
+      .selectAll()
+      .where(
+        "startDate",
+        "in",
+        periods.map((p) => p.startDate)
+      )
+      .where("periodType", "=", periodType)
+      .execute();
+    const existingStartDates = new Set(
+      existing.map((p) => toIsoDate(p.startDate)!)
+    );
+    const periodsToCreate = periods.filter(
+      (period) => !existingStartDates.has(period.startDate)
+    );
+    if (periodsToCreate.length === 0) return { existing, created: [] };
+    const created = await trx
       .insertInto("period")
       .values(
         periodsToCreate.map((period) => ({
@@ -798,9 +864,10 @@ async function getOrCreateDemandPeriods(
       )
       .returningAll()
       .execute();
+    return { existing, created };
   });
 
-  return [...existingPeriods, ...created].map((p) => ({
+  return [...existing, ...created].map((p) => ({
     id: p.id,
     // pg returns DATE columns as JS Date objects; normalize to "YYYY-MM-DD"
     startDate: parseDate(toIsoDate(p.startDate)!),

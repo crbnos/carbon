@@ -26,7 +26,6 @@ export function MousePositionProvider({ children }: { children: ReactNode }) {
     undefined
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
       if (!ref.current) {
@@ -45,11 +44,11 @@ export function MousePositionProvider({ children }: { children: ReactNode }) {
 
       setPosition({ x, y });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [ref.current]
   );
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: tracks pointer position for the hover cursor line only; not a control
     <div
       ref={ref}
       onMouseEnter={handleMouseMove}

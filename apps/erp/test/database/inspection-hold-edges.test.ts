@@ -11,6 +11,7 @@ import {
   heldStockMovedByCount,
   insertReceiptPutAway,
   inspectionHoldAdjustmentRefusal,
+  issueMaterial,
   pickUntrackedStockTransferLines,
   postInventoryAdjustment,
   postReceipt,
@@ -37,6 +38,7 @@ import {
   USER,
   unwrap
 } from "./fixtures/always-post";
+import { holdUnits, serialJob } from "./fixtures/job-unit-hold";
 import { handlesOf } from "./fixtures/handles";
 import {
   connectLocalTestDatabase,
@@ -485,7 +487,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
   );
 
   databaseTest(
-    "a putaway pick takes no more than is still in its unit; an ordinary pick is unchanged",
+    "a putaway pick takes no more than is still in its unit; an ordinary pick no more than its From unit holds",
     async () => {
       const { receiptId, lotId } = await receiveInto("put");
       await seed(f, (trx) =>
@@ -557,16 +559,29 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           createdBy: USER
         })
         .execute();
-      expect(
-        await withGuard(() =>
+      // An ordinary pick is checked too: 2 from a unit holding 1 is refused.
+      const pickOrdinary = () =>
+        withGuard(() =>
           pickUntrackedStockTransferLines(f.db, {
             stockTransferId: ordinary.id,
             companyId: f.companyId,
             userId: USER
           })
-        )
-      ).toHaveLength(1);
-      expect(await untrackedAt(unitOf("put"))).toBe(-1);
+        );
+      await expect(pickOrdinary()).rejects.toThrow(
+        /Only 1 of .* is in .*, and the pick needs 2/
+      );
+      expect(await untrackedAt(unitOf("put"))).toBe(1);
+
+      // What the unit holds is picked.
+      await f.db
+        .updateTable("stockTransferLine")
+        .set({ quantity: 1 })
+        .where("stockTransferId", "=", ordinary.id)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(await pickOrdinary()).toHaveLength(1);
+      expect(await untrackedAt(unitOf("put"))).toBe(0);
     }
   );
 
@@ -1592,7 +1607,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     60_000
   );
 
-  const createIssueFor = async (item: string, units: string[]) => {
+  const createIssueFor = async (item: string, units: string[], jobOperationId?: string) => {
     const type = await f.db
       .selectFrom("nonConformanceType")
       .select("id")
@@ -1607,7 +1622,8 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         nonConformanceTypeId: type.id,
         openDate: f.today,
         items: [item],
-        trackedEntityIds: units
+        trackedEntityIds: units,
+        jobOperationId
       })
     );
     expect(created.error).toBeNull();
@@ -1640,6 +1656,81 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     ).status;
 
   it.skipIf(!client)(
+    "filing an operation issue on one reserved serial leaves siblings free and preserves another issue's hold on acceptance",
+    async () => {
+      await ensureIssueType();
+      const job = await serialJob(f, 4);
+      const unit = `${f.prefix}-unit-3`;
+      await holdUnits(f, true);
+      try {
+        await f.db
+          .updateTable("trackedEntity")
+          .set({ status: "Reserved" })
+          .where("id", "=", unit)
+          .execute();
+        const issueId = await createIssueFor(
+          f.assemblyId,
+          [unit],
+          job.operationId
+        );
+        const holds = () =>
+          f.db
+            .selectFrom("unitQualityHold")
+            .select(["trackedEntityId", "issueId"])
+            .where("companyId", "=", f.companyId)
+            .where(
+              "trackedEntityId",
+              "in",
+              [1, 2, 3, 4].map((n) => `${f.prefix}-unit-${n}`)
+            )
+            .execute();
+        expect(await holds()).toEqual([{ trackedEntityId: unit, issueId }]);
+        const other = await createIssueFor(f.assemblyId, [unit], job.operationId);
+        await f.db
+          .updateTable("nonConformanceItem")
+          .set({ disposition: "Use As Is" })
+          .where("nonConformanceId", "=", issueId)
+          .execute();
+        const result = await closeIssue(client!, f.db, {
+          nonConformanceId: issueId,
+          companyId: f.companyId,
+          userId: USER
+        });
+        expect(result.error).toBeNull();
+        expect(await holds()).toEqual([
+          { trackedEntityId: unit, issueId: other }
+        ]);
+        // Use As Is accepts the WIP serial. The second issue still blocks posting.
+        expect(await unitStatus(unit)).toBe("Available");
+        const completion = await invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "jobOperationSerialComplete",
+            trackedEntityId: unit,
+            quantity: 1,
+            jobOperationId: job.operationId
+          },
+          issueMaterial
+        );
+        expect(completion.error?.message).toContain("on hold for issue");
+        const stockMovements = () => f.db.selectFrom("itemLedger")
+          .select("id").where("trackedEntityId", "=", unit).execute();
+        expect(await stockMovements()).toEqual([]);
+
+        // Disabling the MES hold does not create inventory for Quality to relieve.
+        await holdUnits(f, false);
+        expect((await scrapAndClose(other)).error).toBeNull();
+        expect(await unitStatus(unit)).toBe("Rejected");
+        expect(await stockMovements()).toEqual([]);
+      } finally {
+        await holdUnits(f, false);
+      }
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
     "an issue created for a serial unit links it to the item's row, so its Scrap writes the unit off",
     async () => {
       await ensureIssueType();
@@ -1656,6 +1747,27 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       const closed = await scrapAndClose(issueId);
       expect(closed.error).toBeNull();
       expect(await unitStatus(unit)).toBe("Rejected");
+      const itemRow = await f.db
+        .selectFrom("nonConformanceItem")
+        .select("id")
+        .where("nonConformanceId", "=", issueId)
+        .executeTakeFirstOrThrow();
+      const removed = await quality.deleteIssueAssociation(stackContext(), {
+        type: "items",
+        associationId: itemRow.id
+      });
+      expect(removed.error?.message).toContain("closed issue");
+      expect(
+        (await quality.deleteIssue(stackContext(), { nonConformanceId: issueId }))
+          .error
+      ).toBeTruthy();
+      expect(
+        await f.db
+          .selectFrom("nonConformanceItemTrackedEntity")
+          .select("trackedEntityId")
+          .where("nonConformanceItemId", "=", itemRow.id)
+          .execute()
+      ).toEqual([{ trackedEntityId: unit }]);
       expect(
         (
           await f.db
@@ -1818,7 +1930,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
   );
 
   it.skipIf(!client)(
-    "a unit never in stock stays an association, and on a row its Scrap keeps the older rule",
+    "never-stocked job WIP is linked to the issue and a row-level Scrap rejects it without a stock movement",
     async () => {
       await ensureIssueType();
       const item = `${f.prefix}-item-ci-wip`;
@@ -1895,9 +2007,15 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       const closed = await scrapAndClose(issueId);
       expect(closed.error).toBeNull();
       expect(closed.data?.warning).toBeUndefined();
-      expect(await nonConformanceWriteOffs(unit)).toEqual([
-        { quantity: -1, locationId: f.locationId, storageUnitId: null }
-      ]);
+      expect(await unitStatus(unit)).toBe("Rejected");
+      expect(
+        await f.db
+          .selectFrom("itemLedger")
+          .select("quantity")
+          .where("companyId", "=", f.companyId)
+          .where("itemId", "=", item)
+          .execute()
+      ).toEqual([]);
     },
     60_000
   );

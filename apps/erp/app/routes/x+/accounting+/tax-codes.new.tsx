@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+import { taxCodeValidator } from "~/modules/accounting/accounting.models";
+import { TaxCodeForm } from "~/modules/accounting/ui/Tax";
+import { getParams, path } from "~/utils/path";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { api } = await authorize(request, {
+    "accounting.taxCodes": "Create"
+  });
+
+  const taxAuthorities = await api.accounting.getTaxAuthoritiesList({});
+
+  return {
+    taxAuthorities: taxAuthorities.data ?? []
+  };
+}
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(taxCodeValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: _id, ...taxCode } = input.data;
+  const { api } = await authorize(args.request);
+  const result = await api.accounting.createTaxCode(taxCode);
+  return respond(args.request, result).redirect(
+    `${path.to.taxCodes}?${getParams(args.request)}`,
+    { message: "Tax code created" }
+  );
+}
+
+export default function NewTaxCodeRoute() {
+  const { taxAuthorities } = useLoaderData<typeof loader>();
+  const dialog = useRouteDialog();
+  const initialValues = {
+    name: "",
+    calculationType: "Normal" as const,
+    reportingCategory: "Standard" as const,
+    taxesShipping: false,
+    active: true,
+    components: []
+  };
+
+  return (
+    <TaxCodeForm
+      initialValues={initialValues}
+      taxAuthorities={taxAuthorities}
+      open={dialog.open}
+      onClose={dialog.close}
+    />
+  );
+}

@@ -323,10 +323,11 @@ const JobBillOfMaterial = ({
   const isDisabled = ["Completed", "Cancelled"].includes(
     jobData?.job?.status ?? ""
   );
-  const isReadOnly = isDisabled || !permissions.can("update", "production");
+  const isReadOnly =
+    isDisabled || !permissions.has({ "production.jobs": "Edit" });
 
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "production") || isDisabled) return;
+    if (!permissions.has({ "production.jobs": "Edit" }) || isDisabled) return;
     setCheckedState((prev) => ({
       ...prev,
       [id]: !prev[id]
@@ -334,7 +335,7 @@ const JobBillOfMaterial = ({
   };
 
   const onAddItem = () => {
-    if (!permissions.can("update", "production") || isDisabled) return;
+    if (!permissions.has({ "production.jobs": "Edit" }) || isDisabled) return;
     const materialId = nanoid();
     setSelectedItemId(materialId);
     setSearchParams({ materialId: materialId });
@@ -365,7 +366,7 @@ const JobBillOfMaterial = ({
   // One request for every saved row, so "Delete Selected" removes the checked
   // rows together rather than racing one fetcher submit per row.
   const onRemoveItems = (ids: string[]) => {
-    if (!permissions.can("update", "production") || isDisabled) return;
+    if (!permissions.has({ "production.jobs": "Edit" }) || isDisabled) return;
 
     const without = <T,>(state: Record<string, T>) =>
       Object.fromEntries(
@@ -399,7 +400,7 @@ const JobBillOfMaterial = ({
   );
 
   const onReorder = (items: ItemWithData[]) => {
-    if (!permissions.can("update", "production") || isDisabled) return;
+    if (!permissions.has({ "production.jobs": "Edit" }) || isDisabled) return;
 
     const newOrderState = items.reduce<OrderState>((acc, item, index) => {
       acc[item.id] = index + 1;
@@ -560,7 +561,7 @@ const JobBillOfMaterial = ({
               ref={addItemButtonRef}
               variant="secondary"
               isDisabled={
-                isDisabled || !permissions.can("update", "production")
+                isDisabled || !permissions.has({ "production.jobs": "Edit" })
               }
               onClick={onAddItem}
             >
@@ -589,7 +590,8 @@ const JobBillOfMaterial = ({
                   <Button
                     variant="secondary"
                     isDisabled={
-                      isDisabled || !permissions.can("update", "production")
+                      isDisabled ||
+                      !permissions.has({ "production.jobs": "Edit" })
                     }
                     onClick={onAddItem}
                   >

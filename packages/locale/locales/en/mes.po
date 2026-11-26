@@ -110,9 +110,9 @@ msgstr "{0} maintenance display"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} of {1}"
 
@@ -252,6 +252,12 @@ msgstr "{quantity} used in this operation"
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} jobs"
+
+msgid "{scrapped} scrapped"
+msgstr "{scrapped} scrapped"
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} is on hold"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} in stock, in no bin"
@@ -1328,6 +1334,9 @@ msgstr "Fix the highlighted quantities before completing."
 msgid "Flag issue"
 msgstr "Flag issue"
 
+msgid "Flow chart view"
+msgstr "Flow chart view"
+
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
 
@@ -1717,6 +1726,9 @@ msgstr "Log Completed"
 #. placeholder {0}: operation.itemReadableId
 msgid "Log completed for {0}"
 msgstr "Log completed for {0}"
+
+msgid "Log completed for {trackedEntityReadableId}"
+msgstr "Log completed for {trackedEntityReadableId}"
 
 msgid "Log Rework"
 msgstr "Log Rework"
@@ -2135,6 +2147,9 @@ msgstr "No time entries for this week"
 msgid "No unit"
 msgstr "No unit"
 
+msgid "No unit selected"
+msgstr "No unit selected"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
@@ -2236,6 +2251,9 @@ msgstr "Oldest first"
 msgid "On Hold"
 msgstr "On Hold"
 
+msgid "On hold · {issueNumbers}"
+msgstr "On hold · {issueNumbers}"
+
 msgid "On its way"
 msgstr "On its way"
 
@@ -2292,6 +2310,9 @@ msgstr "Open Jobs"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Open sub-assembly {0}: {1}"
+
+msgid "Open the operation to pick the unit"
+msgstr "Open the operation to pick the unit"
 
 msgid "Operation"
 msgstr "Operation"
@@ -2449,6 +2470,12 @@ msgstr "Pick {itemName}"
 
 msgid "Pick a style, a color and a face."
 msgstr "Pick a style, a color and a face."
+
+msgid "Pick an open unit to issue parts."
+msgstr "Pick an open unit to issue parts."
+
+msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
+msgstr "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "Pick the job. It shows with no hours until you add some."
@@ -2609,6 +2636,9 @@ msgstr "Quality Issue"
 
 msgid "Quality issue created"
 msgstr "Quality issue created"
+
+msgid "Quality rejected this unit for production."
+msgstr "Quality rejected this unit for production."
 
 msgid "Quantity"
 msgstr "Quantity"
@@ -2888,9 +2918,6 @@ msgstr "Scan or search serial number..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 
-msgid "Scan or select the unit, then scan the kanban card again"
-msgstr "Scan or select the unit, then scan the kanban card again"
-
 msgid "Scan received"
 msgstr "Scan received"
 
@@ -3040,6 +3067,12 @@ msgstr "Select a scrap quantity and reason"
 
 msgid "Select a serial number to continue with this operation"
 msgstr "Select a serial number to continue with this operation"
+
+msgid "Select a unit"
+msgstr "Select a unit"
+
+msgid "Select a unit first"
+msgstr "Select a unit first"
 
 msgid "Select an issue type"
 msgstr "Select an issue type"
@@ -3520,6 +3553,9 @@ msgstr "This job does not use that part"
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "This job has no bill rate. Ask the office to set it before the time is billed."
 
+msgid "This job has no operations"
+msgstr "This job has no operations"
+
 msgid "This label does not belong to a unit in this company"
 msgstr "This label does not belong to a unit in this company"
 
@@ -3546,6 +3582,15 @@ msgstr "This stops your clock and posts the job's time. The job can no longer ch
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
 msgstr "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+
+msgid "This unit is complete here"
+msgstr "This unit is complete here"
+
+msgid "This unit is not part of this operation"
+msgstr "This unit is not part of this operation"
+
+msgid "This unit is on hold"
+msgstr "This unit is on hold"
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "This unit will be permanently scrapped and a replacement unit will be created."
@@ -3745,6 +3790,9 @@ msgstr "Unsaved changes"
 msgid "Until <0/>"
 msgstr "Until <0/>"
 
+msgid "Untitled"
+msgstr "Untitled"
+
 msgid "Up next"
 msgstr "Up next"
 
@@ -3862,6 +3910,9 @@ msgstr "Work Center Displays"
 
 msgid "Work instructions"
 msgstr "Work instructions"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "Work on this unit waits until quality closes every issue below. Other units are not affected."
 
 msgid "Work Site"
 msgstr "Work Site"

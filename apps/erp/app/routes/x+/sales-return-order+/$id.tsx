@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -12,9 +12,7 @@ import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
-  getSalesReturnOrder,
   getSalesReturnOrderLineServiceJobs,
-  getSalesReturnOrderLines,
   getSalesReturnOrderRelatedItems
 } from "~/modules/sales/sales.service";
 import {
@@ -34,24 +32,23 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`RMAs`, to: path.to.salesReturnOrders },
     (data) => data?.salesReturnOrder?.salesReturnOrderId
-  ),
-  module: "sales"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.salesReturnOrder?.salesReturnOrderId, "Sales Return Order");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
+  const { client, companyId, api } = await authorize(request, {
+    "sales.returns": "View"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [salesReturnOrder, lines] = await Promise.all([
-    getSalesReturnOrder(client, id),
-    getSalesReturnOrderLines(client, id, companyId)
+    api.sales.getSalesReturnOrder({ salesReturnOrderId: id }),
+    api.sales.getSalesReturnOrderLines({ salesReturnOrderId: id })
   ]);
 
   if (salesReturnOrder.error) {

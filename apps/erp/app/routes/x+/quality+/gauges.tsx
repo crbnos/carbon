@@ -6,7 +6,6 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getGaugeTypesList } from "~/modules/quality/quality.service";
 import GaugesTable from "~/modules/quality/ui/Gauge/GaugesTable";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -21,8 +20,8 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, gaugesList, {
     dataKey: "gauges",
-    firstPage: async ({ client, companyId }) => ({
-      gaugeTypes: (await getGaugeTypesList(client, companyId)).data ?? []
+    firstPage: async ({ api }) => ({
+      gaugeTypes: (await api.quality.getGaugeTypesList({})).data ?? []
     })
   });
 }

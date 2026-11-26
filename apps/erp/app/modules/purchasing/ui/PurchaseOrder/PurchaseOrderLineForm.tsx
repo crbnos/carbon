@@ -42,7 +42,9 @@ import {
 import {
   distinctItemText,
   getItemReadableId,
-  INPUT_FORMAT
+  INPUT_FORMAT,
+  round,
+  taxPairFromPercent
 } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -63,14 +65,22 @@ import {
   Item,
   Location,
   NumberControlled,
+  PartNumberDisplay,
   StorageUnit,
   Submit,
+  TaxCode,
   TaxFields,
   UnitOfMeasure,
   useTaxPair
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
+  RecoverableTax,
+  useIsReverseCharge,
+  useTaxCodeRateOn
+} from "~/components/Form/RecoverableTax";
+import {
+  useCompanyToday,
   useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
@@ -78,12 +88,14 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { purchaseLineAccountClasses } from "~/modules/invoicing/invoicing.models";
 import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
   isPurchaseOrderEditLocked,
-  purchaseOrderLineValidator
+  purchaseOrderLineValidator,
+  purchaseOrderPartNumberRefusal
 } from "~/modules/purchasing/purchasing.models";
 import type {
   PurchaseOrder,
@@ -143,7 +155,23 @@ const PurchaseOrderLineForm = ({
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
     currency: { decimalPlaces: number } | null;
+    resolvedTax: LineTaxDecision | null;
+    taxDate: string;
   }>(path.to.purchaseOrder(orderId));
+
+  // A tax code's rate is the one in force on the order's date.
+  const companyToday = useCompanyToday();
+  const taxDate = routeData?.taxDate ?? companyToday;
+  const taxCodeRateOn = useTaxCodeRateOn(taxDate);
+  // A Reverse Charge supplier charges no tax: picking one zeroes the amount
+  // (its charged rate is 0) and locks it.
+  const isReverseCharge = useIsReverseCharge();
+  // What a line takes before anyone picks: the supplier's code, else its
+  // bare percent.
+  const defaultTax = {
+    taxCodeId: routeData?.resolvedTax?.taxCodeId ?? "",
+    taxPercent: round(routeData?.resolvedTax?.taxPercent ?? 0)
+  };
 
   // Settlement decimals come from the document currency's row (loader data);
   // 2 is only the last resort for a currency-less document
@@ -160,6 +188,8 @@ const PurchaseOrderLineForm = ({
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
   const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
+  const isPartNumberDisplayLocked =
+    purchaseOrderPartNumberRefusal(routeData?.purchaseOrder?.status) !== null;
 
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.purchaseOrderLineType as ItemType
@@ -207,6 +237,7 @@ const PurchaseOrderLineForm = ({
     supplierShippingCost: number;
     supplierTaxAmount: number;
     supplierUnitPrice: number;
+    taxCodeId: string;
     taxPercent: number;
   }>({
     itemId: initialValues.itemId ?? "",
@@ -224,6 +255,7 @@ const PurchaseOrderLineForm = ({
     supplierShippingCost: initialValues.supplierShippingCost ?? 0,
     supplierTaxAmount: initialValues.supplierTaxAmount ?? 0,
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
+    taxCodeId: initialValues.taxCodeId ?? "",
     taxPercent: initialValues.taxPercent ?? 0
   });
 
@@ -260,6 +292,7 @@ const PurchaseOrderLineForm = ({
     supplierUnitPrice: number;
     supplierShippingCost: number;
     supplierTaxAmount: number;
+    taxCodeId: string;
     taxPercent: number;
   }>({
     accountId: initialValues.accountId ?? "",
@@ -271,6 +304,7 @@ const PurchaseOrderLineForm = ({
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
     supplierShippingCost: initialValues.supplierShippingCost ?? 0,
     supplierTaxAmount: initialValues.supplierTaxAmount ?? 0,
+    taxCodeId: initialValues.taxCodeId ?? "",
     taxPercent: initialValues.taxPercent ?? 0
   });
 
@@ -289,6 +323,37 @@ const PurchaseOrderLineForm = ({
         supplierTaxAmount: amount
       }))
   });
+
+  // Picking a code sets the rate, and the pair derives the amount. Clearing
+  // it keeps the rate, which the user can then type.
+  const onItemTaxCodeChange = (
+    code: { value: string; rate: number } | null
+  ) => {
+    setItemData((d) => ({ ...d, taxCodeId: code?.value ?? "" }));
+    if (code) {
+      itemTax.onChange(
+        taxPairFromPercent(
+          itemTax.subtotal,
+          taxCodeRateOn(code.value) ?? round(code.rate),
+          currencyDecimals
+        )
+      );
+    }
+  };
+  const onIndirectTaxCodeChange = (
+    code: { value: string; rate: number } | null
+  ) => {
+    setIndirectData((d) => ({ ...d, taxCodeId: code?.value ?? "" }));
+    if (code) {
+      indirectTax.onChange(
+        taxPairFromPercent(
+          indirectTax.subtotal,
+          taxCodeRateOn(code.value) ?? round(code.rate),
+          currencyDecimals
+        )
+      );
+    }
+  };
 
   const costsDisclosure = useDisclosure();
   const indirectCostsDisclosure = useDisclosure();
@@ -370,8 +435,8 @@ const PurchaseOrderLineForm = ({
   });
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "purchasing")
-    : !permissions.can("create", "purchasing");
+    ? !permissions.has({ "purchasing.purchaseOrders": "Edit" })
+    : !permissions.has({ "purchasing.purchaseOrders": "Create" });
 
   const deleteDisclosure = useDisclosure();
   // These badges render DOCUMENT-currency values, so both formatters take the
@@ -411,7 +476,7 @@ const PurchaseOrderLineForm = ({
       supplierShippingCost: 0,
       supplierTaxAmount: 0,
       supplierUnitPrice: 0,
-      taxPercent: 0
+      ...defaultTax
     });
   };
 
@@ -431,7 +496,7 @@ const PurchaseOrderLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableIdWithRevision, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, leadTime)"
+              "name, readableIdWithRevision, type, unitOfMeasureCode, taxable, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, leadTime)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
@@ -513,7 +578,10 @@ const PurchaseOrderLineForm = ({
           storageUnitId: inventory.data?.defaultStorageUnitId ?? null,
           supplierPartId: supplierPart?.data?.supplierPartId ?? "",
           supplierTaxAmount: 0,
-          taxPercent: 0,
+          // A non-taxable item takes no tax; any other the supplier's.
+          ...(item.data?.taxable === false
+            ? { taxCodeId: "", taxPercent: 0 }
+            : defaultTax),
           pricing: pricing?.data ?? null,
           fallbackUnitPrice
         });
@@ -769,6 +837,22 @@ const PurchaseOrderLineForm = ({
                           }
                         />
 
+                        {/* Empty on a new line: the supplier's choice, else the
+                            company default. A save never clears a saved line's
+                            choice, so its select has nothing to clear. */}
+                        <PartNumberDisplay
+                          party="supplier"
+                          name="partNumberDisplay"
+                          label={t`Part Numbers`}
+                          isOptional={!isEditing}
+                          isReadOnly={isPartNumberDisplayLocked}
+                          placeholder={
+                            isEditing
+                              ? t`Not set: prints as before`
+                              : t`Supplier or company default`
+                          }
+                        />
+
                         <NumberControlled
                           minValue={itemData.minimumOrderQuantity}
                           name="purchaseQuantity"
@@ -949,10 +1033,26 @@ const PurchaseOrderLineForm = ({
                               }))
                             }
                           />
+                          <TaxCode
+                            name="taxCodeId"
+                            label={t`Tax Code`}
+                            isOptional
+                            value={itemData.taxCodeId}
+                            onChange={onItemTaxCodeChange}
+                          />
                           <TaxFields
                             {...itemTax}
                             amountName="supplierTaxAmount"
                             percentName="taxPercent"
+                            isReadOnly={isReverseCharge(itemData.taxCodeId)}
+                          />
+                          <RecoverableTax
+                            taxCodeId={itemData.taxCodeId}
+                            subtotal={itemTax.subtotal}
+                            taxAmount={itemTax.amount}
+                            date={taxDate}
+                            currency={orderCurrency}
+                            currencyDecimals={currencyDecimals}
                           />
                         </div>
                       </div>
@@ -1164,10 +1264,28 @@ const PurchaseOrderLineForm = ({
                                 }))
                               }
                             />
+                            <TaxCode
+                              name="taxCodeId"
+                              label={t`Tax Code`}
+                              isOptional
+                              value={indirectData.taxCodeId}
+                              onChange={onIndirectTaxCodeChange}
+                            />
                             <TaxFields
                               {...indirectTax}
                               amountName="supplierTaxAmount"
                               percentName="taxPercent"
+                              isReadOnly={isReverseCharge(
+                                indirectData.taxCodeId
+                              )}
+                            />
+                            <RecoverableTax
+                              taxCodeId={indirectData.taxCodeId}
+                              subtotal={indirectTax.subtotal}
+                              taxAmount={indirectTax.amount}
+                              date={taxDate}
+                              currency={orderCurrency}
+                              currencyDecimals={currencyDecimals}
                             />
                           </div>
                         </div>

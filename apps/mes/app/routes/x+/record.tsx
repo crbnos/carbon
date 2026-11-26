@@ -2,103 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { assertIsPost } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { stepRecordValidator } from "~/services/models";
-import {
-  abilityBlockRefusal,
-  backflushUntrackedMaterialsOnStepRecord,
-  getCorrectionSuggestion,
-  insertAttributeRecord
-} from "~/services/operations.service";
-
-const log = getLogger("mes");
+import { recordStep } from "~/services/step-record.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {});
-
-  const formData = await request.formData();
-  const validation = await validator(stepRecordValidator).validate(formData);
-  const serviceRole = await getCarbonServiceRole();
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // A missing step is left to insertAttributeRecord's not-found refusal.
-  const step = await serviceRole
-    .from("jobOperationStep")
-    .select("operationId")
-    .eq("id", validation.data.jobOperationStepId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  const refusal = step.data
-    ? await abilityBlockRefusal(serviceRole, {
-        operationId: step.data.operationId,
-        employeeId: userId,
-        companyId
-      })
-    : null;
-  if (refusal) {
-    return data({}, await flash(request, error(null, refusal)));
-  }
-
-  const attributeRecord = await insertAttributeRecord(serviceRole, {
-    ...validation.data,
-    companyId,
-    createdBy: userId
-  });
-
-  if (attributeRecord.refusal) {
-    return data({}, await flash(request, error(null, attributeRecord.refusal)));
-  }
-
-  if (attributeRecord.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(attributeRecord.error, "Failed to record attribute")
-      )
-    );
-  }
-
-  // Recording a step auto-issues one unit's worth of the untracked materials that
-  // step owns — a step-assigned part when its step is recorded, or a loose part
-  // (unassigned) on the operation's first step. The operator builds unit by unit
-  // and never scans these. A backflush failure (e.g. insufficient stock) never
-  // blocks the record; the part just stays manually issuable.
-  const backflush = await backflushUntrackedMaterialsOnStepRecord(serviceRole, {
-    jobOperationStepId: validation.data.jobOperationStepId,
-    companyId,
-    userId
-  });
-  if (backflush.error) {
-    log.error("Backflush on step record failed", {
-      error: backflush.error,
-      jobOperationStepId: validation.data.jobOperationStepId
-    });
-  }
-
-  // A result mapped to a correction asks the operator to confirm it.
-  const correction = await getCorrectionSuggestion(serviceRole, {
-    jobOperationStepId: validation.data.jobOperationStepId,
-    index: validation.data.index,
-    value: validation.data.value,
-    numericValue: validation.data.numericValue,
-    booleanValue: validation.data.booleanValue,
-    companyId
-  });
-
-  return data(
-    { success: true, correction },
-    await flash(request, success("Attribute recorded successfully"))
+  const { companyId, userId } = await authorize(request, {});
+  return recordStep(
+    { client: getCarbonServiceRole() },
+    { request, companyId, userId }
   );
 }

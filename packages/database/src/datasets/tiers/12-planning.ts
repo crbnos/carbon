@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { resolveDate, weekRangesFrom } from "../dates.ts";
+import { PERIOD_LOCK_KEY } from "../../period.ts";
+import { resolveDate, resolveTimestamp, weekRangesFrom } from "../dates.ts";
 import {
   insertId,
   insertMaybe,
@@ -18,15 +19,12 @@ import type { Ctx } from "../types.ts";
 // (the default) requires explicit demand and produces quantityToOrder = 0 when
 // safetyStockQuantity is 0 (which it is by default).
 
-// Mirrors WEEKS_TO_PROJECT in apps/erp/app/routes/x+/production+/projections.tsx.
+// Mirrors PLANNING_WEEKS in apps/erp/app/modules/shared/shared.service.ts.
 // The whole horizon is seeded (not just the weeks that carry demand) so
 // getOrCreatePeriods finds every period already present and returns them in the
 // order they were inserted — otherwise the loader appends the ones it creates
 // and the Week N column headers stop being consecutive.
 const WEEKS_TO_PROJECT = 12 * 4;
-
-/** Arbitrary but fixed — every seeder must pick the same number to serialize. */
-const PERIOD_LOCK_KEY = 4820260813;
 
 export async function runTier12(ctx: Ctx): Promise<void> {
   const data = ctx.dataset.planning;
@@ -92,6 +90,13 @@ export async function runTier12(ctx: Ctx): Promise<void> {
     // opened. Tier 04 does the same for the orders it writes.
     const opportunityId = await insertId(ctx, "opportunity", { customerId });
 
+    // The order is seeded at rate 1, like every tier 04 order, so it must be in
+    // the datasets' base currency. An order with no rate refuses new lines.
+    if (order.currencyCode !== "USD") {
+      throw new Error(
+        `Seed: the planning demand order must be in USD, not ${order.currencyCode}`
+      );
+    }
     const soId = await nextSequence(ctx, "salesOrder");
     const so = await insertId(ctx, "salesOrder", {
       salesOrderId: soId,
@@ -100,6 +105,8 @@ export async function runTier12(ctx: Ctx): Promise<void> {
       customerLocationId,
       locationId: plantId,
       currencyCode: order.currencyCode,
+      exchangeRate: 1,
+      exchangeRateUpdatedAt: resolveTimestamp(ctx.anchor, 0, "08:00:00"),
       opportunityId,
       orderDate: resolveDate(ctx.anchor, 0)
     });
@@ -125,6 +132,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
         description: item.name,
         saleQuantity: line.saleQuantity,
         unitPrice: item.unitCost * line.unitPriceMultiplier,
+        exchangeRate: 1,
         unitOfMeasureCode: line.unitOfMeasureCode,
         locationId: plantId,
         methodType: line.methodType,

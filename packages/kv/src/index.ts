@@ -25,10 +25,6 @@ export {
   normalizeLoginIdentifier,
   SIGN_IN_CODE_LOCKOUT_PREFIX
 } from "./lockout";
-export type {
-  Duration,
-  RatelimitConfig,
-  RatelimitResponse
-} from "./ratelimit";
+export type { Duration, RatelimitConfig, RatelimitResponse } from "./ratelimit";
 export { Ratelimit } from "./ratelimit";
 export { redis };

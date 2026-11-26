@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { dataOrThrow, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getCompanyTimeZone } from "@carbon/database";
@@ -19,6 +19,7 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import {
+  datetime,
   getPreferenceHeaders,
   isOwnSignaturePath,
   redirect
@@ -37,13 +38,7 @@ import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.
 import {
   getDefaultAttachmentsForPO,
   getPendingPurchaseOrderForceDeleteRequest,
-  getPurchaseOrder,
   getPurchaseOrderApproval,
-  getPurchaseOrderDelivery,
-  getPurchaseOrderForceDeleteReceipts,
-  getPurchaseOrderLines,
-  getSupplier,
-  getSupplierInteraction,
   getSupplierInteractionDocuments,
   withoutStoredPurchaseOrderPdfs
 } from "~/modules/purchasing/purchasing.service";
@@ -86,8 +81,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Orders`, to: path.to.purchaseOrders },
     (data) => data?.purchaseOrder?.purchaseOrderId
-  ),
-  module: "purchasing"
+  )
 };
 
 export async function action(args: ActionFunctionArgs) {
@@ -96,7 +90,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { orderId } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.purchasing.decidePurchaseOrderApproval({
     ...input.data,
     purchaseOrderId: orderId,
@@ -128,19 +122,19 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(getPurchaseOrderDisplayId(data?.purchaseOrder), "Purchase Order");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      view: "purchasing",
-      bypassRls: true
-    });
+  const { client, companyId, companyGroupId, userId, api } = await authorize(
+    request,
+    { "purchasing.purchaseOrders": "View" },
+    { bypassRls: true }
+  );
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
   const [purchaseOrder, lines, purchaseOrderDelivery] = await Promise.all([
-    getPurchaseOrder(client, orderId),
-    getPurchaseOrderLines(client, orderId),
-    getPurchaseOrderDelivery(client, orderId)
+    api.purchasing.getPurchaseOrder({ purchaseOrderId: orderId }),
+    api.purchasing.getPurchaseOrderLines({ purchaseOrderId: orderId }),
+    api.purchasing.getPurchaseOrderDelivery({ purchaseOrderId: orderId })
   ]);
 
   if (purchaseOrder.data?.companyId !== companyId) {
@@ -168,6 +162,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+  // The tax a new line takes: the supplier's code (or bare percent), on the
+  // order's date.
+  const taxDate =
+    purchaseOrder.data?.orderDate ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
   const db = getDatabaseClient();
   const [
     supplier,
@@ -178,12 +177,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     currency,
     isAdmin,
     forceDeleteRequest,
-    forceDeleteReceipts
+    forceDeleteReceipts,
+    resolvedTax
   ] = await Promise.all([
     purchaseOrder.data?.supplierId
-      ? getSupplier(client, purchaseOrder.data.supplierId)
+      ? api.purchasing.getSupplier({
+          supplierId: purchaseOrder.data.supplierId
+        })
       : null,
-    getSupplierInteraction(client, purchaseOrder.data.supplierInteractionId),
+    api.purchasing.getSupplierInteraction({
+      opportunityId: purchaseOrder.data.supplierInteractionId
+    }),
     // Only fetch approval request if status is "Needs Approval"
     purchaseOrder.data?.status === "Needs Approval"
       ? getLatestApprovalRequestForDocument(
@@ -215,9 +219,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       purchaseOrderId: orderId
     }),
     // The receipts a force delete reverses, named in its modal and banner.
-    getPurchaseOrderForceDeleteReceipts(db, {
-      companyId,
+    api.purchasing.getPurchaseOrderForceDeleteReceipts({
       purchaseOrderId: orderId
+    }),
+    api.accounting.resolveLineTaxes({
+      source: "purchase",
+      supplierId: purchaseOrder.data?.supplierId,
+      date: taxDate
     })
   ]);
 
@@ -347,11 +355,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     canDelete,
     isAdmin,
     forceDeleteRequest,
-    forceDeleteReceipts: forceDeleteReceipts.map(
+    // A failed read must not show an Admin "no receipts to reverse".
+    forceDeleteReceipts: dataOrThrow(forceDeleteReceipts).map(
       (receipt) => receipt.readableId
     ),
     defaultCc,
-    resolvedAttachments
+    resolvedAttachments,
+    resolvedTax: resolvedTax.data,
+    taxDate
   };
 }
 

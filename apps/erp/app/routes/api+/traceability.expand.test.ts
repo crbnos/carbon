@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { expect, it, vi } from "vitest";
 import { loader } from "./traceability.expand";
 
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize: vi.fn() }));
 
 // The service-role client the route gets: tracked entities filtered by every
 // `.match` and `.eq`. Anything past the ownership check is out of reach.
@@ -37,10 +37,10 @@ function serviceRole(entities: Record<string, unknown>[]) {
 }
 
 it("refuses another company's tracked entity before traversing its lineage", async () => {
-  vi.mocked(requirePermissions).mockResolvedValue({
+  vi.mocked(authorize).mockResolvedValue({
     client: serviceRole([{ id: "entity-1", companyId: "company-2" }]),
     companyId: "company-1"
-  } as unknown as Awaited<ReturnType<typeof requirePermissions>>);
+  } as unknown as Awaited<ReturnType<typeof authorize>>);
 
   await expect(
     loader({

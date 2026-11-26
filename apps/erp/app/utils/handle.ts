@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ModuleId } from "@carbon/database/access";
 import type { RouteRealtimeTable } from "@carbon/database/realtime-tables";
 import type { Mode } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
@@ -10,7 +11,9 @@ import type { ComponentType, ReactNode } from "react";
 export type Handle = {
   breadcrumb?: any;
   to?: string;
-  module?: string;
+  // The module of a route no page covers (`moduleOfMatches`); a route with a
+  // page takes its page's module.
+  module?: ModuleId | "get-started";
   // The tables this route shows. The shell (`RouteRealtime`) reloads the page
   // when one of them changes; each must be in REALTIME_TABLES.
   realtime?: RouteRealtimeTable[];
@@ -24,6 +27,10 @@ export type Handle = {
   // Phones only: the section switcher for a route that is a module section
   // but has no desktop sidebar (desktop is unchanged). Makes it a root screen.
   compactSidebar?: ComponentType;
+  // A full-width board that is a section of its module. Phones get the
+  // section switcher; desktop hides the module sidebar until the person shows
+  // it with the menu button (one cookie for every board).
+  boardSidebar?: ComponentType;
   // Phones only: the app bar's subtitle under a record's ID ("Sales Order"),
   // in place of the list crumb. Child routes (a line page) inherit it.
   appBarSubtitle?: MessageDescriptor;

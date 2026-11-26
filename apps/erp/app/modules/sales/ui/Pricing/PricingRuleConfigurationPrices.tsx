@@ -81,9 +81,9 @@ const PricingRuleConfigurationPrices = ({
 
   // Prices are keyed by one item's parameters: another item starts from an
   // empty price list, and switching back restores the stored prices.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset only when the item changes
   useEffect(() => {
     setAmounts(itemId === initialItemId ? toAmounts(initialPrices) : new Map());
+    // oxlint-disable-next-line react/exhaustive-deps -- reset only when the item changes
   }, [itemId]);
 
   useEffect(() => {

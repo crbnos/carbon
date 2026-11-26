@@ -49,14 +49,17 @@ import {
   Hidden,
   InputControlled,
   Item,
-  Number,
+  NumberControlled,
   Select,
   SelectControlled,
-  Submit
+  Submit,
+  TaxCode
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import { QuoteLineStatusIcon } from "~/components/Icons";
 import {
+  useCompanyToday,
   usePercentFormatter,
   usePermissions,
   useRouteData,
@@ -120,7 +123,11 @@ const QuoteLineForm = ({
   const [items] = useItems();
   const routeData = useRouteData<{
     quote: Quotation;
+    taxDate: string | null;
   }>(path.to.quote(quoteId));
+  // A picked code's rate on the document's date, not today's.
+  const companyToday = useCompanyToday();
+  const taxCodeRateOn = useTaxCodeRateOn(routeData?.taxDate ?? companyToday);
 
   const isLocked = isQuoteLocked(routeData?.quote?.status);
   const isEditable = !isLocked;
@@ -132,6 +139,9 @@ const QuoteLineForm = ({
   const sortedQuantity = [...(initialValues.quantity ?? [])].sort(
     (a, b) => a - b
   );
+
+  const [taxPercent, setTaxPercent] = useState(initialValues.taxPercent ?? 0);
+  const [taxCodeId, setTaxCodeId] = useState(initialValues.taxCodeId ?? "");
 
   const [itemData, setItemData] = useState<{
     customerPartId: string;
@@ -252,7 +262,7 @@ const QuoteLineForm = ({
       carbon
         .from("item")
         .select(
-          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId, taxable"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -277,6 +287,11 @@ const QuoteLineForm = ({
 
     if (item.data?.type) {
       setLineType(item.data.type as ItemType);
+    }
+    // A non-taxable item takes no tax.
+    if (item.data?.taxable === false) {
+      setTaxCodeId("");
+      setTaxPercent(0);
     }
     const newItemData = {
       ...itemData,
@@ -400,7 +415,7 @@ const QuoteLineForm = ({
                     )}
                   </ModalCardDescription>
                 </ModalCardHeader>
-                {isEditing && permissions.can("update", "sales") && (
+                {isEditing && permissions.has({ "sales.quotes": "Edit" }) && (
                   <CardAction className="pr-12">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -554,9 +569,23 @@ const QuoteLineForm = ({
                           onCustomerPartRevisionChange(e.target.value)
                         }
                       />
-                      <Number
+                      <TaxCode
+                        name="taxCodeId"
+                        label={t`Tax Code`}
+                        value={taxCodeId}
+                        onChange={(option) => {
+                          setTaxCodeId(option?.value ?? "");
+                          if (option)
+                            setTaxPercent(
+                              taxCodeRateOn(option.value) ?? option.rate
+                            );
+                        }}
+                      />
+                      <NumberControlled
                         name="taxPercent"
                         label={t`Tax Percent`}
+                        value={taxPercent}
+                        onChange={setTaxPercent}
                         minValue={0}
                         maxValue={1}
                         step={INPUT_STEP.percent}
@@ -598,8 +627,8 @@ const QuoteLineForm = ({
                     isDisabled={
                       !isEditable ||
                       (isEditing
-                        ? !permissions.can("update", "sales")
-                        : !permissions.can("create", "sales"))
+                        ? !permissions.has({ "sales.quotes": "Edit" })
+                        : !permissions.has({ "sales.quotes": "Create" }))
                     }
                     onClick={() => {
                       configurationDisclosure.onOpen();
@@ -615,8 +644,8 @@ const QuoteLineForm = ({
                     (requiresConfiguration && !isConfigured) ||
                     !isEditable ||
                     (isEditing
-                      ? !permissions.can("update", "sales")
-                      : !permissions.can("create", "sales"))
+                      ? !permissions.has({ "sales.quotes": "Edit" })
+                      : !permissions.has({ "sales.quotes": "Create" }))
                   }
                 >
                   <Trans>Save</Trans>

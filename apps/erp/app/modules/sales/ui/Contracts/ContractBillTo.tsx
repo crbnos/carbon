@@ -23,12 +23,13 @@ import {
 } from "~/components/Form";
 import { SetupSection, TermForm } from "~/components/Setup";
 import { useDateFormatter, usePermissions, useSettings } from "~/hooks";
+import { inheritableInvoiceAutomations } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 import {
   contractBillingFrequencies,
-  type contractBillingTimings,
-  invoiceAutomations
+  type contractBillingTimings
 } from "../../sales.models";
+import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import type { Contract } from "./types";
 import { useContractLabels } from "./useContractLabels";
 
@@ -60,7 +61,6 @@ export function useContractTermSave(contractId: string) {
     if (fetcher.data?.error) toastServiceError(fetcher.data);
   }, [fetcher.data]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const submit = useCallback(
     (fields: Record<string, string>) => {
       const formData = new FormData();
@@ -73,6 +73,7 @@ export function useContractTermSave(contractId: string) {
         action: path.to.contractUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [contractId]
   );
 
@@ -110,7 +111,8 @@ const ContractBillTo = ({
   const contractId = contract.id!;
   const { save, submit } = useContractTermSave(contractId);
   const isDisabled =
-    contract.status !== "Draft" || !permissions.can("update", "sales");
+    contract.status !== "Draft" ||
+    !permissions.has({ "sales.serviceContracts": "Edit" });
   const billTo = contract.invoiceCustomerId ?? contract.customerId ?? "";
 
   const onChange = (field: Term, value: string | null) => {
@@ -426,6 +428,8 @@ const ContractInvoiceAutomation = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const labels = useContractLabels();
+  const companySettings = useSettings();
+  const invoiceAutomationHint = useInvoiceAutomationHint();
   return (
     <TermForm
       name="invoiceAutomation"
@@ -434,14 +438,16 @@ const ContractInvoiceAutomation = ({
       <Select
         name="invoiceAutomation"
         label={t`Invoicing`}
-        helperText={t`What happens to an invoice once it is drafted`}
-        isReadOnly={!permissions.can("update", "sales")}
+        helperText={invoiceAutomationHint(
+          contract.invoiceAutomation ?? companySettings.invoiceAutomation
+        )}
+        isReadOnly={!permissions.has({ "sales.serviceContracts": "Edit" })}
         options={[
           {
             value: COMPANY_DEFAULT,
             label: t`Company default (${companyLabel})`
           },
-          ...invoiceAutomations.map((mode) => ({
+          ...inheritableInvoiceAutomations.map((mode) => ({
             value: mode,
             label: labels.invoiceAutomation[mode]
           }))
@@ -545,7 +551,8 @@ export const ContractRevenueMigration = ({
         contract={contract}
         field="recognizeRevenueFrom"
         isDisabled={
-          contract.status !== "Draft" || !permissions.can("update", "sales")
+          contract.status !== "Draft" ||
+          !permissions.has({ "sales.serviceContracts": "Edit" })
         }
         onSave={(field, value) => {
           if ((contract[field as keyof Contract] ?? null) === (value ?? null))

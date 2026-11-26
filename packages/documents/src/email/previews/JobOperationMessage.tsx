@@ -15,7 +15,8 @@ export default function JobOperationMessagePreview() {
       details={[
         {
           label: "Message",
-          value: "Deburr all edges"
+          value:
+            "Burr left on the second edge, please check before the next run"
         },
         {
           label: "Work center",

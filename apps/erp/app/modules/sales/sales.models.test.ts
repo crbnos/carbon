@@ -20,14 +20,19 @@ vi.mock("@lingui/core/macro", () => ({
 
 const {
   contractBillingMethodsFor,
+  contractLineFormValues,
   contractLineNextStep,
   contractRevenueMethodsFor,
+  contractScheduleEditValidator,
   customerContactEmailRequiredValidator,
   customerContactValidator,
   contractTermFromServicePeriods,
+  customerContractLineValidator,
+  customerContractScheduleEditValidator,
   customerContractValidator,
   customerPortalValidator,
   laborCategoriesWithoutBillRate,
+  mergeContractLineChanges,
   priceOverrideValidator,
   priceTraceStepValidator,
   projectContractFunded,
@@ -35,7 +40,9 @@ const {
   quoteLineValidator,
   quoteValidator,
   rentalAgreementChargeValidator,
-  salesOrderLineValidator
+  salesOrderLineValidator,
+  salesRuleInputValidator,
+  salesRuleValidator
 } = await import("./sales.models");
 
 // `quote.internalNotes` is a `json` column that the sales-order conversion
@@ -787,5 +794,203 @@ describe("customerPortalValidator", () => {
       expiresOn
     });
     expect(result.success).toBe(valid);
+  });
+});
+
+describe("a contract schedule edit's invoice date", () => {
+  it.each([
+    ["2026-12-01", true],
+    ["2028-02-29", true],
+    // The shape of a date, but not a day the calendar has.
+    ["2027-02-29", false],
+    ["2026-13-01", false],
+    ["12/01/2026", false]
+  ])("%s → valid %s", (invoiceDate, valid) => {
+    const edit = {
+      intent: "move",
+      customerContractInvoiceId: "inv_1",
+      invoiceDate
+    };
+    // The API's validator and the invoice grid's form copy share the date.
+    expect(contractScheduleEditValidator.safeParse(edit).success).toBe(valid);
+    expect(customerContractScheduleEditValidator.safeParse(edit).success).toBe(
+      valid
+    );
+  });
+});
+
+describe("an edit of some fields of a stored contract line", () => {
+  // A Time & Materials CLIN on a project contract, as the table stores it
+  // (percents as 0–1 fractions).
+  const stored = (overrides: Record<string, unknown> = {}) => ({
+    id: "line-1",
+    customerContractId: "contract-1",
+    revenueType: "One-time" as const,
+    itemId: "item-1",
+    description: "Engineering",
+    quantity: 1,
+    rate: 0,
+    rateUnit: null,
+    discountPercent: 0,
+    discountEndsOn: null,
+    taxPercent: 0.1,
+    taxCodeId: "tax-1",
+    startDate: "2026-11-01",
+    endDate: "2027-10-31",
+    goLiveDate: null,
+    revenueMethod: "Right to Invoice" as const,
+    revenueStartDate: null,
+    revenueEndDate: null,
+    projectId: "project-1",
+    lineItemNumber: "0001",
+    parentLineId: null,
+    billingMethod: "Time & Materials" as const,
+    projectElementId: "element-1",
+    materialHandlingPercent: 0.05,
+    feePercent: null,
+    fundedAmount: 50_000,
+    fundedCost: null,
+    ceilingAmount: 60_000,
+    noticePercent: 0.8,
+    noticeWindowDays: 45,
+    ...overrides
+  });
+  const edit = (
+    changes: Record<string, unknown>,
+    overrides?: Record<string, unknown>,
+    defaultRateUnit?: string
+  ) =>
+    mergeContractLineChanges(
+      contractLineFormValues(
+        stored(overrides) as Parameters<typeof contractLineFormValues>[0]
+      ),
+      changes,
+      defaultRateUnit
+    );
+
+  it("keeps the billing terms, CLIN number, funding and tax code it does not name", () => {
+    const line = customerContractLineValidator.parse(
+      edit({ description: "Engineering services" })
+    );
+    expect(line).toEqual({
+      id: "line-1",
+      customerContractId: "contract-1",
+      revenueType: "One-time",
+      itemId: "item-1",
+      description: "Engineering services",
+      quantity: 1,
+      rate: 0,
+      discountPercent: 0,
+      taxPercent: 10,
+      taxCodeId: "tax-1",
+      startDate: "2026-11-01",
+      endDate: "2027-10-31",
+      revenueMethod: "Right to Invoice",
+      projectId: "project-1",
+      lineItemNumber: "0001",
+      billingMethod: "Time & Materials",
+      projectElementId: "element-1",
+      materialHandlingPercent: 5,
+      fundedAmount: 50_000,
+      ceilingAmount: 60_000,
+      noticePercent: 80,
+      noticeWindowDays: 45
+    });
+  });
+
+  it("clears a field set to null or empty", () => {
+    const line = edit({ endDate: null, description: "" });
+    expect(line).not.toHaveProperty("endDate");
+    expect(line).not.toHaveProperty("description");
+    expect(line.startDate).toBe("2026-11-01");
+  });
+
+  it("drops the rate unit of a line switched to One-time, which has none", () => {
+    const recurring = {
+      revenueType: "Recurring",
+      rateUnit: "Month",
+      rate: 100,
+      billingMethod: "Fixed",
+      revenueMethod: "Daily",
+      projectElementId: null,
+      materialHandlingPercent: null,
+      fundedAmount: null,
+      ceilingAmount: null
+    };
+    const line = edit({ revenueType: "One-time" }, recurring);
+    expect(line).not.toHaveProperty("rateUnit");
+    expect(customerContractLineValidator.safeParse(line).success).toBe(true);
+    // A rate unit the edit names is kept, and the line form refuses it.
+    expect(
+      customerContractLineValidator.safeParse(
+        edit({ revenueType: "One-time", rateUnit: "Week" }, recurring)
+      ).success
+    ).toBe(false);
+  });
+
+  it("gives a line switched to Recurring with no rate unit the contract's billing frequency", () => {
+    const fixed = {
+      billingMethod: "Fixed",
+      revenueMethod: "Daily",
+      projectElementId: null,
+      materialHandlingPercent: null,
+      fundedAmount: null,
+      ceilingAmount: null
+    };
+    expect(edit({ revenueType: "Recurring" }, fixed, "Quarter").rateUnit).toBe(
+      "Quarter"
+    );
+    // A unit the edit or the line names is kept.
+    expect(
+      edit({ revenueType: "Recurring", rateUnit: "Week" }, fixed, "Quarter")
+        .rateUnit
+    ).toBe("Week");
+    expect(
+      edit(
+        { description: "Seats" },
+        { ...fixed, revenueType: "Recurring", rateUnit: "Year" },
+        "Quarter"
+      ).rateUnit
+    ).toBe("Year");
+  });
+});
+
+describe("a sales rule's item types", () => {
+  const rule = {
+    name: "US ship-to only",
+    message: "Ships to the US only",
+    severity: "error",
+    surfaces: ["quoteLine"],
+    conditionAst: {
+      kind: "all",
+      conditions: [
+        { field: "customer.location.countryCode", op: "in", value: ["US"] }
+      ]
+    }
+  };
+
+  it("are refused when they are not item types, in the form and the API alike", () => {
+    expect(
+      salesRuleInputValidator.safeParse({
+        ...rule,
+        filteredItemTypes: ["Gadget"]
+      }).success
+    ).toBe(false);
+    expect(
+      salesRuleValidator.safeParse({
+        ...rule,
+        conditionAst: JSON.stringify(rule.conditionAst),
+        filteredItemTypes: "Gadget"
+      }).success
+    ).toBe(false);
+  });
+
+  it("take one repeated form value as a list", () => {
+    const parsed = salesRuleValidator.parse({
+      ...rule,
+      conditionAst: JSON.stringify(rule.conditionAst),
+      filteredItemTypes: "Part"
+    });
+    expect(parsed.filteredItemTypes).toEqual(["Part"]);
   });
 });

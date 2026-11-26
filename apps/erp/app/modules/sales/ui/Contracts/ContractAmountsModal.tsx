@@ -171,7 +171,9 @@ const ContractAmountsBody = ({
         </Button>
         <Submit
           withBlocker={false}
-          isDisabled={!date || !permissions.can("update", "sales")}
+          isDisabled={
+            !date || !permissions.has({ "sales.serviceContracts": "Edit" })
+          }
         >
           <Trans>Add</Trans>
         </Submit>

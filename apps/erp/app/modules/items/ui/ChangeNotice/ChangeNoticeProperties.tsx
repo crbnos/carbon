@@ -38,7 +38,7 @@ import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { changeNoticePriority, isChangeNoticeLocked } from "../../items.models";
 import type { ChangeNotice } from "../../types";
-import type { AffectedItemDraft } from "./affectedItem.types";
+import type { AffectedItemListEntry } from "./affectedItem.types";
 import ChangeNoticeReleaseMerge from "./ChangeNoticeReleaseMerge";
 import ImpactPanel, { type ChangeNoticeImpactItem } from "./ImpactPanel";
 
@@ -87,7 +87,7 @@ const ChangeNoticeProperties = () => {
   const routeData = useRouteData<{
     changeNotice: ChangeNotice;
     types: ListItem[];
-    affectedItems: AffectedItemDraft[];
+    affectedItems: AffectedItemListEntry[];
     impactUsedIn: Promise<ChangeNoticeImpactItem[]>;
     nonConformanceOptions: {
       id: string;
@@ -109,7 +109,7 @@ const ChangeNoticeProperties = () => {
   const linkedNonConformance = routeData?.linkedNonConformance ?? null;
   const isLocked = isChangeNoticeLocked(changeNotice?.status);
   const isImplementation = changeNotice?.status === "Implementation";
-  const canUpdate = permissions.can("update", "parts");
+  const canUpdate = permissions.has({ "parts.changeNotices": "Edit" });
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
@@ -118,7 +118,6 @@ const ChangeNoticeProperties = () => {
       }
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: id is stable
   const onUpdate = useCallback(
     (field: string, value: string | null) => {
       const formData = new FormData();
@@ -130,6 +129,7 @@ const ChangeNoticeProperties = () => {
         action: path.to.updateChangeNotice
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- id is stable
     [id]
   );
 
@@ -138,7 +138,7 @@ const ChangeNoticeProperties = () => {
     id: a.affectedItem.id,
     label: a.affectedItem.item?.readableIdWithRevision ?? a.affectedItem.itemId,
     changeType: a.affectedItem.changeType,
-    version: a.makeMethod?.version,
+    version: a.affectedItem.draftVersion,
     diff: a.diff
   }));
 

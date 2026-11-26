@@ -59,6 +59,7 @@ export type RentalTerm =
   | "paymentTermId"
   | "depositAmount"
   | "taxPercent"
+  | "taxCodeId"
   | "discountRate"
   | "ownershipTransfers"
   | "specializedAsset"
@@ -74,7 +75,6 @@ export function useRentalTermSave(rentalAgreementId: string) {
     if (fetcher.data?.error) toastServiceError(fetcher.data);
   }, [fetcher.data]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const submit = useCallback(
     (fields: Record<string, string>) => {
       const formData = new FormData();
@@ -87,6 +87,7 @@ export function useRentalTermSave(rentalAgreementId: string) {
         action: path.to.rentalAgreementUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [rentalAgreementId]
   );
 

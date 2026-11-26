@@ -3,15 +3,19 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { NotFoundError } from "@carbon/api/errors";
-import type { RequiredPermissions } from "@carbon/api/permissions";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import {
+  type AnyOfGate,
+  anyOf,
+  ITEM_PAGES,
+  type PageGate
+} from "@carbon/database/access";
 import { StripeConnect } from "@carbon/ee";
 import {
   type SyncedEntityType,
   syncedEntities,
-  syncedEntityParentId,
-  syncedEntityPermissions
+  syncedEntityParentId
 } from "@carbon/ee/issue-sync";
 import { linkExistingIssue, linkNewIssue } from "@carbon/ee/issue-sync.server";
 import {
@@ -45,6 +49,7 @@ import {
 } from "@carbon/stripe/connect.server";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
+import { storageTypesGate } from "~/modules/inventory/inventory.models";
 import { nonConformancePriority } from "~/modules/quality/quality.models";
 import { insertIssue } from "~/modules/quality/quality.service";
 import * as salesService from "~/modules/sales/sales.service";
@@ -57,7 +62,6 @@ import {
   type CreatableLookup,
   creatableLookups,
   importPermissions,
-  importRequiresCreate,
   importSchemas
 } from "./imports.models";
 import { assignableTables, noteFields, noteTables } from "./shared.models";
@@ -91,7 +95,7 @@ export const assignRecord = defineServiceFn({
     id: z.string().min(1),
     assignee: z.string()
   }),
-  permission: {},
+  permission: "employee",
 
   async run(ctx, { table, id, assignee }) {
     const client = ctx.asCaller.supabase;
@@ -169,7 +173,9 @@ export const assignRecord = defineServiceFn({
  * @param field - `internalNotes` or `externalNotes`, or `notes` on a job,
  *   item, fixed asset, picking list or stock transfer.
  * @param text - The notes as Markdown: headings, **bold**, _italic_, lists,
- *   links, quotes and code. Empty text clears them.
+ *   links, quotes and code. Empty text clears them. `externalNotes` go on what
+ *   the customer or supplier receives (purchase order, RFQ, supplier quote
+ *   page, quote, sales order, invoice, packing slip): keep internal notes out.
  *
  * @mcp
  */
@@ -180,7 +186,7 @@ export const setNotes = defineServiceFn({
     field: z.enum(["internalNotes", "externalNotes", "notes"]),
     text: z.string()
   }),
-  permission: {},
+  permission: "employee",
 
   async run(ctx, { table, id, field, text }) {
     const fields: readonly string[] = noteFields[table];
@@ -215,16 +221,26 @@ const importTables = Object.keys(importPermissions) as [
   ...ImportTable[]
 ];
 
-// `update` on the table's module; an import that posts stock also needs
-// `create`, as the single-record adjustment does.
+// Tables whose page moved: their import also admits the page that keeps
+// writing them (`alsoWrittenBy`), as their screen does. Checked in `run`.
+const importAnyOf: Partial<Record<ImportTable, AnyOfGate>> = {
+  storageType: { anyOf: storageTypesGate("Edit") },
+  itemPostingGroup: {
+    anyOf: [
+      { "parts.itemGroups": "Edit" },
+      { "accounting.defaultAccounts": "Edit" }
+    ]
+  }
+};
+
+// Edit on the table's page; an import that posts stock needs it too, as the
+// single-record adjustment does.
 const importRules = Object.fromEntries(
   importTables.map((table) => [
     table,
-    importRequiresCreate.has(table)
-      ? { update: importPermissions[table], create: importPermissions[table] }
-      : { update: importPermissions[table] }
+    importAnyOf[table] ? "employee" : { [importPermissions[table]]: "Edit" }
   ])
-) as Record<ImportTable, RequiredPermissions>;
+) as Record<ImportTable, PageGate | "employee">;
 
 /**
  * Import a CSV file into a table.
@@ -234,7 +250,8 @@ const importRules = Object.fromEntries(
  * `columnMappings` names, for each of the table's fields, the CSV column that
  * fills it; the table's required fields must be mapped. `enumMappings` maps
  * CSV values onto a field's allowed values (field → CSV value → value). Needs
- * `update` on the table's module, and `create` too for the stock imports.
+ * Edit on the table's page (`importPermissions`), or on a page that keeps
+ * writing a moved table (`importAnyOf`).
  * Quotes go through the sales importer, so each gets its opportunity,
  * payment, shipment and share link as one made in the app does; every other
  * table goes through the `import-csv` posting. Returns how many rows were
@@ -252,6 +269,10 @@ export const importCsvFile = defineServiceFn({
   permission: { by: "table", rules: importRules },
 
   async run(ctx, { table, filePath, enumMappings, ...input }) {
+    const anyOf = importAnyOf[table];
+    if (anyOf && !ctx.can(anyOf)) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
     const mapped = importSchemas[table].safeParse(input.columnMappings);
     if (!mapped.success) {
       return ctx.error("validation", z.prettifyError(mapped.error));
@@ -305,19 +326,19 @@ export const importCsvFile = defineServiceFn({
   }
 });
 
-// Creating a lookup is gated by the module that owns it. Exhaustive: a new
+// Creating a lookup is gated by the page that owns it. Exhaustive: a new
 // lookup without a permission fails typecheck.
-const lookupRules: Record<CreatableLookup, RequiredPermissions> = {
-  supplierType: { create: "purchasing" },
-  customerType: { create: "sales" },
-  customerStatus: { create: "sales" }
+const lookupRules: Record<CreatableLookup, PageGate> = {
+  supplierType: { "purchasing.types": "Create" },
+  customerType: { "sales.types": "Create" },
+  customerStatus: { "sales.statuses": "Create" }
 };
 /**
  * Create name-only lookup values for a CSV import: supplier types, customer
  * types, customer statuses.
  *
  * @remarks
- * Needs `create` on the module that owns the lookup. A name that already
+ * Needs Create on the page that owns the lookup. A name that already
  * exists is matched case-insensitively and returned instead of created, and
  * case variants within the batch become one value. `results` answers every
  * name, in order: the value's id and name, or an error.
@@ -402,7 +423,7 @@ export const createImportLookups = defineServiceFn({
  */
 export const enrollImplementationHub = defineServiceFn({
   input: z.object({}),
-  permission: { update: "settings" },
+  permission: { "settings.company": "Edit" },
 
   async run(ctx) {
     const serviceRole = ctx.asSystem.supabase;
@@ -551,7 +572,7 @@ export const createIssueFromSlack = defineServiceFn({
  */
 export const startStripeConnectOnboarding = defineServiceFn({
   input: z.object({ origin: z.url() }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
 
   async run(ctx, { origin }) {
     if (!StripeConnect.active) {
@@ -662,16 +683,14 @@ const syncedEntityTypes = Object.keys(syncedEntities) as [
   ...SyncedEntityType[]
 ];
 
-// An issue's tasks are quality's, a change notice's are parts', a project
-// element is projects'.
+// An issue's tasks are the Issues page's, a change notice's the Change
+// Notices page's, a project element the Projects page's.
 const actionTaskRule = {
   by: "entityType",
   rules: {
-    nonConformanceActionTask: syncedEntityPermissions(
-      "nonConformanceActionTask"
-    ),
-    changeOrderActionTask: syncedEntityPermissions("changeOrderActionTask"),
-    projectElement: syncedEntityPermissions("projectElement")
+    nonConformanceActionTask: { "quality.issues": "Edit" },
+    changeOrderActionTask: { "parts.changeNotices": "Edit" },
+    projectElement: { "projects.projects": "Edit" }
   }
 } as const;
 
@@ -1017,7 +1036,7 @@ export const unlinkLinearIssue = defineServiceFn({
  */
 export const deleteSavedView = defineServiceFn({
   input: z.looseObject({ viewId: z.string() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1036,11 +1055,64 @@ export const deleteSavedView = defineServiceFn({
  */
 export const getBase64ImageFromSupabase = defineServiceFn({
   input: z.looseObject({ path: z.string() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return await service.getBase64ImageFromSupabase(
       ctx.asCaller.supabase,
       input.path as never
+    );
+  }
+});
+
+/** The gates of the screens that show the planning weeks. */
+const planningScreens: AnyOfGate = {
+  anyOf: [
+    { "production.materialPlanning": "View" },
+    { "production.demandForecasts": "View" },
+    { "purchasing.materialPlanning": "View" },
+    ...anyOf(ITEM_PAGES, "View")
+  ]
+};
+
+/**
+ * List the weekly planning periods of a location.
+ *
+ * @remarks
+ * The weeks the planning screens show, from the week of the location's today,
+ * earliest first. A week runs Sunday to Saturday. It adds the weeks missing
+ * from the calendar, as each planning screen does when it opens, so it is a
+ * write. Pass the ids, in this order, as `periods` to
+ * `production_getProductionPlanning`, `production_getProductionProjections`,
+ * `purchasing_getPurchasingPlanning`, `items_getItemDemand` and
+ * `items_getDemandForecastSources`. Needs View on a page whose screen shows
+ * these weeks, as each planning screen does: Material Planning in Production
+ * or Purchasing, Demand Forecasts, or an item page.
+ *
+ * @param locationId - The location whose today starts the first week.
+ *
+ * @mcp
+ */
+export const getPlanningPeriods = defineServiceFn({
+  input: z.object({ locationId: z.string().min(1) }),
+  // Each planning screen gates on its own page, so `run` admits a viewer of
+  // any of them, exactly as their routes do.
+  permission: "employee",
+  async run(ctx, { locationId }) {
+    if (!ctx.can(planningScreens)) {
+      return ctx.error(
+        "forbidden",
+        "Planning periods need View on Material Planning, Demand Forecasts or an item page"
+      );
+    }
+    const owned = await service.refuseUnlessOwned(ctx, "location", {
+      id: locationId
+    });
+    if (owned) return owned;
+    return service.getPlanningWeeks(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      locationId,
+      ctx.company.id
     );
   }
 });
@@ -1052,7 +1124,7 @@ export const getBase64ImageFromSupabase = defineServiceFn({
  */
 export const getCountries = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {},
+  permission: "employee",
   async run(ctx) {
     return unwrap(ctx, await service.getCountries(ctx.asCaller.supabase));
   }
@@ -1065,7 +1137,7 @@ export const getCountries = defineServiceFn({
  */
 export const getModelByItemId = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return await service.getModelByItemId(
       ctx.asCaller.supabase,
@@ -1081,7 +1153,7 @@ export const getModelByItemId = defineServiceFn({
  */
 export const getNotes = defineServiceFn({
   input: z.looseObject({ documentId: z.string() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1097,7 +1169,7 @@ export const getNotes = defineServiceFn({
  */
 export const getTagsList = defineServiceFn({
   input: z.looseObject({ table: z.string().nullable().optional() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1117,7 +1189,7 @@ export const getTagsList = defineServiceFn({
  */
 export const insertNote = defineServiceFn({
   input: z.looseObject({ note: z.string(), documentId: z.string() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1140,7 +1212,7 @@ export const insertTag = defineServiceFn({
     name: z.string(),
     table: z.string()
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1159,7 +1231,7 @@ export const insertTag = defineServiceFn({
  */
 export const getExternalLink = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1183,7 +1255,7 @@ export const getCustomerPortals = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1203,7 +1275,7 @@ export const getCustomerPortals = defineServiceFn({
  */
 export const getCustomerPortal = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1234,7 +1306,7 @@ export const upsertSavedView = defineServiceFn({
     columnVisibility: z.record(z.string(), z.unknown()).optional(),
     columnOrder: z.array(z.string()).optional()
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1264,7 +1336,7 @@ export const updateSavedViewOrder = defineServiceFn({
       z.looseObject({ id: z.string(), sortOrder: z.number().int() })
     )
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, { updates }) {
     try {
       await service.reorderSavedViews(
@@ -1299,7 +1371,7 @@ export const getEnforcementRules = defineServiceFn({
     search: z.string().nullable().optional(),
     targetType: z.enum(["item", "workCenter"]).nullable().optional()
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1323,7 +1395,7 @@ export const getEnforcementRule = defineServiceFn({
     family: z.enum(["storage", "sales"]),
     id: z.string()
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1344,7 +1416,7 @@ export const getEnforcementRule = defineServiceFn({
  */
 export const getEnforcementRuleAssignmentCounts = defineServiceFn({
   input: z.looseObject({ ruleIds: z.array(z.string()) }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,

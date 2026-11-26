@@ -178,6 +178,63 @@ describe("planCompany", () => {
     expect(outputs.groupPegInputs).toEqual([]);
   });
 
+  // A small common-segment company: two bought items, no stock, no other
+  // demand or supply. Each test states only what differs.
+  const base = (
+    overrides: Partial<PlanCompanyInputs> = {}
+  ): PlanCompanyInputs => ({
+    ...loadFixture("plan-company.project.json"),
+    salesOrderLines: [],
+    projectMaterialLines: [],
+    stockedProjectIds: [],
+    items: [
+      { id: "item_old", replenishmentSystem: "Buy" },
+      { id: "item_new", replenishmentSystem: "Buy" }
+    ],
+    replenishments: [
+      { itemId: "item_old", leadTime: 7 },
+      { itemId: "item_new", leadTime: 7 }
+    ],
+    onHand: [],
+    ...overrides
+  });
+  const actuals = (outputs: PlanCompanyOutputs) =>
+    outputs.demandActualUpserts.map((row) => [
+      row.itemId,
+      row.sourceType,
+      row.periodId,
+      Number(row.actualQuantity)
+    ]);
+
+  it("moves a common project material's actual to the Prefer New successor", () => {
+    const outputs = planCompany(
+      base({
+        supersessions: [
+          {
+            itemId: "item_old",
+            supersessionMode: "Prefer New",
+            successorItemId: "item_new",
+            successorEffectivityDate: "2026-10-01",
+            conversionFactor: 1
+          }
+        ],
+        projectMaterialLines: [
+          {
+            id: "pem_common",
+            itemId: "item_old",
+            locationId: "loc_plant",
+            planningSegmentId: "",
+            quantity: 10,
+            requiredDate: "2026-10-14"
+          }
+        ]
+      })
+    );
+    expect(actuals(outputs)).toEqual([
+      ["item_new", "Project Material", "per_w2", 10]
+    ]);
+  });
+
   it("writes one actual row per segment for the same item, location and week", () => {
     const fixture = loadFixture("plan-company.project.json");
     const jobMaterial = {

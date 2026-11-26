@@ -42,7 +42,6 @@ const MIGRATIONS = path.resolve(
   "../../packages/database/supabase/migrations"
 );
 
-// biome-ignore lint/suspicious/noExplicitAny: libpg-query's AST is untyped JSON
 type Ast = any;
 
 export interface SqlSource {

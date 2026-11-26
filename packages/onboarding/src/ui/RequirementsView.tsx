@@ -8,7 +8,6 @@ import { LuTrash } from "react-icons/lu";
 import { COLLECTIONS, PAGE_COPY, REQUIREMENTS } from "../content";
 import { flagKey } from "../logic";
 import type { ImplementationRowData } from "../types";
-import { ProgressPill } from "./ProgressPill";
 import {
   CustomRowSection,
   EditableInput,
@@ -17,6 +16,7 @@ import {
   SectionList,
   StatusToggle
 } from "./primitives";
+import { ProgressPill } from "./ProgressPill";
 import { useCanEdit, useCheckMap, useExclusions, useHubActions } from "./state";
 
 const FLAG = COLLECTIONS.requirement.flag!;

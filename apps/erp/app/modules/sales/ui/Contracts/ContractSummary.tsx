@@ -30,13 +30,14 @@ import {
   isProjectBillingMethod,
   projectContractFunded
 } from "../../sales.models";
+import { untaxedContractInvoices } from "../../sales.utils";
 import { useBillingMethodLabels } from "./ContractLineBillingFields";
 import { scheduleRows, toContractLineTerms } from "./contractTerms";
 import type { Contract, ContractLine, ContractRouteData } from "./types";
 
 type ContractSummaryProps = Pick<
   ContractRouteData,
-  "contract" | "lines" | "schedule" | "computedSchedule"
+  "contract" | "lines" | "schedule" | "computedSchedule" | "plannedInvoices"
 >;
 
 /** The contract at a glance: its lines, each with its amount in a right-hand
@@ -48,7 +49,8 @@ const ContractSummary = ({
   contract,
   lines,
   schedule,
-  computedSchedule
+  computedSchedule,
+  plannedInvoices
 }: ContractSummaryProps) => {
   const { t } = useLingui();
   const today = useCompanyToday();
@@ -102,7 +104,14 @@ const ContractSummary = ({
       .filter((lineId): lineId is string => Boolean(lineId))
   );
 
-  const nextInvoice = nextPlannedInvoice({ computedSchedule, schedule });
+  // The next invoice to be drafted, priced and taxed on the server as the
+  // drafted invoice will be; when the tax codes could not be read, the
+  // schedule's net alone.
+  const nextInvoice = plannedInvoices?.[0] ?? null;
+  const nextNet = plannedInvoices
+    ? nextInvoice
+    : (untaxedContractInvoices({ computedSchedule, invoices: schedule })[0] ??
+      null);
   const automation = automationText(contract);
 
   return (
@@ -144,6 +153,7 @@ const ContractSummary = ({
                 line={line}
                 currencyCode={currencyCode}
                 isReplaced={replaced.has(line.id)}
+                taxPercent={nextInvoice?.taxPercents[line.id]}
               />
             ))}
           </VStack>
@@ -162,31 +172,68 @@ const ContractSummary = ({
             </HStack>
           )}
           {(!isProject || hasFixedLine) && (
-            <HStack className="w-full justify-between text-sm text-muted-foreground">
-              <span>
-                {isProject ? (
-                  <Trans>Next billing event</Trans>
+            <>
+              <HStack className="w-full justify-between text-sm text-muted-foreground">
+                <span>
+                  {isProject ? (
+                    <Trans>Next billing event</Trans>
+                  ) : (
+                    <Trans>Next invoice</Trans>
+                  )}
+                  {nextNet && (
+                    <>
+                      {" · "}
+                      <DateTime value={nextNet.invoiceDate} variant="date" />
+                    </>
+                  )}
+                </span>
+                {nextNet ? (
+                  <MotionMoney
+                    className="tabular-nums"
+                    value={nextNet.net}
+                    currency={currencyCode}
+                    decimalPlaces={currencyDecimals}
+                  />
                 ) : (
-                  <Trans>Next invoice</Trans>
+                  <span>—</span>
                 )}
-                {nextInvoice && (
-                  <>
-                    {" · "}
-                    <DateTime value={nextInvoice.invoiceDate} variant="date" />
-                  </>
-                )}
-              </span>
-              {nextInvoice ? (
-                <MotionMoney
-                  className="tabular-nums"
-                  value={nextInvoice.total}
-                  currency={currencyCode}
-                  decimalPlaces={currencyDecimals}
-                />
-              ) : (
-                <span>—</span>
+              </HStack>
+              {plannedInvoices === null && nextNet && (
+                <p className="w-full text-xs text-muted-foreground">
+                  <Trans>Excludes tax: the tax codes could not be read.</Trans>
+                </p>
               )}
-            </HStack>
+              {nextInvoice && (
+                <>
+                  <HStack className="w-full justify-between text-sm text-muted-foreground">
+                    <span>
+                      <Trans>Tax</Trans>
+                    </span>
+                    <MotionMoney
+                      className="tabular-nums"
+                      value={nextInvoice.tax}
+                      currency={currencyCode}
+                      decimalPlaces={currencyDecimals}
+                    />
+                  </HStack>
+                  <HStack className="w-full justify-between text-sm text-muted-foreground">
+                    <span>
+                      {isProject ? (
+                        <Trans>Next billing event total</Trans>
+                      ) : (
+                        <Trans>Next invoice total</Trans>
+                      )}
+                    </span>
+                    <MotionMoney
+                      className="tabular-nums"
+                      value={nextInvoice.net + nextInvoice.tax}
+                      currency={currencyCode}
+                      decimalPlaces={currencyDecimals}
+                    />
+                  </HStack>
+                </>
+              )}
+            </>
           )}
           <div className="my-2 h-px w-full bg-border" />
           <HStack className="w-full justify-between text-lg font-semibold">
@@ -207,7 +254,8 @@ const ContractSummary = ({
           {!isProject && !contract.endDate && (
             <p className="text-xs text-muted-foreground w-full">
               <Trans>
-                Open-ended: the value of the invoices planned so far.
+                No end date: the value of the invoices planned so far. A new
+                invoice is added every billing period.
               </Trans>
             </p>
           )}
@@ -227,12 +275,16 @@ function SummaryLine({
   contract,
   line,
   currencyCode,
-  isReplaced
+  isReplaced,
+  taxPercent
 }: {
   contract: Contract;
   line: ContractLine;
   currencyCode: string;
   isReplaced: boolean;
+  /** The line's rate on the next invoice, from the server; none when the
+   *  line is not on it. */
+  taxPercent: number | undefined;
 }) {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
@@ -263,6 +315,7 @@ function SummaryLine({
   const billingMethodLabels = useBillingMethodLabels(contract.billingBasis);
   const isBillingLine = isProjectBillingMethod(line.billingMethod);
   const isGovernmentContracting = useGovernmentContracting();
+  const taxRate = percent.format(taxPercent ?? 0);
 
   // A project contract line: its CLIN (government contracting only) and
   // billing method; a billing line's amount is what it is funded for, a Fixed
@@ -336,40 +389,14 @@ function SummaryLine({
             {perUnit[line.rateUnit]}
           </span>
         )}
+        {taxPercent !== undefined && taxPercent > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {t`${taxRate} tax`}
+          </span>
+        )}
       </div>
     </div>
   );
-}
-
-/** The first invoice still to be drafted, with its total. */
-function nextPlannedInvoice({
-  computedSchedule,
-  schedule
-}: Pick<ContractSummaryProps, "computedSchedule" | "schedule">): {
-  invoiceDate: string;
-  total: number;
-} | null {
-  if (computedSchedule) {
-    const next = computedSchedule.find(
-      (invoice) => invoice.status === "Planned"
-    );
-    return next
-      ? {
-          invoiceDate: next.invoiceDate,
-          total: next.rows.reduce((sum, row) => sum + row.amount, 0)
-        }
-      : null;
-  }
-  const next = schedule.find((invoice) => invoice.status === "Planned");
-  return next
-    ? {
-        invoiceDate: next.invoiceDate,
-        total: next.customerContractInvoiceLine.reduce(
-          (sum, row) => sum + Number(row.amount),
-          0
-        )
-      }
-    : null;
 }
 
 /** What happens to an Active contract's invoices once drafted, under its

@@ -69,22 +69,23 @@ export function SalesOrderLineShipments({
             </CardTitle>
           </CardHeader>
           <CardAction>
-            {permissions.can("create", "inventory") && hasShipments && (
-              <fetcher.Form
-                method="post"
-                action={path.to.newSalesOrderLineShipment(orderId, lineId)}
-              >
-                <Button
-                  type="submit"
-                  leftIcon={<LuCirclePlus />}
-                  onClick={newJobDisclosure.onOpen}
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
+            {permissions.has({ "inventory.shipments": "Create" }) &&
+              hasShipments && (
+                <fetcher.Form
+                  method="post"
+                  action={path.to.newSalesOrderLineShipment(orderId, lineId)}
                 >
-                  New Shipment
-                </Button>
-              </fetcher.Form>
-            )}
+                  <Button
+                    type="submit"
+                    leftIcon={<LuCirclePlus />}
+                    onClick={newJobDisclosure.onOpen}
+                    isLoading={fetcher.state !== "idle"}
+                    isDisabled={fetcher.state !== "idle"}
+                  >
+                    New Shipment
+                  </Button>
+                </fetcher.Form>
+              )}
           </CardAction>
         </HStack>
 
@@ -154,7 +155,7 @@ export function SalesOrderLineShipments({
             </Table>
           ) : (
             <Empty className="pb-12">
-              {permissions.can("create", "inventory") && (
+              {permissions.has({ "inventory.shipments": "Create" }) && (
                 <fetcher.Form
                   method="post"
                   action={path.to.newSalesOrderLineShipment(orderId, lineId)}

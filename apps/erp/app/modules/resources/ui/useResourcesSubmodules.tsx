@@ -15,13 +15,16 @@ import {
   LuRedoDot,
   LuWrench
 } from "react-icons/lu";
+import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { RouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function useResourcesSubmodules() {
   const { t } = useLingui();
   const { addSavedViewsToRoutes } = useSavedViews();
+  const permissions = usePermissions();
 
   const translatedRoutes: RouteGroup[] = [
     {
@@ -100,7 +103,7 @@ export default function useResourcesSubmodules() {
   ];
 
   return {
-    groups: translatedRoutes.map((group) => ({
+    groups: visibleGroups(translatedRoutes, permissions).map((group) => ({
       ...group,
       routes: group.routes.map(addSavedViewsToRoutes)
     }))

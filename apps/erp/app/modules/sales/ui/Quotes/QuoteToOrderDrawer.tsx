@@ -113,7 +113,14 @@ const QuoteToOrderDrawer = ({
 
   const quoteData = useRouteData<{
     opportunity: { id: string };
+    sendViaEmail: boolean;
   }>(path.to.quote(quoteId));
+  // Starts from the Send Via picked at finalize. The form's default and
+  // NotificationOptionsForm's state must be equal: a mismatch changes the
+  // select on mount, and Radix then clears it to "".
+  const canEmail = useIntegrations().has("email");
+  const defaultNotification: "Email" | "None" =
+    canEmail && quoteData?.sendViaEmail ? "Email" : "None";
   const { deleteAttachment, getPath, upload } = useOpportunityDocuments({
     opportunityId: quoteData?.opportunity.id!,
     type: "Quote",
@@ -162,11 +169,12 @@ const QuoteToOrderDrawer = ({
         logger.error("Failed to update the opportunity", { error });
         toastError(t`Failed to update opportunity with purchase order`, error);
       } else {
+        // Stays on this step: the PO number was filled from the file name and
+        // is checked or corrected here before Next.
         setTimeout(() => {
           setPurchaseOrder(file);
           setUploading(false);
         }, 2000);
-        setStep(1);
       }
     }
   };
@@ -322,6 +330,7 @@ const QuoteToOrderDrawer = ({
             <ShippingDetailsForm />
             <NotificationOptionsForm
               quote={quote}
+              defaultNotification={defaultNotification}
               onEmailBlockedChange={setEmailBlocked}
             />
           </VStack>
@@ -341,10 +350,6 @@ const QuoteToOrderDrawer = ({
   });
   const isSubmitting = ruleViolations.fetcher.state !== "idle";
   const [emailBlocked, setEmailBlocked] = useState(false);
-  // Must match the Send Via value NotificationOptionsForm starts with: a
-  // default that differs makes the select change value on mount, and Radix
-  // then clears it to "" (its native <select> has no options yet).
-  const defaultNotification = useIntegrations().has("email") ? "Email" : "None";
 
   const isNextButtonDisabled =
     step === 1 && Object.keys(selectedLines).length === 0;
@@ -543,7 +548,6 @@ const LinePricingOptions = ({
     convertedShippingCost: 0
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (selectedValue === "custom") {
       setSelectedLines((prev) => ({
@@ -1089,9 +1093,11 @@ function ShippingDetailsForm() {
 
 function NotificationOptionsForm({
   quote,
+  defaultNotification,
   onEmailBlockedChange
 }: {
   quote: Quotation;
+  defaultNotification: "Email" | "None";
   /** Called when an Email send is blocked by a contact with no email. */
   onEmailBlockedChange: (blocked: boolean) => void;
 }) {
@@ -1099,9 +1105,8 @@ function NotificationOptionsForm({
   const [isExpanded, setIsExpanded] = useState(true);
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
-  const [notificationType, setNotificationType] = useState(
-    canEmail ? "Email" : "None"
-  );
+  const [notificationType, setNotificationType] =
+    useState<string>(defaultNotification);
   const [contactMissingEmail, setContactMissingEmail] = useState(false);
   const emailBlocked = notificationType === "Email" && contactMissingEmail;
 
@@ -1148,6 +1153,9 @@ function NotificationOptionsForm({
               customer={quote.customerId ?? undefined}
               warnIfNoEmail
               onMissingEmailChange={setContactMissingEmail}
+              emailNotice={(name) =>
+                t`This will email the sales order to ${name}.`
+              }
             />
             <EmailRecipients name="cc" label={t`CC`} type="employee" />
           </>

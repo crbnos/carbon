@@ -67,6 +67,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   LuArrowLeft,
+  LuBarcode,
   LuBox,
   LuBoxes,
   LuCheck,
@@ -96,7 +97,7 @@ import {
   LuWrench,
   LuX
 } from "react-icons/lu";
-import { useFetcher, useNavigate, useSearchParams } from "react-router";
+import { useFetcher, useSearchParams } from "react-router";
 import { AbilityWarning } from "~/components/AbilityWarning";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
@@ -115,9 +116,11 @@ import { useScrapParts } from "~/components/JobOperation/components/ScrapPartsMo
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
 import { useTravelerScan } from "~/components/JobOperation/hooks/useTravelerScan";
+import { useWorkUnit } from "~/components/JobOperation/hooks/useWorkUnit";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
+import { UnitHoldBanner } from "~/components/UnitHoldBanner";
 import { useRealtime, useUser } from "~/hooks";
 import {
   type AbilityShortfall,
@@ -138,7 +141,9 @@ import {
 } from "~/utils/kanban";
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
+import { holdingIssues, isUnitOnHold, type UnitHolds } from "~/utils/unitHold";
 import { deriveUnits } from "~/utils/units";
+import { operationUnits, shownRecordIndex } from "~/utils/workUnit";
 
 const log = getLogger("mes", "assembly-view");
 
@@ -337,6 +342,8 @@ type Props = {
     /** False when this rework or correction copy does not work the unit. */
     inOperationScope?: boolean;
   }[];
+  /** The units on hold for an open quality issue (`readUnitHolds`). */
+  unitHolds?: UnitHolds;
   trackedEntityId: string | null;
   materials: { materials?: any[]; trackedInputs?: any[] } | null;
   procedure: { attributes: Step[]; parameters: any[] };
@@ -547,6 +554,7 @@ export function AssemblyView({
   thumbnailPath,
   correctionName,
   trackedEntities,
+  unitHolds,
   trackedEntityId,
   materials,
   procedure,
@@ -575,7 +583,6 @@ export function AssemblyView({
   const user = useUser();
   const { carbon } = useCarbon();
   const mode = useMode();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLingui();
   const origin = useOrigin();
@@ -592,7 +599,6 @@ export function AssemblyView({
   const reworkModal = useDisclosure();
   const finishModal = useDisclosure();
   const maintenanceModal = useDisclosure();
-  const serialModal = useDisclosure();
   const actionsSheet = useDisclosure();
   const completeAllModal = useDisclosure();
   const completeAllFetcher = useFetcher<{ success?: boolean }>();
@@ -628,30 +634,21 @@ export function AssemblyView({
 
   // Kanban barcode scan → complete the operation (matches the operation view).
   // The wedge takes a scan's Enter in the capture phase, so the Enter/Space
-  // shortcut below never sees it. A serial scan completes the unit on screen
-  // (the ?trackedEntityId the operator scanned or selected), never one the
-  // server picks: at a later operation that pick need not be the unit in hand.
-  const selectedEntityParam = searchParams.get("trackedEntityId");
+  // shortcut below never sees it. A serial scan completes the unit the
+  // operator holds (`useWorkUnit`), never one the server picks: at a later
+  // operation that pick need not be the unit in hand.
   const completeFetcher = useFetcher();
   useKeyboardWedge({
     test: (input) => !!kanban && isKanbanCompleteScan(input, kanban),
     callback: () => {
-      const selected = selectedEntityParam
-        ? trackedEntities.find((entity) => entity.id === selectedEntityParam)
-        : undefined;
       const target = kanbanCompleteTarget({
         requiresSerialTracking,
         isFirstOperation,
-        selectedEntityId: selected?.id ?? null,
-        selectedIsIncomplete:
-          !!selected && isUnitIncompleteForOperation(selected, operationId),
+        selectedEntityId: workUnit.unit?.id ?? null,
+        selectedIsIncomplete: workUnit.unitIsOpen,
         soleUnitId: soleUnitId(trackedEntities, operation?.operationQuantity)
       });
-      if (target.action === "select") {
-        toast.info(t`Scan or select the unit, then scan the kanban card again`);
-        serialModal.onOpen();
-        return;
-      }
+      if (target.action === "select") return askForUnit();
       const endPath = path.to.endOperation(operationId);
       return completeFetcher.load(
         target.trackedEntityId
@@ -703,7 +700,6 @@ export function AssemblyView({
   // against this item/process is materialized as a recordable Inspection step so the
   // operator signs off on the containment inline. Idempotent — actions that already have
   // a step are skipped; the fetcher POST revalidates the loader, so a second pass no-ops.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: mirrors the operation view
   useEffect(() => {
     function createInspectionStepsForNonConformanceActions() {
       // Skip while a prior POST is still in flight: procedure/nonConformanceActions
@@ -774,6 +770,7 @@ export function AssemblyView({
     }
 
     createInspectionStepsForNonConformanceActions();
+    // oxlint-disable-next-line react/exhaustive-deps -- mirrors the operation view
   }, [
     carbon,
     operationId,
@@ -889,14 +886,18 @@ export function AssemblyView({
   // A rework or correction copy works only the units sent into it: page through
   // those, but key step records by each unit's place in the full axis, as the
   // operation view and the ERP do. With no scope the two are the same.
-  const scopedAxis = axisEntities
-    .map((entity, axisIndex) => ({ entity, axisIndex }))
-    .filter(({ entity }) => entity.inOperationScope !== false);
-  const axisIndexOf = (position: number) =>
-    scopedAxis[position]?.axisIndex ?? position;
-  const units = deriveUnits(
+  const navigableEntities = operationUnits(
+    axisEntities,
     unitCount,
-    scopedAxis.map(({ entity }) => entity)
+    navigatesByEntity ? { operationId, holds: unitHolds } : undefined
+  );
+  const axisIndexOf = (position: number) => {
+    const entity = navigableEntities[position];
+    return entity ? axisEntities.indexOf(entity) : position;
+  };
+  const units = deriveUnits(
+    Math.max(unitCount, navigableEntities.length),
+    navigableEntities
   );
   // The tracked entities within the navigable set (for the serial picker; empty when
   // the parent is untracked).
@@ -911,12 +912,35 @@ export function AssemblyView({
     Math.round(operation?.quantityComplete ?? 0)
   );
 
-  // Resolve the current unit: by tracked entity from the URL when present, else by the
-  // ?unit index — untracked parents have no entity to key off. (FIX-3 / FIX-4)
+  // The serial unit the operator works on, decided as on the operation view
+  // (`useWorkUnit`). At a later operation the unit on screen is for viewing
+  // until the operator picks or scans one: no write names it.
+  // A unit on hold for an open quality issue is not open here: no work names
+  // it and the screen moves past it, as the server does (`resolveWorkUnit`).
+  const workUnit = useWorkUnit({
+    serial: navigatesByEntity,
+    isFirstOperation,
+    units: unitEntities,
+    isOpen: (entity) => isUnitIncompleteForOperation(entity, operationId),
+    isOnHold: (entity) => isUnitOnHold(unitHolds, entity.id)
+  });
+  // The open issues that hold the unit on screen.
+  const shownUnitHolds = navigatesByEntity
+    ? holdingIssues(unitHolds, workUnit.reviewUnitId)
+    : [];
+
+  // Resolve the current unit. A serial part shows the unit `useWorkUnit` holds
+  // (picked, or looked back at), so what the screen shows is what its writes
+  // name. With none held: the URL's unit, else the ?unit index — untracked
+  // parents have no entity to key off.
   const unitParam = Number.parseInt(searchParams.get("unit") ?? "", 10);
   const hasUnitParam =
     Number.isInteger(unitParam) && unitParam >= 0 && unitParam < units.length;
   const currentUnitIndex = (() => {
+    if (navigatesByEntity && workUnit.unit) {
+      const i = units.findIndex((u) => u.entity?.id === workUnit.unit?.id);
+      if (i >= 0) return i;
+    }
     if (navigatesByEntity && trackedEntityId) {
       const i = units.findIndex((u) => u.entity?.id === trackedEntityId);
       if (i >= 0) return i;
@@ -935,12 +959,31 @@ export function AssemblyView({
     ? (axisEntities[0] ?? undefined)
     : (currentUnit?.entity ?? undefined);
 
+  const noUnitHeld = workUnit.noUnitHeld;
+  const writesBlocked = workUnit.writesBlocked;
+  const workEntity = navigatesByEntity
+    ? workUnit.workUnitId
+      ? workUnit.unit
+      : undefined
+    : currentEntity;
+  // The unit on screen, open or looked back at: a quality issue and an
+  // unconsume name it (the server accepts a unit done here for those).
+  const reviewEntity = navigatesByEntity ? workUnit.unit : currentEntity;
+  // The Issue dialog opens on a finished unit too, for Unconsume only.
+  const issueDialogBlocked = writesBlocked && !reviewEntity;
+  const canPickUnit = workUnit.canPick;
+  const askForUnit = () => {
+    toast.info(t`Select a unit first`);
+    workUnit.askForUnit();
+  };
+
   // Step records key off the unit index for ALL tracking types, identical to the
   // Operation view (FIX-1 / FIX-5) — this is what isolates unit i's records.
   const activeIndex = axisIndexOf(currentUnitIndex);
+  const shownIndex = shownRecordIndex(workUnit, activeIndex);
 
   const isStepDone = (step: Step) =>
-    (step.jobOperationStepRecord ?? []).some((r) => r.index === activeIndex);
+    (step.jobOperationStepRecord ?? []).some((r) => r.index === shownIndex);
   // A recorded step whose value FAILS its acceptance criteria for a given unit:
   // a Measurement out of [min, max], or a pass/fail step (Inspection) recorded as
   // not passing. Mirrors the out-of-spec red styling in the operation view's Step
@@ -962,7 +1005,7 @@ export function AssemblyView({
     return false;
   };
   const isStepBadResult = (step: Step) =>
-    isStepBadResultAtIndex(step, activeIndex);
+    shownIndex !== null && isStepBadResultAtIndex(step, shownIndex);
   // Does any step have an out-of-spec record for this unit? Flags the unit red in
   // the sidebar navigator so a bad build is visible without opening each unit.
   const unitHasBadResult = (position: number) =>
@@ -1025,12 +1068,15 @@ export function AssemblyView({
         : steps.some(
             (s) => (m.jobOperationStepIds ?? []).includes(s.id) && isStepDone(s)
           );
+    // No unit on screen: the loader's default unit's issues are not shown.
     const issuedOverride =
-      !isTrackedMat && perUnit > 0
-        ? ownedStepDoneForUnit
-          ? perUnit
-          : 0
-        : undefined;
+      shownIndex === null
+        ? 0
+        : !isTrackedMat && perUnit > 0
+          ? ownedStepDoneForUnit
+            ? perUnit
+            : 0
+          : undefined;
     // Shadow the line quantity with the step share so the card's required/issued
     // numbers describe this step's portion of the split, not the whole line.
     const effectiveMaterial =
@@ -1272,7 +1318,6 @@ export function AssemblyView({
   // On step change, default the main panel to the animated step playback when this
   // step maps to an instruction step; otherwise the step's first slide, and only
   // fall back to the finished-assembly image when the step has neither.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the current step
   useEffect(() => {
     setSelected(
       playbackAvailable ? "playback" : stepSlides.length > 0 ? 0 : "finished"
@@ -1363,14 +1408,13 @@ export function AssemblyView({
   const openLaborEvent = openByType("Labor");
   const currentStepDone = step ? isStepDone(step) : false;
   const currentStepRecord = step?.jobOperationStepRecord?.find(
-    (r) => r.index === activeIndex
+    (r) => r.index === shownIndex
   );
   const currentStepValue =
     step && currentStepRecord
       ? recordedStepValue(step, currentStepRecord)
       : null;
   const stepDoneRef = useRef({ step: currentStep, done: currentStepDone });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on the current step only
   useEffect(() => {
     const prev = stepDoneRef.current;
     stepDoneRef.current = { step: currentStep, done: currentStepDone };
@@ -1396,7 +1440,7 @@ export function AssemblyView({
       fd.set("exclusive", "true");
       if (operation.workCenterId)
         fd.set("workCenterId", operation.workCenterId);
-      const entityId = isTracked ? currentEntity?.id : undefined;
+      const entityId = isTracked ? workEntity?.id : undefined;
       if (entityId) fd.set("trackedEntityId", entityId);
       fd.set("unitIndex", String(activeIndex));
       laborFetcher.submit(fd, {
@@ -1406,6 +1450,7 @@ export function AssemblyView({
     }
 
     if (!isLastStep) goToStep(currentStep + 1);
+    // oxlint-disable-next-line react/exhaustive-deps -- transition-detect on the current step only
   }, [currentStep, currentStepDone, isLastStep, allStepsRecorded]);
 
   // ── Keyboard shortcuts (Bluetooth clicker / pedal friendly) ────────────────
@@ -1502,7 +1547,6 @@ export function AssemblyView({
 
   // Stop the labor clock automatically once every step is recorded for this unit.
   const allDoneRef = useRef(allStepsRecorded);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on all-complete
   useEffect(() => {
     const wasAllDone = allDoneRef.current;
     allDoneRef.current = allStepsRecorded;
@@ -1523,6 +1567,7 @@ export function AssemblyView({
         action: path.to.productionEvent
       });
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- transition-detect on all-complete
   }, [allStepsRecorded]);
 
   // ── Auto-complete one unit + roll to the next ────────────────────────────
@@ -1535,9 +1580,8 @@ export function AssemblyView({
   const isMultiQuantity = unitCount > 1;
   const unitsRemaining = unitCount - quantityComplete;
   const autoCompleteSubmittedRef = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on all-complete
   useEffect(() => {
-    if (!isMultiQuantity || unitsRemaining <= 0) return;
+    if (!isMultiQuantity || unitsRemaining <= 0 || writesBlocked) return;
     // Only auto-complete the unit currently being built. Guards against
     // re-completing an already-finished unit whose step records still read
     // "done" if the operator navigates back to it. Serial parents may be worked
@@ -1569,8 +1613,7 @@ export function AssemblyView({
       );
     if (requiresSerialTracking) fd.set("trackingType", "Serial");
     else if (requiresBatchTracking) fd.set("trackingType", "Batch");
-    if (isTracked && currentEntity?.id)
-      fd.set("trackedEntityId", currentEntity.id);
+    if (isTracked && workEntity?.id) fd.set("trackedEntityId", workEntity.id);
     // Link the open production events so the completion is attributed to them.
     const setup = openByType("Setup");
     const labor = openByType("Labor");
@@ -1600,6 +1643,7 @@ export function AssemblyView({
         { replace: true, preventScrollReset: true }
       );
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- transition-detect on all-complete
   }, [allStepsRecorded, isMultiQuantity, unitsRemaining]);
 
   // Re-arm auto-complete when a completion POST fails. complete.tsx returns
@@ -1612,7 +1656,6 @@ export function AssemblyView({
   // auto-complete effect only re-fires when its deps actually change, and a
   // failed completion leaves quantityComplete (hence unitsRemaining) unchanged.
   const prevCompleteUnitStateRef = useRef(completeUnitFetcher.state);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: settle-detect on the fetcher
   useEffect(() => {
     const settled =
       prevCompleteUnitStateRef.current !== "idle" &&
@@ -1627,90 +1670,10 @@ export function AssemblyView({
       Object.keys(result).length === 0;
     if (failed) {
       autoCompleteSubmittedRef.current = false;
-      return;
     }
-    // A serial unit just completed (complete.tsx returns { completed: true } and no
-    // longer redirects to a next unit — the client is the single advancement
-    // authority). Advance to the next unit still to build: on the first operation
-    // auto-select it (no printed labels to scan yet); on later operations prompt the
-    // operator to scan/select (every unit already carries a label). The final unit
-    // finishes the operation server-side and redirects, so `result` is undefined
-    // there and nothing happens.
-    if (navigatesByEntity && result?.completed) {
-      // Search the capped unit axis (unitEntities), not the raw prop: a job can
-      // pre-generate more serials than the operation quantity, and navigating to
-      // one of those would fall outside currentUnitIndex / the maxNavigableUnitIndex
-      // clamp and desync the URL from the rendered unit.
-      const next = unitEntities.find((entity) =>
-        isUnitIncompleteForOperation(entity, operationId)
-      );
-      if (!next) return;
-      if (isFirstOperation) navigateEntity(next);
-      else serialModal.onOpen();
-    }
+    // A serial unit that completes moves on through `useWorkUnit`: the next
+    // unit on the first operation, the one left, or the picker.
   }, [completeUnitFetcher.state, completeUnitFetcher.data]);
-
-  // Later operations: when the unit the operator holds becomes complete here —
-  // by a kanban scan, which leaves it in the URL, or by any other completion —
-  // ask for the next one. Edge-triggered off the held unit, so a dismissed
-  // picker stays closed across revalidations.
-  const heldEntityRef = useRef<string | null>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: edge-detect on the held unit
-  useEffect(() => {
-    if (!navigatesByEntity || isFirstOperation) return;
-    const selected = selectedEntityParam
-      ? unitEntities.find((entity) => entity.id === selectedEntityParam)
-      : undefined;
-    if (selected && isUnitIncompleteForOperation(selected, operationId)) {
-      heldEntityRef.current = selected.id;
-      return;
-    }
-    const heldJustCompleted =
-      !!heldEntityRef.current && heldEntityRef.current === selectedEntityParam;
-    heldEntityRef.current = null;
-    if (
-      heldJustCompleted &&
-      unitEntities.some((entity) =>
-        isUnitIncompleteForOperation(entity, operationId)
-      )
-    ) {
-      serialModal.onOpen();
-    }
-  }, [
-    navigatesByEntity,
-    isFirstOperation,
-    trackedEntities,
-    selectedEntityParam
-  ]);
-
-  // Later operations: prompt the operator to scan/select the unit on arrival. Every
-  // unit already carries a printed label (labels print at the first operation's
-  // completion), so there is nothing to auto-select. Prompt once per mount, only
-  // while units remain to build. A ?trackedEntityId naming a unit still open here
-  // was scanned or selected (a traveler scan redirects with it; the operation
-  // route forwards to this view before it seeds a default), so it needs no prompt.
-  // The first operation auto-selects instead (loader default + the settle effect above).
-  const arrivalPromptedRef = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot arrival prompt
-  useEffect(() => {
-    if (!navigatesByEntity || isFirstOperation) return;
-    if (arrivalPromptedRef.current) return;
-    const held = selectedEntityParam
-      ? unitEntities.find((entity) => entity.id === selectedEntityParam)
-      : undefined;
-    if (held && isUnitIncompleteForOperation(held, operationId)) {
-      arrivalPromptedRef.current = true;
-      return;
-    }
-    // Cap to the unit axis (see the settle effect): don't prompt for serials the
-    // job pre-generated beyond the operation quantity.
-    const hasIncomplete = unitEntities.some((entity) =>
-      isUnitIncompleteForOperation(entity, operationId)
-    );
-    if (!hasIncomplete) return;
-    arrivalPromptedRef.current = true;
-    serialModal.onOpen();
-  }, [navigatesByEntity, isFirstOperation, trackedEntities, operationId]);
 
   // Return to step 1 on a new unit. Whenever the active unit changes — the
   // auto-complete rolls quantityComplete forward (untracked), a serial/batch
@@ -1718,12 +1681,12 @@ export function AssemblyView({
   // jump to that unit's first step still to record (step 1 for a fresh unit). This
   // is what returns the operator to the top after finishing a unit's last step.
   const lastUnitRef = useRef(currentUnitIndex);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on the unit index
   useEffect(() => {
     if (lastUnitRef.current === currentUnitIndex) return;
     lastUnitRef.current = currentUnitIndex;
     const firstIncomplete = steps.findIndex((s) => !isStepDone(s));
     goToStep(firstIncomplete >= 0 ? firstIncomplete : 0);
+    // oxlint-disable-next-line react/exhaustive-deps -- transition-detect on the unit index
   }, [currentUnitIndex]);
 
   // On first open (no explicit ?step in the URL), land on the first step that
@@ -1731,7 +1694,6 @@ export function AssemblyView({
   // where they left off. Resolves once, as soon as steps are available; an
   // explicit ?step (a shared/bookmarked link) is always respected.
   const initialStepResolvedRef = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot once steps load
   useEffect(() => {
     if (initialStepResolvedRef.current) return;
     if (searchParams.get("step") != null) {
@@ -1742,14 +1704,8 @@ export function AssemblyView({
     initialStepResolvedRef.current = true;
     const firstIncomplete = steps.findIndex((s) => !isStepDone(s));
     if (firstIncomplete > 0) goToStep(firstIncomplete);
+    // oxlint-disable-next-line react/exhaustive-deps -- one-shot once steps load
   }, [steps.length]);
-
-  function navigateEntity(entity: { id: string }) {
-    const url = new URL(window.location.href);
-    url.searchParams.set("trackedEntityId", entity.id);
-    url.searchParams.delete("unit");
-    navigate(url.pathname + url.search);
-  }
 
   // Serial parents mint one serial at a time — the next unit's tracked entity is only
   // created when the current unit completes — so units beyond the created serials have
@@ -1768,8 +1724,11 @@ export function AssemblyView({
   // whose serial hasn't been minted yet.
   function goToUnit(n: number) {
     const clamped = Math.max(0, Math.min(n, maxNavigableUnitIndex));
-    if (clamped === currentUnitIndex) return;
+    // With no unit held, picking the unit on screen is still a pick.
+    if (clamped === currentUnitIndex && !noUnitHeld) return;
     const entity = units[clamped]?.entity;
+    // A serial unit paged to is the operator's pick (`useWorkUnit` sets the URL).
+    if (navigatesByEntity && entity?.id) return workUnit.pick(entity.id);
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -1924,7 +1883,13 @@ export function AssemblyView({
               variant="secondary"
               className="whitespace-nowrap tabular-nums"
             >
-              Unit {Math.min(currentUnitIndex + 1, unitCount)} / {unitCount}
+              {shownIndex === null ? (
+                <Trans>No unit selected</Trans>
+              ) : (
+                <>
+                  Unit {currentUnitIndex + 1} / {units.length}
+                </>
+              )}
             </Badge>
             <IconButton
               aria-label="Next unit"
@@ -1973,10 +1938,14 @@ export function AssemblyView({
   // already sits in, or goes to its traveler.
   useTravelerScan({
     operationId,
-    parentTrackedEntityId: currentEntity?.id ?? trackedEntities[0]?.id,
+    parentTrackedEntityId:
+      workEntity?.id ??
+      (navigatesByEntity ? undefined : trackedEntities[0]?.id),
     jobOperationStepId: step?.id,
     unitNumber: activeIndex + 1,
-    active: !issueModal.isOpen && !abilityBlocked
+    active: !issueModal.isOpen && !abilityBlocked,
+    onUnitOpened: workUnit.pick,
+    onUnitRequired: askForUnit
   });
 
   // An item sticker names a part, not a unit to fit: the operator stays here
@@ -1984,6 +1953,7 @@ export function AssemblyView({
   useKeyboardWedge({
     test: (input) => !!parseItemCode(input),
     callback: (input) => {
+      if (writesBlocked) return askForUnit();
       const itemId = parseItemCode(input);
       const material = allMaterials.find((m) => m.itemId === itemId);
       if (!material) {
@@ -2000,11 +1970,21 @@ export function AssemblyView({
   // The header's actions; the md+ header and the phone app bar share them.
   const headerActions = (
     <>
+      {canPickUnit ? (
+        <button
+          type="button"
+          onClick={workUnit.askForUnit}
+          className="flex h-full shrink-0 items-center gap-1 border-l border-border bg-primary px-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98] max-md:hidden md:gap-2 md:px-4"
+        >
+          <LuBarcode className="size-4" />
+          <Trans>Select a unit</Trans>
+        </button>
+      ) : null}
       {/* Phones: Complete sits in the bottom action bar instead. */}
       {operation ? (
         <button
           type="button"
-          disabled={abilityBlocked}
+          disabled={abilityBlocked || writesBlocked}
           onClick={completeModal.onOpen}
           className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 max-md:hidden md:gap-2 md:px-4"
         >
@@ -2030,7 +2010,7 @@ export function AssemblyView({
               operation={operation}
               openEvent={openEventForWorkType(wt)}
               workType={wt}
-              trackedEntityId={isTracked ? currentEntity?.id : undefined}
+              trackedEntityId={isTracked ? workEntity?.id : undefined}
               unitIndex={activeIndex}
               startDisabled={abilityBlocked}
             />
@@ -2119,6 +2099,14 @@ export function AssemblyView({
           <AbilityWarning warning={abilityWarning} />
         </div>
       )}
+      {shownUnitHolds.length > 0 && (
+        <div className="shrink-0 px-4 pt-3">
+          <UnitHoldBanner
+            serialNumber={workUnit.unit?.readableId}
+            issues={shownUnitHolds}
+          />
+        </div>
+      )}
 
       {/* ── BODY ── stacks vertically (page scrolls) on phones/tablets,
           three columns side-by-side on lg+. ── */}
@@ -2139,7 +2127,7 @@ export function AssemblyView({
                 {operation?.itemDescription}
               </p>
             )}
-            {!isMultiQuantity && currentEntity ? (
+            {!isMultiQuantity && workEntity ? (
               <div className="mt-1.5 flex items-center gap-1.5 min-w-0">
                 <Badge
                   variant="secondary"
@@ -2147,18 +2135,18 @@ export function AssemblyView({
                 >
                   {requiresBatchTracking ? "Batch" : "S/N"}
                 </Badge>
-                {currentEntity.readableId ? (
+                {workEntity.readableId ? (
                   <span className="flex min-w-0 items-center gap-1.5">
                     <span className="truncate text-[0.625rem] font-medium">
-                      {currentEntity.readableId}
+                      {workEntity.readableId}
                     </span>
                     <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
-                      {currentEntity.id.slice(0, 8)}
+                      {workEntity.id.slice(0, 8)}
                     </span>
                   </span>
                 ) : (
                   <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
-                    {currentEntity.id.slice(0, 8)}
+                    {workEntity.id.slice(0, 8)}
                   </span>
                 )}
               </div>
@@ -2233,7 +2221,8 @@ export function AssemblyView({
           {isMultiQuantity && (
             <UnitNavigator
               units={units}
-              currentUnitIndex={currentUnitIndex}
+              // No unit held: none is marked as the one being worked.
+              currentUnitIndex={noUnitHeld ? -1 : currentUnitIndex}
               maxNavigableIndex={maxNavigableUnitIndex}
               isTracked={isTracked}
               labelByEntity={requiresSerialTracking}
@@ -2241,13 +2230,13 @@ export function AssemblyView({
               // Print the current unit's serial/lot label. Only tracked units have
               // an entity to print; untracked builds have nothing to label.
               headerAction={
-                isTracked && currentEntity?.id ? (
+                isTracked && workEntity?.id ? (
                   <PrintButton
                     isIcon
                     variant="ghost"
                     size="lg"
                     sourceDocument="Entity"
-                    sourceDocumentId={currentEntity.id}
+                    sourceDocumentId={workEntity.id}
                     locationId={locationId}
                     context="workCenter"
                     workCenterId={operation?.workCenterId ?? undefined}
@@ -2652,7 +2641,7 @@ export function AssemblyView({
                   variant="ghost"
                   size="lg"
                   icon={<LuCirclePlus />}
-                  isDisabled={abilityBlocked}
+                  isDisabled={abilityBlocked || issueDialogBlocked}
                   onClick={() => {
                     // Clear any per-row selection so the modal opens in
                     // "pick any item" mode → issue a part not on the BOM.
@@ -2678,7 +2667,7 @@ export function AssemblyView({
                         issuedIsPerUnit={issuedIsPerUnit}
                         issuedOverride={issuedOverride}
                         onIssue={
-                          abilityBlocked
+                          abilityBlocked || issueDialogBlocked
                             ? undefined
                             : () => {
                                 setSelectedMaterial(m);
@@ -2823,8 +2812,11 @@ export function AssemblyView({
                   <StepCompleteAction
                     step={step}
                     activeIndex={activeIndex}
+                    unitId={navigatesByEntity ? workEntity?.id : undefined}
                     done={isStepDone(step)}
-                    disabled={hasPendingScans || abilityBlocked}
+                    disabled={
+                      hasPendingScans || abilityBlocked || writesBlocked
+                    }
                     actionRef={primaryStepActionRef}
                     onScrap={scrapModal.onOpen}
                     onQualityIssue={qualityModal.onOpen}
@@ -2859,15 +2851,26 @@ export function AssemblyView({
           data-mes-bottom-bar
           className="flex shrink-0 border-t border-border bg-card px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden"
         >
-          <Button
-            size="lg"
-            leftIcon={<LuCheck />}
-            isDisabled={abilityBlocked}
-            onClick={completeModal.onOpen}
-            className="h-12 flex-1"
-          >
-            <Trans>Complete</Trans>
-          </Button>
+          {canPickUnit ? (
+            <Button
+              size="lg"
+              leftIcon={<LuBarcode />}
+              onClick={workUnit.askForUnit}
+              className="h-12 flex-1"
+            >
+              <Trans>Select a unit</Trans>
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              leftIcon={<LuCheck />}
+              isDisabled={abilityBlocked || writesBlocked}
+              onClick={completeModal.onOpen}
+              className="h-12 flex-1"
+            >
+              <Trans>Complete</Trans>
+            </Button>
+          )}
         </div>
       ) : null}
 
@@ -2887,7 +2890,13 @@ export function AssemblyView({
         // Untracked parents have no unit-axis entity, but tracked child
         // consumes still need a genealogy parent — fall back to the make
         // method's seed entity, same as the operation view.
-        parentId={currentEntity?.id ?? trackedEntities[0]?.id ?? ""}
+        parentId={
+          reviewEntity?.id ??
+          (navigatesByEntity ? undefined : trackedEntities[0]?.id) ??
+          ""
+        }
+        issueBlocked={writesBlocked}
+        parentOnHold={shownUnitHolds.length > 0}
         parentIdIsSerialized={requiresSerialTracking}
         // Stamp the current step + 1-based unit onto the consume so issued
         // quantities can be attributed per-unit even for a batch parent (where
@@ -2900,7 +2909,7 @@ export function AssemblyView({
 
       <QualityIssueModal
         operationId={operationId}
-        trackedEntityId={isTracked ? currentEntity?.id : undefined}
+        trackedEntityId={isTracked ? reviewEntity?.id : undefined}
         isOpen={qualityModal.isOpen}
         onClose={qualityModal.onClose}
       />
@@ -2912,7 +2921,7 @@ export function AssemblyView({
         onClose={needMaterialModal.onClose}
       />
 
-      {operation && completeModal.openCount > 0 && (
+      {operation && !writesBlocked && completeModal.openCount > 0 && (
         <QuantityModal
           key={`complete-${completeModal.openCount}`}
           open={completeModal.isOpen}
@@ -2921,7 +2930,8 @@ export function AssemblyView({
           materials={(materials?.materials ?? []) as JobMaterial[]}
           parentIsSerial={requiresSerialTracking}
           parentIsBatch={requiresBatchTracking}
-          trackedEntityId={currentEntity?.id ?? ""}
+          trackedEntityId={workEntity?.id ?? ""}
+          trackedEntityReadableId={workEntity?.readableId ?? undefined}
           setupProductionEvent={openByType("Setup")}
           laborProductionEvent={openByType("Labor")}
           machineProductionEvent={openByType("Machine")}
@@ -2940,8 +2950,8 @@ export function AssemblyView({
           operation={operation as unknown as OperationWithDetails}
           parentIsSerial={requiresSerialTracking}
           parentIsBatch={requiresBatchTracking}
-          trackedEntityId={currentEntity?.id ?? ""}
-          trackedEntityReadableId={currentEntity?.readableId ?? undefined}
+          trackedEntityId={workEntity?.id ?? ""}
+          trackedEntityReadableId={workEntity?.readableId ?? undefined}
           setupProductionEvent={openByType("Setup")}
           laborProductionEvent={openByType("Labor")}
           machineProductionEvent={openByType("Machine")}
@@ -2957,7 +2967,7 @@ export function AssemblyView({
           operation={operation as unknown as OperationWithDetails}
           parentIsSerial={requiresSerialTracking}
           parentIsBatch={requiresBatchTracking}
-          trackedEntityId={currentEntity?.id ?? ""}
+          trackedEntityId={workEntity?.id ?? ""}
           setupProductionEvent={openByType("Setup")}
           laborProductionEvent={openByType("Labor")}
           machineProductionEvent={openByType("Machine")}
@@ -2973,6 +2983,7 @@ export function AssemblyView({
           jobId={jobId}
           isOpen={reworkModal.isOpen}
           onClose={reworkModal.onClose}
+          unitHolds={unitHolds}
           trackedEntities={trackedEntities as never}
           parentIsSerial={requiresSerialTracking}
           parentIsBatch={requiresBatchTracking}
@@ -2988,18 +2999,13 @@ export function AssemblyView({
       )}
 
       <SerialSelectorModal
-        open={serialModal.isOpen}
-        availableEntities={
-          unitEntities.filter((entity) =>
-            isUnitIncompleteForOperation(entity, operationId)
-          ) as never
-        }
-        onClose={serialModal.onClose}
-        onCancel={serialModal.onClose}
-        onSelect={(entity) => {
-          navigateEntity(entity);
-          serialModal.onClose();
-        }}
+        open={workUnit.pickerOpen}
+        availableEntities={workUnit.openUnits as never}
+        onHoldEntities={workUnit.onHoldUnits as never}
+        unitHolds={unitHolds}
+        onClose={workUnit.closePicker}
+        onCancel={workUnit.closePicker}
+        onSelect={(entity) => workUnit.pick(entity.id)}
       />
 
       <BottomSheet
@@ -3014,7 +3020,7 @@ export function AssemblyView({
               <ActionSheetButton
                 icon={<LuTrash className="size-4 shrink-0" />}
                 label="Scrap"
-                disabled={abilityBlocked}
+                disabled={abilityBlocked || writesBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   scrapModal.onOpen();
@@ -3023,7 +3029,7 @@ export function AssemblyView({
               <ActionSheetButton
                 icon={<LuGitPullRequest className="size-4 shrink-0" />}
                 label="Rework"
-                disabled={abilityBlocked}
+                disabled={abilityBlocked || writesBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   reworkModal.onOpen();
@@ -3074,7 +3080,7 @@ export function AssemblyView({
                 }}
               />
               {/* Manager-only override: record every remaining step for this unit at once.
-                  Shown only to users with the Production DELETE permission, and only when
+                  Shown only with Jobs at Full (the pinned operator's, on a console), and only when
                   there are unrecorded steps left. */}
               {canOverrideComplete &&
                 steps.length > 0 &&
@@ -3082,6 +3088,7 @@ export function AssemblyView({
                   <ActionSheetButton
                     icon={<LuListChecks className="size-4 shrink-0" />}
                     label="Complete all steps"
+                    disabled={abilityBlocked || writesBlocked}
                     onClick={() => {
                       actionsSheet.onClose();
                       completeAllModal.onOpen();
@@ -3129,6 +3136,8 @@ export function AssemblyView({
                 const fd = new FormData();
                 fd.append("operationId", operationId);
                 fd.append("index", String(activeIndex));
+                if (navigatesByEntity && workEntity?.id)
+                  fd.append("trackedEntityId", workEntity.id);
                 completeAllFetcher.submit(fd, {
                   method: "post",
                   action: path.to.completeAllSteps
@@ -3164,7 +3173,7 @@ export function AssemblyView({
             workType={headerWorkTypes[0]}
             workCenterId={operation.workCenterId ?? undefined}
             openEvent={openEventForWorkType(headerWorkTypes[0])}
-            trackedEntityId={isTracked ? currentEntity?.id : undefined}
+            trackedEntityId={isTracked ? workEntity?.id : undefined}
             unitIndex={activeIndex}
           />
         )}
@@ -3200,7 +3209,6 @@ function AutoTimer({
   const running = !!openEvent;
 
   // Auto-start once when the view opens and nothing is running yet.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot on open
   useEffect(() => {
     if (!enabled || startedRef.current) return;
     startedRef.current = true;
@@ -3214,6 +3222,7 @@ function AutoTimer({
     if (trackedEntityId) fd.set("trackedEntityId", trackedEntityId);
     if (typeof unitIndex === "number") fd.set("unitIndex", String(unitIndex));
     fetcher.submit(fd, { method: "post", action: path.to.productionEvent });
+    // oxlint-disable-next-line react/exhaustive-deps -- one-shot on open
   }, [enabled]);
 
   return null;
@@ -3634,6 +3643,7 @@ function MaterialRow({
 function StepCompleteAction({
   step,
   activeIndex,
+  unitId,
   done,
   disabled = false,
   actionRef,
@@ -3642,6 +3652,8 @@ function StepCompleteAction({
 }: {
   step: Step;
   activeIndex: number;
+  /** The serial unit the record is for; the server keys the record by it. */
+  unitId?: string;
   done: boolean;
   // Offered by the correction prompt past a correction's attempt limit.
   onScrap?: () => void;
@@ -3681,6 +3693,7 @@ function StepCompleteAction({
     const fd = new FormData();
     fd.append("jobOperationStepId", step.id);
     fd.append("index", String(activeIndex));
+    if (unitId) fd.append("trackedEntityId", unitId);
     fd.append("booleanValue", "true");
     fetcher.submit(fd, { method: "post", action: path.to.record });
   }
@@ -3779,6 +3792,7 @@ function StepCompleteAction({
         open={recordModal.isOpen}
         attribute={step as unknown as JobOperationStep}
         activeStep={activeIndex}
+        unitId={unitId}
         onClose={recordModal.onClose}
         onScrap={onScrap}
         onQualityIssue={onQualityIssue}
@@ -3839,7 +3853,6 @@ function UnitNavigator({
   // currentUnitIndex is a real dep: the ref points at a different row after it
   // changes, so re-run the scroll even though the body only reads the ref.
   const currentRef = useRef<HTMLButtonElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on unit change
   useEffect(() => {
     currentRef.current?.scrollIntoView({ block: "nearest" });
   }, [currentUnitIndex]);

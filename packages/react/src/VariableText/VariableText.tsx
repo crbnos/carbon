@@ -191,7 +191,7 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
     const valueRef = useRef(value);
     valueRef.current = value;
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: initial content only on mount
+    // oxlint-disable-next-line react/exhaustive-deps -- initial content only on mount
     const initialContent = useMemo(() => partsToDoc(value), []);
 
     const variableExtension = useMemo(

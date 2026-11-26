@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -13,8 +13,8 @@ import { upsertAssemblyInstructionStepTool } from "~/modules/production/producti
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "production"
+  const { client, companyId, userId } = await authorize(request, {
+    "production.assemblies": "Create"
   });
 
   const { id: assemblyInstructionId } = params;
@@ -31,7 +31,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: id is never set on create
   const { id, ...rest } = validation.data;
 
   const create = await upsertAssemblyInstructionStepTool(client, {

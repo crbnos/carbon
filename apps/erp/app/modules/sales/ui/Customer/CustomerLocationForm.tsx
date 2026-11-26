@@ -23,7 +23,8 @@ import {
   CustomFormFields,
   Hidden,
   Input,
-  Submit
+  Submit,
+  TaxCode
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
@@ -50,8 +51,8 @@ const CustomerLocationForm = ({
   const permissions = usePermissions();
   const isEditing = !!initialValues?.id;
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.customers": "Edit" })
+    : !permissions.has({ "sales.customers": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>
@@ -92,6 +93,7 @@ const CustomerLocationForm = ({
               <VStack spacing={4}>
                 <Input name="name" label={t`Name`} />
                 <AddressAutocomplete />
+                <TaxCode name="taxCodeId" label={t`Tax Code`} />
                 <CustomFormFields table="customerLocation" />
               </VStack>
             </ModalDrawerBody>

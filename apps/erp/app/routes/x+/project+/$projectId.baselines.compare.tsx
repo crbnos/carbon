@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
@@ -19,7 +19,6 @@ import {
 } from "~/modules/projects/projects.models";
 import {
   getLaborCategoryNames,
-  getProjectBaseline,
   loadPlanSnapshot
 } from "~/modules/projects/projects.service";
 import PlanDiffViewer from "~/modules/projects/ui/Baselines/PlanDiffViewer";
@@ -29,8 +28,8 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "project-baseline-compare");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, client, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId } = params;
@@ -49,10 +48,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!fromId) throw await refuse(null, "Choose a baseline to compare");
 
   const [from, to] = await Promise.all([
-    getProjectBaseline(client, fromId, companyId),
+    api.projects.getProjectBaseline({ id: fromId }),
     toId === CURRENT_PLAN
       ? Promise.resolve(null)
-      : getProjectBaseline(client, toId, companyId)
+      : api.projects.getProjectBaseline({ id: toId })
   ]);
 
   if (from.error || from.data?.projectId !== projectId) {

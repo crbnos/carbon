@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { taxRegistrationValidator } from "~/modules/accounting/accounting.models";
+import { TaxRegistrationForm } from "~/modules/accounting/ui/Tax";
+import { setCustomFields } from "~/utils/form";
+import { getParams, path } from "~/utils/path";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  await authorize(request, {
+    "accounting.taxRegistrations": "Create"
+  });
+
+  return null;
+}
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(taxRegistrationValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: _id, ...taxRegistration } = input.data;
+  const { api } = await authorize(args.request);
+  const result = await api.accounting.createTaxRegistration({
+    ...taxRegistration,
+    customFields: input.formData && setCustomFields(input.formData)
+  });
+  // The modal form reads the result and closes itself.
+  if (input.formData?.get("type") === "modal") return result;
+  return respond(args.request, result).redirect(
+    `${path.to.taxRegistrations}?${getParams(args.request)}`,
+    { message: "Tax registration created" }
+  );
+}
+
+export default function NewTaxRegistrationRoute() {
+  const dialog = useRouteDialog();
+  const initialValues = {
+    countryCode: "",
+    state: "",
+    registrationNumber: "",
+    effectiveDate: "",
+    endDate: ""
+  };
+
+  return (
+    <TaxRegistrationForm
+      initialValues={initialValues}
+      open={dialog.open}
+      onClose={dialog.close}
+    />
+  );
+}

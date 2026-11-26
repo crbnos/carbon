@@ -68,8 +68,8 @@ meaningless); `Badge` color = ad-hoc facts. `PulsingDot` = "live / active now", 
 
 ## 3. Progress
 
-`BarProgress` is the house meter (segmented 2px bars; default emerald fill; `gradient`
-red → green; `invertGradient` when lower is better; `label`/`value` header; accessible
+`BarProgress` is the house meter (segmented 2px bars; default emerald fill; pass a status
+colour as `activeClassName` (red over plan, green on track); `label`/`value` header; accessible
 `role="progressbar"`). Table cell: `value={\`${done}/${total}\`}`. Numbers always get their
 denominator ("12 of 40", `4e795c4f0c`). Don't use `Progress`. Time-relative progress uses
 badges: "3d late" (red) / "2d early" (green) with a tooltip.

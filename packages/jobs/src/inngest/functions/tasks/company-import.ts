@@ -6,6 +6,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
+import { clearCompanyAccessCaches } from "../../../backups/access-cache";
 import {
   groupConflictClause,
   rebuildDerivedGroups
@@ -304,6 +305,9 @@ export const companyImportFunction = inngest.createFunction(
           );
         }
         await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
+        // The triggers that fill a document line's part number display choice
+        // leave a backup's values as they are, also when replica mode is off.
+        await sql`SET LOCAL app.backup_load = 'on'`.execute(trx);
 
         const ledger: LedgerRow[] = [];
 
@@ -438,6 +442,7 @@ export const companyImportFunction = inngest.createFunction(
         await rebuildDerivedGroups(trx, companyId);
         await refreshReceiptInspectionStatuses(trx, companyId);
       });
+      await clearCompanyAccessCaches(db, companyId);
 
       if (unresolvedRefs.size > 0) {
         logger.warn(

@@ -117,7 +117,6 @@ export const locationValidator = z
   });
 
 export const maintenanceDispatchCommentValidator = z.object({
-  id: zfd.text(z.string().optional()),
   maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
   comment: z.string().min(1, { message: "Comment is required" })
 });
@@ -147,17 +146,6 @@ export const maintenanceDispatchEventValidator = z
     }
   );
 
-export const maintenanceDispatchItemValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
-  itemId: z.string().min(1, { message: "Item is required" }),
-  quantity: zfd.numeric(z.number().min(1)),
-  unitOfMeasureCode: z
-    .string()
-    .min(1, { message: "Unit of measure is required" }),
-  unitCost: zfd.numeric(z.number().min(0).optional())
-});
-
 export const maintenanceDispatchPriority = [
   "Low",
   "Medium",
@@ -165,12 +153,38 @@ export const maintenanceDispatchPriority = [
   "Critical"
 ] as const;
 
+// Each KPI names the pages it reads, so the dashboard shows only what the person may see.
 export const MaintenanceKPIs = [
-  { key: "mttr", label: "Mean Time To Repair" },
-  { key: "mtbf", label: "Mean Time Between Failures" },
-  { key: "sparePartCost", label: "Spare Part Cost" },
-  { key: "worstPerformingMachines", label: "Worst Performing Machines" },
-  { key: "sparePartConsumption", label: "Spare Part Consumption" }
+  {
+    key: "mttr",
+    label: "Mean Time To Repair",
+    gate: { "resources.dispatches": "View" },
+    lowerIsBetter: true
+  },
+  {
+    key: "mtbf",
+    label: "Mean Time Between Failures",
+    gate: { "resources.dispatches": "View", "production.jobs": "View" },
+    lowerIsBetter: false
+  },
+  {
+    key: "sparePartCost",
+    label: "Spare Part Cost",
+    gate: { "resources.dispatches": "View" },
+    lowerIsBetter: true
+  },
+  {
+    key: "worstPerformingMachines",
+    label: "Worst Performing Machines",
+    gate: { "resources.dispatches": "View", "resources.workCenters": "View" },
+    lowerIsBetter: true
+  },
+  {
+    key: "sparePartConsumption",
+    label: "Spare Part Consumption",
+    gate: { "resources.dispatches": "View" },
+    lowerIsBetter: true
+  }
 ] as const;
 
 export const maintenanceDispatchStatus = [

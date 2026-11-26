@@ -2,32 +2,66 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type {
+import {
   CarbonError,
-  ServiceContext
+  type ErrorCategory,
+  type Result,
+  type ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
   CarbonEdition,
   CONTROLLED_ENVIRONMENT,
-  hasPermission,
   ITAR_RIDER_SHA256,
   ITAR_RIDER_VERSION
 } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
+  clearClaims,
   deactivateCustomer,
   deactivateEmployee,
   deactivateSupplier,
+  deactivateUser,
   getUserClaims
 } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type AccessSubjectType,
+  actionsGained,
+  type Grant,
+  holdsGate,
+  isAdminType,
+  type Level,
+  levelOf,
+  levelReaches,
+  MODULES,
+  type ModuleEnum,
+  PAGES,
+  type PageGate,
+  type PageId,
+  type PortalKey
+} from "@carbon/database/access";
+import {
+  readCompanyGrants,
+  readGrants,
+  subjectTypeOfRow
+} from "@carbon/database/access-write";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  withTransaction
+} from "@carbon/database/client";
 import { InviteEmail } from "@carbon/documents/email";
+import { isCompanyAdmin } from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
-import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
-import { companyHasFeature } from "@carbon/ee/plan.server";
+import { accessSubject, subjectGates } from "@carbon/ee/permission-grants";
+import {
+  type AccessChange,
+  grantWriteRefusal,
+  saveEmployeeType,
+  writeAccessGrants
+} from "@carbon/ee/permissions.server";
 import {
   emailDomain,
   getSsoAwareInviteLink,
@@ -53,7 +87,10 @@ import {
   datetime,
   Edition,
   getClientIp,
+  indexBy,
+  indexByMapped,
   isOwnSignaturePath,
+  pluckUnique,
   requireAffected,
   SIGNATURES_BUCKET
 } from "@carbon/utils";
@@ -65,11 +102,15 @@ import type { z } from "zod";
 import { getAttribute } from "~/modules/people/people.service";
 import { getSupplierContact } from "~/modules/purchasing/purchasing.service";
 import { getCustomerContact } from "~/modules/sales/sales.service";
+import { refuseKeyWithout } from "~/modules/shared/shared.service";
 import type { EmployeeInsert, InviteInsert, User } from "~/modules/users/types";
 import {
   type BulkUserAction,
   canBulkActOnUser,
-  type modulePreferencesValidator
+  isConsoleOperatorOf,
+  type modulePreferencesValidator,
+  nonOperatorPinResetPermission,
+  type permissionsValidator
 } from "~/modules/users/users.models";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
@@ -425,8 +466,15 @@ export async function getInvitable(
     .order("lastName");
 }
 
-export async function getModules(client: SupabaseClient<Database>) {
-  return client.from("modules").select("name").order("name");
+/**
+ * The modules a grant can hold: those with pages (`MODULES`), by name. The
+ * `module` enum also names modules with no pages (Items, Messaging, Printing),
+ * which no grant holds, so they are left out.
+ */
+export function getModules(): { name: ModuleEnum }[] {
+  return MODULES.map((module) => ({ name: module.enum })).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
 }
 
 export async function getGroup(
@@ -580,16 +628,6 @@ export async function resolveUserSelectIds(
   return { users, groups };
 }
 
-export async function getPermissionsByEmployeeType(
-  client: SupabaseClient<Database>,
-  employeeTypeId: string
-) {
-  return client
-    .from("employeeTypePermission")
-    .select("view, create, update, delete, module")
-    .eq("employeeTypeId", employeeTypeId);
-}
-
 export async function getSuppliers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -652,59 +690,126 @@ export async function getUserEmails(
     .filter((email): email is string => !!email);
 }
 
-/** Groups are created through `users.group.create`, which also saves the members. */
-export async function insertGroup(
-  client: SupabaseClient<Database>,
-  group: { name: string; companyId: string }
-) {
-  return client.from("group").insert(group).select("*").single();
-}
-
-/** Groups are changed through `users.group.update`. */
-export async function upsertGroup(
-  client: SupabaseClient<Database>,
-  {
-    id,
-    name,
-    companyId
-  }: {
-    id: string;
-    name: string;
-    companyId: string;
+/** A group's members from the form's `user_<id>` / `group_<id>` selections, each once. */
+export function groupMembersOf(selections: string[]) {
+  const userIds = new Set<string>();
+  const groupIds = new Set<string>();
+  for (const selection of selections) {
+    if (selection.startsWith("user_")) userIds.add(selection.slice(5));
+    else if (selection.startsWith("group_")) groupIds.add(selection.slice(6));
   }
-) {
-  return client.from("group").upsert([{ id, name, companyId }]);
+  return { userIds: [...userIds], groupIds: [...groupIds] };
 }
 
-/** Members are saved through `users.group.create` / `users.group.update`. */
-export async function upsertGroupMembers(
-  client: SupabaseClient<Database>,
-  groupId: string,
-  selections: string[]
+export type GroupMembers = ReturnType<typeof groupMembersOf>;
+
+/**
+ * Members are written with the service role, and `membership` keys them on
+ * the global `user` and `group` ids: each must be a group of the company, or
+ * a user with any tie to it (`refuseUnlessCompanyUsers`): a membership, an
+ * employee, customer or supplier account, or an invite here. That takes a
+ * deactivated employee, whose employee record stays, and a person whose
+ * invite is pending, revoked or accepted. A group is never its own member.
+ */
+export async function refuseForeignGroupMembers(
+  ctx: ServiceContext,
+  members: GroupMembers,
+  groupId?: string
+): Promise<CarbonError | null> {
+  if (groupId && members.groupIds.includes(groupId)) {
+    return ctx.error("validation", "A group cannot be a member of itself");
+  }
+  if (members.userIds.length > 0) {
+    const outside = await refuseUnlessCompanyUsers(ctx, members.userIds);
+    if (outside) return outside;
+  }
+  for (const chunk of chunkArray(members.groupIds, 100)) {
+    const groups = await ctx.asSystem.supabase
+      .from("group")
+      .select("id")
+      .eq("companyId", ctx.company.id)
+      .in("id", chunk);
+    if (groups.error) {
+      return ctx.error("internal", "Failed to read the groups", groups.error);
+    }
+    if (groups.data.length !== chunk.length) {
+      return ctx.error("notFound", "Group not found");
+    }
+  }
+  return null;
+}
+
+function membershipRows(groupId: string, members: GroupMembers) {
+  return [
+    ...members.groupIds.map((memberGroupId) => ({
+      groupId,
+      memberGroupId,
+      memberUserId: null
+    })),
+    ...members.userIds.map((memberUserId) => ({
+      groupId,
+      memberGroupId: null,
+      memberUserId
+    }))
+  ];
+}
+
+/** A new group and its members, in one transaction. Returns the group's id. */
+export async function insertGroupWithMembers(
+  db: Kysely<KyselyDatabase>,
+  group: { name: string; companyId: string; members: GroupMembers }
 ) {
-  const deleteExisting = await client
-    .from("membership")
-    .delete()
-    .eq("groupId", groupId);
+  return withTransaction(db, async (trx) => {
+    const created = await trx
+      .insertInto("group")
+      .values({ name: group.name, companyId: group.companyId })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const rows = membershipRows(created.id, group.members);
+    if (rows.length > 0) {
+      await trx.insertInto("membership").values(rows).execute();
+    }
+    return created.id;
+  });
+}
 
-  if (deleteExisting.error) return deleteExisting;
+/**
+ * Renames a group and replaces its members, in one transaction. False when
+ * the group is not the company's.
+ */
+export async function replaceGroup(
+  db: Kysely<KyselyDatabase>,
+  group: { id: string; name: string; companyId: string; members: GroupMembers }
+) {
+  return withTransaction(db, async (trx) => {
+    const renamed = await trx
+      .updateTable("group")
+      .set({ name: group.name, updatedAt: datetime.timestamp() })
+      .where("id", "=", group.id)
+      .where("companyId", "=", group.companyId)
+      .returning("id")
+      .executeTakeFirst();
+    if (!renamed) return false;
 
-  // separate each id according to whether it is a group or a user
-  const memberGroups = selections
-    .filter((id) => id.startsWith("group_"))
-    .map((id) => ({
-      groupId,
-      memberGroupId: id.slice(6)
-    }));
-
-  const memberUsers = selections
-    .filter((id) => id.startsWith("user_"))
-    .map((id) => ({
-      groupId,
-      memberUserId: id.slice(5)
-    }));
-
-  return client.from("membership").insert([...memberGroups, ...memberUsers]);
+    // `membership` has no companyId: the subquery is its company scope.
+    await trx
+      .deleteFrom("membership")
+      .where(
+        "groupId",
+        "in",
+        trx
+          .selectFrom("group")
+          .select("id")
+          .where("id", "=", group.id)
+          .where("companyId", "=", group.companyId)
+      )
+      .execute();
+    const rows = membershipRows(group.id, group.members);
+    if (rows.length > 0) {
+      await trx.insertInto("membership").values(rows).execute();
+    }
+    return true;
+  });
 }
 /**
  * Controlled environments (ITAR) expire invites 7 days after creation. Computed
@@ -975,9 +1080,9 @@ export async function acceptInvite(
     });
 
     // Post-commit and failure-tolerant: the grants just written are cached by
-    // requirePermissions, so a stale entry would outlive the acceptance.
+    // authorize, so a stale entry would outlive the acceptance.
     try {
-      await redis.del(getPermissionCacheKey(userId));
+      await clearClaims([userId]);
     } catch (err) {
       logger.error(
         "Failed to invalidate permission cache after invite accept",
@@ -1282,15 +1387,6 @@ export async function createEmployeeAccount(
     return { success: false, message: "Location not found" };
   }
 
-  const employeeTypePermissions = await getPermissionsByEmployeeType(
-    client,
-    employeeType
-  );
-  if (employeeTypePermissions.error) {
-    return { success: false, message: employeeTypePermissions.error.message };
-  }
-
-  const permissions = makePermissionsFromEmployeeType(employeeTypePermissions);
   const serviceRole = getCarbonServiceRole();
   const user = await getUserByEmail(email);
   let userId = "";
@@ -1367,7 +1463,8 @@ export async function createEmployeeAccount(
   const code = crypto.randomUUID();
   const invite = {
     role: "employee",
-    permissions,
+    // An employee's access comes from their employee type's grants.
+    permissions: {},
     email,
     companyId,
     createdBy,
@@ -1377,16 +1474,16 @@ export async function createEmployeeAccount(
   } satisfies InviteInsert;
 
   if (isReactivation) {
-    // Reusing surviving rows is an UPDATE, which RLS would gate behind
-    // users_update / people_update, so this path writes outside RLS, scoped by
+    // Reusing surviving rows is an UPDATE, which RLS would gate behind Edit
+    // on Accounts and Employees, so this path writes outside RLS, scoped by
     // id + companyId. It is one transaction because the three writes are only
     // correct together (see the helper), and it needs no compensation: the
     // auth user already existed, so a rollback leaves nothing behind.
     //
     // Writing outside RLS must not grant more than a first-time add, which
     // inserts under the caller's client: the INSERT policies on "employee" and
-    // "employeeJob" require users_update and people_create. The route only
-    // requires users_create, so the same two are checked here.
+    // "employeeJob" require Accounts Edit and Employees Create. The operation
+    // only requires Accounts Create, so the same two are checked here.
     const claims = await getUserClaims(createdBy, companyId).catch(
       (err: unknown) => {
         logger.error("Failed to read the inviter's permissions", {
@@ -1406,7 +1503,7 @@ export async function createEmployeeAccount(
       return {
         success: false,
         message:
-          "Re-adding a deactivated employee requires the Users update and People create permissions"
+          "Re-adding a deactivated employee requires Edit on Accounts and Create on Employees"
       };
     }
 
@@ -1630,10 +1727,6 @@ export async function getClaims(
   company?: string
 ) {
   return client.rpc("get_claims", { uid, company: company ?? "" });
-}
-
-export function getPermissionCacheKey(userId: string) {
-  return `permissions:${userId}`;
 }
 
 export async function getUser(client: SupabaseClient<Database>, id: string) {
@@ -2050,26 +2143,26 @@ export async function createConsoleOperator(
 }
 
 /**
- * Converts a console-only operator to a full user by adding a Supabase Auth
- * account and updating their email to a real one.
+ * Creates the auth account, then one `writeAccessGrants` write moves the user row
+ * and type; when that write refuses, the auth account is deleted.
  */
 export async function convertConsoleOperatorToUser(
-  client: SupabaseClient<Database>,
+  ctx: ServiceContext,
   {
     userId,
     email,
     employeeType,
-    companyId,
-    createdBy
+    ip
   }: {
     userId: string;
     email: string;
     employeeType: string;
-    companyId: string;
-    createdBy: string;
+    ip?: string;
   }
-): Promise<{ success: false; message: string } | { success: true }> {
-  const serviceRole = getCarbonServiceRole();
+): Promise<CarbonError | null> {
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const createdBy = ctx.auditUserId;
 
   // userId comes from the URL and every write below is service-role, so prove
   // the operator is an employee of THIS company — otherwise another company's
@@ -2095,7 +2188,7 @@ export async function convertConsoleOperatorToUser(
       userId,
       error: membership.error
     });
-    return { success: false, message: "User is not a console operator" };
+    return ctx.error("notFound", "User is not a console operator");
   }
   if (targetEmployeeType.error || !targetEmployeeType.data) {
     logger.error("Employee type is not in the company", {
@@ -2103,9 +2196,8 @@ export async function convertConsoleOperatorToUser(
       employeeType,
       error: targetEmployeeType.error
     });
-    return { success: false, message: "Employee type not found" };
+    return ctx.error("notFound", "Employee type not found");
   }
-
   // Verify the user is a console operator
   // Note: isConsoleOperator field added by migration 20260319000000_console-mode.sql
   const existingUser = await serviceRole
@@ -2115,7 +2207,7 @@ export async function convertConsoleOperatorToUser(
     .single();
 
   if (existingUser.error || !(existingUser.data as any)?.isConsoleOperator) {
-    return { success: false, message: "User is not a console operator" };
+    return ctx.error("notFound", "User is not a console operator");
   }
 
   // Check email isn't already taken
@@ -2126,7 +2218,7 @@ export async function convertConsoleOperatorToUser(
     .maybeSingle();
 
   if (emailCheck.data) {
-    return { success: false, message: "Email is already in use" };
+    return ctx.error("conflict", "Email is already in use");
   }
 
   // Create Supabase Auth account with the same user ID
@@ -2138,37 +2230,59 @@ export async function convertConsoleOperatorToUser(
   });
 
   if (createAuth.error) {
-    return { success: false, message: createAuth.error.message };
+    return ctx.error(
+      "internal",
+      "Failed to create the sign-in account",
+      createAuth.error
+    );
   }
 
-  // Update user record: real email + no longer console operator
-  const updateUser = await requireAffected(
-    serviceRole
-      .from("user")
-      .update({
-        email: email.toLowerCase(),
-        isConsoleOperator: false
-      } as any)
-      .eq("id", userId)
-      .select("id")
+  const written = await writeAccessGrants(
+    ctx.asCaller.supabase,
+    ctx.asSystem.pg,
+    {
+      companyId,
+      subject: { userId },
+      change: { keep: true },
+      employeeType,
+      subjectRow: async (tx) => {
+        const updated = await tx
+          .updateTable("user")
+          .set({ email: email.toLowerCase(), isConsoleOperator: false })
+          .where("id", "in", (eb) =>
+            eb
+              .selectFrom("employee")
+              .select("id")
+              .where("id", "=", userId)
+              .where("companyId", "=", companyId)
+          )
+          .where("isConsoleOperator", "=", true)
+          .executeTakeFirst();
+        if (!updated.numUpdatedRows) {
+          throw new Error("The operator is no longer a console operator");
+        }
+      },
+      actor: ctx.actor,
+      actorId: createdBy,
+      ip,
+      reason: "Console operator converted to a user"
+    }
   );
-
-  if (updateUser.error) {
-    // Cleanup auth
-    await deleteAuthAccount(serviceRole, userId);
-    return { success: false, message: updateUser.error.message };
+  if (written.error) {
+    // Only the new sign-in: the user row is the operator's and was rolled back.
+    const removed = await serviceRole.auth.admin.deleteUser(userId);
+    logger.error("Failed to convert the console operator", {
+      companyId,
+      userId,
+      error: written.error.cause ?? written.error.message,
+      authCleanupError: removed.error
+    });
+    return grantWriteRefusal(ctx, written.error);
   }
-
-  // Change employee type to the selected type
-  await serviceRole
-    .from("employee")
-    .update({ employeeTypeId: employeeType })
-    .eq("id", userId)
-    .eq("companyId", companyId);
 
   // Create invite so user gets the magic link email
   const code = crypto.randomUUID();
-  const employee = await client
+  const employee = await ctx.asCaller.supabase
     .from("employee")
     .select("employeeTypeId")
     .eq("id", userId)
@@ -2176,108 +2290,62 @@ export async function convertConsoleOperatorToUser(
     .single();
 
   if (employee.data?.employeeTypeId) {
-    const employeeTypePermissions = await getPermissionsByEmployeeType(
-      client,
-      employee.data.employeeTypeId
-    );
+    // Access comes from the employee type's grants.
+    const inviteResult = await insertInvite(serviceRole, {
+      role: "employee",
+      permissions: {},
+      email: email.toLowerCase(),
+      companyId,
+      createdBy,
+      code
+    });
 
-    if (!employeeTypePermissions.error) {
-      const permissions = makePermissionsFromEmployeeType(
-        employeeTypePermissions
-      );
-
-      const inviteResult = await insertInvite(serviceRole, {
-        role: "employee",
-        permissions,
-        email: email.toLowerCase(),
-        companyId,
-        createdBy,
-        code
+    if (inviteResult.error) {
+      logger.error("Failed to create invite for converted operator", {
+        error: inviteResult.error
       });
-
-      if (inviteResult.error) {
-        logger.error("Failed to create invite for converted operator", {
-          error: inviteResult.error
-        });
-      }
     }
   }
 
-  return { success: true };
+  return null;
 }
 
 /** Re-adding a deactivated employee writes outside RLS, so the inviter needs
- *  what a first-time add's RLS inserts need: users update and people create. */
+ *  what a first-time add's RLS inserts need: Edit on Accounts and Create on
+ *  Employees. */
 export function canReAddDeactivatedEmployee(
-  permissions: Parameters<typeof hasPermission>[0],
+  permissions: Parameters<typeof holdsGate>[0],
   companyId: string
 ): boolean {
-  return (
-    hasPermission(permissions, "users", "update", companyId) &&
-    hasPermission(permissions, "people", "create", companyId)
+  return holdsGate(
+    permissions,
+    { "users.accounts": "Edit", "people.employees": "Create" },
+    companyId
   );
 }
 
-/** An employee type's permission rows as invite permissions, keyed
- *  `module_action`. */
-export function makePermissionsFromEmployeeType({
-  data
-}: {
-  data: {
-    view: string[];
-    create: string[];
-    update: string[];
-    delete: string[];
-    module: string;
-  }[];
-}) {
-  const permissions: Record<string, string[]> = {};
-
-  data.forEach((permission) => {
-    if (!permission.module) {
-      throw new Error(
-        `Permission module is missing for permission ${JSON.stringify(data)}`
-      );
-    }
-
-    const module = permission.module.toLowerCase();
-
-    permissions[`${module}_view`] = permission.view;
-    permissions[`${module}_create`] = permission.create;
-    permissions[`${module}_update`] = permission.update;
-    permissions[`${module}_delete`] = permission.delete;
-  });
-
-  return permissions;
-}
-
-function makeCustomerPermissions(companyId: string) {
-  // TODO: this should be more dynamic
-  const permissions: Record<string, string[]> = {
+function makeCustomerPermissions(
+  companyId: string
+): Partial<Record<PortalKey, string[]>> {
+  return {
     documents_view: [companyId],
     documents_create: [companyId],
-    documents_udpate: [companyId],
     documents_delete: [companyId],
-    jobs_view: [companyId],
     sales_view: [companyId],
     parts_view: [companyId]
   };
-
-  return permissions;
 }
 
-function makeSupplierPermissions(companyId: string) {
-  // TODO: this should be more dynamic
-  const permissions: Record<string, string[]> = {
+function makeSupplierPermissions(
+  companyId: string
+): Partial<Record<PortalKey, string[]>> {
+  return {
     documents_view: [companyId],
     documents_create: [companyId],
-    documents_udpate: [companyId],
     documents_delete: [companyId],
     purchasing_view: [companyId],
     parts_view: [companyId]
   };
-
-  return permissions;
 }
 
 export async function getInvite(
@@ -2299,30 +2367,6 @@ export async function resetPassword(userId: string, password: string) {
   });
 }
 
-/** The request's IP and city, for the operations that record them. */
-export function originOf(request: Request) {
-  return {
-    ip: getClientIp(request) ?? undefined,
-    city: request.headers.get("x-vercel-ip-city") ?? undefined,
-    userAgent: request.headers.get("user-agent") ?? undefined
-  };
-}
-
-/**
- * Role authoring is a Business-plan feature. This is the friendly refusal;
- * the lock is `requireEntitlement` inside `@carbon/ee/permissions.server`.
- */
-export async function refuseUnlessPermissionsFeature(ctx: ServiceContext) {
-  const spec = { feature: "PERMISSIONS" } as const;
-  if (await companyHasFeature(ctx.asCaller.supabase, ctx.company.id, spec)) {
-    return null;
-  }
-  return ctx.error(
-    "entitlement",
-    defaultUpgradeMessage(resolveRequirement(spec))
-  );
-}
-
 /** The company's name and the inviting user, for the invite email. */
 export async function inviteSender(ctx: ServiceContext) {
   const client = ctx.asCaller.supabase;
@@ -2338,6 +2382,15 @@ export async function inviteSender(ctx: ServiceContext) {
   return { companyName: company.data.name, invitedBy: user.data };
 }
 
+/**
+ * Where an invite email says the request came from. A call no request made
+ * (a job, a missing header) shows the loopback address and "Unknown".
+ */
+export function inviteOrigin(origin: { ip?: string; city?: string }) {
+  return { ip: origin.ip ?? "127.0.0.1", location: origin.city ?? "Unknown" };
+}
+
+/** The invite email, which shows where the request came from (`ctx.origin`). */
 export async function sendInviteEmail(
   ctx: ServiceContext,
   invite: {
@@ -2346,8 +2399,6 @@ export async function sendInviteEmail(
     name: string;
     companyName: string;
     invitedBy: { email: string; fullName: string | null };
-    ip?: string;
-    city?: string;
   }
 ) {
   const inviteLink = await getSsoAwareInviteLink(
@@ -2363,8 +2414,7 @@ export async function sendInviteEmail(
     name: invite.name,
     companyName: invite.companyName,
     inviteLink,
-    ip: invite.ip ?? "127.0.0.1",
-    location: invite.city ?? "Unknown",
+    ...inviteOrigin(ctx.origin),
     controlledEnvironment: CONTROLLED_ENVIRONMENT
   });
   // Queued so it follows the company's Email settings; a failed dispatch only logs.
@@ -2389,8 +2439,7 @@ export async function sendInviteEmail(
 /** Email a new customer or supplier account its invite link. */
 export async function emailAccountInvite(
   ctx: ServiceContext,
-  account: { userId: string; email: string; code: string },
-  origin: { ip?: string; city?: string }
+  account: { userId: string; email: string; code: string }
 ) {
   const [sender, invitee] = await Promise.all([
     inviteSender(ctx),
@@ -2405,26 +2454,986 @@ export async function emailAccountInvite(
     ...sender,
     email: account.email,
     code: account.code,
-    name: invitee.data?.fullName ?? "",
-    ...origin
+    name: invitee.data?.fullName ?? ""
   });
   return { userId: account.userId };
 }
 
-/** `updateEmployee` / `updatePermissions` refusals, by what they mean. */
-export function permissionsWriteError(
+/**
+ * A write whose gate is narrower than what it needs: before it left the
+ * caller's client, row-level security asked for `required`. Every actor must
+ * hold it; an API key gets `refuseKeyWithout`'s message.
+ */
+export function refuseUnlessCan(
   ctx: ServiceContext,
-  message = "Failed to update permissions"
-) {
-  switch (message) {
-    case "Employee not found":
-    case "Employee type not found":
-      return ctx.error("notFound", message);
-    case "You do not have permission to update permissions":
-      return ctx.error("forbidden", message);
-    default:
-      return ctx.error("internal", message);
+  required: PageGate
+): CarbonError | null {
+  const keyRefused = refuseKeyWithout(ctx, required);
+  if (keyRefused) return keyRefused;
+  if (ctx.can(required)) return null;
+  return ctx.error(
+    "forbidden",
+    `You need ${Object.entries(required)
+      .map(([page, level]) => `${page}: ${level}`)
+      .join(", ")} to do this`
+  );
+}
+
+type AccountRole = Database["public"]["Enums"]["role"];
+
+/** A user and their ties to the company: what Revoke, Resend and Deactivate decide on. */
+export type CompanyTie = {
+  userId: string;
+  email: string;
+  isMember: boolean;
+  accounts: Record<AccountRole, boolean>;
+  invite: {
+    id: string;
+    role: AccountRole;
+    acceptedAt: string | null;
+    revokedAt: string | null;
+  } | null;
+};
+
+/** The read of `readCompanyTies` that failed: its table and its error. */
+export type TiesReadFailure = { table: string; cause: PostgrestError };
+
+/**
+ * Each user the ids name, with their ties to the company: a membership,
+ * employee, customer and supplier accounts, and their invite here. The users
+ * are read across companies, so a user with no tie here is returned too, with
+ * none.
+ */
+export async function readCompanyTies(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  userIds: string[]
+): Promise<
+  { data: CompanyTie[]; error: null } | { data: null; error: TiesReadFailure }
+> {
+  const failed = (table: string, cause: PostgrestError) => ({
+    data: null,
+    error: { table, cause }
+  });
+  const ties: CompanyTie[] = [];
+  for (const chunk of chunkArray(
+    pluckUnique(userIds, (id) => id),
+    100
+  )) {
+    const users = await serviceRole
+      .from("user")
+      .select("id, email")
+      .in("id", chunk);
+    if (users.error) return failed("user", users.error);
+
+    const [invites, members, employees, customers, suppliers] =
+      await Promise.all([
+        serviceRole
+          .from("invite")
+          .select("id, email, role, acceptedAt, revokedAt")
+          .eq("companyId", companyId)
+          .in(
+            "email",
+            users.data.map((user) => user.email)
+          ),
+        serviceRole
+          .from("userToCompany")
+          .select("userId")
+          .eq("companyId", companyId)
+          .in("userId", chunk),
+        serviceRole
+          .from("employee")
+          .select("id")
+          .eq("companyId", companyId)
+          .in("id", chunk),
+        serviceRole
+          .from("customerAccount")
+          .select("id")
+          .eq("companyId", companyId)
+          .in("id", chunk),
+        serviceRole
+          .from("supplierAccount")
+          .select("id")
+          .eq("companyId", companyId)
+          .in("id", chunk)
+      ]);
+    if (invites.error) return failed("invite", invites.error);
+    if (members.error) return failed("userToCompany", members.error);
+    if (employees.error) return failed("employee", employees.error);
+    if (customers.error) return failed("customerAccount", customers.error);
+    if (suppliers.error) return failed("supplierAccount", suppliers.error);
+
+    const inviteByEmail = indexBy(invites.data, (invite) => invite.email);
+    const memberIds = new Set(members.data.map((member) => member.userId));
+    const accountIds = {
+      employee: new Set(employees.data.map((row) => row.id)),
+      customer: new Set(customers.data.map((row) => row.id)),
+      supplier: new Set(suppliers.data.map((row) => row.id))
+    };
+    for (const user of users.data) {
+      const invite = inviteByEmail.get(user.email);
+      ties.push({
+        userId: user.id,
+        email: user.email,
+        isMember: memberIds.has(user.id),
+        accounts: {
+          employee: accountIds.employee.has(user.id),
+          customer: accountIds.customer.has(user.id),
+          supplier: accountIds.supplier.has(user.id)
+        },
+        invite: invite
+          ? {
+              id: invite.id,
+              role: invite.role,
+              acceptedAt: invite.acceptedAt ?? null,
+              revokedAt: invite.revokedAt ?? null
+            }
+          : null
+      });
+    }
   }
+  return { data: ties, error: null };
+}
+
+/** Whether an id names no user in `ties`. */
+function someIdNotIn(ties: CompanyTie[], userIds: string[]) {
+  const read = indexBy(ties, (tie) => tie.userId);
+  return userIds.some((id) => !read.has(id));
+}
+
+function refused(category: ErrorCategory, message: string) {
+  return { data: null, error: new CarbonError(category, message) };
+}
+
+export type RevocableInvite = {
+  userId: string;
+  inviteId: string;
+  revokedAt: string | null;
+};
+
+/**
+ * The invites Revoke Invite takes, or the refusal. Revoking deactivates the
+ * user, so it takes what the Employees, Customers and Suppliers lists offer
+ * Revoke Invite on: a pending invite here and no membership in the company
+ * (an active account is deactivated instead). An invite revoked earlier and
+ * never accepted is taken too, with its `revokedAt`: its deactivation may not
+ * have run, and running it again removes nothing it already removed. A user
+ * with neither an invite nor a membership here is not found, and their email
+ * is not shown.
+ */
+export function revocableInvites(
+  ties: CompanyTie[],
+  userIds: string[]
+): Result<RevocableInvite[]> {
+  if (someIdNotIn(ties, userIds)) return refused("notFound", "User not found");
+  const refusals: string[] = [];
+  const invites: RevocableInvite[] = [];
+  for (const tie of ties) {
+    if (tie.isMember) {
+      refusals.push(
+        `${tie.email} has an active account: deactivate it instead`
+      );
+    } else if (!tie.invite) {
+      return refused("notFound", "User not found");
+    } else if (tie.invite.acceptedAt) {
+      refusals.push(
+        tie.invite.revokedAt
+          ? `${tie.email} was deactivated`
+          : `${tie.email} accepted their invite`
+      );
+    } else {
+      invites.push({
+        userId: tie.userId,
+        inviteId: tie.invite.id,
+        revokedAt: tie.invite.revokedAt
+      });
+    }
+  }
+  if (refusals.length > 0) {
+    return refused(
+      "rule",
+      `Only a pending invite can be revoked: ${refusals.join("; ")}.`
+    );
+  }
+  return { data: invites, error: null };
+}
+
+/**
+ * Each user's invite `revokedAt`, or the refusal. Resend Invite takes what the
+ * Employees, Customers and Suppliers lists offer it on: a user with an invite
+ * here, no membership in the company, and still the account the invite is
+ * for. Resending clears the invite's acceptance, so an active account
+ * accepting it again would get the invite's grants back over what an admin
+ * removed since. A deactivated customer or supplier has no account left, and
+ * its link could never be accepted.
+ */
+export function reinviteRevocations(
+  ties: CompanyTie[],
+  userIds: string[]
+): Result<Map<string, string | null>> {
+  if (someIdNotIn(ties, userIds)) return refused("notFound", "User not found");
+  const active: string[] = [];
+  const deactivatedContacts: string[] = [];
+  const revokedAt = new Map<string, string | null>();
+  for (const tie of ties) {
+    if (!tie.invite) {
+      return refused("notFound", "No invite record found for user");
+    }
+    revokedAt.set(tie.userId, tie.invite.revokedAt);
+    if (tie.isMember) active.push(tie.email);
+    else if (!tie.accounts[tie.invite.role]) {
+      deactivatedContacts.push(tie.email);
+    }
+  }
+  if (active.length > 0) {
+    return refused(
+      "rule",
+      `${active.join(", ")} already ${active.length === 1 ? "has" : "have"} an active account in the company. An invite is sent again only to an invited or deactivated person.`
+    );
+  }
+  if (deactivatedContacts.length > 0) {
+    return refused(
+      "rule",
+      `${deactivatedContacts.join(", ")}: the customer or supplier account was deactivated. Invite the contact again from the customer's or supplier's contacts.`
+    );
+  }
+  return { data: revokedAt, error: null };
+}
+
+function isTiedToCompany(tie: CompanyTie) {
+  return (
+    tie.isMember ||
+    tie.invite !== null ||
+    Object.values(tie.accounts).some(Boolean)
+  );
+}
+
+/**
+ * The refusal unless every id is a user of the company: a membership, an
+ * employee, customer or supplier account, or an invite here, whatever its
+ * state.
+ */
+export function companyUsersRefusal(
+  ties: CompanyTie[],
+  userIds: string[]
+): CarbonError | null {
+  return someIdNotIn(ties.filter(isTiedToCompany), userIds)
+    ? new CarbonError("notFound", "User not found")
+    : null;
+}
+
+/**
+ * The users of a revoke and their invites here, or the refusal
+ * (`revocableInvites`). The operation then revokes the pending invites where
+ * they still are, and deactivates only those users and the already revoked
+ * ones. At most 100 users: the operation's input caps it.
+ */
+export async function readRevocableInvites(
+  ctx: ServiceContext,
+  userIds: string[]
+): Promise<Result<RevocableInvite[]>> {
+  const ties = await readCompanyTies(
+    ctx.asSystem.supabase,
+    ctx.company.id,
+    userIds
+  );
+  if (ties.error) {
+    const message =
+      ties.error.table === "user"
+        ? "Failed to load users"
+        : "Failed to read the invites";
+    return {
+      data: null,
+      error: ctx.error("internal", message, ties.error.cause)
+    };
+  }
+  return revocableInvites(ties.data, userIds);
+}
+
+/**
+ * Each user's invite `revokedAt` as read here, or the refusal
+ * (`reinviteRevocations`): the refresh clears only that revocation, never one
+ * saved after the request.
+ */
+export async function readReinviteRevocations(
+  ctx: ServiceContext,
+  userIds: string[]
+): Promise<Result<Map<string, string | null>>> {
+  const ties = await readCompanyTies(
+    ctx.asSystem.supabase,
+    ctx.company.id,
+    userIds
+  );
+  if (ties.error) {
+    const message =
+      ties.error.table === "invite"
+        ? "Failed to read the invites"
+        : "Failed to read the users";
+    return {
+      data: null,
+      error: ctx.error("internal", message, ties.error.cause)
+    };
+  }
+  return reinviteRevocations(ties.data, userIds);
+}
+
+/**
+ * Each user's invite `revokedAt` in the company, read as their resends are
+ * queued: the job's refresh clears only that revocation, never one saved
+ * while the event waited. Throws when a read fails.
+ */
+export async function readInviteRevocations(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  userIds: string[]
+): Promise<Map<string, string | null>> {
+  const ties = await readCompanyTies(serviceRole, companyId, userIds);
+  if (ties.error) {
+    const message =
+      ties.error.table === "invite"
+        ? "Failed to read the invites of a resend"
+        : "Failed to read the users of a resend";
+    throw new Error(message, { cause: ties.error.cause });
+  }
+  return indexByMapped(
+    ties.data,
+    (tie) => tie.userId,
+    (tie) => tie.invite?.revokedAt ?? null
+  );
+}
+
+/**
+ * Stamps this revoke's `revokedAt` on the invites still pending and returns
+ * the ids it stamped. The write decides: an acceptance needs `revokedAt`
+ * null, so an invite accepted since it was read is not stamped, and its
+ * account is not deactivated.
+ */
+export async function stampPendingInvites(
+  ctx: ServiceContext,
+  invites: RevocableInvite[],
+  revokedAt: string
+): Promise<Result<string[]>> {
+  const pending = invites.filter((invite) => invite.revokedAt === null);
+  if (pending.length === 0) return { data: [], error: null };
+  const stamped = await ctx.asSystem.supabase
+    .from("invite")
+    .update({ revokedAt })
+    .in(
+      "id",
+      pending.map((invite) => invite.inviteId)
+    )
+    .eq("companyId", ctx.company.id)
+    .is("acceptedAt", null)
+    .is("revokedAt", null)
+    .select("id");
+  if (stamped.error) {
+    return {
+      data: null,
+      error: ctx.error("internal", "Failed to revoke invites", stamped.error)
+    };
+  }
+  return { data: stamped.data.map((invite) => invite.id), error: null };
+}
+
+/**
+ * Gives the invites a revoke stamped back, as pending, when its deactivation
+ * failed before it changed the account: the revoke can be sent again. A
+ * failure is logged.
+ */
+export async function restoreStampedInvites(
+  ctx: ServiceContext,
+  inviteIds: string[],
+  revokedAt: string
+) {
+  if (inviteIds.length === 0) return;
+  const restored = await ctx.asSystem.supabase
+    .from("invite")
+    .update({ revokedAt: null })
+    .in("id", inviteIds)
+    .eq("companyId", ctx.company.id)
+    .eq("revokedAt", revokedAt);
+  if (restored.error) {
+    logger.error("Failed to restore revoked invites", {
+      companyId: ctx.company.id,
+      error: restored.error
+    });
+  }
+}
+
+/**
+ * Deactivates the one user of a revoke (and, on Cloud, updates the
+ * subscription's seat count). A failed account write is the refusal.
+ * `deactivateUser` throws only after its writes (clearing the cached claims),
+ * so a throw answers "queue": the invite stays revoked and the job, which
+ * retries, runs the deactivation again.
+ */
+export async function deactivateRevokedUser(
+  ctx: ServiceContext,
+  userId: string
+): Promise<"done" | "queue" | CarbonError> {
+  const deactivated = await deactivateUser(
+    ctx.asSystem.supabase,
+    userId,
+    ctx.company.id,
+    ctx.auditUserId,
+    ctx.origin.ip
+  ).catch((error: unknown) => {
+    logger.error("Failed to finish deactivating a revoked invite's user", {
+      companyId: ctx.company.id,
+      error
+    });
+    return null;
+  });
+  if (deactivated === null) return "queue";
+  if (!deactivated.success) {
+    return ctx.error(
+      "internal",
+      "Failed to deactivate user",
+      deactivated.message
+    );
+  }
+  if (CarbonEdition === Edition.Cloud) {
+    await updateSubscriptionQuantityForCompany(ctx.company.id);
+  }
+  return "done";
+}
+
+/**
+ * Queues the `user-admin` deactivation of each revoked user, with the
+ * revocation its job must still find. The send can reject after Inngest
+ * accepted the events, and an accepted deactivation still runs, so a failed
+ * send leaves the invites revoked: a revoke sent again runs the deactivations
+ * that did not.
+ */
+export async function queueRevokedDeactivations(
+  ctx: ServiceContext,
+  users: { id: string; revokedAt: string }[]
+): Promise<CarbonError | null> {
+  if (users.length === 0) return null;
+  try {
+    await batchTrigger(
+      "user-admin",
+      users.map((user) => ({
+        payload: {
+          id: user.id,
+          type: "deactivate" as const,
+          companyId: ctx.company.id,
+          actorId: ctx.auditUserId,
+          ip: ctx.origin.ip,
+          revokedAt: user.revokedAt
+        }
+      }))
+    );
+  } catch (cause) {
+    return ctx.error(
+      "internal",
+      "Revoked the invites, but deactivating their users may not have been queued: revoke them again to finish",
+      cause
+    );
+  }
+  return null;
+}
+
+/**
+ * Writes each stamped invite's revocation to the audit log. Best effort: a
+ * company without audit logging has no audit log table.
+ */
+export async function auditRevokedInvites(
+  ctx: ServiceContext,
+  inviteIds: string[],
+  revokedAt: string
+) {
+  if (inviteIds.length === 0) return;
+  try {
+    await insertAuditLogEntries(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      inviteIds.map((id) => ({
+        tableName: "invite" as const,
+        entityType: "invite" as const,
+        entityId: id,
+        recordId: id,
+        operation: "UPDATE" as const,
+        actorId: ctx.auditUserId,
+        diff: { revokedAt: { old: null, new: revokedAt } },
+        metadata: {
+          ipAddress: ctx.origin.ip,
+          userAgent: ctx.origin.userAgent
+        }
+      }))
+    );
+  } catch (err) {
+    logger.warning("Audit write skipped for a revoked invite", { error: err });
+  }
+}
+
+/**
+ * The bulk permission job writes grants as the service role: every user must
+ * be an employee of the company.
+ */
+export async function refuseUnlessCompanyEmployees(
+  ctx: ServiceContext,
+  userIds: string[]
+): Promise<CarbonError | null> {
+  for (const chunk of chunkArray([...new Set(userIds)], 100)) {
+    const employees = await ctx.asSystem.supabase
+      .from("employee")
+      .select("id")
+      .in("id", chunk)
+      .eq("companyId", ctx.company.id);
+    if (employees.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the employees",
+        employees.error
+      );
+    }
+    if (employees.data.length !== chunk.length) {
+      logger.warning("Bulk permission edit names users outside the company", {
+        companyId: ctx.company.id,
+        userIds: chunk
+      });
+      return ctx.error("notFound", "Employee not found");
+    }
+  }
+  return null;
+}
+
+/**
+ * Deactivate takes users of the company (`companyUsersRefusal`).
+ * `deactivateUser` answers any other id "already deactivated", and the job
+ * it queues for several changes nothing.
+ */
+export async function refuseUnlessCompanyUsers(
+  ctx: ServiceContext,
+  userIds: string[]
+): Promise<CarbonError | null> {
+  const ties = await readCompanyTies(
+    ctx.asSystem.supabase,
+    ctx.company.id,
+    userIds
+  );
+  if (ties.error) {
+    const message =
+      ties.error.table === "invite"
+        ? "Failed to read the invites"
+        : "Failed to read the users";
+    return ctx.error("internal", message, ties.error.cause);
+  }
+  return companyUsersRefusal(ties.data, userIds);
+}
+
+/**
+ * A portal invite takes a contact of the named customer or supplier, with an
+ * email, whose person has no account and no pending invite in the company
+ * yet. A second account insert fails, and its rollback deactivates the
+ * account the person already has: a removal that Create on Accounts must
+ * not reach, since deactivating needs Full on Accounts. The contact pages offer
+ * Create Account only on a contact with no user.
+ */
+export async function refuseUninvitableContact(
+  ctx: ServiceContext,
+  contact:
+    | { role: "customer"; id: string; customerId: string }
+    | { role: "supplier"; id: string; supplierId: string }
+): Promise<CarbonError | null> {
+  const companyId = ctx.company.id;
+  const serviceRole = ctx.asSystem.supabase;
+
+  // The contact's email, or undefined when the contact is not the named
+  // customer's or supplier's in this company.
+  let email: string | null | undefined;
+  if (contact.role === "customer") {
+    const row = await serviceRole
+      .from("customerContact")
+      .select("customerId, contact(email)")
+      .eq("id", contact.id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (row.error) {
+      return ctx.error("internal", "Failed to read the contact", row.error);
+    }
+    if (row.data?.customerId === contact.customerId) {
+      email = row.data.contact?.email ?? null;
+    }
+  } else {
+    const row = await serviceRole
+      .from("supplierContact")
+      .select("supplierId, contact(email)")
+      .eq("id", contact.id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (row.error) {
+      return ctx.error("internal", "Failed to read the contact", row.error);
+    }
+    if (row.data?.supplierId === contact.supplierId) {
+      email = row.data.contact?.email ?? null;
+    }
+  }
+  if (email === undefined) {
+    return ctx.error(
+      "notFound",
+      contact.role === "customer"
+        ? "Customer contact not found"
+        : "Supplier contact not found"
+    );
+  }
+  if (!email) {
+    return ctx.error("validation", "The contact has no email address");
+  }
+
+  // The invite is upserted on (email, company): an open one, of any role,
+  // would be rewritten with the portal role and its permissions.
+  const [user, openInvites] = await Promise.all([
+    serviceRole
+      .from("user")
+      .select("id")
+      .eq("email", email.toLowerCase())
+      .maybeSingle(),
+    serviceRole
+      .from("invite")
+      .select("id")
+      .eq("companyId", companyId)
+      .in("email", [...new Set([email, email.toLowerCase()])])
+      .is("acceptedAt", null)
+      .is("revokedAt", null)
+  ]);
+  if (user.error) {
+    return ctx.error("internal", "Failed to read the user", user.error);
+  }
+  if (openInvites.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the invites",
+      openInvites.error
+    );
+  }
+  if (openInvites.data.length > 0) {
+    return ctx.error(
+      "conflict",
+      "This person already has a pending invite in the company: send it again or revoke it first"
+    );
+  }
+  if (!user.data) return null;
+
+  const [member, account] = await Promise.all([
+    serviceRole
+      .from("userToCompany")
+      .select("userId")
+      .eq("userId", user.data.id)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    contact.role === "customer"
+      ? serviceRole
+          .from("customerAccount")
+          .select("id")
+          .eq("id", user.data.id)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : serviceRole
+          .from("supplierAccount")
+          .select("id")
+          .eq("id", user.data.id)
+          .eq("companyId", companyId)
+          .maybeSingle()
+  ]);
+  if (member.error || account.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the accounts",
+      member.error ?? account.error
+    );
+  }
+  if (member.data || account.data) {
+    return ctx.error(
+      "conflict",
+      "This person already has an account in the company"
+    );
+  }
+  return null;
+}
+
+export function readAccessGrants(
+  ctx: ServiceContext,
+  subjectType: AccessSubjectType,
+  subjectId: string
+) {
+  return readGrants(
+    ctx.asSystem.pg,
+    ctx.company.id,
+    accessSubject(subjectType, subjectId)
+  );
+}
+
+type GrantRow = Awaited<ReturnType<typeof readCompanyGrants>>[number];
+
+function toGrant(row: GrantRow): Grant & { convertedFrom: string[] | null } {
+  return {
+    subject: subjectTypeOfRow(row),
+    module: row.module,
+    page: row.page,
+    level: row.level,
+    convertedFrom: row.convertedFrom
+  };
+}
+
+/** The company's employees (or one), with whether their type is the company's Admin type. */
+async function readCompanyEmployees(ctx: ServiceContext, userId?: string) {
+  let query = ctx.asSystem.pg
+    .selectFrom("employee")
+    .innerJoin("userToCompany", (join) =>
+      join
+        .onRef("userToCompany.userId", "=", "employee.id")
+        .onRef("userToCompany.companyId", "=", "employee.companyId")
+        .on("userToCompany.role", "=", "employee")
+    )
+    .innerJoin("user", "user.id", "employee.id")
+    .leftJoin("employeeType", "employeeType.id", "employee.employeeTypeId")
+    .select([
+      "employee.id",
+      "user.fullName",
+      "employee.employeeTypeId",
+      "employeeType.systemType",
+      "employeeType.companyId as employeeTypeCompanyId"
+    ])
+    .where("employee.companyId", "=", ctx.company.id);
+  if (userId) query = query.where("employee.id", "=", userId);
+  const rows = await query.execute();
+  return rows.map(({ systemType, employeeTypeCompanyId, ...employee }) => ({
+    ...employee,
+    admin: isAdminType(
+      { systemType, companyId: employeeTypeCompanyId },
+      ctx.company.id
+    )
+  }));
+}
+
+/** An employee as `levelOf` reads them: Admin, and their own and their role's grants. */
+function employeeSubject(
+  rows: GrantRow[],
+  employee: { id: string; employeeTypeId: string | null; admin: boolean }
+) {
+  return {
+    admin: employee.admin,
+    grants: rows
+      .filter(
+        (row) =>
+          row.userId === employee.id ||
+          (row.employeeTypeId !== null &&
+            row.employeeTypeId === employee.employeeTypeId)
+      )
+      .map(toGrant)
+  };
+}
+
+/**
+ * What a person can do on each page and what decides it (`levelOf`): Admin,
+ * the person's own override, or their role. A converted grant lists the
+ * actions the round-up added to its old checkboxes.
+ */
+export async function readEffectiveAccess(ctx: ServiceContext, userId: string) {
+  const [[employee], rows] = await Promise.all([
+    readCompanyEmployees(ctx, userId),
+    readCompanyGrants(ctx.asSystem.pg, ctx.company.id)
+  ]);
+  if (!employee) return null;
+  const subject = employeeSubject(rows, employee);
+  return PAGES.map((page) => {
+    const { level, source, grant } = levelOf(subject, page.id);
+    return {
+      page: page.id,
+      label: page.label,
+      level,
+      source:
+        source === "admin" ? ("admin" as const) : (grant?.subject ?? null),
+      scope: grant
+        ? grant.page
+          ? ("page" as const)
+          : ("module" as const)
+        : null,
+      gained: grant ? actionsGained(grant.level, grant.convertedFrom) : []
+    };
+  });
+}
+
+/**
+ * Why the actor may not reset the target's console PIN, or null. A PIN signs in
+ * as the target with their own access, so no one resets a PIN above their own.
+ */
+export function pinResetRefusal({
+  actor,
+  actorIsAdmin,
+  companyId,
+  target
+}: {
+  actor: ServiceContext["actor"];
+  actorIsAdmin: boolean;
+  companyId: string;
+  target: {
+    isConsoleOperator: boolean;
+    systemType: string | null;
+    employeeTypeCompanyId: string | null;
+    admin: boolean;
+    levels: readonly { page: PageId; level: Level }[];
+  };
+}): string | null {
+  if (actor.type === "system") return null;
+  if (
+    !isConsoleOperatorOf(target, companyId) &&
+    !holdsGate(actor.permissions, nonOperatorPinResetPermission, companyId)
+  )
+    return "Resetting the PIN of someone who is not a console operator needs Edit on Accounts and on Settings → People";
+  if (target.admin && !actorIsAdmin)
+    return "Only an Admin can reset an Admin's PIN";
+  const above = target.levels.some(
+    ({ page, level }) =>
+      level !== "None" &&
+      !holdsGate(actor.permissions, { [page]: level }, companyId)
+  );
+  return above
+    ? "You cannot reset the PIN of someone with more access than you"
+    : null;
+}
+
+/** The refusal of a console PIN reset (`pinResetRefusal`), or null; notFound when the target is not an employee of the company. */
+export async function refusePinReset(ctx: ServiceContext, userId: string) {
+  const [row, access] = await Promise.all([
+    ctx.asSystem.pg
+      .selectFrom("employee")
+      .innerJoin("user", "user.id", "employee.id")
+      .leftJoin("employeeType", "employeeType.id", "employee.employeeTypeId")
+      .select([
+        "user.isConsoleOperator",
+        "employeeType.systemType",
+        "employeeType.companyId as employeeTypeCompanyId"
+      ])
+      .where("employee.id", "=", userId)
+      .where("employee.companyId", "=", ctx.company.id)
+      .executeTakeFirst(),
+    readEffectiveAccess(ctx, userId)
+  ]);
+  if (!row || !access) return ctx.error("notFound", "Operator not found");
+  const admin = access.some((page) => page.source === "admin");
+  const actorIsAdmin =
+    admin &&
+    ctx.actor.type === "user" &&
+    (await isCompanyAdmin(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      ctx.actor.userId
+    ));
+  const refusal = pinResetRefusal({
+    actor: ctx.actor,
+    actorIsAdmin,
+    companyId: ctx.company.id,
+    target: { ...row, admin, levels: access }
+  });
+  return refusal ? ctx.error("forbidden", refusal) : null;
+}
+
+/**
+ * The employees, and with the settings view the API keys, whose level on a
+ * page (`levelOf`) reaches `level`. One read of the company's grants and
+ * employees.
+ */
+export async function readPageAccessHolders(
+  ctx: ServiceContext,
+  page: string,
+  level: Level
+) {
+  const withKeys = ctx.can(subjectGates("View").key);
+  const [employees, rows, keys] = await Promise.all([
+    readCompanyEmployees(ctx),
+    readCompanyGrants(ctx.asSystem.pg, ctx.company.id),
+    withKeys
+      ? ctx.asSystem.pg
+          .selectFrom("apiKey")
+          .select(["id", "name"])
+          .where("companyId", "=", ctx.company.id)
+          .execute()
+      : Promise.resolve([])
+  ]);
+  const people = employees.flatMap((employee) => {
+    const of = levelOf(employeeSubject(rows, employee), page);
+    if (!levelReaches(of.level, level)) return [];
+    return [
+      {
+        userId: employee.id,
+        name: employee.fullName ?? employee.id,
+        level: of.level,
+        source: of.source === "admin" ? "admin" : (of.grant?.subject ?? "none")
+      }
+    ];
+  });
+  const apiKeys = keys.flatMap((key) => {
+    const of = levelOf(
+      { grants: rows.filter((row) => row.apiKeyId === key.id).map(toGrant) },
+      page
+    );
+    if (!levelReaches(of.level, level)) return [];
+    return [{ apiKeyId: key.id, name: key.name ?? key.id, level: of.level }];
+  });
+  return { people, apiKeys };
+}
+
+export async function readRoleGrants(ctx: ServiceContext) {
+  const rows = await readCompanyGrants(ctx.asSystem.pg, ctx.company.id);
+  return rows.flatMap(({ employeeTypeId, module, page, level }) =>
+    employeeTypeId !== null ? [{ employeeTypeId, module, page, level }] : []
+  );
+}
+
+/**
+ * Write the grants of a role, a person or an API key: replace them with a set,
+ * or remove one (`writeAccessGrants`, `@carbon/ee`, which checks the
+ * entitlement, the subject and what it may hold, and clears the caches). A
+ * person can move to another employee type in the same write.
+ */
+export async function saveAccessGrants(
+  ctx: ServiceContext,
+  {
+    subjectType,
+    subjectId,
+    change,
+    employeeType,
+    ip
+  }: {
+    subjectType: AccessSubjectType;
+    subjectId: string;
+    change: AccessChange;
+    employeeType?: string;
+    ip?: string;
+  }
+): Promise<CarbonError | null> {
+  return grantWriteRefusal(
+    ctx,
+    writeAccessGrants(ctx.asCaller.supabase, ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      subject: accessSubject(subjectType, subjectId),
+      change,
+      employeeType,
+      actor: ctx.actor,
+      actorId: ctx.auditUserId,
+      ip
+    })
+  );
+}
+
+/** Create or rename an employee type with its grants, in one transaction (`saveEmployeeType`, `@carbon/ee`). */
+export async function writeEmployeeType(
+  ctx: ServiceContext,
+  input: Pick<
+    Parameters<typeof saveEmployeeType>[2],
+    "employeeType" | "grants" | "ip"
+  >
+): Promise<{ id: string } | CarbonError> {
+  const written = await saveEmployeeType(
+    ctx.asCaller.supabase,
+    ctx.asSystem.pg,
+    { ...input, companyId: ctx.company.id, actorId: ctx.auditUserId }
+  );
+  if (written.error) return grantWriteRefusal(ctx, written.error);
+  return { id: written.id };
 }
 
 /**
@@ -2991,7 +4000,7 @@ export async function refuseAttributeValueChange(
   userAttributeId: string,
   refusal: string
 ) {
-  if (ctx.can({ update: "resources" })) return null;
+  if (ctx.can({ "people.attributes": "Edit" })) return null;
   if (ctx.auditUserId !== userId) return ctx.error("forbidden", refusal);
 
   const attribute = await getAttribute(ctx.asCaller.supabase, userAttributeId);
@@ -3035,6 +4044,11 @@ export async function queueInviteResends(args: {
   location: string;
   ip: string;
 }) {
+  const revokedAt = await readInviteRevocations(
+    getCarbonServiceRole(),
+    args.companyId,
+    args.userIds
+  );
   await batchTrigger(
     "user-admin",
     args.userIds.map((id) => ({
@@ -3043,30 +4057,31 @@ export async function queueInviteResends(args: {
         type: "resend" as const,
         companyId: args.companyId,
         location: args.location,
-        ip: args.ip
+        ip: args.ip,
+        revokedAt: revokedAt.get(id) ?? null
       }
     }))
   );
 }
 
-/** Queues the `update-permissions` job for each user. */
 export async function queuePermissionUpdates(args: {
   userIds: string[];
   companyId: string;
   actorId: string;
-  permissions: Record<
-    string,
-    { view: boolean; create: boolean; update: boolean; delete: boolean }
-  >;
+  /** The access grid's grants; a null level stores nothing (inherit). */
+  grants: z.infer<typeof permissionsValidator>["grants"];
   addOnly: boolean;
   ip?: string;
 }) {
+  const grants = args.grants.flatMap((grant) =>
+    grant.level === null ? [] : [{ ...grant, level: grant.level }]
+  );
   await batchTrigger(
     "update-permissions",
     args.userIds.map((id) => ({
       payload: {
         id,
-        permissions: args.permissions,
+        grants,
         addOnly: args.addOnly,
         companyId: args.companyId,
         actorId: args.actorId,

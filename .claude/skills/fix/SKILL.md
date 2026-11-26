@@ -123,8 +123,9 @@ prove it, and stop.
    Phase 1 (`/root-cause`). Never fix a guess.
 2. Read `.ai/lessons.md` for the affected area.
 3. Read the affected module/package `AGENTS.md`.
-4. Read `BACKWARD_COMPATIBILITY.md` if the brief lists any BC impact.
-5. If working a GitHub issue: `gh issue edit <number> --add-assignee carbon-agent --add-label "agent:working"`.
+4. Read `.claude/rules/write-time-checklist.md`.
+5. Read `BACKWARD_COMPATIBILITY.md` if the brief lists any BC impact.
+6. If working a GitHub issue: `gh issue edit <number> --add-assignee carbon-agent --add-label "agent:working"`.
 
 ### 3.2 Plan the change
 
@@ -162,6 +163,7 @@ sure Phase 4 (Browser verify) is in the phase set.
 ### 3.4 Implement
 
 - **One concern.** Fix the bug. No refactoring, no cleanup, no "while I'm here".
+- **Checklist first.** Answer `.claude/rules/write-time-checklist.md` before writing each file.
 - **Match surrounding patterns** — grep for similar code and copy its idiom.
 - **companyId scoping** on every new or modified tenant-data query. Never skip.
 - **Module discipline**: one `{module}.service.ts`, one `{module}.models.ts`.
@@ -177,7 +179,8 @@ sure Phase 4 (Browser verify) is in the phase set.
 pnpm run generate:types
 
 # 2. Format + lint the files you touched
-pnpm exec biome check --write <changed paths>
+pnpm exec oxlint --fix --no-error-on-unmatched-pattern <changed paths>
+pnpm exec oxfmt --no-error-on-unmatched-pattern <changed paths>
 
 # 3. Typecheck each touched package — NEVER whole-repo (it OOMs)
 pnpm exec turbo run typecheck --filter=<pkg>
@@ -196,6 +199,7 @@ to the human even in autonomous mode).
 | Check | Question |
 |-------|----------|
 | Scope | Did I change only what the brief called for? |
+| Checklist | `.claude/rules/write-time-checklist.md` re-answered over `git diff HEAD`, every "no" fixed? |
 | Red→green | Did I watch the test fail before the fix and pass after? |
 | companyId | Every new/modified query scoped? |
 | Callers | Every caller of a changed signature updated? |
@@ -211,7 +215,7 @@ to the human even in autonomous mode).
 **Root-cause brief:** <path/link>
 **Files changed:** <path — what>
 **Proof:** <committed test path, or scratch proof quoted here — failed before fix (output), passes after (output)>
-**Gates:** generate:types PASS|SKIP · biome PASS · typecheck(<pkgs>) PASS · test(<pkgs>) PASS
+**Gates:** generate:types PASS|SKIP · oxlint PASS · typecheck(<pkgs>) PASS · test(<pkgs>) PASS
 **BC assessment:** NONE | <surfaces and how they comply>
 **Summary:** <2–3 sentences>
 ```

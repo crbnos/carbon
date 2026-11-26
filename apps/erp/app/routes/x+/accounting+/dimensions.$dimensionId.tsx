@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,23 +11,17 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { dimensionValidator } from "~/modules/accounting/accounting.models";
-import {
-  getDimension,
-  upsertDimension
-} from "~/modules/accounting/accounting.service";
+import { upsertDimension } from "~/modules/accounting/accounting.service";
 import { DimensionForm } from "~/modules/accounting/ui/Dimensions";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "accounting.dimensions": "View" });
 
   const { dimensionId } = params;
   if (!dimensionId) throw notFound("dimensionId not found");
 
-  const dimension = await getDimension(client, dimensionId);
+  const dimension = await api.accounting.getDimension({ dimensionId });
 
   return {
     dimension: dimension?.data ?? null
@@ -36,8 +30,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "accounting"
+  const { client, userId } = await authorize(request, {
+    "accounting.dimensions": "Edit"
   });
 
   const formData = await request.formData();

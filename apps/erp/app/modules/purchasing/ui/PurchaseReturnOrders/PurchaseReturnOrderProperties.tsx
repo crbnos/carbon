@@ -165,7 +165,6 @@ const PurchaseReturnOrderProperties = () => {
     ];
   }, [purchaseOrderOptions, linkedOrderId, linkedOrderLabel]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
     (field: keyof PurchaseReturnOrder, value: string | null) => {
       if (value === routeData?.purchaseReturnOrder[field]) {
@@ -182,10 +181,10 @@ const PurchaseReturnOrderProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id, routeData?.purchaseReturnOrder]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -200,6 +199,7 @@ const PurchaseReturnOrderProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id]
   );
 
@@ -213,7 +213,7 @@ const PurchaseReturnOrderProperties = () => {
       ? optimisticAssignment
       : routeData?.purchaseReturnOrder?.assignee;
 
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.returns": "Edit" });
   const isLocked = isPurchaseReturnOrderLocked(
     routeData?.purchaseReturnOrder?.status
   );

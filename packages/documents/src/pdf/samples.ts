@@ -8,6 +8,34 @@
  * schema+sample idea; the "schema" half is the merge-field catalog in
  * template/mergeFields.ts). Cast to `any` — it only needs the fields blocks read.
  */
+
+/**
+ * A two-component tax code (6% = 4% + 2%), so the quote and sales order samples
+ * print a `taxComponent` row per component.
+ */
+export const SAMPLE_TAX_CODE = {
+  id: "sample-tax-code",
+  calculationType: "Normal",
+  taxesShipping: false,
+  invoiceMessage: null,
+  taxCodeComponent: [
+    ["sample-state", "State Tax", 0.04, 1],
+    ["sample-city", "City Tax", 0.02, 2]
+  ].map(([id, name, taxPercent, sequence]) => ({
+    id,
+    name,
+    taxAuthorityId: null,
+    taxPercent,
+    recoverablePercent: 0,
+    sequence,
+    isCompound: false,
+    taxReceivedAccountId: null,
+    taxPaidAccountId: null,
+    effectiveDate: null,
+    expirationDate: null
+  }))
+};
+
 export const SAMPLE_SALES_INVOICE = {
   company: {
     id: "sample",
@@ -47,6 +75,9 @@ export const SAMPLE_SALES_INVOICE = {
       id: "line-1",
       invoiceLineType: "Part",
       itemReadableId: "WIDGET-100",
+      customerPartId: "C-100",
+      customerPartRevision: "3",
+      partNumberDisplay: "Ours First",
       description: "Precision Widget, anodized",
       quantity: 10,
       unitOfMeasureCode: "EA",
@@ -88,13 +119,28 @@ export const SAMPLE_SALES_INVOICE = {
     invoicePostalCode: "60601",
     invoiceCountryName: "United States",
     contactName: "Hank Scorpio",
-    contactEmail: "hank@globex.example"
+    contactEmail: "hank@globex.example",
+    // The shipment went to another address than the invoice's.
+    shipmentCustomerName: "Globex Corporation",
+    shipmentAddressLine1: "88 Harbor Road",
+    shipmentAddressLine2: "Dock 3",
+    shipmentCity: "Springfield",
+    shipmentStateProvince: "IL",
+    shipmentPostalCode: "62701",
+    shipmentCountryName: "United States"
   },
   salesInvoiceShipment: {
     shippingCost: 0,
     shippingMethodId: "ground",
     shippingTermId: "fob"
   },
+  // What `loadTaxSummary` returns for the lines above (6% of 249.00).
+  taxSummary: [
+    { name: "City Tax", rate: 0.02, base: 249, tax: 4.98 },
+    { name: "State Tax", rate: 0.04, base: 249, tax: 9.96 }
+  ],
+  invoiceMessages: ["Sales tax charged at the combined state and city rate."],
+  sellerRegistration: "MI-0001234",
   paymentTerms: [{ id: "net30", name: "Net 30" }],
   shippingMethods: [{ id: "ground", name: "Ground" }],
   shippingTerms: [{ id: "fob", name: "FOB Origin" }],

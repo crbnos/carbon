@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ITEM_PAGES } from "@carbon/database/access";
 import {
   Card,
   CardContent,
@@ -50,41 +51,46 @@ function ImpactItem({ item }: { item: ChangeNoticeImpactItem }) {
   const u = item.usedIn;
 
   const tree: UsedInNode[] = [
-    { key: "issues", name: t`Issues`, module: "quality", children: u.issues },
+    {
+      key: "issues",
+      name: t`Issues`,
+      pages: ["quality.issues"],
+      children: u.issues
+    },
     {
       key: "jobs",
       name: t`Jobs`,
-      module: "production",
+      pages: ["production.jobs"],
       children: u.jobs.map((job) => ({ ...job, methodType: "Make to Order" }))
     },
     {
       key: "jobMaterials",
       name: t`Job Materials`,
-      module: "production",
+      pages: ["production.jobs"],
       children: u.jobMaterials
     },
     {
       key: "maintenanceDispatchItems",
       name: t`Maintenance`,
-      module: "resources",
+      pages: ["resources.dispatches"],
       children: u.maintenanceDispatchItems
     },
     {
       key: "assemblyInstructions",
       name: t`Assembly Instructions`,
-      module: "production",
+      pages: ["production.assemblies"],
       children: u.assemblyInstructions
     },
     {
       key: "methodMaterials",
       name: t`Method Materials`,
-      module: "parts",
+      pages: ITEM_PAGES,
       children: u.methodMaterials
     },
     {
       key: "purchaseOrderLines",
       name: t`Purchase Orders`,
-      module: "purchasing",
+      pages: ["purchasing.purchaseOrders"],
       children: u.purchaseOrderLines.map((po) => ({
         ...po,
         methodType: "Purchase to Order"
@@ -93,7 +99,7 @@ function ImpactItem({ item }: { item: ChangeNoticeImpactItem }) {
     {
       key: "receiptLines",
       name: t`Receipts`,
-      module: "inventory",
+      pages: ["inventory.receipts"],
       children: u.receiptLines.map((receipt) => ({
         ...receipt,
         methodType: "Pull from Inventory"
@@ -102,25 +108,25 @@ function ImpactItem({ item }: { item: ChangeNoticeImpactItem }) {
     {
       key: "quoteLines",
       name: t`Quotes`,
-      module: "sales",
+      pages: ["sales.quotes"],
       children: u.quoteLines
     },
     {
       key: "quoteMaterials",
       name: t`Quote Materials`,
-      module: "sales",
+      pages: ["sales.quotes"],
       children: u.quoteMaterials
     },
     {
       key: "salesOrderLines",
       name: t`Sales Orders`,
-      module: "sales",
+      pages: ["sales.salesOrders"],
       children: u.salesOrderLines
     },
     {
       key: "shipmentLines",
       name: t`Shipments`,
-      module: "inventory",
+      pages: ["inventory.shipments"],
       children: u.shipmentLines.map((shipment) => ({
         ...shipment,
         methodType: "Shipment"
@@ -129,7 +135,7 @@ function ImpactItem({ item }: { item: ChangeNoticeImpactItem }) {
     {
       key: "supplierQuotes",
       name: t`Supplier Quotes`,
-      module: "purchasing",
+      pages: ["purchasing.supplierQuotes"],
       children: u.supplierQuotes
     }
   ];

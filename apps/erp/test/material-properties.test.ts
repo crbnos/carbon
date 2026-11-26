@@ -6,16 +6,20 @@ import { describe, expect, it } from "vitest";
 import {
   checkMaterialProperties,
   clearsSubstanceOrShape,
+  generatedMaterialUpdateRefusal,
   generateMaterialIdentity,
+  materialCostFields,
   materialItemUpdateFields,
   type MaterialPropertyLookups,
   type MaterialPropertyValues,
+  newMaterialIdentity,
+  newMaterialRevisions,
   noMaterialProperties,
   resolveMaterialProperties,
   sentMaterialProperties
 } from "~/modules/items/material-properties";
 
-// The properties panel's rules for material edits, which upsertMaterial,
+// The properties panel's rules for material edits, which updateMaterial,
 // updateMaterialProperties (MCP) and the panel's own route all apply.
 
 const ALUMINUM_PLATE: MaterialPropertyValues = {
@@ -189,7 +193,7 @@ describe("generated material IDs", () => {
     ).toBeNull();
   });
 
-  it("ignores a sent name, which is derived instead", () => {
+  it("leaves the name out of the item update of a call that derives it", () => {
     expect(materialItemUpdateFields(true)).not.toContain("name");
     expect(materialItemUpdateFields(false)).toContain("name");
   });
@@ -210,6 +214,89 @@ describe("generated material IDs", () => {
   });
 });
 
+describe("newMaterialIdentity", () => {
+  // An API create mirrors the New Material form, which has no ID or name
+  // field under generated IDs and requires both when IDs are typed.
+  const derived = { readableId: "6061-AL-PL", name: "6061 Aluminum Plate" };
+
+  it("takes the derived ID and name when none or the same are sent", () => {
+    expect(newMaterialIdentity(derived, {})).toEqual(derived);
+    expect(
+      newMaterialIdentity(derived, {
+        id: "6061-AL-PL",
+        name: "6061 Aluminum Plate"
+      })
+    ).toEqual(derived);
+  });
+
+  it.each([
+    { id: "AL-SHEET" },
+    { name: "Aluminum sheet" }
+  ])("refuses %o when it differs from the derived value", (sent) => {
+    expect(newMaterialIdentity(derived, sent)).toMatchObject({
+      refusal: "rule"
+    });
+  });
+
+  it("requires both an ID and a name when IDs are typed", () => {
+    expect(
+      newMaterialIdentity(null, { id: "AL-SHEET", name: "Aluminum sheet" })
+    ).toEqual({ readableId: "AL-SHEET", name: "Aluminum sheet" });
+    expect(newMaterialIdentity(null, { name: "Aluminum sheet" })).toMatchObject(
+      { refusal: "validation" }
+    );
+    expect(newMaterialIdentity(null, { id: "AL-SHEET" })).toMatchObject({
+      refusal: "validation"
+    });
+  });
+});
+
+describe("newMaterialRevisions", () => {
+  it.each([
+    [undefined, ["0"]],
+    [[], ["0"]],
+    [[""], ["0"]],
+    [["A", "A"], ["A"]],
+    [["A", "", "B", "A"], ["A", "B"]]
+  ])("makes %o one revision per distinct size: %o", (sizes, revisions) => {
+    expect(newMaterialRevisions(sizes)).toEqual(revisions);
+  });
+});
+
+describe("generatedMaterialUpdateRefusal", () => {
+  // An API update mirrors the properties panel under generated IDs: no ID
+  // field, and a name field whose value a property change replaces.
+  const derived = { readableId: "6061-AL-SH", name: "6061 Aluminum Sheet" };
+
+  it("lets a call that changes no property set any name", () => {
+    expect(
+      generatedMaterialUpdateRefusal("6061-AL-PL", null, {
+        name: "Plate offcuts"
+      })
+    ).toBeNull();
+  });
+
+  it("lets a property change through with no name, or the derived one", () => {
+    expect(generatedMaterialUpdateRefusal("6061-AL-PL", derived, {})).toBeNull();
+    expect(
+      generatedMaterialUpdateRefusal("6061-AL-PL", derived, {
+        readableId: "6061-AL-SH",
+        name: "6061 Aluminum Sheet"
+      })
+    ).toBeNull();
+  });
+
+  it.each([
+    ["a name the change does not derive", derived, { name: "Plate offcuts" }],
+    ["an ID the change does not derive", derived, { readableId: "AL-SHEET" }],
+    ["another ID with no property change", null, { readableId: "AL-SHEET" }]
+  ])("refuses %s", (_case, generated, sent) => {
+    expect(
+      generatedMaterialUpdateRefusal("6061-AL-PL", generated, sent)
+    ).toEqual(expect.any(String));
+  });
+});
+
 describe("sentMaterialProperties", () => {
   it("absent keeps, undefined, null and empty string clear", () => {
     const payload = {
@@ -225,5 +312,38 @@ describe("sentMaterialProperties", () => {
       dimensionId: null,
       materialFormId: "plate"
     });
+  });
+});
+
+describe("materialCostFields", () => {
+  it("writes only the cost fields sent", () => {
+    expect(materialCostFields({}, { clearsEmptyGroup: true })).toEqual({});
+    expect(
+      materialCostFields(
+        { postingGroupId: "raw", unitCost: 0 },
+        { clearsEmptyGroup: false }
+      )
+    ).toEqual({ itemPostingGroupId: "raw", unitCost: 0 });
+  });
+
+  it("clears the group on an update that sends it empty, never on a create", () => {
+    expect(
+      materialCostFields({ postingGroupId: "" }, { clearsEmptyGroup: true })
+    ).toEqual({ itemPostingGroupId: null });
+    expect(
+      materialCostFields(
+        { postingGroupId: undefined },
+        { clearsEmptyGroup: true }
+      )
+    ).toEqual({ itemPostingGroupId: null });
+    expect(
+      materialCostFields({ postingGroupId: "" }, { clearsEmptyGroup: false })
+    ).toEqual({});
+  });
+
+  it("leaves the unit cost alone unless a number is sent", () => {
+    expect(
+      materialCostFields({ unitCost: null }, { clearsEmptyGroup: true })
+    ).toEqual({});
   });
 });

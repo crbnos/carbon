@@ -5,7 +5,7 @@
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { manifest as authzManifest } from "./manifest";
-import { company, custom, type Manifest } from "./rules";
+import { custom, inCompany, type Manifest, policies } from "./rules";
 import { assertOnlyPolicies, syncAuthz } from "./sync";
 
 // Runs against the local database: SUPABASE_DB_URL=… pnpm vitest run src/authz
@@ -40,7 +40,9 @@ describe.skipIf(!url)("syncAuthz against a migrated database", () => {
   }, 60_000);
 
   test("applies, is idempotent, and heals a hand-added policy", async () => {
-    const manifest = { [scratch]: company("parts") } as Manifest;
+    const manifest = {
+      [scratch]: policies({ all: inCompany("companyId", "employee") })
+    } as Manifest;
 
     expect((await syncAuthz(db, manifest, { helpers: [] })).changed).toEqual([
       scratch

@@ -71,7 +71,6 @@ import {
   isNull,
   many,
   maybeSingle,
-  neq,
   newIds,
   notNull,
   rpcValue,
@@ -102,7 +101,13 @@ import {
   settleConsumeFirstLine,
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import {
+  deleteDemandProjections,
+  upsertDemandProjections
+} from "@carbon/ee/forecast.server";
 import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
+import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
 import { TiptapText } from "@carbon/files/markdown";
@@ -169,6 +174,7 @@ import {
 import {
   parseDate,
   parseDateTime,
+  startOfWeek,
   toCalendarDateTime
 } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -198,7 +204,10 @@ import {
   chunked,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
+  getLocationTimeZone,
+  getOrCreatePeriods,
   getStorageUnitId,
+  refuseUnlessOwned,
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
@@ -242,8 +251,9 @@ import {
   type assemblyInstructionStatuses,
   type assemblyStepStatuses,
   type cameraSchema,
+  type DemandProjectionRow,
   type deadlineTypes,
-  type failureModeValidator,
+  demandProjectionRows,
   type fastenerSchema,
   getAssemblyModelState,
   isJobLocked,
@@ -255,13 +265,6 @@ import {
   type jobOperationValidator,
   type jobStatus,
   type jobValidator,
-  type maintenanceDispatchCommentValidator,
-  type maintenanceDispatchEventValidator,
-  type maintenanceDispatchItemValidator,
-  type maintenanceDispatchValidator,
-  type maintenanceDispatchWorkCenterValidator,
-  type maintenanceScheduleItemValidator,
-  type maintenanceScheduleValidator,
   makeToAssetReleaseError,
   motionSchema,
   type orientationSchema,
@@ -272,6 +275,7 @@ import {
   type procedureValidator,
   type productionEventValidator,
   type productionQuantityValidator,
+  SCHEDULED_JOB_STATUSES,
   type scrapReasonValidator,
   WEEKDAYS_MONDAY_FIRST
 } from "./production.models";
@@ -280,7 +284,8 @@ import type {
   ItemShortfall,
   Job,
   JobMaterialPurchaseOrderLine,
-  JobMaterialSupplyJobLine
+  JobMaterialSupplyJobLine,
+  JobReceiptTracking
 } from "./types";
 import {
   makeMethodsMissingOperations,
@@ -1086,110 +1091,6 @@ export async function deleteScrapReason(
   );
 }
 
-export async function deleteFailureMode(
-  client: SupabaseClient<Database>,
-  failureModeId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceFailureMode")
-      .delete()
-      .eq("id", failureModeId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatch(
-  client: SupabaseClient<Database>,
-  dispatchId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatch")
-      .delete()
-      .eq("id", dispatchId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchComment(
-  client: SupabaseClient<Database>,
-  commentId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchComment")
-      .delete()
-      .eq("id", commentId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchEvent(
-  client: SupabaseClient<Database>,
-  eventId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchEvent")
-      .delete()
-      .eq("id", eventId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchItem(
-  client: SupabaseClient<Database>,
-  itemId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchItem")
-      .delete()
-      .eq("id", itemId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchWorkCenter(
-  client: SupabaseClient<Database>,
-  workCenterId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchWorkCenter")
-      .delete()
-      .eq("id", workCenterId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceSchedule(
-  client: SupabaseClient<Database>,
-  scheduleId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceSchedule")
-      .delete()
-      .eq("id", scheduleId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceScheduleItem(
-  client: SupabaseClient<Database>,
-  itemId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceScheduleItem")
-      .delete()
-      .eq("id", itemId)
-      .select("id")
-  );
-}
-
 export async function getDemandForecasts(
   client: SupabaseClient<Database>,
   params: {
@@ -1662,6 +1563,108 @@ export async function getCapacityReservationsForResources(
   }
 
   return query.order("startAt");
+}
+
+/** The most operations one Forecast load lists as unreserved. */
+const UNRESERVED_OPERATIONS_LIMIT = 200;
+
+/**
+ * The most candidate operations one Forecast load reads: PostgREST's row cap.
+ * A late operation that was placed is a candidate too and is dropped, so the
+ * candidates must reach past the listed cap.
+ */
+const UNRESERVED_OPERATION_CANDIDATE_LIMIT = 1000;
+
+/**
+ * Drops the operations a live reservation already draws on the Forecast: one
+ * booked on the operation itself (a placeholder included), or the coalesced
+ * booking of the Released batch it is a member of, which names only the
+ * batch's anchor operation.
+ */
+export function withoutLiveReservation<
+  T extends { id: string; jobOperationBatchId: string | null }
+>(
+  operations: T[],
+  reservations: { operationId: string; jobOperationBatchId: string | null }[]
+): T[] {
+  const reservedOperationIds = new Set(reservations.map((r) => r.operationId));
+  const reservedBatchIds = new Set(
+    reservations.flatMap((r) =>
+      r.jobOperationBatchId ? [r.jobOperationBatchId] : []
+    )
+  );
+  return operations.filter(
+    (op) =>
+      !reservedOperationIds.has(op.id) &&
+      !(op.jobOperationBatchId && reservedBatchIds.has(op.jobOperationBatchId))
+  );
+}
+
+/**
+ * Open operations of the jobs the scheduler places at a location that have no
+ * live capacity reservation, so the Forecast draws them nowhere else: no work
+ * center, or a work center or process the scheduler could not use there (it
+ * flags those with a conflict and keeps the stored work center). Outside
+ * Processing has no work center by design and is left out.
+ */
+export async function getUnreservedOperations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  const candidates = await client
+    .from("jobOperation")
+    .select(
+      `id, jobId, description, conflictReason, jobOperationBatchId,
+       job!inner(jobId, status, locationId),
+       jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))`
+    )
+    .eq("companyId", companyId)
+    .or("workCenterId.is.null,hasConflict.eq.true")
+    .neq("operationType", "Outside Processing")
+    .not("status", "in", '("Done","Canceled")')
+    .eq("job.locationId", locationId)
+    .in("job.status", SCHEDULED_JOB_STATUSES)
+    // Operations with no work center first: they never have a reservation.
+    .order("workCenterId", { ascending: true, nullsFirst: true })
+    .order("id")
+    .limit(UNRESERVED_OPERATION_CANDIDATE_LIMIT);
+  if (candidates.error) return { data: null, error: candidates.error };
+  if (candidates.data.length === 0) return { data: [], error: null };
+
+  const batchIds = [
+    ...new Set(
+      candidates.data.flatMap((op) =>
+        op.jobOperationBatchId ? [op.jobOperationBatchId] : []
+      )
+    )
+  ];
+  const reservationsFor =
+    (column: "operationId" | "jobOperationBatchId") => (ids: string[]) =>
+      client
+        .from("capacityReservation")
+        .select("id, operationId, jobOperationBatchId")
+        .eq("companyId", companyId)
+        .is("scenarioId", null)
+        .in(column, ids)
+        .order("id");
+  const [byOperation, byBatch] = await Promise.all([
+    fetchAllByIds(
+      candidates.data.map((op) => op.id),
+      reservationsFor("operationId")
+    ),
+    fetchAllByIds(batchIds, reservationsFor("jobOperationBatchId"))
+  ]);
+  if (byOperation.error) return { data: null, error: byOperation.error };
+  if (byBatch.error) return { data: null, error: byBatch.error };
+
+  return {
+    data: withoutLiveReservation(candidates.data, [
+      ...byOperation.data,
+      ...byBatch.data
+    ]).slice(0, UNRESERVED_OPERATIONS_LIMIT),
+    error: null
+  };
 }
 
 export async function getMaintenanceDowntimeForResources(
@@ -3422,6 +3425,115 @@ export async function getJobTrackedEntitiesPreview(
   };
 }
 
+/** Materialize the state once so the candidate rows and confirmation identify
+ * the same receipt. The route reads the ledger and hold explanations alongside
+ * it in a repeatable-read transaction. */
+export async function getJobReceiptPreview(
+  db: Kysely<KyselyDatabase>,
+  jobId: string,
+  companyId: string
+) {
+  const result = await sql<{
+    tracking: JobReceiptTracking;
+    receiptPreview: string;
+  }>`
+    WITH preview AS MATERIALIZED (
+      SELECT util.job_receipt_preview_state(${jobId}, ${companyId}) AS state
+    )
+    SELECT state AS tracking, md5(state::text) AS "receiptPreview"
+    FROM preview WHERE state IS NOT NULL
+  `.execute(db);
+  const preview = result.rows[0];
+  if (!preview) return undefined;
+  const { trackedEntities, quantityReceived } = preview.tracking;
+  return {
+    ...preview,
+    quantityReceivedToInventory: quantityReceived,
+    trackedEntityIds: trackedEntities
+      .filter((unit) => unit.received !== null || unit.fixedAsset)
+      .map((unit) => unit.id),
+    issuedTrackedEntityIds: trackedEntities
+      .filter((unit) => unit.issued && unit.quantity === 1)
+      .map((unit) => unit.id)
+  };
+}
+
+/** Outstanding serials a job receipt must leave with Quality. */
+export async function getJobReceiptHolds(
+  db: Kysely<KyselyDatabase>,
+  jobId: string,
+  companyId: string
+) {
+  return db
+    .selectFrom("jobMakeMethod as method")
+    .innerJoin("trackedEntity as unit", (join) =>
+      join
+        .onRef("unit.companyId", "=", "method.companyId")
+        .on((eb) =>
+          eb(
+            sql<string>`"unit".attributes->>'Job Make Method'`,
+            "=",
+            eb.ref("method.id")
+          )
+        )
+    )
+    .innerJoin("unitQualityHold as hold", (join) =>
+      join
+        .onRef("hold.trackedEntityId", "=", "unit.id")
+        .onRef("hold.companyId", "=", "unit.companyId")
+    )
+    .select(["unit.id", "unit.readableId as serial"])
+    .select([
+      sql<
+        string[]
+      >`array_agg(DISTINCT concat_ws(' · ', hold."issueNumber", hold.disposition) ORDER BY concat_ws(' · ', hold."issueNumber", hold.disposition))`.as(
+        "issues"
+      ),
+      sql<boolean>`bool_or(hold.disposition IS NOT NULL)`.as("rejected")
+    ])
+    .where("method.jobId", "=", jobId)
+    .where("method.companyId", "=", companyId)
+    .where("method.parentMaterialId", "is", null)
+    .where("method.requiresSerialTracking", "=", true)
+    .where("unit.quantity", ">", 0)
+    .where(sql<boolean>`NOT ("unit".attributes ? 'Fixed Asset')`)
+    .where("unit.status", "!=", "Scrapped")
+    .where((eb) =>
+      eb.or([
+        eb("unit.status", "!=", "Consumed"),
+        eb.exists(
+          eb
+            .selectFrom("itemLedger as issued")
+            .select("issued.id")
+            .whereRef("issued.trackedEntityId", "=", "unit.id")
+            .whereRef("issued.companyId", "=", "unit.companyId")
+            .where("issued.quantity", "<", 0)
+        )
+      ])
+    )
+    .where((eb) =>
+      eb(
+        "unit.quantity",
+        ">",
+        eb
+          .selectFrom("itemLedger as receipt")
+          .select((qb) =>
+            qb.fn
+              .coalesce(qb.fn.sum<number>("receipt.quantity"), qb.lit(0))
+              .as("received")
+          )
+          .whereRef("receipt.trackedEntityId", "=", "unit.id")
+          .whereRef("receipt.companyId", "=", "method.companyId")
+          .whereRef("receipt.documentId", "=", "method.jobId")
+          .where("receipt.documentType", "=", "Job Receipt")
+      )
+    )
+    .groupBy(["unit.id", "unit.readableId"])
+    .orderBy("unit.readableId")
+    .orderBy("unit.id")
+    .execute();
+}
+
 /**
  * What a job has already received to inventory: its received quantity and the
  * tracked entities its receipts posted. One statement, so both come from the
@@ -3621,22 +3733,47 @@ export async function runMRP(
   }
 }
 
+/**
+ * Set the serial or batch number of a unit of a job: one of its own units or a
+ * sub-assembly's (`attributes ->> Job Make Method` names one of the job's make
+ * methods). The caller passes the service role, so the job and the company are
+ * the write's only scope. `locked` when the job is Completed, Closed or
+ * Cancelled; `notUnit` when the job is not the company's or the unit is not
+ * the job's.
+ */
 export async function updateJobBatchNumber(
   client: SupabaseClient<Database>,
   companyId: string,
-  trackedEntityId: string,
-  value: string | null
-) {
-  return requireAffected(
-    client
-      .from("trackedEntity")
-      .update({
-        readableId: value
-      })
-      .eq("id", trackedEntityId)
-      .eq("companyId", companyId)
-      .select("id, readableId")
-  );
+  unit: { jobId: string; trackedEntityId: string; value: string | null }
+): Promise<
+  | { status: "locked" }
+  | { status: "notUnit" }
+  | { status: "renamed"; unit: { id: string; readableId: string | null } }
+  | { error: PostgrestError }
+> {
+  const job = await client
+    .from("job")
+    .select("status, jobMakeMethod(id)")
+    .eq("id", unit.jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (job.error) return { error: job.error };
+  if (!job.data) return { status: "notUnit" };
+  if (isJobLocked(job.data.status)) return { status: "locked" };
+  const renamed = await client
+    .from("trackedEntity")
+    .update({ readableId: unit.value })
+    .eq("id", unit.trackedEntityId)
+    .eq("companyId", companyId)
+    .in(
+      "attributes->>Job Make Method",
+      job.data.jobMakeMethod.map((makeMethod) => makeMethod.id)
+    )
+    .select("id, readableId");
+  if (renamed.error) return { error: renamed.error };
+  const [renamedUnit] = renamed.data;
+  if (!renamedUnit) return { status: "notUnit" };
+  return { status: "renamed", unit: renamedUnit };
 }
 
 export type JobReleaseReadiness = {
@@ -4030,8 +4167,13 @@ export async function updateJobStatus(
   const updated =
     !result.error && (!fromStatuses || (result.data?.length ?? 0) > 0);
 
-  if (updated && prior.data && prior.data.status !== status) {
-    if (status === "Ready") {
+  if (prior.data) {
+    const moment = jobStatusMoment({
+      updated,
+      priorStatus: prior.data.status,
+      status
+    });
+    if (moment === "production.jobReleased") {
       await raiseMoment("production.jobReleased", {
         outputs: { job: { id }, releasedBy: { id: updatedBy } },
         companyId,
@@ -4045,7 +4187,7 @@ export async function updateJobStatus(
         priorStatus: prior.data.status,
         source
       });
-    } else if (status === "Paused") {
+    } else if (moment === "production.jobHeld") {
       await raiseMoment("production.jobHeld", {
         outputs: { job: { id }, heldBy: { id: updatedBy } },
         companyId,
@@ -4055,6 +4197,22 @@ export async function updateJobStatus(
   }
 
   return { ...result, updated };
+}
+
+/**
+ * `updated: false` (a guarded write that found the job moved on) announces
+ * nothing.
+ */
+export function jobStatusMoment(change: {
+  updated: boolean;
+  priorStatus: (typeof jobStatus)[number];
+  status: (typeof jobStatus)[number];
+}): "production.jobReleased" | "production.jobHeld" | null {
+  const { updated, priorStatus, status } = change;
+  if (!updated || priorStatus === status) return null;
+  if (status === "Ready") return "production.jobReleased";
+  if (status === "Paused") return "production.jobHeld";
+  return null;
 }
 
 export async function updateJobMaterialOrder(
@@ -5989,7 +6147,6 @@ export async function upsertProcedure(
         attributes.length > 0
           ? client.from("procedureStep").insert(
               attributes.map((attribute) => {
-                // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
                 const { id, procedureId, ...rest } = attribute;
                 return {
                   ...rest,
@@ -6002,7 +6159,6 @@ export async function upsertProcedure(
         parameters.length > 0
           ? client.from("procedureParameter").insert(
               parameters.map((parameter) => {
-                // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
                 const { id, procedureId, ...rest } = parameter;
                 return {
                   ...rest,
@@ -6105,221 +6261,6 @@ export async function upsertScrapReason(
         .eq("id", scrapReason.id)
         .select("id")
     );
-  }
-}
-
-export async function upsertFailureMode(
-  client: SupabaseClient<Database>,
-  failureMode:
-    | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  // maintenanceFailureMode has no customFields column.
-  const { customFields: _customFields, ...mode } = failureMode;
-  if ("createdBy" in mode) {
-    return client.from("maintenanceFailureMode").insert([mode]).select("id");
-  }
-  return requireAffected(
-    client
-      .from("maintenanceFailureMode")
-      .update(sanitize(mode))
-      .eq("id", mode.id)
-      .select("id")
-  );
-}
-
-export async function upsertMaintenanceDispatch(
-  client: SupabaseClient<Database>,
-  dispatch:
-    | (Omit<z.infer<typeof maintenanceDispatchValidator>, "id"> & {
-        maintenanceDispatchId: string;
-        companyId: string;
-        createdBy: string;
-        content?: Json;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        content?: Json;
-      })
-) {
-  if ("createdBy" in dispatch) {
-    return client
-      .from("maintenanceDispatch")
-      .insert([
-        { ...dispatch, severity: dispatch.severity ?? "Support Required" }
-      ])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatch")
-      .update(sanitize(dispatch))
-      .eq("id", dispatch.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchComment(
-  client: SupabaseClient<Database>,
-  comment:
-    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in comment) {
-    return client
-      .from("maintenanceDispatchComment")
-      .insert([comment])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchComment")
-      .update(sanitize(comment))
-      .eq("id", comment.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchEvent(
-  client: SupabaseClient<Database>,
-  event:
-    | (Omit<z.infer<typeof maintenanceDispatchEventValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchEventValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in event) {
-    return client
-      .from("maintenanceDispatchEvent")
-      .insert([event])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchEvent")
-      .update(sanitize(event))
-      .eq("id", event.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchItem(
-  client: SupabaseClient<Database>,
-  item:
-    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in item) {
-    return client
-      .from("maintenanceDispatchItem")
-      .insert([item])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchItem")
-      .update(sanitize(item))
-      .eq("id", item.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchWorkCenter(
-  client: SupabaseClient<Database>,
-  workCenter:
-    | (Omit<z.infer<typeof maintenanceDispatchWorkCenterValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchWorkCenterValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in workCenter) {
-    return client
-      .from("maintenanceDispatchWorkCenter")
-      .insert([workCenter])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchWorkCenter")
-      .update(sanitize(workCenter))
-      .eq("id", workCenter.id);
-  }
-}
-
-export async function upsertMaintenanceSchedule(
-  client: SupabaseClient<Database>,
-  schedule:
-    | (Omit<z.infer<typeof maintenanceScheduleValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceScheduleValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in schedule) {
-    return client
-      .from("maintenanceSchedule")
-      .insert([schedule])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceSchedule")
-      .update(sanitize(schedule))
-      .eq("id", schedule.id);
-  }
-}
-
-export async function upsertMaintenanceScheduleItem(
-  client: SupabaseClient<Database>,
-  item:
-    | (Omit<z.infer<typeof maintenanceScheduleItemValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceScheduleItemValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in item) {
-    return client
-      .from("maintenanceScheduleItem")
-      .insert([item])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceScheduleItem")
-      .update(sanitize(item))
-      .eq("id", item.id);
   }
 }
 
@@ -7124,20 +7065,38 @@ export async function movePeopleAssignment(
 }
 
 /**
+ * The values two rows of one person, day, shift and station merge into: hours
+ * add (a whole-shift row absorbs the other) and the larger overtime is kept,
+ * since the scheduler reads a day's overtime as the maximum across its rows.
+ */
+function mergedPeopleAssignment(
+  a: { hours: number | null; overtimeHours: number },
+  b: { hours: number | null; overtimeHours: number }
+) {
+  return {
+    hours:
+      a.hours === null || b.hours === null
+        ? null
+        : Number(a.hours) + Number(b.hours),
+    overtimeHours: Math.max(Number(a.overtimeHours), Number(b.overtimeHours))
+  };
+}
+
+/**
  * Move one assignment row to another person and/or date at the SAME station
  * (the matrix's drag). If the person already has a row at that station for
  * the same effective shift on that date, the rows merge (hours add; a
- * whole-shift row absorbs the other). Refused, with nothing written, when the
- * person is absent that day (`"absent"`) or already holds that day's shift at
- * another station (`"taken"` — one row per person, day and shift).
+ * whole-shift row absorbs the other; the larger overtime is kept). Refused,
+ * with nothing written, when the person is absent that day (`"absent"`). A
+ * person who already works another station that day keeps it, and the moved
+ * row splits their day.
  * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function movePeopleAssignmentCell(
   db: Kysely<KyselyDatabase>,
   args: { id: string; companyId: string; employeeId: string; date: string }
 ): Promise<
-  | { id: string; workCenterId: string; merged: boolean }
-  | { refused: "absent" | "taken" }
+  { id: string; workCenterId: string; merged: boolean } | { refused: "absent" }
 > {
   await requirePeopleBoardRefs(db, args.companyId, {
     employeeId: args.employeeId
@@ -7184,7 +7143,7 @@ export async function movePeopleAssignmentCell(
       null;
     let targetQuery = trx
       .selectFrom("peopleAssignment")
-      .select(["id", "hours"])
+      .select(["id", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("date", "=", args.date)
@@ -7192,16 +7151,13 @@ export async function movePeopleAssignmentCell(
     targetQuery = effectiveShiftId
       ? targetQuery.where(whereEffectiveShift(effectiveShiftId, args.companyId))
       : targetQuery.where("shiftId", "is", null);
-    const target = await targetQuery.executeTakeFirst();
+    // locked, so a concurrent merge into the same row reads this one's sum
+    const target = await targetQuery.forUpdate().executeTakeFirst();
 
     if (target) {
-      const mergedHours =
-        source.hours === null || target.hours === null
-          ? null
-          : Number(source.hours) + Number(target.hours);
       await trx
         .updateTable("peopleAssignment")
-        .set({ hours: mergedHours })
+        .set(mergedPeopleAssignment(source, target))
         .where("id", "=", target.id)
         .where("companyId", "=", args.companyId)
         .execute();
@@ -7212,20 +7168,6 @@ export async function movePeopleAssignmentCell(
         .execute();
       return { id: target.id, workCenterId: source.workCenterId, merged: true };
     }
-
-    // peopleAssignment_person_day_key: one row per person, date and stored
-    // shift — a row at another station holds the slot this one would take
-    let takenQuery = trx
-      .selectFrom("peopleAssignment")
-      .select("id")
-      .where("companyId", "=", args.companyId)
-      .where("employeeId", "=", args.employeeId)
-      .where("date", "=", args.date)
-      .where("id", "!=", source.id);
-    takenQuery = source.shiftId
-      ? takenQuery.where("shiftId", "=", source.shiftId)
-      : takenQuery.where("shiftId", "is", null);
-    if (await takenQuery.executeTakeFirst()) return { refused: "taken" };
 
     const moved = await trx
       .updateTable("peopleAssignment")
@@ -7594,11 +7536,9 @@ export async function assignPeopleWeek(
     }
     const weekEnd = addIsoDays(args.weekStart, 6);
     const [existing, absences, ownShift] = await Promise.all([
-      // Company-wide (NOT location-scoped): the unique index is
-      // peopleAssignment_person_day_key (companyId, employeeId, date,
-      // COALESCE(shiftId,'')) — a person already booked for this day+shift at
-      // ANY location/station collides, so a location-scoped skip let the bulk
-      // insert violate the constraint and fail the whole week assignment.
+      // Company-wide (NOT location-scoped): a person already booked for this
+      // day and shift at ANY location or station is not booked a second
+      // whole shift by a week assignment.
       trx
         .selectFrom("peopleAssignment")
         .select(["date", "shiftId"])
@@ -7622,9 +7562,9 @@ export async function assignPeopleWeek(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst()
     ]);
-    // A day is taken by a row in the same slot of the unique index, or by a
-    // row in the same EFFECTIVE shift (a shift-less row counts as the
-    // person's own), which the boards would show as a double booking.
+    // A day is taken by a row with the same stored shift, or by a row in the
+    // same EFFECTIVE shift (a shift-less row counts as the person's own),
+    // which the boards would show as a double booking.
     const slotKey = (date: string, shiftId: string | null) =>
       `${date}:${shiftId ?? ""}`;
     const personShiftId = ownShift?.shiftId ?? null;
@@ -7703,8 +7643,11 @@ export async function unassignPeopleWeek(
 
 /**
  * Move a person's whole week from one station to another. Days where they
- * already have a row at the target station keep the target row (the source
- * row is dropped); other days simply change station.
+ * already have a row at the target station for the same shift merge into it
+ * (hours add; a whole-shift row absorbs the other; the larger overtime is
+ * kept); other days simply change station. The source rows, then the target
+ * rows, are locked before the merge, so two moves into one station add both
+ * and a repeated request merges nothing twice.
  * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function movePeopleWeek(
@@ -7725,7 +7668,7 @@ export async function movePeopleWeek(
   return db.transaction().execute(async (trx) => {
     let sourceQuery = trx
       .selectFrom("peopleAssignment")
-      .select(["id", "date", "shiftId"])
+      .select(["id", "date", "shiftId", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("workCenterId", "=", args.fromWorkCenterId)
@@ -7736,24 +7679,34 @@ export async function movePeopleWeek(
         whereEffectiveShift(args.shiftId, args.companyId)
       );
     }
-    const source = await sourceQuery.execute();
+    const source = await sourceQuery.forUpdate().execute();
 
     const target = await trx
       .selectFrom("peopleAssignment")
-      .select(["date", "shiftId"])
+      .select(["id", "date", "shiftId", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("workCenterId", "=", args.workCenterId)
       .where("date", ">=", args.weekStart)
       .where("date", "<=", weekEnd)
+      .forUpdate()
       .execute();
-    const occupied = new Set(
-      target.map((row) => `${toIsoDate(row.date)}:${row.shiftId ?? ""}`)
+    const occupied = new Map(
+      target.map((row) => [`${toIsoDate(row.date)}:${row.shiftId ?? ""}`, row])
     );
 
     let moved = 0;
     for (const row of source) {
-      if (occupied.has(`${toIsoDate(row.date)}:${row.shiftId ?? ""}`)) {
+      const existing = occupied.get(
+        `${toIsoDate(row.date)}:${row.shiftId ?? ""}`
+      );
+      if (existing) {
+        await trx
+          .updateTable("peopleAssignment")
+          .set(mergedPeopleAssignment(row, existing))
+          .where("id", "=", existing.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
         await trx
           .deleteFrom("peopleAssignment")
           .where("id", "=", row.id)
@@ -8944,7 +8897,6 @@ export async function copyAssemblyInstructionAsVersion(
   if ((sourceSteps.data?.length ?? 0) > 0) {
     const stepRows = sourceSteps.data.map((step) => {
       // Strip identity/audit columns; keep every authored field verbatim.
-      // biome-ignore lint/correctness/noUnusedVariables: destructure omits identity/audit columns before re-insert
       const { id, createdAt, updatedAt, updatedBy, ...rest } = step;
       return {
         ...rest,
@@ -8986,7 +8938,6 @@ export async function copyAssemblyInstructionAsVersion(
       if (rows.error) return rows;
       if (!rows.data?.length) return rows;
       const inserts = rows.data.map((row: any) => {
-        // biome-ignore lint/correctness/noUnusedVariables: destructure omits identity/audit columns before re-insert
         const { id, createdAt, updatedAt, updatedBy, ...rest } = row;
         return {
           ...rest,
@@ -9102,11 +9053,30 @@ export async function activateAssemblyInstructionVersion(
 
     const staleOpIds = (staleOps.data ?? []).map((o) => o.id);
     if (staleOpIds.length > 0) {
-      const repoint = await client
-        .from("jobOperation")
-        .update({ assemblyInstructionId: id })
-        .in("id", staleOpIds);
-      if (repoint.error) return repoint;
+      // Production → Jobs owns the operations: repointed on the system
+      // handle (the caller's assembly permission is the gate), this company's only.
+      try {
+        await db
+          .updateTable("jobOperation")
+          .set({ assemblyInstructionId: id })
+          .where("companyId", "=", companyId)
+          .where("id", "in", staleOpIds)
+          .execute();
+      } catch (error) {
+        return {
+          data: null,
+          error: {
+            name: "PostgrestError",
+            code: "",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Failed to repoint job operations",
+            details: "",
+            hint: ""
+          } as PostgrestError
+        };
+      }
 
       // Migrate step markers v(old) -> v(new) by lineage group before syncing.
       // Without this the job's steps still point at the old version's step ids,
@@ -11950,9 +11920,9 @@ export async function generateAssemblyStepsFromPlan(
   //
   // This is a SYSTEM/derived-data write (reflecting the plan), not a user
   // creating a unit — so the generate route passes a bypassRls (service-role)
-  // `client`. The assemblyUnit INSERT/DELETE RLS policies require
-  // `production_create`/`production_delete`, but generate only authorizes
-  // `production_update`; through a plain RLS client the write silently no-ops
+  // `client`. The assemblyUnit INSERT/DELETE RLS policies require Create and
+  // Full on Assemblies, but generate only authorizes Edit there; through a
+  // plain RLS client the write silently no-ops
   // (steps get built, units never do). Scoped to companyId, so it's tenant-safe.
   const detectedUnits = Object.entries(plan.groups ?? {})
     .filter(([groupId]) => groupId.startsWith("swarm:"))
@@ -14452,8 +14422,8 @@ export async function startAssemblyPlan(
   modelUploadId: string,
   options: { reMotionFor?: string; reDetectUnits?: boolean } = {}
 ) {
-  // The service role: the INSERT needs production_create, and the operations
-  // that start a plan require only update. Every caller read the model under
+  // The service role: the INSERT needs Create on Assemblies, and the
+  // operations that start a plan require only Edit. Every caller read the model under
   // the company, and the row is written to it.
   const created = await createAssemblyPlanJob(ctx.asSystem.supabase, {
     modelUploadId,
@@ -14763,7 +14733,7 @@ export const assignSerialNumbersInput = z.object({
  * Idempotent: it no-ops when the seed is already numbered or already split.
  */
 export const assignSerialNumbersPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof assignSerialNumbersInput>>;
 
 export async function assignSerialNumbers(
@@ -14845,7 +14815,8 @@ export async function assignSerialNumbers(
       .where(sql<boolean>`attributes->>'Job Material' IS NULL`)
       .where(sql<boolean>`attributes->>'Split Entity ID' IS NULL`)
       .where(sql<boolean>`attributes->>'Split From Entity ID' IS NULL`)
-      .orderBy("createdAt", "asc")
+      .orderBy("id")
+      // Use the receipt's lock order when the job already has several units.
       // Lock the seed row for the duration of the transaction so concurrent
       // runs for the same job serialize here: the second waits, then sees
       // the readableId the first assigned and no-ops the idempotency guard
@@ -14862,6 +14833,22 @@ export async function assignSerialNumbers(
     const count =
       trackingType === "Batch" ? 1 : Math.round(Number(job.quantity));
     if (count < 1) return { assigned: 0 };
+
+    // The issue identifies the seed itself. Splitting it would leave its
+    // children outside that hold. Read after acquiring the row lock so a
+    // concurrent Quality decision is visible before any numbers are drawn.
+    if (
+      trackingType === "Serial" &&
+      (count > 1 || Number(seed.quantity) !== 1)
+    ) {
+      const hold = await trx
+        .selectFrom("unitQualityHold")
+        .select("issueId")
+        .where("companyId", "=", companyId)
+        .where("trackedEntityId", "=", seed.id)
+        .executeTakeFirst();
+      if (hold) return { assigned: 0 };
+    }
 
     // 7. Atomically reserve + format the next `count` serial numbers.
     const serials = await getNextSerialNumbers(trx, {
@@ -16083,7 +16070,7 @@ export const getMethodInput = z.object({
 export type GetMethodResult = { success: boolean; newQuoteId?: string };
 
 export const getMethodPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof getMethodInput>>;
 
 /** Copies a method (BOM + BOP) between items, quotes and jobs, per `type`. */
@@ -17836,7 +17823,7 @@ export async function getMethod(
       // FIXME: hydrated here but never applied — this make-method path does
       // not run configuration rules (itemToJob does). Applying them is a
       // behavior change for its own PR.
-      // biome-ignore lint/correctness/noUnusedVariables: see FIXME above
+      // oxlint-disable-next-line no-unused-vars -- see FIXME above
       const hydratedConfiguration = await hydrateConfiguration(
         db,
         configuration,
@@ -17900,7 +17887,7 @@ export async function getMethod(
       );
 
       // Get configuration code by field
-      // biome-ignore lint/correctness/noUnusedVariables: unapplied configuration, see FIXME above
+      // oxlint-disable-next-line no-unused-vars -- unapplied configuration, see FIXME above
       const configurationCodeByField = configurationRules.data?.reduce<
         Record<string, string>
       >((acc, rule) => {
@@ -19464,7 +19451,7 @@ export async function getMethod(
 
         // FIXME: never called — configuration rules are not applied on this
         // make-method path.
-        // biome-ignore lint/correctness/noUnusedVariables: see FIXME above
+        // oxlint-disable-next-line no-unused-vars -- see FIXME above
         async function getConfiguredValue<T>({
           id,
           field,
@@ -25710,7 +25697,7 @@ async function recalculatePriorities(
 }
 
 export const rescheduleJobPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof rescheduleInput>>;
 
 /**
@@ -25863,7 +25850,7 @@ const postedNetKey = (lines: Awaited<ReturnType<typeof readPostedNet>>) =>
     .join(";");
 
 export const postProductionEventPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof postProductionEventInput>>;
 
 export const SHOP_LABOR_CATEGORY_REQUIRED =
@@ -26772,7 +26759,7 @@ const recalculateRequirementsLogger = getLogger(
   "recalculate"
 );
 export const recalculateRequirementsPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof recalculateInput>>;
 
 /** Re-derives a job's (or one make method's) material and operation quantities. */
@@ -27515,9 +27502,7 @@ async function cloneReworkOperations(
   };
 }
 
-export const triggerReworkPermission = {
-  update: "production"
-} satisfies PermissionRule<z.output<typeof triggerReworkInput>>;
+export { triggerReworkPermission } from "@carbon/api/postings";
 
 /**
  * Sends a job back to an earlier operation: clones the operations from the
@@ -27577,14 +27562,6 @@ export async function triggerRework(
     body.companyId,
     "Tracked entity"
   );
-  await assertUnitsOfMakeMethod(db, {
-    trackedEntityIds: body.trackedEntityIds ?? [],
-    jobMakeMethodId: operations.find(
-      (operation) => operation.id === body.triggeredAtJobOperationId
-    )?.jobMakeMethodId,
-    jobOperationId: body.triggeredAtJobOperationId,
-    companyId: body.companyId
-  });
 
   // Written as productionQuantity.inspectionId, whose FK accepts any company's
   // inspection.
@@ -27603,6 +27580,16 @@ export async function triggerRework(
   });
 
   const result = await db.transaction().execute(async (trx) => {
+    await assertUnitsOfMakeMethod(trx, {
+      jobId: body.jobId,
+      trackedEntityIds: body.trackedEntityIds ?? [],
+      quantity: body.quantity,
+      jobMakeMethodId: operations.find(
+        (operation) => operation.id === body.triggeredAtJobOperationId
+      )?.jobMakeMethodId,
+      jobOperationId: body.triggeredAtJobOperationId,
+      companyId: body.companyId
+    });
     return await cloneReworkOperations(trx, body);
   });
 
@@ -27629,9 +27616,11 @@ export async function triggerRework(
  * another job would leave an operation no unit of this job can complete.
  */
 async function assertUnitsOfMakeMethod(
-  db: Kysely<KyselyDatabase>,
+  db: Transaction<KyselyDatabase>,
   args: {
+    jobId: string;
     trackedEntityIds: string[];
+    quantity: number;
     jobMakeMethodId: string | null | undefined;
     /** The operation the units are sent on from; its scope, if it has one. */
     jobOperationId?: string;
@@ -27639,7 +27628,32 @@ async function assertUnitsOfMakeMethod(
   }
 ) {
   const ids = [...new Set(args.trackedEntityIds)];
+  const requiresHeldUnitCheck =
+    args.jobMakeMethodId &&
+    (await db
+      .selectFrom("jobMakeMethod as method")
+      .innerJoin(
+        "companySettings as settings",
+        "settings.id",
+        "method.companyId"
+      )
+      .select("method.id")
+      .where("method.id", "=", args.jobMakeMethodId)
+      .where("method.companyId", "=", args.companyId)
+      .where("method.requiresSerialTracking", "=", true)
+      .where("settings.holdUnitsWithOpenIssues", "=", true)
+      .executeTakeFirst());
+  if (
+    requiresHeldUnitCheck &&
+    (ids.length !== args.quantity ||
+      ids.length !== args.trackedEntityIds.length)
+  ) {
+    throw new InvalidInputError(
+      "Select one serial unit for each unit sent to rework"
+    );
+  }
   if (ids.length === 0) return;
+  await inventoryPostings.lockProductionJob(db, args.jobId, args.companyId);
   const units = args.jobMakeMethodId
     ? await db
         .selectFrom("trackedEntity")
@@ -27647,11 +27661,22 @@ async function assertUnitsOfMakeMethod(
         .where("id", "in", ids)
         .where("companyId", "=", args.companyId)
         .where(sql`"attributes"->>'Job Make Method'`, "=", args.jobMakeMethodId)
+        .orderBy("id")
+        .forUpdate()
         .execute()
     : [];
   if (units.length !== ids.length) {
     throw new InvalidInputError(
       "A unit is not a unit of this operation's part on this job"
+    );
+  }
+  // Dispatch credits the source operation immediately, including a correction
+  // requested during inspection. Check each selected unit before that credit.
+  if (requiresHeldUnitCheck) {
+    await inventoryPostings.assertSerialsOffQualityHold(
+      db,
+      args.companyId,
+      ids
     );
   }
   // A rework or correction operation works only the units sent into it, so
@@ -27670,9 +27695,7 @@ async function assertUnitsOfMakeMethod(
   }
 }
 
-export const triggerCorrectionPermission = {
-  update: "production"
-} satisfies PermissionRule<z.output<typeof triggerCorrectionInput>>;
+export { triggerCorrectionPermission } from "@carbon/api/postings";
 
 /**
  * Sends units through one of the job's corrections: inserts the correction's
@@ -27747,12 +27770,6 @@ export async function triggerCorrection(
     companyId,
     "Tracked entity"
   );
-  await assertUnitsOfMakeMethod(db, {
-    trackedEntityIds,
-    jobMakeMethodId: triggeringOperation.jobMakeMethodId,
-    jobOperationId: triggeringOperation.id,
-    companyId
-  });
   await assertCompanyRecords(
     db,
     "inspection",
@@ -27768,6 +27785,14 @@ export async function triggerCorrection(
   }
 
   const result = await db.transaction().execute(async (trx) => {
+    await assertUnitsOfMakeMethod(trx, {
+      jobId: input.jobId,
+      trackedEntityIds,
+      quantity: input.quantity,
+      jobMakeMethodId: triggeringOperation.jobMakeMethodId,
+      jobOperationId: triggeringOperation.id,
+      companyId
+    });
     // Two operators who confirm at the same moment must not both pass the
     // limit: lock the correction, then count the uses under the lock.
     await trx
@@ -28610,6 +28635,552 @@ async function assertMaterialCompatible(
   }
 }
 
+// Both manual receipt and MES serial completion lock the job before its units.
+async function lockBatchJobs(
+  trx: Transaction<KyselyDatabase>,
+  batchId: string,
+  companyId: string
+) {
+  return await trx
+    .selectFrom("job")
+    .innerJoin("jobOperation as member", "member.jobId", "job.id")
+    .select(["job.status", "job.jobId", "member.id as operationId"])
+    .where("job.companyId", "=", companyId)
+    .where("member.companyId", "=", companyId)
+    .where("member.jobOperationBatchId", "=", batchId)
+    .orderBy("job.id")
+    .forUpdate("job")
+    .execute();
+}
+
+/**
+ * The first member of the run whose job is already Completed, Closed or
+ * Cancelled, when the company holds units with open issues. A held company's
+ * job can be Completed with serials still to receive, and crediting its
+ * operation would mark them worked with no receipt to take them. Without
+ * holds the batch completes as it always has: sync_finish_job_operation skips
+ * the receipt of a finished job.
+ */
+export function findClosedBatchJob(
+  jobs: { status: string; jobId: string; operationId: string }[],
+  memberIds: string[],
+  holdUnitsWithOpenIssues: boolean
+) {
+  if (!holdUnitsWithOpenIssues) return undefined;
+  const included = new Set(memberIds);
+  return jobs.find(
+    (job) =>
+      included.has(job.operationId) &&
+      ["Completed", "Closed", "Cancelled"].includes(job.status)
+  );
+}
+
+type BatchSerialUnit = {
+  id: string;
+  quantity: number;
+  status: Database["public"]["Enums"]["trackedEntityStatus"];
+  attributes: unknown;
+  received: boolean;
+};
+
+type BatchSerialHold = {
+  trackedEntityId: string | null;
+  issueNumber: string | null;
+  // Set only when a closed issue dispositioned the unit Scrap or Return to
+  // Supplier. An open issue's hold has none.
+  disposition: string | null;
+};
+
+/**
+ * Which serials of one batch member the submitted quantity completes. Null
+ * when no unit is held, received or worked: the quantity then posts as it does
+ * for an untracked member. Throws when the quantity cannot name its units.
+ */
+export function planBatchSerialRun(args: {
+  operation: {
+    id: string;
+    targetQuantity: number | null;
+    operationQuantity: number | null;
+    quantityComplete: number | null;
+    quantityReworked: number | null;
+  };
+  member: { quantity: number; scrapQuantity?: number };
+  /** The operation's units, in lock order. */
+  units: BatchSerialUnit[];
+  outputs: { trackedEntityId: string; single: boolean }[];
+  /** The holds on those units, by issue number. */
+  holds: BatchSerialHold[];
+}) {
+  const { operation: op, member, units, outputs, holds } = args;
+  const marker = `Operation ${op.id}`;
+  // Pre-marker Complete and Produce activities are also worked-unit evidence
+  // for final receipt. Each output must identify a single unit exactly once.
+  const worked = new Set(
+    units
+      .filter(
+        (unit) => marker in ((unit.attributes as Record<string, unknown>) ?? {})
+      )
+      .map((unit) => unit.id)
+  );
+  const scopedIds = new Set(units.map((unit) => unit.id));
+  const ambiguousHistory = () =>
+    new InvalidInputError(
+      "Earlier production does not identify one serial for each completed unit. Review this operation's production and traceability before completing the batch."
+    );
+  for (const output of outputs) {
+    if (!output.single || !scopedIds.has(output.trackedEntityId))
+      throw ambiguousHistory();
+    worked.add(output.trackedEntityId);
+  }
+  if (!units.length) return null;
+  const hasReceived = units.some((u) => u.received);
+  if (!holds.length && !hasReceived && !worked.size) return null;
+  if (worked.size !== (op.quantityComplete ?? 0)) throw ambiguousHistory();
+  const held = new Set(holds.map((h) => h.trackedEntityId));
+  const openIssue = new Set(
+    holds.filter((h) => h.disposition === null).map((h) => h.trackedEntityId)
+  );
+  const disposed = new Set(
+    holds.filter((h) => h.disposition !== null).map((h) => h.trackedEntityId)
+  );
+  // The units this operation may still work after this run. A closed Scrap or
+  // Return to Supplier disposition blocks a unit for good, and a Rejected unit
+  // comes back only through an open issue's Use As Is or Rework. Receipt never
+  // takes either, so neither keeps the operation open.
+  const remaining = units.filter(
+    (u) =>
+      !u.received &&
+      u.status !== "Consumed" &&
+      u.status !== "Scrapped" &&
+      !worked.has(u.id) &&
+      !disposed.has(u.id) &&
+      (u.status !== "Rejected" || openIssue.has(u.id))
+  );
+  const eligible = remaining.filter(
+    (u) =>
+      !held.has(u.id) &&
+      u.quantity === 1 &&
+      (u.status === "Reserved" || u.status === "Available")
+  );
+  // The quantity trigger closes this operation at its target. Existing
+  // quantity-only credits cannot be attributed to any more serials than
+  // the operation has left to run.
+  const target = op.targetQuantity || op.operationQuantity;
+  const balance =
+    target == null
+      ? Infinity
+      : target - (op.quantityComplete ?? 0) - (op.quantityReworked ?? 0);
+  if (
+    !eligible.length ||
+    member.quantity !== eligible.length ||
+    member.quantity > balance ||
+    member.scrapQuantity
+  ) {
+    throw new InvalidInputError(
+      (holds[0]
+        ? `Serial units are on hold for issue ${holds[0].issueNumber}. `
+        : hasReceived
+          ? "Serials on this job have already been received. "
+          : "Serials have already completed this operation. ") +
+        (eligible.length && eligible.length <= balance
+          ? `Enter ${eligible.length} with zero scrap to complete all eligible serials. For a smaller run, leave this operation out of the batch and complete the serials individually.`
+          : "Review the remaining units before completing this operation.")
+    );
+  }
+  return {
+    eligibleIds: eligible.map((u) => u.id),
+    partial: remaining.length > eligible.length && member.quantity < balance,
+    workedCount: worked.size
+  };
+}
+
+/**
+ * The serial number draws for units numbered at their first touch, in the
+ * order the units are completed. One draw takes a run of consecutive units of
+ * one item and location: `get_next_serial_numbers` returns a count's numbers
+ * in sequence order, so the units get the numbers one draw per unit gave them.
+ */
+export function planSerialNumberDraws(
+  units: {
+    id: string;
+    itemId: string | null;
+    readableId: string | null;
+    locationCode: string | null;
+    locationName: string | null;
+  }[]
+) {
+  const draws: {
+    itemId: string;
+    locationCode: string | null;
+    locationName: string | null;
+    trackedEntityIds: string[];
+  }[] = [];
+  const planned = new Set<string>();
+  for (const unit of units) {
+    // A unit an earlier member already numbers draws nothing more.
+    if (unit.readableId || !unit.itemId || planned.has(unit.id)) continue;
+    planned.add(unit.id);
+    const last = draws.at(-1);
+    if (
+      last?.itemId === unit.itemId &&
+      last.locationCode === unit.locationCode &&
+      last.locationName === unit.locationName
+    ) {
+      last.trackedEntityIds.push(unit.id);
+    } else {
+      draws.push({
+        itemId: unit.itemId,
+        locationCode: unit.locationCode,
+        locationName: unit.locationName,
+        trackedEntityIds: [unit.id]
+      });
+    }
+  }
+  return draws;
+}
+
+// A serial member submits quantities, with no lot/serial id. If serials are
+// held, already worked or received, a quantity identifies the output unambiguously
+// only when it covers all remaining eligible single units. Record those ids
+// before the production trigger runs. The batch activity also lets a retry
+// finish the run while leaving this operation open for its held siblings.
+// The caller runs it only for a company that holds units with open issues.
+// Every read and write covers all serial members at once.
+async function recordEligibleBatchSerials(
+  trx: Transaction<KyselyDatabase>,
+  ctx: { batchId: string; companyId: string; userId: string },
+  members: {
+    jobOperationId: string;
+    quantity: number;
+    scrapQuantity?: number;
+  }[]
+) {
+  const { companyId, batchId, userId } = ctx;
+  const serialOperations = await trx
+    .selectFrom("jobOperation as op")
+    .innerJoin("jobMakeMethod as m", "m.id", "op.jobMakeMethodId")
+    .select([
+      "op.id",
+      "op.jobId",
+      "op.targetQuantity",
+      "op.operationQuantity",
+      "op.quantityComplete",
+      "op.quantityReworked",
+      "m.id as methodId"
+    ])
+    .where("op.jobOperationBatchId", "=", batchId)
+    .where("op.companyId", "=", companyId)
+    .where(
+      "op.id",
+      "in",
+      members.map((m) => m.jobOperationId)
+    )
+    .where("m.requiresSerialTracking", "=", true)
+    .orderBy("op.id")
+    .forUpdate("op")
+    .execute();
+  if (!serialOperations.length) return [];
+  const operationIds = serialOperations.map((op) => op.id);
+
+  // Lock every member's units in one statement, member by member and each
+  // member's units by id: the order the members took when they ran one
+  // after another. A rework operation sees only the units sent into it.
+  const unitRows = await trx
+    .selectFrom("jobOperation as op")
+    .innerJoin("trackedEntity as unit", (join) =>
+      join
+        .onRef("unit.companyId", "=", "op.companyId")
+        .on((eb) =>
+          eb(
+            sql<string>`"unit".attributes->>'Job Make Method'`,
+            "=",
+            eb.ref("op.jobMakeMethodId")
+          )
+        )
+    )
+    .select([
+      "op.id as operationId",
+      "unit.id",
+      "unit.quantity",
+      "unit.status",
+      "unit.attributes",
+      "unit.readableId",
+      "unit.itemId"
+    ])
+    .where("op.companyId", "=", companyId)
+    .where("unit.companyId", "=", companyId)
+    .where("op.id", "in", operationIds)
+    .where((eb) =>
+      eb.or([
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom("jobOperationTrackedEntity as scope")
+              .select("scope.trackedEntityId")
+              .where("scope.companyId", "=", companyId)
+              .whereRef("scope.jobOperationId", "=", "op.id")
+          )
+        ),
+        eb.exists(
+          eb
+            .selectFrom("jobOperationTrackedEntity as scope")
+            .select("scope.trackedEntityId")
+            .where("scope.companyId", "=", companyId)
+            .whereRef("scope.jobOperationId", "=", "op.id")
+            .whereRef("scope.trackedEntityId", "=", "unit.id")
+        )
+      ])
+    )
+    .orderBy("op.id")
+    .orderBy("unit.id")
+    .forUpdate("unit")
+    .execute();
+  const unitIds = [...new Set(unitRows.map((unit) => unit.id))];
+
+  // The jobs are locked, and a receipt locks its job first, so nothing is
+  // received between the unit locks and this read.
+  const received = new Map<string, Set<string>>();
+  const jobIds = [...new Set(serialOperations.map((op) => op.jobId))];
+  const receivedRows = await sql<{ jobId: string; trackedEntityId: string }>`
+    SELECT member_job.id AS "jobId", received.id AS "trackedEntityId"
+    FROM unnest(${jobIds}::text[]) AS member_job(id)
+    CROSS JOIN LATERAL util.received_job_serials(member_job.id, ${companyId}) AS received(id)
+  `.execute(trx);
+  for (const row of receivedRows.rows) {
+    const ids = received.get(row.jobId) ?? new Set<string>();
+    ids.add(row.trackedEntityId);
+    received.set(row.jobId, ids);
+  }
+
+  // inventory's getOperationSerialOutputs, for every member at once.
+  const outputRows = await trx
+    .selectFrom("trackedActivity as a")
+    .innerJoin("trackedActivityOutput as output", (join) =>
+      join
+        .onRef("output.trackedActivityId", "=", "a.id")
+        .onRef("output.companyId", "=", "a.companyId")
+    )
+    .select([
+      "a.sourceDocumentId as operationId",
+      "output.trackedEntityId",
+      sql<boolean>`count(*) = 1 AND sum(output.quantity) = 1`.as("single")
+    ])
+    .where("a.companyId", "=", companyId)
+    .where("a.sourceDocument", "=", "Job Operation")
+    .where("a.sourceDocumentId", "in", operationIds)
+    .where("a.type", "in", ["Complete", "Produce"])
+    .groupBy(["a.sourceDocumentId", "output.trackedEntityId"])
+    .execute();
+
+  // Read after acquiring the locks, so an issue link which committed
+  // while the posting waited is visible in this statement's snapshot.
+  const holdRows = unitIds.length
+    ? await trx
+        .selectFrom("unitQualityHold")
+        .select(["trackedEntityId", "issueNumber", "disposition"])
+        .where("companyId", "=", companyId)
+        .where("trackedEntityId", "in", unitIds)
+        .orderBy("issueNumber")
+        .execute()
+    : [];
+
+  const submitted = new Map(
+    members.map((member) => [member.jobOperationId, member])
+  );
+  const unitsByOperation = Map.groupBy(unitRows, (unit) => unit.operationId);
+  const runs = serialOperations.flatMap((op) => {
+    const units = unitsByOperation.get(op.id) ?? [];
+    const ids = new Set(units.map((unit) => unit.id));
+    const plan = planBatchSerialRun({
+      operation: op,
+      member: submitted.get(op.id)!,
+      units: units.map((unit) => ({
+        ...unit,
+        received: received.get(op.jobId)?.has(unit.id) ?? false
+      })),
+      outputs: outputRows.filter((output) => output.operationId === op.id),
+      holds: holdRows.filter(
+        (hold) => hold.trackedEntityId && ids.has(hold.trackedEntityId)
+      )
+    });
+    return plan ? [{ op, ...plan }] : [];
+  });
+  if (!runs.length) return [];
+
+  // First-touch numbering, in the order the members complete their units.
+  const unitById = new Map(unitRows.map((unit) => [unit.id, unit]));
+  const toNumber = runs.flatMap((run) =>
+    run.eligibleIds.map((id) => {
+      const unit = unitById.get(id)!;
+      const job = (unit.attributes as Record<string, unknown> | null)?.Job;
+      return { ...unit, job: typeof job === "string" ? job : null };
+    })
+  );
+  const numberedJobIds = [
+    ...new Set(
+      toNumber.flatMap((unit) =>
+        !unit.readableId && unit.itemId && unit.job ? [unit.job] : []
+      )
+    )
+  ];
+  const locations = new Map(
+    (numberedJobIds.length
+      ? await trx
+          .selectFrom("job")
+          .innerJoin("location", "location.id", "job.locationId")
+          .select(["job.id", "location.code", "location.name"])
+          .where("job.id", "in", numberedJobIds)
+          .where("job.companyId", "=", companyId)
+          .execute()
+      : []
+    ).map((job) => [job.id, job])
+  );
+  const draws = planSerialNumberDraws(
+    toNumber.map((unit) => {
+      const location = unit.job ? locations.get(unit.job) : undefined;
+      return {
+        ...unit,
+        locationCode: location?.code ?? null,
+        locationName: location?.name ?? null
+      };
+    })
+  );
+  // One allocator call per run of one item and location, not per unit.
+  const serials = new Map<string, string>();
+  for (const draw of draws) {
+    const numbers = await getNextSerialNumbers(trx, {
+      itemId: draw.itemId,
+      companyId,
+      count: draw.trackedEntityIds.length,
+      locationCode: draw.locationCode,
+      locationName: draw.locationName
+    });
+    draw.trackedEntityIds.forEach((id, index) => {
+      if (numbers[index]) serials.set(id, numbers[index]);
+    });
+  }
+
+  // Step records use zero-based positions in the whole make method, even
+  // for a rework operation scoped to just a few of the serials. Freeze the
+  // output positions before first-touch numbering can change a tie break.
+  // A member sees the numbers members before it in this run drew, as it did
+  // when each member numbered its units before the next one read.
+  const numberedBy = new Map<string, number>();
+  runs.forEach((run, index) => {
+    for (const id of run.eligibleIds) {
+      if (serials.has(id) && !numberedBy.has(id)) numberedBy.set(id, index);
+    }
+  });
+  const axisRows = await sql<{
+    operationId: string;
+    trackedEntityId: string;
+    position: number;
+  }>`
+    SELECT op.id AS "operationId", unit.id AS "trackedEntityId",
+      (row_number() OVER (
+        PARTITION BY op.id
+        ORDER BY unit."createdAt", COALESCE(drawn."readableId", unit."readableId"), unit.id
+      ) - 1)::integer AS "position"
+    FROM jsonb_to_recordset(${JSON.stringify(
+      runs.map((run, index) => ({
+        id: run.op.id,
+        methodId: run.op.methodId,
+        run: index
+      }))
+    )}::jsonb) AS op(id text, "methodId" text, run integer)
+    JOIN "trackedEntity" unit
+      ON unit."companyId" = ${companyId}
+      AND unit.attributes->>'Job Make Method' = op."methodId"
+    LEFT JOIN jsonb_to_recordset(${JSON.stringify(
+      [...numberedBy].map(([id, run]) => ({
+        id,
+        readableId: serials.get(id),
+        run
+      }))
+    )}::jsonb) AS drawn(id text, "readableId" text, run integer)
+      ON drawn.id = unit.id AND drawn.run < op.run
+  `.execute(trx);
+
+  const activities = await trx
+    .insertInto("trackedActivity")
+    .values(
+      runs.map((run) => {
+        const outputIds = new Set(run.eligibleIds);
+        return {
+          type: "Produce",
+          sourceDocument: "Job Operation",
+          sourceDocumentId: run.op.id,
+          attributes: {
+            Job: run.op.jobId,
+            "Job Operation": run.op.id,
+            "Job Operation Batch": batchId,
+            "Output Unit Indices": Object.fromEntries(
+              axisRows.rows.flatMap((row) =>
+                row.operationId === run.op.id &&
+                outputIds.has(row.trackedEntityId)
+                  ? [[row.trackedEntityId, row.position] as const]
+                  : []
+              )
+            ),
+            "Partial Operation": run.partial
+          },
+          companyId,
+          createdBy: userId
+        };
+      })
+    )
+    .returning(["id", "sourceDocumentId"])
+    .execute();
+  const activityByOperation = new Map(
+    activities.map((activity) => [activity.sourceDocumentId, activity.id])
+  );
+  await trx
+    .insertInto("trackedActivityOutput")
+    .values(
+      runs.flatMap((run) =>
+        run.eligibleIds.map((id) => ({
+          trackedActivityId: activityByOperation.get(run.op.id)!,
+          trackedEntityId: id,
+          quantity: 1,
+          companyId,
+          createdBy: userId
+        }))
+      )
+    )
+    .execute();
+
+  // One row per unit: a unit two members complete carries both markers.
+  const markers = new Map<string, Record<string, number>>();
+  for (const run of runs) {
+    run.eligibleIds.forEach((id, index) => {
+      markers.set(id, {
+        ...markers.get(id),
+        [`Operation ${run.op.id}`]: run.workedCount + index + 1
+      });
+    });
+  }
+  const unitUpdates = [...markers].map(([id, marker]) => ({
+    id,
+    markers: marker,
+    readableId: serials.get(id) ?? null
+  }));
+  const updated = await sql<{ id: string }>`
+    UPDATE "trackedEntity" AS unit
+    SET status = 'Available',
+      attributes = unit.attributes || r.markers,
+      "readableId" = COALESCE(r."readableId", unit."readableId")
+    FROM jsonb_to_recordset(${JSON.stringify(unitUpdates)}::jsonb)
+      AS r(id text, markers jsonb, "readableId" text)
+    WHERE unit.id = r.id AND unit."companyId" = ${companyId}
+    RETURNING unit.id
+  `.execute(trx);
+  if (updated.rows.length !== unitUpdates.length) {
+    throw new Error("A completed serial unit was not found");
+  }
+
+  return runs.flatMap((run) => (run.partial ? [run.op.id] : []));
+}
+
 // Two-phase, resumable batch completion.
 //
 // Phase 1 (one Kysely transaction, runs once): FOR UPDATE the batch row to
@@ -28671,6 +29242,8 @@ async function completeBatch(
   // inside the transaction: freshly sliced on the first attempt, re-loaded on resume.
   let glEvents: { id: string; postedToGL: boolean }[] = [];
 
+  let partialOperations: string[] = [];
+
   // Strict backflush: refuse before phase 1 writes, since phase 2 issues after
   // it commits. Every member is checked in one dry run, so members sharing a
   // bin are held to their combined demand. A completed batch skips this, so a
@@ -28711,6 +29284,38 @@ async function completeBatch(
     // "resume" if the batch is already Completing (a prior phase-2 step failed);
     // "slice" if Active; throws for a terminal status.
     const phase = planBatchCompletion(batch.status);
+
+    const jobs = await lockBatchJobs(trx, batchId, companyId);
+    // The closed-job refusal and the serial recording apply only to a company
+    // that holds units; every other company completes the batch as before.
+    const settings =
+      phase === "slice"
+        ? await trx
+            .selectFrom("companySettings")
+            .select("holdUnitsWithOpenIssues")
+            .where("id", "=", companyId)
+            .executeTakeFirst()
+        : undefined;
+    const holdUnits = settings?.holdUnitsWithOpenIssues === true;
+    const closed = findClosedBatchJob(jobs, memberIds, holdUnits);
+    if (closed)
+      throw new InvalidInputError(
+        `Job ${closed.jobId} is ${closed.status}. Review the batch before completing it.`
+      );
+
+    // A member can name the serial its output belongs to. Check before
+    // phase 1 commits any quantity, timer split or status transition.
+    const outputIds = members.flatMap((member) =>
+      member.trackedEntityId &&
+      (member.quantity > 0 || (member.scrapQuantity ?? 0) > 0)
+        ? [member.trackedEntityId]
+        : []
+    );
+    await inventoryPostings.lockProductionOutputsForPosting(
+      trx,
+      companyId,
+      outputIds
+    );
 
     if (phase === "resume") {
       // The payload must cover EXACTLY the batch's membership — phase 2 flips
@@ -28755,6 +29360,38 @@ async function completeBatch(
         if (r.type === "Production") s.produced += Number(r.quantity);
         if (r.type === "Scrap") s.scrap += Number(r.quantity);
         sums.set(r.jobOperationId, s);
+      }
+      // A serial member may already have production rows from an earlier
+      // run. Its batch activity records exactly the serials credited in this
+      // run and whether the operation stays open for its remaining siblings.
+      const serialRuns = await trx
+        .selectFrom("trackedActivity as a")
+        .innerJoin("trackedActivityOutput as output", (join) =>
+          join
+            .onRef("output.trackedActivityId", "=", "a.id")
+            .onRef("output.companyId", "=", "a.companyId")
+        )
+        .select([
+          "a.sourceDocumentId",
+          sql<number>`sum(output.quantity)`.as("produced"),
+          sql<boolean>`a.attributes @> '{"Partial Operation":true}'::jsonb`.as(
+            "partial"
+          )
+        ])
+        .where("a.companyId", "=", companyId)
+        .where("a.sourceDocument", "=", "Job Operation")
+        .where("a.sourceDocumentId", "in", memberIds)
+        .where("a.type", "=", "Produce")
+        .where(sql<string>`a.attributes->>'Job Operation Batch'`, "=", batchId)
+        .where(sql<boolean>`a.attributes ? 'Partial Operation'`)
+        .groupBy(["a.id", "a.sourceDocumentId"])
+        .execute();
+      for (const run of serialRuns) {
+        sums.set(run.sourceDocumentId!, {
+          produced: Number(run.produced),
+          scrap: 0
+        });
+        if (run.partial) partialOperations.push(run.sourceDocumentId!);
       }
       const mismatches = members.filter((m) => {
         const s = sums.get(m.jobOperationId) ?? { produced: 0, scrap: 0 };
@@ -28804,6 +29441,14 @@ async function completeBatch(
       [...memberIds, ...excludedIds],
       operations.map((o: any) => o.id)
     );
+
+    partialOperations = holdUnits
+      ? await recordEligibleBatchSerials(
+          trx,
+          { companyId, userId, batchId },
+          members
+        )
+      : [];
 
     // Detach "not in this run" members inside the same transaction: back to the
     // schedule un-run — no time slice, no quantities, and phase 2's batch-wide
@@ -29045,17 +29690,22 @@ async function completeBatch(
     outputTrackedEntityIds.push(m.trackedEntityId);
   }
 
-  // Flip members Done — sync_finish_job_operation readies each member job's next
-  // operation and completes the job independently. Skip already-Done so a resume
-  // does not re-fire the trigger.
-  const done = await updateRows(
-    db,
-    "jobOperation",
-    { status: "Done", updatedBy: userId },
-    { jobOperationBatchId: batchId, companyId, status: neq("Done") }
-  );
-  if (done.error) {
-    throw new Error(`Failed to finish batch operations: ${done.error.message}`);
+  // A partial operation stays open for its held units. Preserve membership
+  // until GL posts so a resume sees exactly the operations in the original run.
+  const partialIds = new Set(partialOperations);
+  const finished = memberIds.filter((id) => !partialIds.has(id));
+  if (finished.length) {
+    await db.transaction().execute(async (trx) => {
+      await lockBatchJobs(trx, batchId, companyId);
+      await trx
+        .updateTable("jobOperation")
+        .set({ status: "Done", updatedBy: userId })
+        .where("id", "in", finished)
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .where("status", "!=", "Done")
+        .execute();
+    });
   }
 
   // Post GL per sliced event; skip events a prior attempt already posted, and
@@ -29082,18 +29732,26 @@ async function completeBatch(
     }
   }
 
-  // Finalize: Completing -> Completed now that every phase-2 effect succeeded.
-  const finalized = await updateRows(
-    db,
-    "jobOperationBatch",
-    { status: "Completed", updatedBy: userId, updatedAt: now },
-    { id: batchId, companyId, status: "Completing" }
-  );
-  if (finalized.error) {
-    throw new Error(
-      `Failed to finalize batch completion: ${finalized.error.message}`
-    );
-  }
+  // Finalize membership and batch status in one transaction. A retry
+  // cannot see a Completing batch with its partial members already detached.
+  await db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable("jobOperationBatch")
+      .set({ status: "Completed", updatedBy: userId, updatedAt: now })
+      .where("id", "=", batchId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Completing")
+      .execute();
+    if (partialOperations.length) {
+      await trx
+        .updateTable("jobOperation")
+        .set({ jobOperationBatchId: null, updatedBy: userId })
+        .where("companyId", "=", companyId)
+        .where("jobOperationBatchId", "=", batchId)
+        .where("id", "in", partialOperations)
+        .execute();
+    }
+  });
 
   return {
     completed: members.length,
@@ -29105,7 +29763,7 @@ async function completeBatch(
 }
 
 export const batchOperationPermission = {
-  update: "production"
+  "production.batches": "Edit"
 } satisfies PermissionRule<z.output<typeof batchOperationsInput>>;
 
 /** Job-operation batches: create, change membership, release, dissolve and complete. */
@@ -29718,4 +30376,195 @@ export async function getJobCorrections(
     }),
     error: null
   };
+}
+
+// --- Demand projections -------------------------------------------------------
+
+/** The weeks a demand forecast form shows, from this week on. */
+const DEMAND_PROJECTION_WEEKS = 52;
+
+/**
+ * The weeks the demand forecast forms show, in date order: the new form
+ * counts its weeks from the company's today, the edit form from the
+ * location's, so both forms' weeks are here (one more when those weeks
+ * differ). A week a write takes is one of these, and a delete clears them.
+ */
+export async function demandProjectionFormWeeks(
+  ctx: ServiceContext,
+  locationId: string
+) {
+  const [companyToday, locationToday] = await Promise.all([
+    getCompanyTimeZone(ctx.asCaller.supabase, ctx.company.id).then((tz) =>
+      datetime.today(tz)
+    ),
+    getLocationTimeZone(ctx.asCaller.supabase, locationId, ctx.company.id).then(
+      (tz) => datetime.today(tz)
+    )
+  ]);
+  const sameWeek =
+    startOfWeek(companyToday, "en-US").compare(
+      startOfWeek(locationToday, "en-US")
+    ) === 0;
+  return getOrCreatePeriods(
+    ctx.asSystem.pg,
+    companyToday.compare(locationToday) <= 0 ? companyToday : locationToday,
+    DEMAND_PROJECTION_WEEKS + (sameWeek ? 0 : 1)
+  );
+}
+
+/**
+ * A demand projection write the plan refuses (`requireEntitlement` in
+ * `@carbon/ee/forecast.server`): the upgrade message the routes flashed.
+ */
+export function forecastEntitlementRefusal(ctx: ServiceContext, err: unknown) {
+  if (!(err instanceof EntitlementError)) throw err;
+  return ctx.error(
+    "entitlement",
+    defaultUpgradeMessage(resolveRequirement({ feature: "FORECAST" }))
+  );
+}
+
+/**
+ * An item's demand projections at a location, each with its week's start
+ * date. Without `periodIds`, the weeks the forms show
+ * (`demandProjectionFormWeeks`).
+ */
+export async function getDemandProjectionWeeks(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string; periodIds?: string[] }
+) {
+  const client = ctx.asCaller.supabase;
+  const weeks = input.periodIds
+    ? await client
+        .from("period")
+        .select("id, startDate")
+        .in("id", input.periodIds)
+    : {
+        data: await demandProjectionFormWeeks(ctx, input.locationId),
+        error: null
+      };
+  if (weeks.error) return { data: null, error: weeks.error };
+  // Every projection read is of one of these weeks: the read takes their ids.
+  const weekStartById: Record<string, string> = Object.fromEntries(
+    weeks.data.map((week) => [week.id, week.startDate])
+  );
+  const projections = await getDemandProjections(client, {
+    itemId: input.itemId,
+    locationId: input.locationId,
+    companyId: ctx.company.id,
+    periodIds: weeks.data.map((week) => week.id)
+  });
+  if (projections.error) return { data: null, error: projections.error };
+  return {
+    data: projections.data
+      .map((row) => ({ ...row, weekStart: weekStartById[row.periodId] }))
+      .sort((a, b) => a.weekStart.localeCompare(b.weekStart)),
+    error: null
+  };
+}
+
+/** A refusal unless the item and the location are both the company's. */
+export async function refuseUnlessItemAndLocationOwned(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string }
+) {
+  const itemRefused = await refuseUnlessOwned(ctx, "item", {
+    id: input.itemId
+  });
+  if (itemRefused) return itemRefused;
+  return refuseUnlessOwned(ctx, "location", { id: input.locationId });
+}
+
+/**
+ * The demand projection rows a create or update writes, or its refusal: the
+ * item and the location must be the company's, and each week one the forms
+ * show (`demandProjectionRows`).
+ */
+export async function planDemandProjections(
+  ctx: ServiceContext,
+  input: {
+    itemId: string;
+    locationId: string;
+    weeks: { weekStart: string; quantity: number }[];
+  }
+): Promise<DemandProjectionRow[] | CarbonError> {
+  const refused = await refuseUnlessItemAndLocationOwned(ctx, input);
+  if (refused) return refused;
+  const planned = demandProjectionRows(
+    await demandProjectionFormWeeks(ctx, input.locationId),
+    input,
+    { companyId: ctx.company.id, userId: ctx.auditUserId }
+  );
+  if ("refusal" in planned) return ctx.error("validation", planned.refusal);
+  return planned.rows;
+}
+
+/**
+ * Delete an item's demand projections at a location in `formWeeks`, in one
+ * DELETE; returns those weeks, each with a quantity of 0. The caller has
+ * checked that the item and the location are the company's.
+ */
+export async function clearDemandProjections(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string },
+  formWeeks: { id: string; startDate: string }[]
+) {
+  try {
+    const deleted = await deleteDemandProjections(ctx.asCaller.supabase, {
+      itemId: input.itemId,
+      locationId: input.locationId,
+      companyId: ctx.company.id,
+      futurePeriodIds: formWeeks.map((week) => week.id)
+    });
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete demand forecasts",
+        deleted.error
+      );
+    }
+    return {
+      itemId: input.itemId,
+      locationId: input.locationId,
+      weeks: formWeeks.map((week) => ({
+        weekStart: week.startDate,
+        periodId: week.id,
+        quantity: 0
+      }))
+    };
+  } catch (err) {
+    return forecastEntitlementRefusal(ctx, err);
+  }
+}
+
+/** Write demand projection rows; returns the weeks written. */
+export async function writeDemandProjections(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string },
+  rows: DemandProjectionRow[]
+) {
+  try {
+    const written = await upsertDemandProjections(
+      ctx.asCaller.supabase,
+      rows.map(({ weekStart: _weekStart, ...row }) => row)
+    );
+    if (written.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save demand forecasts",
+        written.error
+      );
+    }
+    return {
+      itemId: input.itemId,
+      locationId: input.locationId,
+      weeks: rows.map((row) => ({
+        weekStart: row.weekStart,
+        periodId: row.periodId,
+        quantity: row.forecastQuantity
+      }))
+    };
+  } catch (err) {
+    return forecastEntitlementRefusal(ctx, err);
+  }
 }

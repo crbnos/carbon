@@ -28,6 +28,11 @@ type CustomFormInlineFieldsProps = {
   table: string;
   tags?: string[];
   isDisabled?: boolean;
+  /**
+   * The changed field alone, as JSON `{ [fieldId]: value }`: the save merges it
+   * into the stored values, so a field someone else saved since this panel
+   * loaded is kept.
+   */
   onUpdate: (value: string) => void | Promise<void>;
 };
 
@@ -58,11 +63,11 @@ const CustomFormInlineFields = ({
             return true;
           return field.tags.some((tag) => tags.includes(tag));
         })
+        // oxlint-disable-next-line react/jsx-key -- suppressed due to migration
         .map((field) => {
           switch (field.dataTypeId) {
             case DataType.Boolean:
               return (
-                // biome-ignore lint/correctness/useJsxKeyInIterable: suppressed due to migration
                 <ValidatedForm
                   defaultValues={{
                     [field.id]:
@@ -83,7 +88,6 @@ const CustomFormInlineFields = ({
                     onChange={(value) => {
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: value ? "on" : ""
                         })
                       );
@@ -93,7 +97,6 @@ const CustomFormInlineFields = ({
               );
             case DataType.Date:
               return (
-                // biome-ignore lint/correctness/useJsxKeyInIterable: suppressed due to migration
                 <ValidatedForm
                   defaultValues={{
                     [field.id]: fields[field.id] as string
@@ -113,7 +116,6 @@ const CustomFormInlineFields = ({
                         date === null ? null : date.split("T")[0];
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: modifiedDate
                         })
                       );
@@ -123,7 +125,6 @@ const CustomFormInlineFields = ({
               );
             case DataType.List:
               return (
-                // biome-ignore lint/correctness/useJsxKeyInIterable: suppressed due to migration
                 <ValidatedForm
                   defaultValues={{
                     [field.id]: fields[field.id] as string
@@ -149,7 +150,6 @@ const CustomFormInlineFields = ({
                     onChange={(value) => {
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: value?.value ?? null
                         })
                       );
@@ -159,7 +159,6 @@ const CustomFormInlineFields = ({
               );
             case DataType.Numeric:
               return (
-                // biome-ignore lint/correctness/useJsxKeyInIterable: suppressed due to migration
                 <ValidatedForm
                   defaultValues={{
                     [field.id]: fields[field.id] as number
@@ -180,7 +179,6 @@ const CustomFormInlineFields = ({
                     onChange={(value) => {
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: value
                         })
                       );
@@ -190,7 +188,6 @@ const CustomFormInlineFields = ({
               );
             case DataType.Text:
               return (
-                // biome-ignore lint/correctness/useJsxKeyInIterable: suppressed due to migration
                 <ValidatedForm
                   defaultValues={{
                     [field.id]: fields[field.id] as string
@@ -210,7 +207,6 @@ const CustomFormInlineFields = ({
                     onBlur={(e) => {
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: e.target.value
                         })
                       );
@@ -220,7 +216,6 @@ const CustomFormInlineFields = ({
               );
             case DataType.Link:
               return (
-                // biome-ignore lint/correctness/useJsxKeyInIterable: suppressed due to migration
                 <ValidatedForm
                   defaultValues={{
                     [field.id]: fields[field.id] as string
@@ -249,7 +244,6 @@ const CustomFormInlineFields = ({
                     onBlur={(e) => {
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: e.target.value
                         })
                       );
@@ -259,7 +253,6 @@ const CustomFormInlineFields = ({
               );
             case DataType.User:
               return (
-                // biome-ignore lint/correctness/useJsxKeyInIterable: suppressed due to migration
                 <ValidatedForm
                   defaultValues={{
                     [field.id]: fields[field.id] as string
@@ -278,7 +271,6 @@ const CustomFormInlineFields = ({
                       if (value?.value) {
                         onUpdate(
                           JSON.stringify({
-                            ...fields,
                             [field.id]: value.value
                           })
                         );
@@ -289,7 +281,6 @@ const CustomFormInlineFields = ({
               );
             case DataType.Customer:
               return (
-                // biome-ignore lint/correctness/useJsxKeyInIterable: suppressed due to migration
                 <ValidatedForm
                   defaultValues={{
                     [field.id]: fields[field.id] as string
@@ -308,7 +299,6 @@ const CustomFormInlineFields = ({
                       if (value?.value) {
                         onUpdate(
                           JSON.stringify({
-                            ...fields,
                             [field.id]: value.value
                           })
                         );
@@ -319,7 +309,6 @@ const CustomFormInlineFields = ({
               );
             case DataType.Supplier:
               return (
-                // biome-ignore lint/correctness/useJsxKeyInIterable: suppressed due to migration
                 <ValidatedForm
                   defaultValues={{
                     [field.id]: fields[field.id] as string
@@ -338,7 +327,6 @@ const CustomFormInlineFields = ({
                       if (value?.value) {
                         onUpdate(
                           JSON.stringify({
-                            ...fields,
                             [field.id]: value.value
                           })
                         );

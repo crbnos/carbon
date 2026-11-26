@@ -147,9 +147,10 @@ export async function loadRampOutboundCandidates(args: {
     });
     scanned.purchaseOrders = ids.length;
     refs.push(
-      ...ids.map(
-        (id): ReconcileRef => ({ entityType: "purchaseOrder", entityId: id })
-      )
+      ...ids.map((id): ReconcileRef => ({
+        entityType: "purchaseOrder",
+        entityId: id
+      }))
     );
   } else {
     skippedReasons.push("purchase orders: push disabled");

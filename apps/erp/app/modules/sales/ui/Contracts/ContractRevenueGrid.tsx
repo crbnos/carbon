@@ -46,9 +46,9 @@ import {
 import { path } from "~/utils/path";
 import { contractScheduleRevenueMethods } from "../../sales.models";
 import ContractAmountsModal from "./ContractAmountsModal";
+import { contractLineName, lineColumnKey } from "./contractGrid";
 import { Remaining } from "./ContractInvoiceGrid";
 import ContractMoney from "./ContractMoney";
-import { contractLineName, lineColumnKey } from "./contractGrid";
 import type { ContractLine, ContractRouteData } from "./types";
 
 type ContractRevenueGridProps = Pick<
@@ -107,7 +107,7 @@ const ContractRevenueGrid = ({
   const contractId = contract.id!;
   const { currencyCode } = contract;
   const decimals = useCurrencyDecimals(currencyCode);
-  const canEdit = permissions.can("update", "sales");
+  const canEdit = permissions.has({ "sales.serviceContracts": "Edit" });
   const action = path.to.contractRevenue(contractId);
   const monthLabel = useCallback(
     (date: string) => formatDate(date, { month: "short", year: "numeric" }),
@@ -402,7 +402,7 @@ export const ContractRecognitionGrid = ({
   const { formatDate } = useDateFormatter();
 
   const contractId = contract.id!;
-  const canEdit = permissions.can("update", "sales");
+  const canEdit = permissions.has({ "sales.serviceContracts": "Edit" });
   const methodLabels = useMemo<Record<ContractLine["revenueMethod"], string>>(
     () => ({
       Daily: t`Daily`,

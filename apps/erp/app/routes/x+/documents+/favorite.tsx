@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -12,9 +12,7 @@ import { updateDocumentFavorite } from "~/modules/documents/documents.service";
 import { favoriteSchema } from "~/types/validators";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
-    view: "purchasing"
-  });
+  const { client, userId } = await authorize(request, { documents: "View" });
 
   const validation = await validator(favoriteSchema).validate(
     await request.formData()

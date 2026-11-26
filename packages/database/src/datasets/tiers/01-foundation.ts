@@ -15,7 +15,6 @@ import {
   insertRow,
   maybeOne,
   need,
-  one,
   RICH
 } from "../sql.ts";
 import type { Ctx, FoundationData, PartyAddressSpec } from "../types.ts";
@@ -64,6 +63,33 @@ export async function runTier1(ctx: Ctx): Promise<void> {
         '("id") DO UPDATE SET "accountingCutoverDate" = EXCLUDED."accountingCutoverDate", "accountingActivatedAt" = EXCLUDED."accountingActivatedAt", "accountingActivatedBy" = EXCLUDED."accountingActivatedBy"'
     }
   );
+
+  // ── Roles ────────────────────────────────────────────────────────────────
+  // A non-admin role with grants, so the access screens show one. Both tables
+  // survive the wipe: a re-apply adopts the role by name and keeps any grant
+  // the company changed.
+  ctx.log("roles");
+  for (const role of data.roles) {
+    const existing = await maybeOne<{ id: string }>(
+      client,
+      `SELECT id FROM "employeeType" WHERE "companyId" = $1 AND name = $2`,
+      [companyId, role.name]
+    );
+    const employeeTypeId =
+      existing?.id ??
+      (await insertId(ctx, "employeeType", {
+        name: role.name,
+        protected: false
+      }));
+    for (const grant of role.grants) {
+      await insertMaybe(ctx, "permission", {
+        employeeTypeId,
+        module: grant.module,
+        page: null,
+        level: grant.level
+      });
+    }
+  }
 
   // ── Departments ──────────────────────────────────────────────────────────
   ctx.log("departments");
@@ -348,11 +374,11 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
   }
 
-  const netThirty = await one<{ id: string }>(
+  const netThirty = (await maybeOne<{ id: string }>(
     client,
     `SELECT id FROM "paymentTerm" WHERE "companyId" = $1 AND name ILIKE '%net%30%' LIMIT 1`,
     [companyId]
-  );
+  )) ?? { id: await bootstrapIdByName(ctx, "paymentTerm", "Net 30") };
   ctx.refs.misc.paymentTermId = netThirty.id;
 
   const paymentTermFor = (spec: { paymentTerm?: string }): Promise<string> =>
@@ -366,6 +392,42 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   }
   for (const code of currencyCodes) await assertCurrencyExists(ctx, code);
 
+  // ── Tax ───────────────────────────────────────────────────────────────────
+  ctx.log("tax codes");
+  const taxAuthorityIds: Record<string, string> = {};
+  for (const authority of data.taxAuthorities) {
+    taxAuthorityIds[authority.name] = await insertId(ctx, "taxAuthority", {
+      name: authority.name
+    });
+  }
+  const taxCodeIds: Record<string, string> = {};
+  for (const code of data.taxCodes) {
+    const taxCodeId = await insertId(ctx, "taxCode", {
+      name: code.name,
+      description: code.description ?? null,
+      calculationType: code.calculationType ?? "Normal",
+      reportingCategory: code.reportingCategory ?? "Standard",
+      invoiceMessage: code.invoiceMessage ?? null,
+      countryCode: code.countryCode,
+      state: code.state ?? null
+    });
+    taxCodeIds[code.name] = taxCodeId;
+    for (const [index, component] of code.components.entries()) {
+      await insertId(ctx, "taxCodeComponent", {
+        taxCodeId,
+        name: component.name,
+        taxAuthorityId: need(
+          taxAuthorityIds,
+          component.authority,
+          "tax authority"
+        ),
+        taxPercent: component.taxPercent / 100,
+        recoverablePercent: (component.recoverablePercent ?? 0) / 100,
+        sequence: index + 1
+      });
+    }
+  }
+
   // ── Customers ─────────────────────────────────────────────────────────────
   ctx.log("customers");
   for (const c of data.customers) {
@@ -377,7 +439,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       customerStatusId: statusId,
       phone: c.phone,
       website: c.website,
-      currencyCode: c.currencyCode ?? "USD"
+      currencyCode: c.currencyCode ?? "USD",
+      partNumberDisplay: c.partNumberDisplay ?? null
     });
     ctx.refs.customers[c.name] = custId;
 
@@ -390,6 +453,12 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       `UPDATE "customerShipping" SET "shippingMethodId" = $1 WHERE "customerId" = $2`,
       [need(ctx.refs.shippingMethods, data.defaultShippingMethod), custId]
     );
+    if (c.taxCode) {
+      await client.query(
+        `UPDATE "customerTax" SET "taxCodeId" = $1 WHERE "customerId" = $2`,
+        [need(taxCodeIds, c.taxCode, "tax code"), custId]
+      );
+    }
   }
 
   // Customer contacts
@@ -446,7 +515,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       phone: s.phone,
       website: s.website,
       currencyCode: s.currencyCode ?? "USD",
-      supplierStatus: s.status ?? "Active"
+      supplierStatus: s.status ?? "Active",
+      partNumberDisplay: s.partNumberDisplay ?? null
     });
     ctx.refs.suppliers[s.name] = supId;
 

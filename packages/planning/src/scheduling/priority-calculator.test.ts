@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  calculatePrioritiesByWorkCenter,
   committedDueDate,
   sortOperationsByPriority
 } from "./priority-calculator.ts";
@@ -50,5 +51,23 @@ describe("committedDueDate", () => {
     expect(committedDueDate({ deadlineType, dueDate: "2026-10-24" })).toBe(
       expected
     );
+  });
+});
+
+describe("calculatePrioritiesByWorkCenter", () => {
+  // An outside op runs at the supplier: a work center it still carries from
+  // an in-house type is stale, and must not take a place in that queue.
+  it("leaves an outside op out of the queue of the work center it carries", () => {
+    const priorities = calculatePrioritiesByWorkCenter([
+      {
+        ...op("outside", "2026-10-05T12:00:00Z"),
+        workCenterId: "wc-7",
+        startDate: "2026-10-05",
+        operationType: "Outside Processing"
+      },
+      { ...op("first", "2026-10-06T10:00:00Z"), workCenterId: "wc-7" },
+      { ...op("second", "2026-10-06T15:00:00Z"), workCenterId: "wc-7" }
+    ]);
+    expect(Object.fromEntries(priorities)).toEqual({ first: 1, second: 2 });
   });
 });

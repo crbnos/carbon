@@ -2,17 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { error, success } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime, getErrorMessage, redirect } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { customerContractScheduleEditValidator } from "~/modules/sales/sales.models";
-import { runContractAction } from "~/modules/sales/sales.service";
-import { getCompanyTimeZone } from "~/modules/shared/shared.service";
-import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 /** Edits a Draft contract's invoice schedule — move, split, merge, move a row,
@@ -22,14 +19,12 @@ import { path, requestReferrer } from "~/utils/path";
  *
  *  A grid cell posts `quiet`: it gets `{ error }` back instead of a redirect
  *  and a flash, so typing across a row does not toast per cell. */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
-  });
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
+export async function action(args: ActionFunctionArgs) {
+  // The body is read below: a quiet cell's invalid edit answers `{ error }`.
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { request } = args;
+  const { id } = input.params;
 
   const formData = await request.formData();
   const quiet = formData.get("quiet") === "true";
@@ -42,25 +37,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       : validationError(validation.error);
   }
 
-  const asOf = datetime
-    .today(await getCompanyTimeZone(client, companyId))
-    .toString();
-  const caller = { client, db: getDatabaseClient(), companyId, userId };
-
   const edit = validation.data;
+  const { api } = await authorize(request);
   const result =
     edit.intent === "reset"
-      ? await runContractAction(caller, {
-          type: "reset-schedule",
-          customerContractId: id,
-          asOf
-        })
-      : await runContractAction(caller, {
-          type: "edit-schedule",
-          customerContractId: id,
-          asOf,
-          edit
-        });
+      ? await api.sales.resetContractSchedule({ customerContractId: id })
+      : await api.sales.editContractSchedule({ customerContractId: id, edit });
 
   const failure =
     edit.intent === "reset"

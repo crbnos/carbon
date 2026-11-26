@@ -46,8 +46,8 @@ import { Number, NumberControlled } from "./CurrencyNumber";
 import Customer from "./Customer";
 import CustomerContact from "./CustomerContact";
 import CustomerLocation from "./CustomerLocation";
-import CustomerStatus from "./CustomerStatus";
 import Customers from "./Customers";
+import CustomerStatus from "./CustomerStatus";
 import CustomerType from "./CustomerType";
 import CustomerTypes from "./CustomerTypes";
 import CustomFormFields from "./CustomFormFields";
@@ -78,6 +78,10 @@ import Location from "./Location";
 import LocationEmployee from "./LocationEmployee";
 import MaterialType from "./MaterialType";
 import Part from "./Part";
+import PartNumberDisplay, {
+  type PartNumberParty,
+  usePartNumberDisplayOptions
+} from "./PartNumberDisplay";
 import PaymentTerm from "./PaymentTerm";
 import Procedure from "./Procedure";
 import Process from "./Process";
@@ -91,6 +95,7 @@ import {
 import Shift from "./Shift";
 import Shifts from "./Shifts";
 import ShippingMethod from "./ShippingMethod";
+import ShipTo from "./ShipTo";
 import StandardFactor from "./StandardFactor";
 import StorageTypes from "./StorageTypes";
 import StorageUnit from "./StorageUnit";
@@ -98,11 +103,12 @@ import Supplier from "./Supplier";
 import SupplierContact from "./SupplierContact";
 import SupplierLocation from "./SupplierLocation";
 import SupplierProcess from "./SupplierProcess";
+import Suppliers from "./Suppliers";
 import SupplierStage from "./SupplierStage";
 import SupplierStatus from "./SupplierStatus";
-import Suppliers from "./Suppliers";
 import SupplierType from "./SupplierType";
 import Tags from "./Tags";
+import TaxCode, { useTaxCodes } from "./TaxCode";
 import { TaxFields, useTaxPair } from "./TaxFields";
 import Timezone from "./Timezone";
 import Tool from "./Tool";
@@ -176,6 +182,8 @@ export {
   Number,
   NumberControlled,
   Part,
+  PartNumberDisplay,
+  type PartNumberParty,
   Password,
   PaymentTerm,
   PhoneInput,
@@ -192,6 +200,7 @@ export {
   Shift,
   Shifts,
   ShippingMethod,
+  ShipTo,
   StandardFactor,
   StorageTypes,
   StorageUnit,
@@ -205,6 +214,7 @@ export {
   Suppliers,
   SupplierType,
   Tags,
+  TaxCode,
   TaxFields,
   TextArea,
   TimePicker,
@@ -219,6 +229,8 @@ export {
   useConfigurableItems,
   useEmptyState,
   useLaborCategories,
+  usePartNumberDisplayOptions,
+  useTaxCodes,
   useTaxPair,
   WorkCenter,
   WorkCenters

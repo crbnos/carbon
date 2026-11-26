@@ -33,7 +33,7 @@ import {
   sendPostedSalesInvoiceViaStripe
 } from "@carbon/stripe/send-sales-invoice.server";
 import type { InvoiceAutomation } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
+import { datetime, invoiceAutomationPosts } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { render } from "react-email";
@@ -160,7 +160,9 @@ export type InvoiceToAutomate = {
  * not finished with: the company's Draft (or Pending — a claim left by a
  * crashed post, reported as held) invoices created by the job (`system`),
  * with no hold, from a recurring source whose effective mode is not Draft
- * Only. Read from the database rather than from the drafting step's result,
+ * Only. `createdBy` alone does not keep a person's draft out (an API or MCP
+ * caller is `system` too): such a draft carries a hold, as the rental early
+ * invoice does. Read from the database rather than from the drafting step's result,
  * so drafts from an earlier attempt — a retried step drafts nothing new, a
  * failed one returns nothing — are still automated. A posted or held invoice
  * leaves the set, so each is automated once.
@@ -197,7 +199,7 @@ export async function findInvoicesToAutomate(
     .where("si.status", "in", ["Draft", "Pending"])
     .where("si.automationHoldReason", "is", null)
     // The retry / catch-up window only. An older draft was left for review
-    // (Draft Only at the time, or a person's choice) and is not posted just
+    // (Draft Only or Manual at the time, or a person's choice) and is not posted just
     // because the source's mode has changed since.
     .where("si.createdAt", ">=", sql<string>`now() - interval '3 days'`)
     .orderBy("si.id")
@@ -230,7 +232,7 @@ export async function findInvoicesToAutomate(
     const mode = invoice.customerContractId
       ? invoice.contractMode
       : agreementMode.get(sourceId);
-    if (!mode || mode === "Draft Only") continue;
+    if (!mode || !invoiceAutomationPosts(mode)) continue;
     result.push({ invoiceId: invoice.id, sourceId, mode });
   }
   return result;
@@ -548,6 +550,7 @@ async function fileInvoicePdf(args: {
 
   const document = await loadSalesInvoiceDocument({
     client,
+    taxClient: client,
     companyId,
     companyGroupId,
     invoiceId,

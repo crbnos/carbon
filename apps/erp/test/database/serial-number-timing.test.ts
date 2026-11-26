@@ -7,6 +7,7 @@
 // job's units stay unnumbered until first touched, and completing the job is a
 // first touch: completeJob splits and numbers the units the receipt takes.
 
+import { createHash } from "node:crypto";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import {
   assignSerialNumberIfMissing,
@@ -22,6 +23,7 @@ import {
   completeJob,
   releaseCheckedJobs
 } from "../../app/modules/production/production.server";
+import { closeIssue } from "../../app/modules/quality/quality.service";
 import { assignJobSerialNumbers } from "../../app/modules/production/production.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
@@ -36,17 +38,18 @@ import {
 } from "./fixtures/always-post";
 import { connectLocalTestDatabase } from "./fixtures/local-database";
 import { handlesOf } from "./fixtures/handles";
+import { holdUnits, raiseIssueOnUnit } from "./fixtures/job-unit-hold";
 import { hasLocalDatabase } from "./fixtures/local-database";
-import { localServiceRoleClient } from "./fixtures/local-supabase";
+import {
+  localApiKeyClient,
+  localServiceRoleClient
+} from "./fixtures/local-supabase";
 
 // Release recalculates the job and numbers it through postings, and the
 // posting gate tells the system by its key.
 vi.mock("@carbon/env", async (importOriginal) => {
-  const { localServiceRoleKey } = await import("./fixtures/local-supabase");
-  return {
-    ...(await importOriginal<object>()),
-    SUPABASE_SERVICE_ROLE_KEY: localServiceRoleKey() ?? "test"
-  };
+  const { localSupabaseEnv } = await import("./fixtures/local-supabase");
+  return { ...(await importOriginal<object>()), ...localSupabaseEnv() };
 });
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
@@ -189,6 +192,36 @@ async function units(f: Fixture, makeMethodId: string) {
     .execute();
 }
 
+async function inventoryIntegration(f: Fixture) {
+  const rawKey = `crbn_split_${crypto.randomUUID()}`;
+  const key = await f.db
+    .insertInto("apiKey")
+    .values({
+      name: "Tracked entity integration",
+      companyId: f.companyId,
+      createdBy: USER,
+      keyHash: createHash("sha256").update(rawKey).digest("hex"),
+      scopes: JSON.stringify({})
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return { caller: localApiKeyClient(rawKey)!, keyId: key.id };
+}
+
+async function grantTrackedEntityEdit(f: Fixture, keyId: string) {
+  await f.db
+    .insertInto("permission")
+    .values({
+      companyId: f.companyId,
+      apiKeyId: keyId,
+      module: "Inventory",
+      page: "inventory.trackedEntities",
+      level: "Edit",
+      createdBy: USER
+    })
+    .execute();
+}
+
 async function receivedUnits(f: Fixture, jobId: string) {
   const rows = await f.db
     .selectFrom("itemLedger")
@@ -217,6 +250,111 @@ describe.skipIf(!client)("serial number timing", () => {
       expect(await getSerialNumberTiming(f.db, `${f.companyId}-none`)).toBe(
         "jobCreation"
       );
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("keeps the published split RPC available and honors a hold the caller cannot read", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "split", 3);
+      const [seedUnit] = await units(f, job.makeMethodId);
+      await holdUnits(f, true);
+      await raiseIssueOnUnit(f, seedUnit!.id, 1);
+
+      const { caller, keyId } = await inventoryIntegration(f);
+      await grantTrackedEntityEdit(f, keyId);
+      const hidden = await caller
+        .from("unitQualityHold")
+        .select("trackedEntityId")
+        .eq("trackedEntityId", seedUnit!.id);
+      expect(hidden.error).toBeNull();
+      expect(hidden.data).toEqual([]);
+
+      const split = () =>
+        caller.rpc("split_serial_units_for_completion", {
+          p_job_id: job.jobId,
+          p_make_method_id: job.makeMethodId,
+          p_company_id: f.companyId,
+          p_count: 2
+        });
+      const held = await split();
+      expect(held.error).toBeNull();
+      expect(held.data).toBe(0);
+      expect(await units(f, job.makeMethodId)).toEqual([seedUnit]);
+
+      await holdUnits(f, false);
+      const released = await split();
+      expect(released.error).toBeNull();
+      expect(released.data).toBe(2);
+      const quantities = (await units(f, job.makeMethodId)).map((u) => u.quantity);
+      expect(quantities).toEqual([1, 1, 1]);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("preserves the prior receipt on a partly received seed when an inventory editor calls the split RPC", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await f.db
+        .updateTable("item")
+        .set({ itemTrackingType: "Serial" })
+        .where("id", "=", f.assemblyId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const job = await untouchedSerialJob(f, "partly-received", 3);
+      await completeToInventory(f.db, {
+        jobId: job.jobId,
+        companyId: f.companyId,
+        quantityComplete: 2
+      });
+      expect(await receivedUnits(f, job.jobId)).toEqual([
+        { readableId: null, quantity: 2 }
+      ]);
+      const before = await units(f, job.makeMethodId);
+      expect(before).toEqual([expect.objectContaining({ quantity: 3 })]);
+
+      // Numbering is enabled after both units were received against the seed.
+      await serialSetup(f, "production");
+      // The owner must exclude the seed even when the invoker's ledger read
+      // would independently keep it intact (as it does for an Inventory editor).
+      const exclusions = await sql<{ id: string }>`
+        SELECT unnest(util.lock_serial_split_exclusions(
+          ${job.jobId}, ${job.makeMethodId}, ${f.companyId}
+        )) AS id
+      `.execute(f.db);
+      expect(exclusions.rows).toEqual([{ id: before[0]!.id }]);
+
+      const { caller, keyId } = await inventoryIntegration(f);
+      const receipts = () =>
+        caller
+          .from("itemLedger")
+          .select("trackedEntityId, quantity")
+          .eq("documentType", "Job Receipt")
+          .eq("documentId", job.jobId);
+      const split = () =>
+        caller.rpc("split_serial_units_for_completion", {
+          p_job_id: job.jobId,
+          p_make_method_id: job.makeMethodId,
+          p_company_id: f.companyId,
+          p_count: 2
+        });
+
+      expect(await receipts()).toMatchObject({ error: null, data: [] });
+      expect(await split()).toMatchObject({ error: null, data: 0 });
+
+      // An Edit grant on Tracked Entities also grants ledger reads.
+      await grantTrackedEntityEdit(f, keyId);
+      expect(await split()).toMatchObject({ error: null, data: 0 });
+      expect(await units(f, job.makeMethodId)).toEqual(before);
+      expect(await receipts()).toMatchObject({
+        error: null,
+        data: [{ trackedEntityId: before[0]!.id, quantity: 2 }]
+      });
     } finally {
       await f.cleanup();
     }
@@ -1015,6 +1153,180 @@ describe.skipIf(!client)("serial number timing", () => {
       await f.cleanup();
     }
   }, 60_000);
+
+  it("releases a held serial seed intact and numbers eligible units", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "jobRelease");
+      await holdUnits(f, true);
+      // Both seeds come from the job insert, with the production make method
+      // and Item source. Nothing has been received or individually numbered.
+      const heldJob = await jobFixture(f, "held-seed", 2);
+      const peerJob = await jobFixture(f, "good-seed", 2);
+      const singleton = await jobFixture(f, "one-held-unit", 1);
+      const rows = (jobId: string) =>
+        f.db
+          .selectFrom("trackedEntity")
+          .select(["id", "readableId", "quantity", "status"])
+          .where("companyId", "=", f.companyId)
+          .where(sql<boolean>`attributes->>'Job' = ${jobId}`)
+          .orderBy("readableId")
+          .execute();
+      const before = await rows(heldJob.jobId);
+      expect(before).toEqual([
+        expect.objectContaining({
+          readableId: null,
+          quantity: 2,
+          status: "Reserved"
+        })
+      ]);
+      const seedId = before[0]!.id;
+      const issueId = await raiseIssueOnUnit(f, seedId, 1);
+      const issueItem = await f.db
+        .insertInto("nonConformanceItem")
+        .values({
+          nonConformanceId: issueId,
+          itemId: f.assemblyId,
+          quantity: 2,
+          disposition: "Use As Is",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await f.db
+        .insertInto("nonConformanceItemTrackedEntity")
+        .values({
+          nonConformanceId: issueId,
+          nonConformanceItemId: issueItem.id,
+          trackedEntityId: seedId,
+          quantity: 2,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+
+      const single = (await rows(singleton.jobId))[0]!;
+      await raiseIssueOnUnit(f, single.id, 2);
+      const releaseIds = [heldJob.jobId, peerJob.jobId, singleton.jobId];
+      const released = await releaseCheckedJobs(contextFor(f), {
+        jobIds: releaseIds,
+        purchaseOrdersBySupplierId: {}
+      });
+      expect(released.error).toBeNull();
+      expect(released.data?.failure).toBeNull();
+      expect(released.data?.releasedJobIds).toEqual(releaseIds);
+      expect(await rows(heldJob.jobId)).toEqual(before);
+      expect((await rows(peerJob.jobId)).map((row) => row.readableId)).toEqual([
+        "SN-001",
+        "SN-002"
+      ]);
+      // Numbering a single unit preserves the exact entity covered by its issue.
+      expect(await rows(singleton.jobId)).toEqual([
+        { ...single, readableId: "SN-003" }
+      ]);
+      expect(await drawn(f)).toBe(3);
+      await expect(
+        completeToInventory(f.db, {
+          jobId: heldJob.jobId,
+          quantityComplete: 2,
+          companyId: f.companyId
+        })
+      ).rejects.toThrow(/no unit to receive/i);
+      expect(await receivedUnits(f, heldJob.jobId)).toEqual([]);
+      expect(await rows(heldJob.jobId)).toEqual(before);
+
+      const releasedByQuality = await closeIssue(client!, f.db, {
+        nonConformanceId: issueId,
+        companyId: f.companyId,
+        userId: USER
+      });
+      expect(releasedByQuality.error).toBeNull();
+      await completeToInventory(f.db, {
+        jobId: heldJob.jobId,
+        quantityComplete: 2,
+        companyId: f.companyId
+      });
+      expect(await receivedUnits(f, heldJob.jobId)).toEqual([
+        { readableId: "SN-004", quantity: 1 },
+        { readableId: "SN-005", quantity: 1 }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }, 60_000);
+
+  it("observes a quality link committed while release numbering waits for the seed", async () => {
+    const f = await alwaysPostFixture();
+    const numbering = await connectLocalTestDatabase();
+    let assignment: Promise<boolean> | undefined;
+    try {
+      await serialSetup(f, "jobRelease");
+      await holdUnits(f, true);
+      const job = await jobFixture(f, "concurrent-hold", 2);
+      const unit = await f.db
+        .selectFrom("trackedEntity")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where(sql<boolean>`attributes->>'Job' = ${job.jobId}`)
+        .executeTakeFirstOrThrow();
+      const issueId = await raiseIssueOnUnit(f, unit.id, 1);
+      await f.db
+        .deleteFrom("nonConformanceTrackedEntity")
+        .where("nonConformanceId", "=", issueId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const {
+        rows: [connection]
+      } = await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+        numbering
+      );
+      await f.db.transaction().execute(async (trx) => {
+        // The FK takes a key-share lock on the unit until the issue link commits.
+        await trx
+          .insertInto("nonConformanceTrackedEntity")
+          .values({
+            nonConformanceId: issueId,
+            trackedEntityId: unit.id,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        assignment = assignJobSerialNumbers(client!, numbering, {
+          jobId: job.jobId,
+          itemId: f.assemblyId,
+          companyId: f.companyId,
+          userId: USER,
+          at: "jobRelease"
+        });
+        await expect
+          .poll(async () => {
+            const { rows } = await sql<{
+              waiting: boolean;
+            }>`SELECT pg_backend_pid() = ANY(pg_blocking_pids(${connection!.pid})) AS waiting`.execute(
+              trx
+            );
+            return rows[0]!.waiting;
+          })
+          .toBe(true);
+      });
+      expect(await assignment).toBe(true);
+      expect(await drawn(f)).toBe(0);
+      expect(
+        await f.db
+          .selectFrom("trackedEntity")
+          .select(["quantity", "readableId"])
+          .where("companyId", "=", f.companyId)
+          .where("id", "=", unit.id)
+          .execute()
+      ).toEqual([{ quantity: 2, readableId: null }]);
+    } finally {
+      await assignment;
+      await numbering.destroy();
+      await f.cleanup();
+    }
+  });
 
   it("follows an item's own timing before the company's", async () => {
     const f = await alwaysPostFixture();

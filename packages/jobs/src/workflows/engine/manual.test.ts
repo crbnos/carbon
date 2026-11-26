@@ -66,7 +66,15 @@ vi.mock("@carbon/ee/workflows.server", () => ({
   workflowsEnabledForCompany: vi.fn(async () => true)
 }));
 vi.mock("../../db", () => ({ getJobDatabaseClient }));
-vi.mock("./owner", () => ({
+// @carbon/auth/client.server reads its configuration once, at import; ./owner imports it.
+vi.hoisted(() => {
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+});
+// The owner's reads are faked; the permission rule itself (`ownerRefusal`) is real.
+vi.mock("./owner", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./owner")>()),
   // The engine reads the company custom fields through this client; a bare {} has no
   // `.from`, so the stub answers that one query with an empty list.
   getOwnerClient: vi.fn(async () => ({
@@ -76,8 +84,12 @@ vi.mock("./owner", () => ({
       })
     })
   })),
-  readOwnerPermissions: vi.fn(async () => ({})),
-  hasPermission: vi.fn(() => true)
+  // The owner holds every page in co1.
+  readOwnerPermissions: vi.fn(async () => {
+    const { ACTIONS, PAGES } = await import("@carbon/database/access");
+    const all = Object.fromEntries(ACTIONS.map((action) => [action, ["co1"]]));
+    return Object.fromEntries(PAGES.map((page) => [page.id, all]));
+  })
 }));
 vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
 

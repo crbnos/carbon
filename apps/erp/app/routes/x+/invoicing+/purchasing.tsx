@@ -15,8 +15,7 @@ import { path } from "~/utils/path";
 export const handle: Handle = {
   realtime: ["purchaseInvoice"],
   breadcrumb: msg`Purchasing Invoices`,
-  to: path.to.invoicingPurchasing,
-  module: "invoicing"
+  to: path.to.invoicingPurchasing
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

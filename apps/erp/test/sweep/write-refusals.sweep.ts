@@ -20,7 +20,11 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { type ServiceFn, toResult } from "@carbon/api/service-fn.server";
+import {
+  NO_ORIGIN,
+  type ServiceFn,
+  toResult
+} from "@carbon/api/service-fn.server";
 import { getUserScopedClient } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { today } from "@internationalized/date";
@@ -28,7 +32,7 @@ import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
 import { router } from "~/modules/router.server";
-import { contextFor } from "~/modules/service-context.server";
+import { serviceContext } from "~/modules/service-context.server";
 import {
   OPERATIONS,
   operationId
@@ -277,14 +281,18 @@ describe("every update and delete, for a record that does not exist", () => {
       try {
         // A fresh token per call: the sweep outlives a user token's five minutes.
         const client = await getUserScopedClient(userId);
-        const ctx = contextFor({
-          kind: "user",
-          userId,
-          permissions: claims.permissions,
-          companyId,
-          companyGroupId,
-          client
-        });
+        const ctx = serviceContext(
+          {
+            caller: "session",
+            userId,
+            role: "employee", // the sweep targets an employee (shared.ts)
+            permissions: claims.permissions,
+            companyId,
+            companyGroupId,
+            client,
+            origin: NO_ORIGIN
+          }
+        );
         const result = await withTimeout(fn(ctx, faked.args).then(toResult));
         const error = result.error as {
           category: string;

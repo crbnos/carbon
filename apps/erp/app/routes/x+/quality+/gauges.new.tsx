@@ -2,76 +2,42 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { datetime, redirect } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useCompanyToday, useRouteData, useUser } from "~/hooks";
 import { gaugeValidator } from "~/modules/quality/quality.models";
-import { insertGauge } from "~/modules/quality/quality.service";
 import type { GaugeType } from "~/modules/quality/types";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
-import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    create: "quality"
-  });
+  await authorize(request, { "quality.gauges": "Create" });
 
   return null;
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "quality"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(gaugeValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: _id, ...gauge } = input.data;
+  const { api } = await authorize(args.request);
+  const result = await api.quality.insertGauge({
+    ...gauge,
+    gaugeId: gauge.gaugeId || undefined,
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-
-  const formData = await request.formData();
-  const validation = await validator(gaugeValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id: _id, ...d } = validation.data;
-
-  const companyToday = datetime.today(
-    await getCompanyTimeZone(client, companyId)
-  );
-  const gaugeCalibrationStatus = d.nextCalibrationDate
-    ? parseDate(d.nextCalibrationDate).compare(companyToday) < 0
-      ? "Out-of-Calibration"
-      : d.lastCalibrationDate
-        ? "In-Calibration"
-        : "Pending"
-    : "Pending";
-
-  const result = await insertGauge(client, {
-    ...d,
-    gaugeId: d.gaugeId || undefined,
-    gaugeCalibrationStatus,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
-
   if (result.error || !result.data) {
-    throw redirect(
-      path.to.gauges,
-      await flash(request, error(result.error, "Failed to insert gauge"))
-    );
+    return respond(args.request, result).redirect(path.to.gauges, {
+      onError: path.to.gauges
+    });
   }
-
-  throw redirect(
-    `${path.to.gauges}?${getParams(request)}`,
-    await flash(request, success(`Gauge ${result.data.gaugeId} created`))
+  return respond(args.request, result).redirect(
+    `${path.to.gauges}?${getParams(args.request)}`,
+    { message: `Gauge ${result.data.gaugeId} created` }
   );
 }
 

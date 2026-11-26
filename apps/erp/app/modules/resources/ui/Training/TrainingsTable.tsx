@@ -212,7 +212,7 @@ const TrainingsTable = memo((props: TrainingsTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "resources")}
+            disabled={!permissions.has({ "resources.training": "Edit" })}
             onClick={() => {
               navigate(`${path.to.training(row.id!)}`);
             }}
@@ -223,7 +223,7 @@ const TrainingsTable = memo((props: TrainingsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "resources")}
+            disabled={!permissions.has({ "resources.training": "Full" })}
             onClick={() => {
               flushSync(() => {
                 setSelectedTraining(row);
@@ -248,7 +248,7 @@ const TrainingsTable = memo((props: TrainingsTableProps) => {
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "resources") && (
+          permissions.has({ "resources.training": "Create" }) && (
             <New label={t`Training`} to={path.to.newTraining} />
           )
         }

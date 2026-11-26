@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -24,7 +25,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const formData = input.formData ?? new FormData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
 
   if (input.data.intent === "preview") {
     const cancellation = await validator(cancelPreviewValidator).validate(
@@ -53,10 +54,15 @@ export async function action(args: ActionFunctionArgs) {
     ...cancellation.data,
     customerContractId: id
   });
-  // The memo is linked from the credit rows of the Invoices section.
+  // The memos are linked from the credit rows of the Invoices section. A
+  // credit over two tax rates is two memos.
+  const memoReadableIds = result.data?.memoReadableIds ?? [];
   return respond(args.request, result).redirect(path.to.contractDetails(id), {
-    message: result.data?.memoReadableId
-      ? `Cancelled. Credit memo ${result.data.memoReadableId} drafted`
-      : "Contract cancelled"
+    message:
+      memoReadableIds.length > 1
+        ? `Cancelled. Credit memos ${memoReadableIds.join(", ")} drafted`
+        : memoReadableIds.length === 1
+          ? `Cancelled. Credit memo ${memoReadableIds[0]} drafted`
+          : "Contract cancelled"
   });
 }

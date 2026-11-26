@@ -40,7 +40,7 @@ import {
   serviceReplenishmentSystems
 } from "../../items.models";
 import type { ItemFile, MakeMethod, Service, SupplierPart } from "../../types";
-import { FileBadge, ItemDescription } from "../Item";
+import { FileBadge, ItemDescription, TaxableProperty } from "../Item";
 
 type ServicePropertiesProps = {
   data?: {
@@ -62,6 +62,7 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
   // When `data` is injected, this hook won't match a route and returns
   // undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     serviceSummary: Service;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -105,7 +106,6 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
       toastServiceError(data);
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (
       field:
@@ -114,7 +114,8 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemPostingGroupId"
-        | "active",
+        | "active"
+        | "taxable",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -128,10 +129,10 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [itemId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
@@ -148,10 +149,10 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.serviceSummary?.readableId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -166,6 +167,7 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.serviceSummary?.readableId]
   );
 
@@ -435,6 +437,11 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
           }}
         />
       </ValidatedForm>
+      <TaxableProperty
+        itemId={itemId}
+        taxable={routeDataFromRoute?.taxable}
+        onChange={(value) => onUpdate("taxable", value)}
+      />
       {supersession?.successor && (
         <div className="w-full">
           <h3 className="text-xs text-muted-foreground mb-1">

@@ -149,7 +149,6 @@ const JobMaterialsTable = memo(
       return map;
     }, [items]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<JobMaterial>[]>(() => {
       return [
         {
@@ -677,6 +676,7 @@ const JobMaterialsTable = memo(
           }
         }
       ];
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     }, [
       items,
       jobId,
@@ -745,7 +745,7 @@ const JobMaterialsTable = memo(
         columns={columns}
         data={filteredData}
         primaryAction={
-          data.length > 0 && permissions.can("update", "production") ? (
+          data.length > 0 && permissions.has({ "production.jobs": "Edit" }) ? (
             <fetcher.Form action={path.to.jobRecalculate(jobId)} method="post">
               <Button
                 leftIcon={<LuRefreshCcwDot />}

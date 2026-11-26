@@ -13,7 +13,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useLocation } from "react-router";
 import {
   GENERAL_LEDGER_PAGING,
-  getAccountsList,
   getGeneralLedgerDimensions,
   getGeneralLedgerLines,
   withGeneralLedgerCounterparties,
@@ -38,6 +37,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const {
+    api,
     client,
     companies,
     selectedCompany,
@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       limit,
       cursor
     }),
-    getAccountsList(client, companyGroupId, { isGroup: false }),
+    api.accounting.getAccountsList({ isGroup: false }),
     getGeneralLedgerDimensions(client, companyGroupId)
   ]);
 

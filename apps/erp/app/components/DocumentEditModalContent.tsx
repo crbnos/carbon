@@ -29,6 +29,7 @@ import { path } from "~/utils/path";
 import { EditorPanes } from "./DocumentTemplateEditor";
 import {
   changedNotes,
+  changedPartNumberDisplay,
   DocumentTemplateProvider,
   useDocumentTemplate,
   useEditorStore,
@@ -63,11 +64,12 @@ export default function DocumentEditModal({
   const actionPath = path.to.api.documentEdit(documentType, documentId);
   const { editor, error } = useDocumentEditor(actionPath);
   // The record's page keeps its own copy of the notes and saves it on the next
-  // keystroke, which would overwrite these. Reloading is the one way that works on
+  // keystroke, and an open line form keeps the line's part number choice; either
+  // would overwrite what was saved here. Reloading is the one way that works on
   // every record's page.
-  const notesSaved = useRef(false);
+  const reloadOnClose = useRef(false);
   const close = () => {
-    if (notesSaved.current) navigate(0);
+    if (reloadOnClose.current) navigate(0);
     else onClose();
   };
   const printed = editor && applyDocumentEdit(editor.template, editor.edit);
@@ -112,7 +114,7 @@ export default function DocumentEditModal({
             initialHeaderSectionId={editor.template.headerSectionId ?? null}
             initialFooterSectionId={editor.template.footerSectionId ?? null}
             sections={editor.sections}
-            customFields={[]}
+            customFields={editor.customFields}
             previewEntities={[]}
             termsSeed={
               (editor.termsSeed ?? undefined) as JSONContent | undefined
@@ -127,11 +129,18 @@ export default function DocumentEditModal({
               template: {
                 blocks: editor.template.blocks,
                 settings: editor.template.settings as DocumentSettings
-              }
+              },
+              partNumberParty: editor.partNumbersShown
+                ? (DOCUMENT_EDIT_RECORDS[documentType].partNumberLines?.party ??
+                  null)
+                : null,
+              partNumbersLocked: editor.partNumbersLocked,
+              partNumberLineCount: editor.partNumberLineCount
             }}
             initialNotes={editor.notes as JSONContent | null}
-            onSaved={({ notesChanged, stillEditing }) => {
-              notesSaved.current ||= notesChanged;
+            initialPartNumberDisplay={editor.partNumberDisplay}
+            onSaved={({ notesChanged, partNumbersChanged, stillEditing }) => {
+              reloadOnClose.current ||= notesChanged || partNumbersChanged;
               if (!stillEditing) close();
             }}
           >
@@ -210,6 +219,7 @@ function DocumentEditBar({
   const isDirty = useIsDirty();
   const document = useEditorStore((s) => s.document);
   const notes = useEditorStore(changedNotes);
+  const partNumberDisplay = useEditorStore(changedPartNumberDisplay);
   const resetToTemplate = useEditorStore((s) => s.resetToTemplate);
   const [isDownloading, setIsDownloading] = useState(false);
   if (!document) return null;
@@ -225,6 +235,9 @@ function DocumentEditBar({
       formData.append("settings", JSON.stringify(settings));
       formData.append("intent", "download");
       if (notes !== undefined) formData.append("notes", notes);
+      if (partNumberDisplay !== undefined) {
+        formData.append("partNumberDisplay", partNumberDisplay);
+      }
       const response = await fetch(previewPath, {
         method: "post",
         body: formData

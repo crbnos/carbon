@@ -15,9 +15,8 @@ vi.mock("@carbon/env", async (importOriginal) => ({
 vi.mock("@carbon/jobs", () => ({ trigger: vi.fn(), batchTrigger: vi.fn() }));
 vi.mock("@carbon/planning", () => ({ runLocationSchedule: vi.fn() }));
 
-const { createJobOperation, updateJobOperation } = await import(
-  "../app/modules/production/production.server"
-);
+const { createJobOperation, getJobOrderStatusMap, updateJobOperation } =
+  await import("../app/modules/production/production.server");
 const { createQuoteOperation, updateQuoteOperation } = await import(
   "../app/modules/sales/sales.server"
 );
@@ -148,5 +147,48 @@ describe("fillOperationStandards", () => {
       operationUnitCost: 0,
       laborRate: 0
     });
+  });
+});
+
+// A get_job_quantity_on_hand row for a material with no bin, no substitute,
+// no thumbnail and no unit: the columns the RPC leaves null.
+const jobMaterial = {
+  id: "jm1",
+  jobMaterialItemId: "item1",
+  jobMakeMethodId: "jmm1",
+  itemReadableId: "PART-1",
+  name: "Part",
+  description: "Part",
+  itemTrackingType: "Inventory",
+  methodType: "Pull from Inventory",
+  type: "Part",
+  thumbnailPath: null,
+  unitOfMeasureCode: null,
+  quantityPerParent: 1,
+  estimatedQuantity: null,
+  quantityIssued: null,
+  quantityOnHandInStorageUnit: 0,
+  quantityOnHandNotInStorageUnit: 0,
+  quantityOnSalesOrder: 0,
+  quantityOnPurchaseOrder: 0,
+  quantityOnProductionOrder: 0,
+  quantityFromProductionOrderInStorageUnit: 0,
+  quantityFromProductionOrderNotInStorageUnit: 0,
+  quantityInTransitToStorageUnit: 0,
+  storageUnitId: null,
+  storageUnitName: null,
+  itemScrapPercentage: 0,
+  substitutedFromItemId: null
+};
+
+describe("getJobOrderStatusMap input", () => {
+  it("takes the materials the job Materials page loads, nulls included", () => {
+    const parsed = getJobOrderStatusMap.input.safeParse({
+      jobId: "job1",
+      locationId: "loc1",
+      jobStatus: "Ready",
+      materials: [jobMaterial]
+    });
+    expect(parsed.error?.issues).toBeUndefined();
   });
 });

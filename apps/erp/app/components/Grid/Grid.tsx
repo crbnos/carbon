@@ -31,7 +31,12 @@ import type {
 } from "~/components/Editable";
 import { useVirtualRows } from "~/components/Table/useVirtualRows";
 import { Row } from "./components";
-import { getAccessorKey, updateNestedProperty } from "./utils";
+import {
+  getAccessorKey,
+  gridKeyCode,
+  takesKeyFromEditor,
+  updateNestedProperty
+} from "./utils";
 
 // Used until a row is measured: a body cell is `h-11`.
 const ESTIMATED_ROW_HEIGHT = 44;
@@ -40,6 +45,9 @@ const ESTIMATED_ROW_HEIGHT = 44;
 // cell.
 const HEADER_HEIGHT = 44;
 const OVERSCAN = 3;
+// Portaled overlays (a combobox list, a calendar, a row menu) own their keys.
+const OVERLAY_SELECTOR =
+  "[data-radix-popper-content-wrapper],[role=menu],[role=listbox],[role=dialog]";
 
 interface GridProps<T extends object> {
   canEdit?: boolean;
@@ -151,7 +159,6 @@ const Grid = <T extends object>({
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCell, setSelectedCell] = useState<Position>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const focusOnSelectedCell = useCallback(() => {
     if (selectedCell == null) return;
     const cell = tableContainerRef.current?.querySelector(
@@ -234,9 +241,11 @@ const Grid = <T extends object>({
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!selectedCell) return;
+      // The Enter or Tab that ends an IME composition belongs to it.
+      if (!selectedCell || event.nativeEvent.isComposing) return;
 
-      const { code, shiftKey } = event;
+      const { shiftKey } = event;
+      const code = gridKeyCode(event);
 
       const commandCodes: {
         [key: string]: [number, number];
@@ -367,8 +376,23 @@ const Grid = <T extends object>({
     [canEdit, isCellEditable, isEditing, selectedCell, table]
   );
 
+  // Only Tab and Enter while editing: other keys reach the editor first.
+  const onKeyDownCapture = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!selectedCell || !takesKeyFromEditor(event.nativeEvent, isEditing))
+        return;
+      const overlay =
+        event.target instanceof Element
+          ? event.target.closest(OVERLAY_SELECTOR)
+          : null;
+      if (overlay && !overlay.contains(event.currentTarget)) return;
+      event.stopPropagation();
+      onKeyDown(event);
+    },
+    [isEditing, onKeyDown, selectedCell]
+  );
+
   // reset the selected cell when the table data changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     setSelectedCell(null);
   }, [columnOrder, columnVisibility]);
@@ -473,7 +497,7 @@ const Grid = <T extends object>({
         isVirtual && !contained && "overflow-hidden rounded-md border"
       )}
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: delegated keydown for cell navigation/editing of the focused cell inside; the scroller itself is not a control */}
+      {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- delegated keydown for cell navigation/editing of the focused cell inside; the scroller itself is not a control */}
       <div
         className={cn(
           "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-md:scroll-fade-x",
@@ -485,6 +509,7 @@ const Grid = <T extends object>({
         }
         ref={tableContainerRef}
         onKeyDown={onKeyDown}
+        onKeyDownCapture={onKeyDownCapture}
       >
         <Table
           full={contained || isVirtual}

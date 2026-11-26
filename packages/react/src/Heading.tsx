@@ -43,8 +43,7 @@ const headingVariants = cva(
 );
 
 export interface HeadingProps
-  extends ComponentProps<"h2">,
-    VariantProps<typeof headingVariants> {
+  extends ComponentProps<"h2">, VariantProps<typeof headingVariants> {
   as?: ElementType;
 }
 

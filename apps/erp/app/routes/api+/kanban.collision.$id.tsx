@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useAction } from "@carbon/query";
 import { Button, Heading } from "@carbon/react";
@@ -19,9 +19,7 @@ import {
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(request, {});
 
   const { id } = params;
   if (!id) throw notFound("id not found");
@@ -50,7 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {});
+  const { client, userId, companyId } = await authorize(request);
 
   const { id } = params;
   if (!id) throw notFound("id not found");

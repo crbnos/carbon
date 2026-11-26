@@ -215,7 +215,6 @@ const ProductionEventsTable = memo(
 
     const navigate = useNavigate();
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const renderContextMenu = useCallback<
       (row: ProductionEvent) => JSX.Element
     >(
@@ -223,7 +222,7 @@ const ProductionEventsTable = memo(
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "production")}
+            disabled={!permissions.has({ "production.jobs": "Edit" })}
             onClick={() => navigate(row.id)}
           >
             <MenuIcon icon={<LuPencil />} />
@@ -232,7 +231,7 @@ const ProductionEventsTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "production")}
+            disabled={!permissions.has({ "production.jobs": "Full" })}
             onClick={() => onDelete(row)}
           >
             <MenuIcon icon={<LuTrash />} />
@@ -241,6 +240,7 @@ const ProductionEventsTable = memo(
         </>
       ),
 
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
       [permissions]
     );
     const [params] = useUrlParams();
@@ -283,7 +283,7 @@ const ProductionEventsTable = memo(
           data={data}
           emptyState={emptyState}
           primaryAction={
-            permissions.can("update", "accounting") && (
+            permissions.has({ "production.jobs": "Create" }) && (
               <New
                 label={t`Production Event`}
                 to={`new?${params.toString()}`}

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -34,6 +34,7 @@ const updateForm = z.object({
     "materialSubstanceId",
     "materialTypeId",
     "active",
+    "taxable",
     "itemPostingGroupId",
     "partId",
     "consumableId",
@@ -72,11 +73,11 @@ export async function action(args: ActionFunctionArgs) {
       change.data
     );
     if (started) return started;
-    const api = await carbon(args.request);
+    const { api } = await authorize(args.request);
     return api.items.updateItems({ ids, change: change.data });
   }
 
-  const api = (await carbon(args.request)).items;
+  const api = (await authorize(args.request)).api.items;
 
   switch (field) {
     case "name":
@@ -93,6 +94,8 @@ export async function action(args: ActionFunctionArgs) {
       return api.setMaterialProperties({ ids, [field]: value || null });
     case "active":
       return api.setItemActive({ ids, active: value === "on" });
+    case "taxable":
+      return api.setItemTaxable({ ids, taxable: value === "on" });
     case "partId":
     case "consumableId":
     case "materialId":

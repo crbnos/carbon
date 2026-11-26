@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -12,7 +12,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { materialValidator } from "~/modules/items/items.models";
-import { upsertMaterial } from "~/modules/items/items.service";
+import { insertMaterial, planNewMaterial } from "~/modules/items/items.service";
 import { MaterialForm } from "~/modules/items/ui/Materials";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
@@ -24,14 +24,13 @@ export const meta = newRecordMeta("Material");
 
 export const handle: Handle = {
   breadcrumb: msg`Materials`,
-  to: path.to.materials,
-  module: "items"
+  to: path.to.materials
 };
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts"
+  const { client, companyId, userId } = await authorize(request, {
+    "parts.materials": "Create"
   });
 
   const formData = await request.formData();
@@ -43,12 +42,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const createMaterial = await upsertMaterial(client, getDatabaseClient(), {
+  const material = {
     ...validation.data,
     companyId,
     customFields: setCustomFields(formData),
     createdBy: userId
-  });
+  };
+  // With generated material IDs the derived ID and name replace the form's.
+  const plan = await planNewMaterial(client, material);
+  const createMaterial = plan.error
+    ? plan
+    : await insertMaterial(client, getDatabaseClient(), material, {
+        readableId: plan.data.generated?.readableId ?? material.id,
+        name: plan.data.generated?.name ?? material.name,
+        properties: plan.data.properties
+      });
   if (createMaterial.error) {
     return modal
       ? data(

@@ -61,42 +61,43 @@ export default function AssemblyStepTools({
           ))}
         </ul>
       )}
-      {!isDisabled && permissions.can("create", "production") && (
-        <ValidatedForm
-          key={formKey}
-          validator={assemblyStepToolValidator}
-          method="post"
-          action={path.to.newAssemblyStepTool(instructionId)}
-          fetcher={fetcher}
-          className="w-full"
-        >
-          <Hidden name="stepId" value={stepId} />
-          <VStack spacing={2} className="w-full">
-            <Tool
-              name="itemId"
-              placeholder="Pick a tool"
-              disabledTools={tools.map((tool) => tool.itemId)}
-            />
-            <HStack className="w-full items-end" spacing={2}>
-              <div className="flex-1 min-w-0">
-                <Number
-                  name="quantity"
-                  label="Quantity"
-                  minValue={1}
-                  defaultValue={1}
-                />
-              </div>
-              <Submit
-                variant="secondary"
-                leftIcon={<LuCirclePlus />}
-                isDisabled={fetcher.state !== "idle"}
-              >
-                Add
-              </Submit>
-            </HStack>
-          </VStack>
-        </ValidatedForm>
-      )}
+      {!isDisabled &&
+        permissions.has({ "production.assemblies": "Create" }) && (
+          <ValidatedForm
+            key={formKey}
+            validator={assemblyStepToolValidator}
+            method="post"
+            action={path.to.newAssemblyStepTool(instructionId)}
+            fetcher={fetcher}
+            className="w-full"
+          >
+            <Hidden name="stepId" value={stepId} />
+            <VStack spacing={2} className="w-full">
+              <Tool
+                name="itemId"
+                placeholder="Pick a tool"
+                disabledTools={tools.map((tool) => tool.itemId)}
+              />
+              <HStack className="w-full items-end" spacing={2}>
+                <div className="flex-1 min-w-0">
+                  <Number
+                    name="quantity"
+                    label="Quantity"
+                    minValue={1}
+                    defaultValue={1}
+                  />
+                </div>
+                <Submit
+                  variant="secondary"
+                  leftIcon={<LuCirclePlus />}
+                  isDisabled={fetcher.state !== "idle"}
+                >
+                  Add
+                </Submit>
+              </HStack>
+            </VStack>
+          </ValidatedForm>
+        )}
     </VStack>
   );
 }
@@ -132,7 +133,7 @@ function ToolRow({
       <Badge variant="secondary" className="tabular-nums">
         ×{tool.quantity}
       </Badge>
-      {!isDisabled && permissions.can("delete", "production") && (
+      {!isDisabled && permissions.has({ "production.assemblies": "Full" }) && (
         <IconButton
           aria-label={`Delete ${tool.item?.name ?? "tool"}`}
           icon={<LuTrash />}

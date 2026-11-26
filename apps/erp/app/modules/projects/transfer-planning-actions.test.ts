@@ -38,9 +38,8 @@ vi.mock("~/services/database.server", () => ({ getDatabaseClient: vi.fn() }));
 vi.mock("@carbon/server-functions", () => ({ serverFns: {} }));
 vi.mock("~/modules/items/items.service", () => ({ getMethodTree: vi.fn() }));
 
-const { createProjectStockTransfersFromActions } = await import(
-  "./projects.service"
-);
+const { createProjectStockTransfersFromActions } =
+  await import("./projects.service");
 
 // The Postgres wire is the boundary: each statement is recorded, and the
 // driver answers it with the next scripted result.
@@ -57,7 +56,7 @@ class ScriptedDriver extends DummyDriver {
         this.sent.push(query);
         return { rows: (this.results.shift() ?? []) as R[] };
       },
-      // biome-ignore lint/correctness/useYield: never streamed
+      // oxlint-disable-next-line require-yield -- never streamed
       streamQuery: async function* () {
         throw new Error("not streamed");
       }

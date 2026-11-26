@@ -31,7 +31,7 @@ import {
   round,
   searchFilter
 } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -52,7 +52,6 @@ import type {
   locationValidator,
   maintenanceDispatchCommentValidator,
   maintenanceDispatchEventValidator,
-  maintenanceDispatchItemValidator,
   maintenanceDispatchPriority,
   maintenanceDispatchStatus,
   maintenanceScheduleValidator,
@@ -65,6 +64,7 @@ import type {
 import {
   type employeeAbilityCellValidator,
   isMaintenanceDispatchLocked,
+  MAINTENANCE_DISPATCH_LOCKED_STATUSES,
   trainingCertificateKeyPrefix,
   validateTrainingCertificate
 } from "./resources.models";
@@ -129,17 +129,19 @@ export async function deleteLocation(
   );
 }
 
+/** No row back means the dispatch is gone, another company's, or locked. */
 export async function deleteMaintenanceDispatch(
   client: SupabaseClient<Database>,
+  companyId: string,
   dispatchId: string
 ) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatch")
-      .delete()
-      .eq("id", dispatchId)
-      .select("id")
-  );
+  return client
+    .from("maintenanceDispatch")
+    .delete()
+    .eq("id", dispatchId)
+    .eq("companyId", companyId)
+    .not("status", "in", `(${MAINTENANCE_DISPATCH_LOCKED_STATUSES.join(",")})`)
+    .select("id");
 }
 
 export async function deleteMaintenanceDispatchItem(
@@ -997,7 +999,7 @@ export async function getMaintenanceDispatches(
 ) {
   let query = client
     .from("maintenanceDispatch")
-    .select(`*`, { count: LIST_COUNT })
+    .select(`*`, { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1005,9 +1007,7 @@ export async function getMaintenanceDispatches(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, MAINTENANCE_DISPATCHES_PAGING);
   }
 
   return query;
@@ -1956,24 +1956,26 @@ export async function upsertFailureMode(
     | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
         companyId: string;
         createdBy: string;
-        customFields?: Json;
       })
     | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
-        customFields?: Json;
       })
 ) {
-  // maintenanceFailureMode has no customFields column.
-  const { customFields: _customFields, ...mode } = failureMode;
-  if ("createdBy" in mode) {
-    return client.from("maintenanceFailureMode").insert([mode]).select("id");
+  if ("createdBy" in failureMode) {
+    return client
+      .from("maintenanceFailureMode")
+      .insert([failureMode])
+      .select("id");
   }
+  const { id, companyId, ...changes } = failureMode;
   return requireAffected(
     client
       .from("maintenanceFailureMode")
-      .update(sanitize(mode))
-      .eq("id", mode.id)
+      .update(sanitize(changes))
+      .eq("id", id)
+      .eq("companyId", companyId)
       .select("id")
   );
 }
@@ -2087,30 +2089,18 @@ export async function insertMaintenanceDispatch(
   };
 }
 
-export async function upsertMaintenanceDispatchComment(
+export async function insertMaintenanceDispatchComment(
   client: SupabaseClient<Database>,
-  comment:
-    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in comment) {
-    return client
-      .from("maintenanceDispatchComment")
-      .insert([comment])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchComment")
-      .update(sanitize(comment))
-      .eq("id", comment.id);
+  comment: z.infer<typeof maintenanceDispatchCommentValidator> & {
+    companyId: string;
+    createdBy: string;
   }
+) {
+  return client
+    .from("maintenanceDispatchComment")
+    .insert([comment])
+    .select("id")
+    .single();
 }
 
 /** The bare insert under `resources.maintenanceEvent.create`, which also posts the labor. */
@@ -2137,32 +2127,6 @@ export async function upsertMaintenanceDispatchEvent(
       .from("maintenanceDispatchEvent")
       .update(sanitize(event))
       .eq("id", event.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchItem(
-  client: SupabaseClient<Database>,
-  item:
-    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in item) {
-    return client
-      .from("maintenanceDispatchItem")
-      .insert([item])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchItem")
-      .update(sanitize(item))
-      .eq("id", item.id);
   }
 }
 
@@ -2259,9 +2223,15 @@ function extractBatchRules<
   return { batchRules, rest };
 }
 
-/** The bare write under `resources.createProcess`, which also keeps its ability in step. */
+/**
+ * The bare write under `resources.createProcess`, which also keeps its ability
+ * in step. Resources → Work Centers owns `workCenterProcess`, so the links are
+ * written with `system`, once the caller's process permission has passed, and
+ * only to the company's own work centers.
+ */
 export async function insertProcess(
   client: SupabaseClient<Database>,
+  system: SupabaseClient<Database>,
   process: Omit<z.infer<typeof processValidator>, "id"> & {
     companyId: string;
     createdBy: string;
@@ -2285,20 +2255,39 @@ export async function insertProcess(
     return processInsert;
   }
   const processId = processInsert.data.id;
-  const processProcesses = workCenters?.map((workCenterId) => ({
-    workCenterId,
-    processId,
-    companyId: insert.companyId,
-    createdBy: insert.createdBy
-  }));
 
-  if (processProcesses) {
-    const processProcessInsert = await client
-      .from("workCenterProcess")
-      .insert(processProcesses);
+  if (workCenters?.length) {
+    const owned = await system
+      .from("workCenter")
+      .select("id")
+      .eq("companyId", insert.companyId)
+      .in("id", workCenters);
+    if (owned.error) return { data: null, error: owned.error };
+    const ownedIds = new Set(owned.data.map((row) => row.id));
+    if (workCenters.some((id) => !ownedIds.has(id))) {
+      return {
+        data: null,
+        error: {
+          name: "PostgrestError",
+          code: "P0002",
+          message: "Work center not found",
+          details: "",
+          hint: ""
+        } as PostgrestError
+      };
+    }
+
+    const processProcessInsert = await system.from("workCenterProcess").insert(
+      [...ownedIds].map((workCenterId) => ({
+        workCenterId,
+        processId,
+        companyId: insert.companyId,
+        createdBy: insert.createdBy
+      }))
+    );
 
     if (processProcessInsert.error) {
-      return processProcessInsert;
+      return { data: null, error: processProcessInsert.error };
     }
   }
 
@@ -2984,7 +2973,7 @@ export function withoutSupersededEntries(
 }
 
 export const postMaintenanceEventPermission = {
-  update: "resources"
+  "resources.dispatches": "Edit"
 } satisfies PermissionRule<z.output<typeof postMaintenanceEventInput>>;
 
 /**

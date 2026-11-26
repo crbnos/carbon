@@ -82,7 +82,7 @@ export default function ProjectStock({
   const { projectId } = useParams();
   if (!projectId) throw new Error("projectId not found");
   const permissions = usePermissions();
-  const canTransfer = permissions.can("update", "projects");
+  const canTransfer = permissions.has({ "projects.projects": "Edit" });
 
   const owed = borrows.filter((b) => b.borrowerProjectId === projectId);
   const lent = borrows.filter((b) => b.lenderProjectId === projectId);

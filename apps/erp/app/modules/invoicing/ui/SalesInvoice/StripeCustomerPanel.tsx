@@ -54,11 +54,11 @@ export function useStripeCustomerResolution(
         );
   const loadedUrl = useRef<string | null>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `fetcher` is a fresh object each render, so depending on it would re-run this effect forever.
   useEffect(() => {
     if (!url) return;
     loadedUrl.current = url;
     fetcher.load(url);
+    // oxlint-disable-next-line react/exhaustive-deps -- `fetcher` is a fresh object each render, so depending on it would re-run this effect forever.
   }, [url]);
 
   if (!url) return { resolution: null, isLoading: false };

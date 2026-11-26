@@ -14,7 +14,6 @@ export function useResizeObserver(
     setEntry(entry);
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     const node = elementRef?.current;
     if (!node) return;

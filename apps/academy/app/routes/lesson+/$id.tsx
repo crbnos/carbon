@@ -141,7 +141,6 @@ export default function LessonRoute() {
     });
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       try {
@@ -175,6 +174,7 @@ export default function LessonRoute() {
     return () => {
       window.removeEventListener("message", handleMessage);
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [id]);
 
   return (

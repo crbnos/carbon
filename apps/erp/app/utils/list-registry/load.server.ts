@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
@@ -20,9 +20,7 @@ export { LOAD_MORE_ERROR, listErrorPage } from "./list-error";
 const logger = getLogger("erp", "list-registry");
 
 /** What a list loader has when it reads its page and its page-1 extras. */
-export type ListLoaderContext = Awaited<
-  ReturnType<typeof requirePermissions>
-> & {
+export type ListLoaderContext = Awaited<ReturnType<typeof authorize>> & {
   request: Request;
   /** The URL search the list reads. */
   params: URLSearchParams;
@@ -98,7 +96,7 @@ export type LoadListPageOptions<
 /**
  * The whole loader of a registered list:
  *
- * 1. `requirePermissions` with the list's permission (and `bypassRls`).
+ * 1. `authorize` with the list's gate and role (and `bypassRls`).
  * 2. `guard`, then `fetchListPage` for the URL's page (or `params`), with
  *    the user's company group.
  * 3. `firstPage` extras on page 1 only, in parallel with the page; the
@@ -137,12 +135,9 @@ export async function loadListPage<
   list: ListDefinition<TRow, TListRow>,
   options: LoadListPageOptions<TKey, TExtra, TListRow, TOut>
 ): Promise<ListLoaderData<TKey, TOut> & TExtra> {
-  const auth = await requirePermissions(
-    request,
-    options.bypassRls
-      ? { ...list.permission, bypassRls: true }
-      : list.permission
-  );
+  const auth = await authorize(request, list.gate, {
+    bypassRls: options.bypassRls
+  });
   const requestParams = new URL(request.url).searchParams;
   const after = requestParams.get("after");
   // The Table's count request: the exact count only, after page 1 shows.

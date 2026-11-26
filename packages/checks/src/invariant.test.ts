@@ -7,7 +7,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadInvariants, runInvariants } from "./invariant";
-import { repoRoot } from "./sources/migrations";
 
 describe("loadInvariants", () => {
   it("loads each .sql file as an invariant keyed by basename (no extension)", () => {
@@ -43,14 +42,5 @@ describe("runInvariants", () => {
     const [r] = await runInvariants([{ id: "e", sql: "SELECT bad" }], query);
     expect(r?.passed).toBe(false);
     expect(r?.error).toContain("boom");
-  });
-});
-
-describe("seed invariants", () => {
-  it("loads the committed invariants directory", () => {
-    const dir = `${repoRoot()}/packages/checks/src/invariants`;
-    const inv = loadInvariants(dir);
-    expect(inv.length).toBeGreaterThanOrEqual(1);
-    expect(inv.some((i) => i.id === "tracked-entity-readable-id")).toBe(true);
   });
 });

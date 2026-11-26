@@ -243,7 +243,23 @@ Two Inngest functions listen on that event
   client: serviceRole, locationId, companyId, userId: "system" })` IN-PROCESS
   **once per location** — a whole-location regen (was
   `serviceRole.functions.invoke("schedule", …)`).
-  Each engine run clears its own job's stale stamp (no wave-side flag-clearing).
+  Each engine run clears its own job's stale stamp (no wave-side flag-clearing),
+  but only a stamp no newer than the run's start (`runStartedAt`): a MARK that
+  lands mid-run stays for the next wave. Both sides use the DATABASE clock:
+  `runStartedAt` is `databaseNow` (`packages/planning/src/run-order.ts`, `SELECT now()`, microseconds, read
+  once before any input), and MARK and `nightly-replan.ts` stamp
+  `scheduleOutdatedAt = now()` through Kysely (`getJobDatabaseClient()`).
+  Newest read wins: under the location lock, `claimLocationSave`
+  (`persist-location.ts`) reads `locationScheduleRun.lastRunStartedAt` and applies the rule MRP uses (`newestRunSaves`, `run-order.ts`) against
+  `runStartedAt`; when a later-started run already saved, the run writes
+  nothing (batch pre-pass and final write alike) and returns `skipped: true`
+  with zero counts and no newly-late jobs; otherwise it records its start
+  there and writes. A run with no jobs to write still takes the lock and records its
+  start, so an older run that saves after it skips. No caller treats a skipped run as a failure. Waves share the `"schedule:" + companyId`
+  concurrency key; a user-triggered regen runs in-process in the ERP and does not,
+  so `persistLocationWrites` and the batch pre-pass first take
+  `pg_advisory_xact_lock(hashtextextended('schedule:location:<id>', 0))`
+  (`lockLocationSchedule`), always before the per-job dependency lock.
   There is no pre-clear-reservations step, no batch slicing/chunking, and no
   chain-next-wave continuation. After the regens the wave sends one digest
   `carbon/notify` (`NotificationEvent.JobsProjectedLate`, `documentIds` = the
@@ -301,8 +317,23 @@ only; its output is read by nothing in the placement path (spec
   once and shared across every job in the batch. The location's open jobs
   (`Ready | In Progress | Paused`) are ordered **deadline class first**
   (`DEADLINE_PRIORITY`: ASAP → Hard Deadline → Soft Deadline → No Deadline), then
-  `dueDate ASC NULLS LAST → job.priority ASC → createdAt ASC` — so a no-due-date ASAP
-  order claims capacity first. Each job's engine run **excludes the jobs not yet run
+  `dueDate ASC NULLS LAST → job.priority ASC → createdAt ASC → id ASC` — so a no-due-date ASAP
+  order claims capacity first. Before the jobs run, `provider.holdStartedOperations`
+  holds each STARTED op's machine from `now` for its remaining work, only where the
+  selector will keep it (`startedOperationWorkCenter`, the selector's own sticky rule:
+  a process and a stored work center active at the run's location
+  (`getActiveWorkCenters`); batch members and outside ops skipped; pure
+  rules `startedOperationsToHold` / `startedOperationHolds` in `run-overlay.ts`). A
+  gated op (process `requiresAbility`) also holds each person with an open Labor
+  `productionEvent` on it (one read for all held ops, `getClockedInEmployees`), as an
+  `Employee` hold for the hands-on part from the same start, one per open machine window
+  it spans, so a closed gap inside it (a night, a break) leaves the person free; no open
+  labor event, no person hold. When the op's own job runs, those clocked-in people stay eligible for it
+  whatever the manning board says (`clockedInByOperation` on the finite context: they
+  join pass 1 on the machine's hours), so the running op books them and later jobs wait. A job sees the holds of the jobs not run
+  yet; `releaseHolds` drops a job's own holds as it runs, so a running op keeps its
+  machine ahead of an earlier job's unstarted work while that job's unstarted ops keep
+  their normal place. Each job's engine run **excludes the jobs not yet run
   (itself + later)** from the reservation snapshot, so it sees non-batch reservations
   plus the placements of already-run jobs → sequential capacity
   claiming, no pre-clear step. **Nothing is written while the jobs run.** The
@@ -347,24 +378,32 @@ only; its output is read by nothing in the placement path (spec
   constraints — placement never floors/delays on `op.dueDate` (comments at the
   floor sites in `work-center-selector.ts`; `determinism.test.ts` pins placement
   invariance with/without the need-by pass; the one remaining read is the pinned
-  OUTSIDE-PROCESSING passthrough, which keeps its stored window and chains
-  successors after the pinned end). The pass also produces no conflict flags.
+  OUTSIDE-PROCESSING passthrough, which keeps its stored window — start of its start day
+  to the last instant of its due day in the job's timezone — as its selection, so it
+  counts in the projected completion and lateness, and chains successors after it). The pass also produces no conflict flags.
 - **Finite placement** (`work-center-selector.ts`): ops are placed in a **deterministic
   topological order** (`topologicalPlacementOrder`, Kahn's algorithm over the dependency
   edges; the ready set is ordered by `jobOperation."order"` then id). Each op is placed
   forward from `max(now, placed-dependency-ends)` — **no backward-pass floor** — into the
-  first feasible span. Two finite resources gate it: the work center (capacity 1 — one op
+  first feasible span. A started in-house op (`isOperationStarted`, not a batch member) is
+  running: it ignores its predecessors, is placed first, and starts from `now`; its
+  successors still chain after it. Two finite resources gate it: the work center (capacity 1 — one op
   at a time, decided by actual `capacityReservation` intervals) AND, for ability-gated
   processes, ≥1 qualified employee on shift and unreserved. **Only a started op is
   sticky** (`isOperationStarted`, `apply-work-center-selections.ts`: status In Progress
   or Paused, or `quantityComplete > 0`): it stays on its `workCenterId`. An op that has
   not started gets earliest-finish selection across its process's work centers, even
   when it carries a work center (the stored one is the fallback when the process has no
-  mapped centers). `applyWorkCenterSelections` then puts the chosen work center on a
-  placed op that has not started, and `placementWrites` (`run-overlay.ts`) writes it,
-  so `jobOperation.workCenterId` and the op's `capacityReservation` always name the
-  same station. A started op and a placeholder
-  keep the stored one; an op with no work center gets one either way. Consequence: a
+  mapped centers). Pool, sticky and fallback all take only work centers active at the
+  job's location: `initialize` filters the pool by `getActiveWorkCenters(locationId)`
+  and `loadAvailabilityWindows` leaves a stored center that is not in that set out of
+  the capacity set, so a center moved to another location or deactivated is neither
+  sticky nor a fallback (no candidate → the no-work-center conflict).
+  `applyWorkCenterSelections` then puts the chosen work center on every placed op
+  (a started op is only moved off a center not valid here), and `placementWrites`
+  (`run-overlay.ts`) writes it, so `jobOperation.workCenterId` and the op's
+  `capacityReservation` always name the same station. A placeholder
+  keeps the stored one; an op with no work center gets one either way. Consequence: a
   card dragged to another column on the operations board can move back at the next
   regen when another station finishes it earlier. A placement past the job's
   `dueDate` sets `hasConflict`/`conflictReason` but keeps the placement.
@@ -382,7 +421,10 @@ only; its output is read by nothing in the placement path (spec
   `maintenanceDispatchWorkCenter` rows) — no separate downtime table; completing the
   dispatch restores the hours at the next regen. People with no `employeeShift` rows now
   default to the job LOCATION's calendar (rung 3/4 via `getLocationCalendarWindows`),
-  not 24×7.
+  not 24×7. A person's shifts are expanded over the horizon once per run
+  (`getEmployeeAvailability`, cached per employee + range with `cacheCompanyData`;
+  `expandEmployeeShifts` in `calendar-utils.ts`); the arrays are shared across jobs and
+  never mutated.
 - **Company holidays close the plant.** The provider reads the company's `holiday`
   dates once per run (`getHolidayDates`). `closeHolidays` (`machine-availability.ts`)
   removes each holiday's whole day, in the plant timezone, from every work center that
@@ -448,7 +490,8 @@ only; its output is read by nothing in the placement path (spec
   `productionEvent` exists on the op — anchored at `now`.
 - **Priority** = per-work-center dispatch sequence number (`priority-calculator.ts`): ops
   grouped by `workCenterId`, sorted by **placed start date ascending** (nulls last),
-  tie-broken by `job.priority` then deadline type, then numbered 1, 2, 3…. The dispatch
+  tie-broken by `job.priority` then deadline type, then numbered 1, 2, 3…. Outside
+  Processing ops are left out of every work center's numbering. The dispatch
   sequence IS the forward-ASAP placement order — one source of truth for what runs next.
   Boards sort by `priority` ascending. (Job-level `job.priority` is a separate fractional
   index set at job creation by `calculateJobPriority`.) There is **no configurable
@@ -468,7 +511,9 @@ only; its output is read by nothing in the placement path (spec
   (one delete for all the run's jobs where `scenarioId IS NULL`, then bulk insert — a materialized OUTPUT,
   `WorkCenter`/`Employee` kinds); and writes `job.projectedCompletionAt` (= the max
   placed end, the forecast finish) while clearing
-  `scheduleOutdatedReason`/`scheduleOutdatedAt` for each job. The engine's `buildWrites` also computes the
+  `scheduleOutdatedReason`/`scheduleOutdatedAt` for each job (unless stamped after
+  `runStartedAt`), unless a later-started run already saved the location
+  (`claimLocationSave`: then nothing is written). The engine's `buildWrites` also computes the
   **newly-late** flag (was on-time-or-unforecast before, now projected past `dueDate`
   on the location calendar) for the wave's digest. Every due-date judgement — need-by
   targets, lateness conflicts, newly-late, the behind-target sentence — reads
@@ -496,8 +541,11 @@ op. Forward placement schedules pinned ops **normally** — the old frozen-windo
 branch (reserve the pinned span, skip placement) was REMOVED with the dual-dates
 split, so a pinned op's `startDate`/`projectedCompletionAt` are re-projected every
 regen and may differ from its pin. The one exception is a pinned OUTSIDE-PROCESSING
-op, which skips placement and keeps its stored window (successors chain after the
-pinned end). Pins are set via `setJobOperationDueDate` (`production.server.ts`,
+op, which skips placement and keeps its stored window, emitted as its placement (start
+of `startDate` to the end of `dueDate` in the job's timezone): it counts in the job's
+projected completion and lateness, and successors chain after it. Its selection carries
+no work center (a stored one is a stale in-house machine), and `calculatePrioritiesByWorkCenter`
+numbers no Outside Processing op in any work center's queue. Pins are set via `setJobOperationDueDate` (`production.server.ts`,
 sets `manuallyScheduled`) from `OperationDueDatePicker` on the BOP.
 
 ## Conflict detection
@@ -512,7 +560,10 @@ windows, missing/expired operator qualification, or calendar exhaustion —
 `dueDate`** (the overdue verdict; `jobDueDate` is passed into the selector — the
 per-op need-by targets are NOT a lateness input and NEVER set `hasConflict`; an op
 behind its target only gets the informational amber state). Conflicts
-surface; scheduling never hard-fails. The read RPCs roll it up per job with
+surface; scheduling never hard-fails. The cause (`classifyLatePlacement`,
+`conflict-messages.ts`) is the predecessor, not the work center, when the op starts at
+its work center's first working instant at or after its dominant predecessor's end
+(`startsWhenDependencyEnds`): the wait was only closed hours. The read RPCs roll it up per job with
 `BOOL_OR(...)` so the board shows a red flag.
 
 **Unplaceable ops leave a placeholder (`work-center-selector.ts` `best === null`
@@ -523,20 +574,40 @@ fallback work center — and now also emits a **non-binding placeholder**
 op's earliest start (snapped forward to the fallback WC's next working window via
 `nextWorkingInstant`, so the marker never draws on a night/weekend the `now`
 anchor happened to fall in) for its work-content duration in calendar time, on
-the fallback WC. It exists so the **Forecast** (which is 100% reservation-driven)
+the fallback WC. An op with NO candidate work center (no process, or a process no
+active work center at the location runs) takes the same branch: a conflict (plus
+the `error` quote-lead-time reads), no marker (there is no work center to draw it
+on; its conflict names the process by name, or "No process set"), but successors still
+chain after its work content from its earliest start, laid on the job location's working
+calendar (`locationWindows` on the finite context, the calendar people with no shift use)
+rather than clock hours, and
+its selection's `placeholderEnd` counts in `projectedFinishMs` (the job's projected
+completion, newly-late, the quote lead time) without being applied as a placement. The placeholder exists so the **Forecast** (which is 100% reservation-driven)
 shows the op instead of the job silently ending after its last placeable op, and
 so `job.projectedCompletionAt` extends to it and successors chain after it
 (`placedEndByOperation`). It is deliberately NOT added to the in-run
 `capacity.reservations` blocking set, and `getLiveReservations` filters
 `isPlaceholder IS NOT true`, so it never holds the machine against other jobs or
-the next regen. The Forecast surfaces it with a red "can't be scheduled" alert
+the next regen. An unplaceable op with no work left (0 hours) gets no marker and no
+`placeholderEnd`, but ends at its earliest start for chaining, so a successor still
+waits for that op's predecessors. The Forecast surfaces the placeholder with a red "can't be scheduled" alert
 (`LuBan`) in the TREE status column — via `GanttEvent.data.isUnschedulable`, set
 on BOTH the work-center lane (any unplaceable child) and the operation row, so it
 reports at the work-center level AND per operation (in a Compact lane the
 placeholders get their own bottom strip, overlapping ones merged into one
 "N can't be scheduled" chip, `groupOverlaps`); clicking either row opens the
 detail sidebar ("Unschedulable" chip + reason + "where it would run"
-explanation). Plus a separate "{n} can't be scheduled" header count. (Placed-but
+explanation). Plus a separate "{n} can't be scheduled" header count. An op with
+no work center at all has no reservation to draw, and neither does one whose stored
+work center or process the scheduler cannot use at the job's location (it keeps the
+stored id and gets a conflict). So the Forecast loader also reads the location's open,
+non-outside ops on jobs it schedules with no `workCenterId` or with `hasConflict`, drops
+every one a live reservation draws (its own, a placeholder, or its Released batch's;
+`getUnreservedOperations` + `withoutLiveReservation`, `production.service.ts`, one
+candidate read and one chunked reservation read, capped at 200) and shows them in a
+"No work center" lane (`lane:NoWorkCenter`, `resourceTimeline.ts`)
+spanning the window, counted in the header total, with the conflict reason in the
+detail sidebar. (Placed-but
 -LATE ops keep a real reservation, show the generic `isError` triangle, and are
 the "conflict" count.)
 

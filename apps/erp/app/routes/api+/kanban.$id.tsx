@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { Loading } from "@carbon/react";
@@ -39,7 +39,7 @@ function destination(kanbanId: string, scan: KanbanScan): string {
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.
   rejectCrossSiteNavigation(request);
-  const auth = await requirePermissions(request, { role: "employee" });
+  const auth = await authorize(request, {});
 
   const { id } = params;
   if (!id) throw notFound("id not found");

@@ -3,18 +3,19 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { createQualityIssue } from "~/services/quality.server";
+import { resolveWorkUnit } from "~/services/work-unit.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "quality"
+  const { companyId, userId } = await authorize(request, {
+    "quality.issues": "Create"
   });
   const serviceRole = await getCarbonServiceRole();
 
@@ -43,11 +44,27 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const work = trackedEntityId
+    ? await resolveWorkUnit({
+        client: serviceRole,
+        companyId,
+        operationId: jobOperationId,
+        requestedUnitId: trackedEntityId,
+        mode: "member"
+      })
+    : null;
+  if (work?.kind === "refuse") {
+    throw redirect(
+      requestReferrer(request) ?? path.to.active,
+      await flash(request, error(null, work.message))
+    );
+  }
+
   const result = await createQualityIssue(serviceRole, {
     companyId,
     userId,
     jobOperationId,
-    trackedEntityId,
+    trackedEntityId: work?.kind === "unit" ? work.unitId : trackedEntityId,
     // The operator's free-text description doubles as the issue name (the
     // original MES behavior — the description body stays empty).
     name: userDescription,

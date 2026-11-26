@@ -13,7 +13,7 @@ import { datetime, getRequestOrigin } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import {
-  authenticateApiKey,
+  apiKeyContext,
   findOAuthToken,
   oauthContext
 } from "../v1+/lib/authenticate.server";
@@ -85,7 +85,7 @@ function addCorsHeaders(response: Response): Response {
  * is the house tool (the login limiter is the precedent). Keyed by USER, not by
  * token, so minting extra tokens does not multiply the allowance. Without this,
  * the OAuth branch was the one authenticated path with no rate limit at all —
- * it never touches requirePermissions, where the API-key limit lives.
+ * it never touches authorize, where the API-key limit lives.
  */
 const OAUTH_RATE_LIMIT = 60;
 const oauthRatelimit = new Ratelimit({
@@ -155,17 +155,19 @@ async function resolveAuth(request: Request): Promise<{
           throw make429Response(rl.reset, rl.remaining);
         }
 
-        const ctx = await oauthContext(identity);
+        const ctx = await oauthContext(identity, request);
         if (ctx) return { ctx, request };
       }
 
       throw make401Response(request);
     }
 
-    // Fall back to carbon-key auth
+    // Fall back to carbon-key auth. Same helper as the v1 HTTP transport; the
+    // MCP engine gets the request with the key as its `carbon-key` header.
+    const ctx = await apiKeyContext(request, token);
     const headers = new Headers(request.headers);
     headers.set("carbon-key", token);
-    request = new Request(request, { headers });
+    return { ctx, request: new Request(request, { headers }) };
   }
 
   // No Authorization header at all — return 401 for OAuth discovery
@@ -173,12 +175,9 @@ async function resolveAuth(request: Request): Promise<{
     throw make401Response(request);
   }
 
-  // `request` here carries the carbon-key header for both entry forms
-  // (`Bearer crbn_…` was rewritten above). Same helper as the v1 HTTP transport,
-  // so the requirePermissions-then-read-scopes dance exists once.
   const rawKey = request.headers.get("carbon-key") ?? "";
   return {
-    ctx: await authenticateApiKey(request.url, rawKey),
+    ctx: await apiKeyContext(request, rawKey),
     request
   };
 }

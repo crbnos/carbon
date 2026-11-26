@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,7 +11,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getPlanningGroups } from "~/modules/projects/projects.service";
 import PlanningGroupsTable from "~/modules/projects/ui/PlanningGroups/PlanningGroupsTable";
 import PlanningGroupsUpgradeOverlay from "~/modules/projects/ui/PlanningGroups/PlanningGroupsUpgradeOverlay";
 import type { Handle } from "~/utils/handle";
@@ -20,16 +19,14 @@ import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Planning Groups`,
-  to: path.to.planningGroups,
-  module: "projects"
+  to: path.to.planningGroups
 };
 
 // The list loads without a plan check: a gated company sees the upgrade
 // overlay. The write routes and `upsertPlanningGroup` enforce the plan.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "projects.planningGroups": "View"
   });
 
   const searchParams = new URL(request.url).searchParams;
@@ -37,7 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const groups = await getPlanningGroups(client, companyId, {
+  const groups = await api.projects.getPlanningGroups({
     search,
     limit,
     offset,
@@ -56,8 +53,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    groups: groups.data ?? [],
-    count: groups.count ?? 0
+    groups: groups.data?.rows ?? [],
+    count: groups.data?.count ?? 0
   };
 }
 

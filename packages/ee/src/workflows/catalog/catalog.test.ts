@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it } from "vitest";
+import { gatePages } from "../definition/catalog";
 import {
   type WorkflowDefinition,
   workflowDefinitionSchema
@@ -75,7 +76,7 @@ describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
       "purchaseOrder.status.changed"
     );
     expect(event.id).toBe("purchaseOrder.status.changed");
-    expect(event.permission).toBe("purchasing");
+    expect(event.permission).toBe("purchasing.purchaseOrders");
     expect(event.match).toEqual({
       table: "purchaseOrder",
       operation: "UPDATE",
@@ -118,10 +119,7 @@ describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
     );
     expect(action.inputs.purchaseOrder?.required).toBe(true);
     expect(action.inputs.orderDate?.required).toBe(false);
-    expect(action.permission).toEqual({
-      module: "purchasing",
-      action: "update"
-    });
+    expect(action.permission).toEqual({ "purchasing.purchaseOrders": "Edit" });
   });
 
   it("answers with a hand-written action and its route", () => {
@@ -164,10 +162,7 @@ describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
       "job.totalScrapQuantity"
     );
     expect(operation.entity).toBe("job");
-    expect(operation.permission).toEqual({
-      module: "production",
-      action: "view"
-    });
+    expect(operation.permission).toEqual({ "production.jobs": "View" });
   });
 
   it("returns undefined for an action or operation it does not know", () => {
@@ -175,11 +170,19 @@ describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
     expect(catalog.getOperation("job.vibes")).toBeUndefined();
   });
 
-  it("carries the registry permission on every entity", () => {
+  it("gives every entity View on the page of its table", () => {
     expect(need(catalog.getEntity("job"), "job").permission).toEqual({
-      module: "production",
-      action: "view"
+      "production.jobs": "View"
     });
+    expect(
+      gatePages(need(catalog.getEntity("item"), "item").permission ?? {})
+    ).toEqual([
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ]);
   });
 });
 

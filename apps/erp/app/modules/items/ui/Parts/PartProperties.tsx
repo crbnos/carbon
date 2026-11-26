@@ -69,6 +69,7 @@ import {
   FileBadge,
   ItemDescription,
   SourcingTypeProperty,
+  TaxableProperty,
   useIsComponentOfBuyAndMake
 } from "../Item";
 
@@ -138,6 +139,7 @@ const PartProperties = ({
   // When `data` is injected (subassembly context), this hook won't match a
   // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     partSummary: PartSummary;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -211,11 +213,11 @@ const PartProperties = ({
       setTrackingRefusals((count) => count + 1);
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (
       field:
         | "active"
+        | "taxable"
         | "defaultMethodType"
         | "sourcingType"
         | "itemTrackingType"
@@ -243,10 +245,10 @@ const PartProperties = ({
       );
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.partSummary?.id]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
@@ -263,10 +265,10 @@ const PartProperties = ({
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.partSummary?.readableId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -281,6 +283,7 @@ const PartProperties = ({
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.partSummary?.readableId]
   );
 
@@ -500,7 +503,7 @@ const PartProperties = ({
           id={itemId}
           table="item"
           value={assignee ?? ""}
-          isReadOnly={!permissions.can("update", "parts")}
+          isReadOnly={!permissions.has({ "parts.parts": "Edit" })}
         />
       </VStack> */}
 
@@ -816,6 +819,14 @@ const PartProperties = ({
             />
           </ValidatedForm>
         </ItemChangeNoticeLock>
+      )}
+      {!embedded && (
+        <TaxableProperty
+          itemId={itemId}
+          taxable={routeDataFromRoute?.taxable}
+          onChange={(value) => onUpdate("taxable", value)}
+          isReadOnly={isReadOnly}
+        />
       )}
       {/* Manufacturer Part Number is a purchasing attribute — hidden on the CO
           affected-item card; it stays editable on the part page (non-embedded),

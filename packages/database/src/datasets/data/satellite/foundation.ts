@@ -249,28 +249,33 @@ export const CUSTOMERS = [
     type: "Government",
     status: "Active",
     phone: "+1-703-555-0100",
-    website: "https://orbsec.gov"
+    website: "https://orbsec.gov",
+    taxCode: "Out of State – Exempt",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "NovaSat Networks",
     type: "Commercial",
     status: "Active",
     phone: "+1-415-555-0200",
-    website: "https://novasat.com"
+    website: "https://novasat.com",
+    taxCode: "TX – Houston"
   },
   {
     name: "Apex Space Research",
     type: "Research",
     status: "Active",
     phone: "+1-617-555-0300",
-    website: "https://apexresearch.edu"
+    website: "https://apexresearch.edu",
+    taxCode: "TX – Houston"
   },
   {
     name: "PolarView Earth",
     type: "Commercial",
     status: "Lead",
     phone: "+1-512-555-0400",
-    website: "https://polarview.io"
+    website: "https://polarview.io",
+    taxCode: "TX – Houston"
   }
 ];
 
@@ -326,7 +331,8 @@ export const SUPPLIERS = [
     stage: "Production" as const,
     type: "Hardware",
     phone: "+1-206-555-0600",
-    website: "https://sgfasteners.com"
+    website: "https://sgfasteners.com",
+    partNumberDisplay: "Ours First" as const
   },
   {
     name: "Orbital Composites",
@@ -794,6 +800,15 @@ export const MATERIAL_TAXONOMY: MaterialTaxonomySpec = {
 
 export const satelliteFoundation: FoundationData = {
   departments: DEPT_NAMES,
+  roles: [
+    {
+      name: "Buyer",
+      grants: [
+        { module: "Purchasing", level: "Edit" },
+        { module: "Inventory", level: "View" }
+      ]
+    }
+  ],
   abilities: ABILITIES,
   processes: PROCESSES,
   workCenters: WORK_CENTERS,
@@ -810,6 +825,45 @@ export const satelliteFoundation: FoundationData = {
   workCenterProcessLinks: WORK_CENTER_PROCESS_LINKS,
   customerTypes: CUSTOMER_TYPES,
   supplierTypes: SUPPLIER_TYPES,
+  taxAuthorities: [{ name: "Texas Comptroller" }, { name: "City of Houston" }],
+  taxCodes: [
+    {
+      name: "TX – Houston",
+      countryCode: "US",
+      state: "TX",
+      components: [
+        {
+          name: "Texas State",
+          authority: "Texas Comptroller",
+          taxPercent: 6.25
+        },
+        { name: "City of Houston", authority: "City of Houston", taxPercent: 2 }
+      ]
+    },
+    {
+      name: "Out of State – Exempt",
+      reportingCategory: "Exempt",
+      invoiceMessage: "Exempt from Texas sales tax",
+      countryCode: "US",
+      components: [
+        { name: "Exempt", authority: "Texas Comptroller", taxPercent: 0 }
+      ]
+    },
+    {
+      name: "Use Tax 8.25%",
+      calculationType: "Reverse Charge",
+      reportingCategory: "Reverse Charge",
+      countryCode: "US",
+      state: "TX",
+      components: [
+        {
+          name: "Texas Use Tax",
+          authority: "Texas Comptroller",
+          taxPercent: 8.25
+        }
+      ]
+    }
+  ],
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,

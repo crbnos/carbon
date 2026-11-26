@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
@@ -17,18 +17,14 @@ import type {
   ShouldRevalidateFunction
 } from "react-router";
 import { useLoaderData } from "react-router";
-import { getUnitOfMeasuresList } from "~/modules/items/items.service";
 import {
   getBalloons,
-  getGaugeTypesList,
   getInspectionDocument,
   getInspectionDocumentParameters,
-  getInspectionDocumentVersions,
   getInspectionFeatures
 } from "~/modules/quality/quality.service";
 import type { InspectionDocumentContent } from "~/modules/quality/types";
 import type { SamplingRule } from "~/modules/quality/ui/InspectionDocument/SamplingRuleModal";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -46,8 +42,7 @@ export const handle: Handle = {
     ];
     const name = data?.diagram?.name;
     return name ? [...segments, { breadcrumb: name }] : segments;
-  },
-  module: "quality"
+  }
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
@@ -62,8 +57,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 }) => (formAction?.endsWith("/save") ? false : defaultShouldRevalidate);
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality"
+  const { companyId, api } = await authorize(request, {
+    "quality.inspectionPlans": "View"
   });
 
   const { id } = params;
@@ -82,9 +77,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getInspectionDocument(serviceRole, id, companyId),
     getInspectionFeatures(serviceRole, id),
     getBalloons(serviceRole, id),
-    getUnitOfMeasuresList(client, companyId),
-    getGaugeTypesList(client, companyId),
-    getCompanySettings(client, companyId),
+    api.items.getUnitOfMeasuresList({}),
+    api.quality.getGaugeTypesList({}),
+    api.settings.getCompanySettings({}),
     getInspectionDocumentParameters(serviceRole, id, companyId)
   ]);
 
@@ -106,11 +101,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.inspectionDocuments);
   }
 
-  const versions = await getInspectionDocumentVersions(
-    client,
-    diagram.data,
-    companyId
-  );
+  const versions = await api.quality.getInspectionDocumentVersions({ id });
 
   const features = featuresResult.data ?? [];
   const balloons = balloonsResult.data ?? [];

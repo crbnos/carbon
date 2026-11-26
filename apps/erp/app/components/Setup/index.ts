@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { rowMenuColumn, setupGridHeight, useCellSave } from "./setupGrid";
 import {
   SetupBody,
   SetupFooter,
@@ -9,7 +10,6 @@ import {
   SetupSection
 } from "./SetupLayout";
 import SetupSteps from "./SetupSteps";
-import { rowMenuColumn, setupGridHeight, useCellSave } from "./setupGrid";
 import TermForm from "./TermForm";
 
 export {

@@ -58,7 +58,7 @@ const PickingListNotes = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {permissions.can("update", "inventory") ? (
+        {permissions.has({ "inventory.pickingLists": "Edit" }) ? (
           <Editor
             label={t`Picking List Notes`}
             initialValue={(notes ?? {}) as JSONContent}

@@ -3,10 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   ActionFunctionArgs,
@@ -15,10 +16,9 @@ import type {
 } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
-import { memoValidator } from "~/modules/invoicing/invoicing.models";
+import { memoPage, memoValidator } from "~/modules/invoicing/invoicing.models";
 import {
   getMemo,
-  getMemoApplications,
   getSettlementRelatedItems,
   upsertMemo
 } from "~/modules/invoicing/invoicing.service";
@@ -49,8 +49,7 @@ export const handle: Handle = {
         : { breadcrumb: msg`Credit Memos`, to: path.to.creditMemos },
       { breadcrumb: memo?.memoId }
     ];
-  },
-  module: "invoicing"
+  }
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
@@ -60,21 +59,23 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(["invoicing.supplierCredits", "invoicing.creditMemos"], "View")
+  );
   const { memoId } = params;
   if (!memoId) throw notFound("Missing memoId");
 
-  const memo = await getMemo(client, memoId, companyId);
+  const memo = await api.invoicing.getMemo({ id: memoId });
   if (memo.error || !memo.data) {
     throw redirect(
       path.to.invoicing,
       await flash(request, error(memo.error, "Failed to load memo"))
     );
   }
+  await authorize(request, { [memoPage(memo.data)]: "View" });
 
-  const applications = await getMemoApplications(client, companyId, memoId);
+  const applications = await api.invoicing.getMemoApplications({ memoId });
 
   return {
     memo: memo.data,
@@ -98,9 +99,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "invoicing"
-  });
+  const { client, companyId, companyGroupId, userId } = await authorize(
+    request,
+    anyOf(["invoicing.supplierCredits", "invoicing.creditMemos"], "Edit")
+  );
   const { memoId } = params;
   if (!memoId) throw notFound("Missing memoId");
 
@@ -118,6 +120,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(existing.error, "Failed to load memo"))
     );
   }
+  await authorize(request, { [memoPage(existing.data)]: "Edit" });
   if (existing.data.status !== "Draft") {
     throw redirect(
       path.to.memo(memoId),
@@ -129,6 +132,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const update = await upsertMemo(client, {
     ...memoData,
     id: memoId,
+    companyId,
+    companyGroupId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
   });
@@ -157,10 +162,22 @@ export default function MemoDetailRoute() {
     memoDate: memo.memoDate,
     currencyCode: memo.currencyCode ?? "",
     exchangeRate: Number(memo.exchangeRate ?? 1),
-    amount: Number(memo.amount ?? 0),
+    // `amount` is the gross; the form edits the net and recomputes the tax.
+    netAmount: round(Number(memo.amount ?? 0) - Number(memo.taxAmount ?? 0)),
+    taxCodeId: memo.taxCodeId ?? "",
+    taxAmount: Number(memo.taxAmount ?? 0),
     reference: memo.reference ?? "",
     notes: memo.notes ?? "",
     status: memo.status ?? undefined
+  };
+
+  // The saved tax: while the code is unchanged the form, like `upsertMemo`,
+  // keeps the rate it implies (a memo made from lines with a bare percent has
+  // tax and no code).
+  const storedTax = {
+    amount: Number(memo.amount ?? 0),
+    taxAmount: Number(memo.taxAmount ?? 0),
+    taxCodeId: memo.taxCodeId ?? null
   };
 
   const type = memo.supplierId ? "supplierCredit" : "creditMemo";
@@ -179,7 +196,11 @@ export default function MemoDetailRoute() {
         />
       }
     >
-      <MemoForm initialValues={initialValues} type={type} />
+      <MemoForm
+        initialValues={initialValues}
+        storedTax={storedTax}
+        type={type}
+      />
       <MemoApplicationsPanel
         rows={applications}
         currencyCode={memo.currencyCode ?? "USD"}

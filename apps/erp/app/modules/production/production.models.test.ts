@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   assemblyInstructionStepValidator,
+  demandProjectionRows,
   isBatchDissolvable,
   isBatchReleasable,
   isJobBulkReleasable,
@@ -83,5 +84,81 @@ describe("assemblyInstructionStepValidator list options", () => {
         type: "Task"
       }).success
     ).toBe(true);
+  });
+});
+
+describe("demandProjectionRows", () => {
+  const formWeeks = [
+    { id: "p-1", startDate: "2026-11-22" },
+    { id: "p-2", startDate: "2026-11-29" }
+  ];
+  const plan = (weeks: { weekStart: string; quantity: number }[]) =>
+    demandProjectionRows(
+      formWeeks,
+      { itemId: "item-1", locationId: "loc-1", weeks },
+      { companyId: "company-1", userId: "user-1" }
+    );
+
+  it("names each week's period by its start date", () => {
+    expect(plan([{ weekStart: "2026-11-29", quantity: 4 }])).toEqual({
+      rows: [
+        {
+          itemId: "item-1",
+          locationId: "loc-1",
+          periodId: "p-2",
+          weekStart: "2026-11-29",
+          forecastQuantity: 4,
+          companyId: "company-1",
+          createdBy: "user-1",
+          updatedBy: "user-1"
+        }
+      ]
+    });
+  });
+
+  // The week after the window, and a Monday inside it: neither is a column.
+  it.each(["2026-12-06", "2026-11-23"])(
+    "refuses %s, which no form week starts on",
+    (weekStart) => {
+      expect(plan([{ weekStart, quantity: 1 }])).toHaveProperty("refusal");
+    }
+  );
+
+  // A form opened before Sunday still posts the week that has just passed.
+  it("skips the week before the first and writes the rest", () => {
+    expect(
+      plan([
+        { weekStart: "2026-11-15", quantity: 3 },
+        { weekStart: "2026-11-22", quantity: 5 }
+      ])
+    ).toEqual({
+      rows: [
+        {
+          itemId: "item-1",
+          locationId: "loc-1",
+          periodId: "p-1",
+          weekStart: "2026-11-22",
+          forecastQuantity: 5,
+          companyId: "company-1",
+          createdBy: "user-1",
+          updatedBy: "user-1"
+        }
+      ]
+    });
+  });
+
+  it("refuses a week two weeks before the first", () => {
+    expect(plan([{ weekStart: "2026-11-08", quantity: 1 }])).toHaveProperty(
+      "refusal"
+    );
+  });
+
+  it("refuses a week sent twice", () => {
+    expect(
+      plan([
+        { weekStart: "2026-11-22", quantity: 1 },
+        { weekStart: "2026-11-22", quantity: 2 }
+      ])
+    ).toHaveProperty("refusal");
   });
 });

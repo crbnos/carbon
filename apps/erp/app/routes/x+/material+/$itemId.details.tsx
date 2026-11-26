@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -14,7 +14,7 @@ import { useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import { materialValidator } from "~/modules/items/items.models";
-import { upsertMaterial } from "~/modules/items/items.service";
+import { updateMaterial } from "~/modules/items/items.service";
 import type { ItemFile, MaterialSummary } from "~/modules/items/types";
 import {
   ItemDocuments,
@@ -27,8 +27,8 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, companyId, userId } = await authorize(request, {
+    "parts.materials": "Edit"
   });
 
   const { itemId } = params;
@@ -43,23 +43,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // A new size is a new item revision, so it also needs create.
   if (validation.data.sizes?.length) {
-    await requirePermissions(request, { create: "parts" });
+    await authorize(request, { "parts.materials": "Create" });
   }
 
-  const updateMaterial = await upsertMaterial(client, getDatabaseClient(), {
+  const updated = await updateMaterial(client, getDatabaseClient(), {
     ...validation.data,
     id: itemId,
     companyId,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });
-  if (updateMaterial.error) {
+  if (updated.error) {
     throw redirect(
       path.to.material(itemId),
-      await flash(
-        request,
-        error(updateMaterial.error, "Failed to update material")
-      )
+      await flash(request, error(updated.error, "Failed to update material"))
     );
   }
 

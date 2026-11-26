@@ -3,10 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { anyOf, type PageGate } from "@carbon/database/access";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import {
   bicMatchesCountry,
   colorNames,
   conditionAstFormField,
+  conditionAstSchema,
   equals,
   getBankFieldConfig,
   getFieldDef,
@@ -29,6 +32,7 @@ import {
 } from "~/types/validators";
 import { currencyCodes } from "../accounting/types";
 import { returnTypes } from "../service/service.models";
+import { inheritableInvoiceAutomations } from "../settings/settings.models";
 import {
   incoterms,
   itemType,
@@ -47,26 +51,47 @@ import {
   pricingRuleConfigurationPriceValidator
 } from "./sales.utils";
 
+/** View on either contracts list: both open the same contract page. */
+export const CONTRACT_READ_GATE = anyOf(
+  ["sales.serviceContracts", "sales.projectContracts"],
+  "View"
+);
+
+/** `gate` together with View on either contracts list. */
+export function withContractRead(gate: PageGate): PageGate[] {
+  return CONTRACT_READ_GATE.map((read) => ({ ...gate, ...read }));
+}
+
+// Each KPI names the pages it reads, so the dashboard shows only what the person may see.
 export const KPIs = [
   {
     key: "quoteCount",
-    label: "Quotes"
+    label: "Quotes",
+    gate: { "sales.quotes": "View" }
   },
   {
     key: "rfqCount",
-    label: "RFQs"
+    label: "RFQs",
+    gate: { "sales.rfqs": "View" }
   },
   {
     key: "salesFunnel",
-    label: "Sales Funnel"
+    label: "Sales Funnel",
+    gate: {
+      "sales.rfqs": "View",
+      "sales.quotes": "View",
+      "sales.salesOrders": "View"
+    }
   },
   {
     key: "salesOrderCount",
-    label: "Sales Orders"
+    label: "Sales Orders",
+    gate: { "sales.salesOrders": "View" }
   },
   {
     key: "salesOrderRevenue",
-    label: "Sales Revenue"
+    label: "Sales Revenue",
+    gate: { "sales.salesOrders": "View" }
   }
   // {
   //   key: "turnaroundTime",
@@ -104,7 +129,8 @@ export const CUSTOMER_CONTACT_EMAIL_REQUIRED =
 export const customerLocationValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: zfd.text(z.string()),
-  ...address
+  ...address,
+  taxCodeId: zfd.text(z.string().optional())
 });
 
 export const customerValidator = z.object({
@@ -119,7 +145,9 @@ export const customerValidator = z.object({
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
   salesContactId: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional())
+  website: zfd.text(z.string().optional()),
+  // Empty: the company default applies.
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
 
@@ -134,7 +162,8 @@ export const customerTaxValidator = z
       (val) => (val === "" ? undefined : val),
       z.enum(taxExemptionReasons).optional().nullable()
     ),
-    taxExemptionCertificateNumber: zfd.text(z.string().optional())
+    taxExemptionCertificateNumber: zfd.text(z.string().optional()),
+    taxCodeId: zfd.text(z.string().optional())
   })
   .refine(
     (data) => !data.taxExempt || (data.taxExempt && data.taxExemptionReason),
@@ -551,6 +580,7 @@ export const quoteLineValidator = z.object({
   taxPercent: zfd.numeric(
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
+  taxCodeId: zfd.text(z.string().optional()),
   internalNotes: optionalTiptapDoc,
   externalNotes: optionalTiptapDoc,
   configuration: jsonInput(z.record(z.string(), z.any()).nullable().optional())
@@ -956,6 +986,9 @@ export const salesOrderShipmentValidator = z
     receiptRequestedDate: zfd.text(z.string().optional()),
     receiptPromisedDate: zfd.text(z.string().optional()),
     dropShipment: zfd.checkbox(),
+    // The order's own ship-to (`salesOrder.customerLocationId`); a drop
+    // shipment ships to `customerLocationId` below instead.
+    shipToCustomerLocationId: zfd.text(z.string().optional()),
     customerId: zfd.text(z.string().optional()),
     customerLocationId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
@@ -1039,6 +1072,7 @@ export const salesOrderLineValidator = z
         .min(0)
         .max(1, { message: "Tax percent must be between 0 and 1" })
     ),
+    taxCodeId: zfd.text(z.string().optional()),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     unitPrice: zfd.numeric(z.number().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
@@ -1269,41 +1303,83 @@ export function isQuoteLocked(status: string | null | undefined): boolean {
 // -----------------------------------------------------------------------------
 export const salesRuleSeverities = RULE_SEVERITIES;
 
-export const salesRuleValidator = z
-  .object({
+/**
+ * A condition names a field the rule builder offers, and one the evaluator
+ * fills for every chosen surface (else it resolves undefined → false
+ * "X is required").
+ */
+function refineSalesRuleConditions(
+  val: {
+    surfaces: readonly (typeof SALES_RULE_SURFACES)[number][];
+    conditionAst: { conditions: { field: string }[] };
+  },
+  ctx: z.RefinementCtx
+) {
+  val.conditionAst.conditions.forEach((c, i) => {
+    const def = getFieldDef(c.field);
+    if (!def) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["conditionAst", "conditions", i, "field"],
+        message: `"${c.field}" is not a field a sales rule can test`
+      });
+    } else if (!isFieldAvailableOnSalesRuleSurfaces(def, val.surfaces)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["conditionAst", "conditions", i, "field"],
+        message: `"${def.label}" isn't available on the selected surface(s)`
+      });
+    }
+  });
+}
+
+/** A sales rule's fields as the API takes them (JSON). The form's validator
+ *  reads the same fields from form data. */
+const salesRuleFields = z.object({
+  name: z.string().trim().min(1, { message: "Name is required" }).max(120),
+  description: z.string().optional(),
+  message: z.string().min(1, { message: "Message is required" }).max(500),
+  severity: z.enum(salesRuleSeverities),
+  // Sales rules are always item-target and broadcast via the filteredItem*
+  // columns (empty = all items), so there is no targetType/appliesToAll.
+  filteredItemTypes: z.array(z.enum(itemType)).optional(),
+  filteredItemGroupIds: z.array(z.string()).optional(),
+  filteredItemMatchAll: z.boolean().optional(),
+  active: z.boolean().optional(),
+  surfaces: z
+    .array(z.enum(SALES_RULE_SURFACES))
+    .min(1, { message: "Pick at least one surface" }),
+  conditionAst: conditionAstSchema
+});
+
+const { shape: salesRule } = salesRuleFields;
+
+export const salesRuleValidator = salesRuleFields
+  .extend({
     id: zfd.text(z.string().optional()),
-    name: z.string().trim().min(1, { message: "Name is required" }).max(120),
-    description: zfd.text(z.string().optional()),
-    message: z.string().min(1, { message: "Message is required" }).max(500),
-    severity: z.enum(salesRuleSeverities),
-    // Sales rules are always item-target and broadcast via the filteredItem*
-    // columns (empty = all items), so there is no targetType/appliesToAll.
-    filteredItemTypes: zfd.repeatableOfType(z.string()).optional(),
-    filteredItemGroupIds: zfd.repeatableOfType(z.string()).optional(),
+    description: zfd.text(salesRule.description),
+    filteredItemTypes: zfd.repeatable(salesRule.filteredItemTypes),
+    filteredItemGroupIds: zfd.repeatable(salesRule.filteredItemGroupIds),
     filteredItemMatchAll: zfd.checkbox(),
     active: zfd.checkbox(),
-    surfaces: zfd
-      .repeatableOfType(z.enum(SALES_RULE_SURFACES))
-      .refine((arr) => arr.length >= 1, {
-        message: "Pick at least one surface"
-      }),
+    surfaces: zfd.repeatable(salesRule.surfaces),
     conditionAst: conditionAstFormField
   })
-  .superRefine((val, ctx) => {
-    // Reject conditions on a registry field whose context the evaluator won't
-    // populate for every selected surface (else it resolves undefined → false
-    // "X is required"). Unknown paths are left to runtime presence handling.
-    val.conditionAst.conditions.forEach((c, i) => {
-      const def = getFieldDef(c.field);
-      if (def && !isFieldAvailableOnSalesRuleSurfaces(def, val.surfaces)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["conditionAst", "conditions", i, "field"],
-          message: `"${def.label}" isn't available on the selected surface(s)`
-        });
-      }
-    });
-  });
+  .superRefine(refineSalesRuleConditions);
+
+export const salesRuleInputValidator = salesRuleFields.superRefine(
+  refineSalesRuleConditions
+);
+
+/** The rule an item is pinned to, from the item's sales rule list. */
+export const salesRuleAssignValidator = z.object({
+  ruleId: z.string().min(1, { message: "Rule id required" })
+});
+
+export const salesRuleUpdateInputValidator = salesRuleFields
+  .extend({ id: z.string().min(1) })
+  .superRefine(refineSalesRuleConditions);
+
 // ─── Sales Return Orders (RMAs) ───
 
 export const salesReturnOrderStatusType = [
@@ -1507,14 +1583,23 @@ export const rentalBillingCycles = [
 
 export const rentalBillingTimings = ["Advance", "Arrears"] as const;
 
-/** What happens to an invoice the daily run creates — the DB enum
- *  `invoiceAutomation`. An agreement's null falls back to the company's. */
+/** A rental agreement's invoicing modes: the DB enum `invoiceAutomation`.
+ *  Manual (the daily run creates no invoice) is the agreement's alone; a
+ *  contract and the company default take `inheritableInvoiceAutomations`. */
 export const invoiceAutomations = [
-  "Draft Only",
-  "Post",
-  "Post and Email",
-  "Post and Send via Stripe"
+  "Manual",
+  ...inheritableInvoiceAutomations
 ] as const;
+
+/** The most periods an early invoice bills on an open-ended agreement. */
+export const RENTAL_EARLY_INVOICE_MAX_PERIODS = 12;
+
+export const rentalEarlyInvoiceValidator = z.object({
+  periods: zfd.numeric(z.number().int().min(0)),
+  /** The preview's first period, so a resubmit cannot bill later periods.
+   *  Drafting refuses periods > 0 without it; the preview reads none. */
+  fromPeriodStart: zfd.text(z.string().optional())
+});
 
 /** A rental unit's rate frequency: what one unit of its `rate` buys. */
 export const rentalRateUnits = ["Day", "Week", "Month"] as const;
@@ -1582,6 +1667,7 @@ export const rentalAgreementValidator = z
         .min(0)
         .max(1, { message: "Tax percent must be between 0 and 1" })
     ),
+    taxCodeId: zfd.text(z.string().optional()),
     discountRate: zfd.numeric(
       z.number().min(0, { message: "Discount rate cannot be negative" })
     ),
@@ -1659,6 +1745,7 @@ export const rentalAgreementChargeValidator = z.object({
   taxPercent: zfd.numeric(
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
+  taxCodeId: zfd.text(z.string().optional()),
   /** Drafted on its own invoice, held for review, instead of with the rent. */
   invoiceSeparately: zfd.checkbox()
 });
@@ -2025,7 +2112,9 @@ export const customerContractValidator = z
     billedThrough: zfd.text(z.string().optional()),
     recognizeRevenueFrom: zfd.text(z.string().optional()),
     /** Empty means the company's default. */
-    invoiceAutomation: zfd.text(z.enum(invoiceAutomations).optional()),
+    invoiceAutomation: zfd.text(
+      z.enum(inheritableInvoiceAutomations).optional()
+    ),
     paymentTermId: zfd.text(z.string().optional()),
     currencyCode: z.string().min(1, { message: "Currency is required" }),
     exchangeRate: zfd.numeric(z.number().optional()),
@@ -2201,6 +2290,7 @@ const contractLineFields = {
   discountPercent: percentPoints("Discount"),
   discountEndsOn: zfd.text(z.string().optional()),
   taxPercent: percentPoints("Tax"),
+  taxCodeId: zfd.text(z.string().optional()),
   startDate: z.string().min(1, { message: "Start date is required" }),
   endDate: zfd.text(z.string().optional()),
   goLiveDate: zfd.text(z.string().optional()),
@@ -2276,6 +2366,92 @@ export function contractLineBillingFormValues(line: {
     noticePercent: round(Number(line.noticePercent) * 100),
     noticeWindowDays: Number(line.noticeWindowDays)
   };
+}
+
+type StoredContractLine = Pick<
+  Database["public"]["Tables"]["customerContractLine"]["Row"],
+  | "id"
+  | "customerContractId"
+  | "revenueType"
+  | "itemId"
+  | "description"
+  | "quantity"
+  | "rate"
+  | "rateUnit"
+  | "discountPercent"
+  | "discountEndsOn"
+  | "taxPercent"
+  | "taxCodeId"
+  | "startDate"
+  | "endDate"
+  | "goLiveDate"
+  | "revenueMethod"
+  | "revenueStartDate"
+  | "revenueEndDate"
+  | "projectId"
+  | "lineItemNumber"
+  | "parentLineId"
+> &
+  Parameters<typeof contractLineBillingFormValues>[0];
+
+/** A stored line as `customerContractLineValidator` takes it (percents in
+ *  percent points). The save writes every column, so an edit of some fields
+ *  starts from these. */
+export function contractLineFormValues(line: StoredContractLine) {
+  return {
+    id: line.id,
+    customerContractId: line.customerContractId,
+    revenueType: line.revenueType,
+    itemId: line.itemId,
+    description: line.description,
+    quantity: Number(line.quantity),
+    rate: Number(line.rate),
+    rateUnit: line.rateUnit,
+    discountPercent: round(Number(line.discountPercent) * 100),
+    discountEndsOn: line.discountEndsOn,
+    taxPercent: round(Number(line.taxPercent) * 100),
+    taxCodeId: line.taxCodeId,
+    startDate: line.startDate,
+    endDate: line.endDate,
+    goLiveDate: line.goLiveDate,
+    revenueMethod: line.revenueMethod,
+    revenueStartDate: line.revenueStartDate,
+    revenueEndDate: line.revenueEndDate,
+    projectId: line.projectId,
+    lineItemNumber: line.lineItemNumber,
+    parentLineId: line.parentLineId,
+    ...contractLineBillingFormValues(line)
+  };
+}
+
+/**
+ * `changes` over a stored line's form values, for
+ * `customerContractLineValidator` to check: a field left out (undefined)
+ * keeps the stored value, and a null or empty one is cleared. Switching to
+ * One-time drops the rate unit unless `changes` names one; a Recurring line
+ * left with none takes `defaultRateUnit`, the contract's billing frequency,
+ * as a new line does.
+ */
+export function mergeContractLineChanges(
+  stored: ReturnType<typeof contractLineFormValues>,
+  changes: Record<string, unknown>,
+  defaultRateUnit?: string
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...stored };
+  for (const [field, value] of Object.entries(changes)) {
+    if (value !== undefined) merged[field] = value;
+  }
+  if (changes.revenueType === "One-time" && changes.rateUnit === undefined) {
+    merged.rateUnit = null;
+  }
+  if (merged.revenueType === "Recurring" && !merged.rateUnit) {
+    merged.rateUnit = defaultRateUnit;
+  }
+  return Object.fromEntries(
+    Object.entries(merged).filter(
+      ([, value]) => value !== null && value !== undefined && value !== ""
+    )
+  );
 }
 
 /** A line billed from project work rather than a schedule. */
@@ -2672,80 +2848,110 @@ export const customerContractFundingValidator = z.object({
   expiresOn: zfd.text(z.string().optional())
 });
 
-/** One amount per contract line, JSON-encoded: an added invoice or month.
- *  At least one must be above zero. */
+/** One amount per contract line: an added invoice or month. At least one
+ *  must be above zero. */
+const contractLineAmountList = z
+  .array(
+    z.object({
+      customerContractLineId: z.string().min(1),
+      amount: z.number().min(0, { message: "Amount cannot be negative" })
+    })
+  )
+  .refine((amounts) => amounts.some((entry) => entry.amount > 0), {
+    message: "Enter an amount for at least one line"
+  });
+
+/** The same amounts, JSON-encoded in a form field. */
 const contractLineAmounts = jsonField(
-  z
-    .array(
-      z.object({
-        customerContractLineId: z.string().min(1),
-        amount: z.number().min(0, { message: "Amount cannot be negative" })
-      })
-    )
-    .refine((amounts) => amounts.some((entry) => entry.amount > 0), {
-      message: "Enter an amount for at least one line"
-    }),
+  contractLineAmountList,
   "Invalid amounts"
 );
 
-/** One edit to a Draft contract's invoice schedule. The first edit
- *  materializes the computed schedule; `reset` throws the edits away. */
+const scheduleInvoiceDate = z
+  .string()
+  .min(1, { message: "Invoice date is required" })
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Use YYYY-MM-DD" })
+  .refine(isCalendarDate, { message: "Enter a valid date" });
+
+const moveScheduleEdit = z.object({
+  intent: z.literal("move"),
+  customerContractInvoiceId: z.string().min(1),
+  invoiceDate: scheduleInvoiceDate
+});
+const splitScheduleEdit = z.object({
+  intent: z.literal("split"),
+  customerContractInvoiceLineId: z.string().min(1),
+  installments: z
+    .array(
+      z.object({
+        invoiceDate: scheduleInvoiceDate,
+        amount: z.number().positive("Each installment must be more than 0")
+      })
+    )
+    .min(2, { message: "Split into at least two installments" })
+});
+const mergeScheduleEdit = z.object({
+  intent: z.literal("merge"),
+  sourceInvoiceId: z.string().min(1),
+  targetInvoiceId: z
+    .string()
+    .min(1, { message: "Choose the invoice to merge into" })
+});
+const moveLineScheduleEdit = z.object({
+  intent: z.literal("moveLine"),
+  customerContractInvoiceLineId: z.string().min(1),
+  invoiceDate: scheduleInvoiceDate
+});
+// The invoice grid (plan D10): one cell, one invoice, one deletion. Money
+// only moves — the footer shows what each line has left to invoice.
+const setAmountScheduleEdit = z.object({
+  intent: z.literal("setAmount"),
+  customerContractInvoiceId: z.string().min(1),
+  customerContractLineId: z.string().min(1),
+  amount: z.number().min(0, { message: "Amount cannot be negative" })
+});
+const addInvoiceScheduleEdit = z.object({
+  intent: z.literal("addInvoice"),
+  invoiceDate: scheduleInvoiceDate,
+  amounts: contractLineAmountList
+});
+const deleteScheduleEdit = z.object({
+  intent: z.literal("delete"),
+  customerContractInvoiceId: z.string().min(1)
+});
+
+/** One edit to a Draft contract's invoice schedule, as `post-customer-contract`
+ *  takes it. An invoice or row is a stored id or a `planned:` position ref
+ *  (see `editSchedule`); the first edit materializes the computed schedule. */
+export const contractScheduleEditValidator = z.discriminatedUnion("intent", [
+  moveScheduleEdit,
+  splitScheduleEdit,
+  mergeScheduleEdit,
+  moveLineScheduleEdit,
+  setAmountScheduleEdit,
+  addInvoiceScheduleEdit,
+  deleteScheduleEdit
+]);
+
+/** The same edits from the invoice grid's form (lists JSON-encoded), and
+ *  `reset`, which throws the edits away. */
 export const customerContractScheduleEditValidator = z.discriminatedUnion(
   "intent",
   [
-    z.object({
-      intent: z.literal("move"),
-      customerContractInvoiceId: z.string().min(1),
-      invoiceDate: z.string().min(1, { message: "Invoice date is required" })
-    }),
-    z.object({
-      intent: z.literal("split"),
-      customerContractInvoiceLineId: z.string().min(1),
+    moveScheduleEdit,
+    splitScheduleEdit.extend({
       installments: jsonField(
-        z
-          .array(
-            z.object({
-              invoiceDate: z
-                .string()
-                .min(1, { message: "Invoice date is required" }),
-              amount: z.number()
-            })
-          )
-          .min(2, { message: "Split into at least two installments" }),
+        splitScheduleEdit.shape.installments,
         "Invalid installments"
       )
     }),
-    z.object({
-      intent: z.literal("merge"),
-      sourceInvoiceId: z.string().min(1),
-      targetInvoiceId: z
-        .string()
-        .min(1, { message: "Choose the invoice to merge into" })
+    mergeScheduleEdit,
+    moveLineScheduleEdit,
+    setAmountScheduleEdit.extend({
+      amount: zfd.numeric(setAmountScheduleEdit.shape.amount)
     }),
-    z.object({
-      intent: z.literal("moveLine"),
-      customerContractInvoiceLineId: z.string().min(1),
-      invoiceDate: z.string().min(1, { message: "Invoice date is required" })
-    }),
-    // The invoice grid (plan D10): one cell, one invoice, one deletion. Money
-    // only moves — the footer shows what each line has left to invoice.
-    z.object({
-      intent: z.literal("setAmount"),
-      customerContractInvoiceId: z.string().min(1),
-      customerContractLineId: z.string().min(1),
-      amount: zfd.numeric(
-        z.number().min(0, { message: "Amount cannot be negative" })
-      )
-    }),
-    z.object({
-      intent: z.literal("addInvoice"),
-      invoiceDate: z.string().min(1, { message: "Invoice date is required" }),
-      amounts: contractLineAmounts
-    }),
-    z.object({
-      intent: z.literal("delete"),
-      customerContractInvoiceId: z.string().min(1)
-    }),
+    addInvoiceScheduleEdit.extend({ amounts: contractLineAmounts }),
+    deleteScheduleEdit,
     z.object({ intent: z.literal("reset") })
   ]
 );
@@ -2796,6 +3002,8 @@ export const contractAmendmentChangeValidator = z.discriminatedUnion("op", [
     rateUnit: z.enum(contractRateUnits).optional(),
     discountPercent: z.number().min(0).max(100).optional(),
     taxPercent: z.number().min(0).max(100).optional(),
+    /** The line's new tax code; "" clears it. */
+    taxCodeId: z.string().optional(),
     description: z.string().optional(),
     revenueMethod: z.enum(contractRevenueMethods).optional(),
     projectId: z.string().optional()
@@ -2830,53 +3038,73 @@ export const customerContractCancelValidator = z.object({
   creditUnusedTime: zfd.checkbox()
 });
 
-export const createContractFromSalesOrderValidator = z
-  .object({
-    salesOrderId: z.string().min(1, { message: "Sales order is required" }),
-    name: z.string().trim().min(1, { message: "Name is required" }),
-    startDate: z.string().min(1, { message: "Start date is required" }),
-    duration: z.enum(contractDurations, { error: "Duration is required" }),
-    endDate: zfd.text(z.string().optional()),
-    billingFrequency: z.enum(contractBillingFrequencies, {
-      error: "Billing frequency is required"
-    }),
-    billingAlignment: z.enum(contractBillingAlignments, {
-      error: "Billing alignment is required"
-    }),
-    billingTiming: z.enum(contractBillingTimings, {
-      error: "Billing timing is required"
-    }),
-    lines: jsonField(
-      z
-        .array(
-          z
-            .object({
-              salesOrderLineId: z.string().min(1),
-              revenueType: z.enum(contractRevenueTypes),
-              rateUnit: z.enum(contractRateUnits).optional()
-            })
-            .refine(
-              (line) => (line.revenueType === "Recurring") === !!line.rateUnit,
-              {
-                message:
-                  "A recurring line needs a rate unit; a one-time line has none",
-                path: ["rateUnit"]
-              }
-            )
-        )
-        .min(1, { message: "Choose at least one line" }),
-      "Invalid lines"
-    )
+const contractFromSalesOrderFields = z.object({
+  salesOrderId: z.string().min(1, { message: "Sales order is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  startDate: z.string().min(1, { message: "Start date is required" }),
+  duration: z.enum(contractDurations, { error: "Duration is required" }),
+  endDate: zfd.text(z.string().optional()),
+  billingFrequency: z.enum(contractBillingFrequencies, {
+    error: "Billing frequency is required"
+  }),
+  billingAlignment: z.enum(contractBillingAlignments, {
+    error: "Billing alignment is required"
+  }),
+  billingTiming: z.enum(contractBillingTimings, {
+    error: "Billing timing is required"
   })
-  .refine((data) => (data.duration === "custom" ? !!data.endDate : true), {
-    message: "End date is required",
-    path: ["endDate"]
-  })
-  .refine((data) => isOnOrAfter(data.endDate, data.startDate, -1), {
-    message: "End date cannot be before the start date",
-    path: ["endDate"]
-  });
+});
+
+const contractFromSalesOrderLines = z
+  .array(
+    z
+      .object({
+        salesOrderLineId: z.string().min(1),
+        revenueType: z.enum(contractRevenueTypes),
+        rateUnit: z.enum(contractRateUnits).optional()
+      })
+      .refine(
+        (line) => (line.revenueType === "Recurring") === !!line.rateUnit,
+        {
+          message:
+            "A recurring line needs a rate unit; a one-time line has none",
+          path: ["rateUnit"]
+        }
+      )
+  )
+  .min(1, { message: "Choose at least one line" });
+
+function checkContractFromSalesOrderDates(
+  data: { duration: string; startDate: string; endDate?: string },
+  ctx: z.RefinementCtx
+) {
+  if (data.duration === "custom" && !data.endDate) {
+    ctx.addIssue({
+      code: "custom",
+      message: "End date is required",
+      path: ["endDate"]
+    });
+  }
+  if (!isOnOrAfter(data.endDate, data.startDate, -1)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "End date cannot be before the start date",
+      path: ["endDate"]
+    });
+  }
+}
+
+/** The modal's form: the lines arrive as JSON. */
+export const createContractFromSalesOrderValidator =
+  contractFromSalesOrderFields
+    .extend({ lines: jsonField(contractFromSalesOrderLines, "Invalid lines") })
+    .superRefine(checkContractFromSalesOrderDates);
+
+/** `sales.createContractFromSalesOrder`'s input: the lines already parsed. */
+export const contractFromSalesOrderValidator = contractFromSalesOrderFields
+  .extend({ lines: contractFromSalesOrderLines })
+  .superRefine(checkContractFromSalesOrderDates);
 
 export const customerContractInvoiceAutomationValidator = z.object({
-  invoiceAutomation: z.enum(invoiceAutomations).nullable()
+  invoiceAutomation: z.enum(inheritableInvoiceAutomations).nullable()
 });

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -11,8 +11,8 @@ import { updateTrainingQuestionOrder } from "~/modules/resources/resources.servi
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "resources"
+  const { client, userId } = await authorize(request, {
+    "resources.training": "Edit"
   });
 
   const updateMap = (await request.formData()).get("updates") as string;

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -33,6 +33,8 @@ export type TravelerScanResponse = {
   operationId: string | null;
   trackedEntityId: string | null;
   message: string | null;
+  /** Refused because no unit is held where one must be: ask for the unit. */
+  pickUnit?: boolean;
 };
 
 /**
@@ -42,7 +44,7 @@ export type TravelerScanResponse = {
  */
 export async function action({ request, context }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await authorize(request, {});
   const { locationId, effectiveUserId } = context.get(userContext) ?? {};
 
   const parsed = scanValidator.safeParse(
@@ -80,14 +82,18 @@ export async function action({ request, context }: ActionFunctionArgs) {
     trackedEntityId: found.entity.id,
     at: operationId ? { operationId, ...screen } : undefined
   });
-  if (scan.resolution === null) return reply(409, null, scan.error);
+  if (scan.resolution === null) {
+    return reply(409, null, scan.error, scan.pickUnit);
+  }
 
   const { resolution, claimed } = scan;
+  // A claim's unit may be the server's pick, so it is never marked scanned.
   if (claimed && resolution.kind === "claim") {
     return openOperation(
       claimed.operationId,
       claimed.parentTrackedEntityId,
-      `${resolution.unit.readableId} → ${claimed.parentReadableId}`
+      `${resolution.unit.readableId} → ${claimed.parentReadableId}`,
+      false
     );
   }
   switch (resolution.kind) {
@@ -95,10 +101,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return openOperation(
         resolution.operationId,
         resolution.trackedEntityId,
-        null
+        null,
+        true
       );
     case "refuse":
-      return reply(409, null, resolution.message);
+      return reply(409, null, resolution.message, resolution.pickUnit);
     case "notFound":
       return reply(
         404,
@@ -111,20 +118,28 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 }
 
-function reply(status: number, href: string | null, message: string | null) {
+function reply(
+  status: number,
+  href: string | null,
+  message: string | null,
+  pickUnit?: boolean
+) {
   return data<TravelerScanResponse>(
-    { href, operationId: null, trackedEntityId: null, message },
+    { href, operationId: null, trackedEntityId: null, message, pickUnit },
     { status }
   );
 }
 
+/** `scanned`: the operator scanned this unit's own label. */
 function openOperation(
   operationId: string,
   trackedEntityId: string,
-  message: string | null
+  message: string | null,
+  scanned: boolean
 ) {
+  const href = `${path.to.operation(operationId)}?trackedEntityId=${trackedEntityId}`;
   return data<TravelerScanResponse>({
-    href: `${path.to.operation(operationId)}?trackedEntityId=${trackedEntityId}&${TRAVELER_PARAM}`,
+    href: scanned ? `${href}&${TRAVELER_PARAM}` : href,
     operationId,
     trackedEntityId,
     message

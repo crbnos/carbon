@@ -8,8 +8,8 @@ import SalesRFQForm from "./SalesRFQForm";
 import SalesRFQHeader from "./SalesRFQHeader";
 import SalesRFQLineForm from "./SalesRFQLineForm";
 import SalesRFQProperties from "./SalesRFQProperties";
-import SalesRFQStatus from "./SalesRFQStatus";
 import SalesRFQsTable from "./SalesRFQsTable";
+import SalesRFQStatus from "./SalesRFQStatus";
 
 export {
   DeleteSalesRFQLine,

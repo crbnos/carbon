@@ -3,104 +3,31 @@
 exports[`DOCUMENT_PDFS > prints every text of the issue catalog it reaches 1`] = `
 [
   "issueDetails:unknown",
-  "associations:supplier",
-  "associations:supplierValue",
-  "associations:purchaseOrder",
-  "associations:purchaseOrderValue",
-  "associations:shipment",
-  "associations:shipmentValue",
-  "associations:receipt",
-  "associations:receiptValue",
-  "associations:trackedEntity",
-  "associations:trackedEntityValue",
   "actionTasks:unknown",
 ]
 `;
 
 exports[`DOCUMENT_PDFS > prints every text of the jobTraveler catalog it reaches 1`] = `
 [
-  "jobDetails:service",
-  "jobDetails:serviceValue",
   "jobDetails:makeToOrder",
-  "jobDetails:inventory",
-  "operations:batch",
-  "operations:batchValue",
-  "operations:openInMes",
-  "operations:batchInstructions",
-  "operations:batchNotes",
-  "operations:procedureStep",
-  "operations:workInstructions",
-  "notes:jobNotes",
 ]
 `;
 
-exports[`DOCUMENT_PDFS > prints every text of the packingSlip catalog it reaches 1`] = `
-[
-  "parties:contractNumber",
-  "lineItems:serialBatch",
-  "lineItems:serialBatchCell",
-  "document:receivingReportTitle",
-]
-`;
+exports[`DOCUMENT_PDFS > prints every text of the packingSlip catalog it reaches 1`] = `[]`;
 
-exports[`DOCUMENT_PDFS > prints every text of the purchaseOrder catalog it reaches 1`] = `
-[
-  "notes:none",
-]
-`;
+exports[`DOCUMENT_PDFS > prints every text of the purchaseOrder catalog it reaches 1`] = `[]`;
 
-exports[`DOCUMENT_PDFS > prints every text of the purchaseReturnOrder catalog it reaches 1`] = `
-[
-  "notes:none",
-]
-`;
+exports[`DOCUMENT_PDFS > prints every text of the purchaseReturnOrder catalog it reaches 1`] = `[]`;
 
-exports[`DOCUMENT_PDFS > prints every text of the purchasingRfq catalog it reaches 1`] = `
-[
-  "terms:termsAndConditions",
-]
-`;
+exports[`DOCUMENT_PDFS > prints every text of the purchasingRfq catalog it reaches 1`] = `[]`;
 
-exports[`DOCUMENT_PDFS > prints every text of the quote catalog it reaches 1`] = `
-[
-  "notes:none",
-  "lineItems:columnTaxAndFees",
-  "lineItems:columnTaxAndFeesCell",
-]
-`;
+exports[`DOCUMENT_PDFS > prints every text of the quote catalog it reaches 1`] = `[]`;
 
-exports[`DOCUMENT_PDFS > prints every text of the salesInvoice catalog it reaches 1`] = `
-[
-  "parties:salesOrders",
-  "parties:shipTo",
-  "parties:shipToName",
-  "parties:shipToAddressLine1",
-  "parties:shipToAddressLine2",
-  "parties:shipToCity",
-  "parties:shipToStatePostal",
-  "parties:shipToCountry",
-  "notes:none",
-]
-`;
+exports[`DOCUMENT_PDFS > prints every text of the salesInvoice catalog it reaches 1`] = `[]`;
 
-exports[`DOCUMENT_PDFS > prints every text of the salesOrder catalog it reaches 1`] = `
-[
-  "parties:billTo",
-  "parties:billToName",
-  "parties:billToAddressLine1",
-  "parties:billToAddressLine2",
-  "parties:billToCity",
-  "parties:billToStatePostal",
-  "parties:billToCountry",
-  "notes:none",
-]
-`;
+exports[`DOCUMENT_PDFS > prints every text of the salesOrder catalog it reaches 1`] = `[]`;
 
-exports[`DOCUMENT_PDFS > prints every text of the salesReturnOrder catalog it reaches 1`] = `
-[
-  "notes:none",
-]
-`;
+exports[`DOCUMENT_PDFS > prints every text of the salesReturnOrder catalog it reaches 1`] = `[]`;
 
 exports[`DOCUMENT_PDFS > prints every text of the stockTransfer catalog it reaches 1`] = `
 [
@@ -125,8 +52,13 @@ Started: Jun 2, 2026
 ASSOCIATIONS
 Item: WIDGET-100 - Rework - Qty: 12
 Customer: Globex Corporation
+Supplier: Apex Anodizing
 Job Operation: JOB-002310 / Op 30
+Purchase Order: PO-000512
 Sales Order: SO-001188
+Shipment: SHP-001188
+Receipt: RCV-000377
+Tracked Entity: BATCH-44021
 DESCRIPTION OF ISSUE
 Anodized surface shows visible streaking on 12 of 100 parts. Suspected rack contact points during the anodize bath.
 CORRECTIVE ACTION
@@ -176,6 +108,15 @@ JOB-002310 Page 1 of 2",
   "3 Anodize (outside vendor)
 ACTIONS
 Complete
+4 Stress relieve Machine: 4 hr
+BATCH BAT-000112
+Open in MES
+This operation runs with other jobs as one batch. Start and complete it from the batch
+in MES.
+BATCH NOTES
+Load parts flat on the rack.
+JOB NOTES
+Handle finished parts with gloves to avoid fingerprints on the anodized surface.
 JOB-002310 Page 2 of 2",
 ]
 `;
@@ -201,10 +142,10 @@ SHIPPING
 Method: Ground
 PAYMENT
 Terms: Net 30
-Description Qty
-WIDGET-100
+Description Qty Serial/Batch
+WIDGET-100 (C-100 Rev 3)
 Precision Widget, anodized
-10 / 10 EA
+10 / 10 EA SN-WIDGET-0001
 BRACKET-22
 Mounting Bracket
 4 / 4 EA
@@ -245,6 +186,7 @@ NOTES
 Please confirm lead times.
 # Description Qty UOM Required Unit Price Net Value Tax Value Total
 1 SW-1045-50R
+(STEEL-BAR-50)
 Steel Bar, 50mm
 Shipping: 5.00
 100 EA Jun 20,
@@ -371,7 +313,10 @@ Sincerely,
 Jane Doe
 Acme Manufacturing Co.
 jane.doe@acme.example
-Acme Manufacturing Co. is registered in United States PRFQ000012 Page 1 of 1",
+Acme Manufacturing Co. is registered in United States PRFQ000012 Page 1 of 2",
+  "Terms and Conditions
+Quotes must stay valid for 30 days.
+Acme Manufacturing Co. is registered in United States PRFQ000012 Page 2 of 2",
 ]
 `;
 
@@ -397,7 +342,7 @@ Payment Terms: Net 30
 NOTES
 Pricing valid for 30 days.
 Description Qty Unit Price Lead Time Total
-WIDGET-100
+WIDGET-100 (C-100 Rev 3)
 Precision Widget, anodized
 Tax & Fees
 - Tax (6%) 14.70
@@ -407,14 +352,15 @@ Mounting Bracket
 Tax & Fees
 - Tax (6%) 2.88
 4 EA 12.00 7 days 48.00
-ASSEMBLY-HOUSING-AN…
+ASSEMBLY-HOUSING-ANODIZED-…
 Fully machined precision aluminium hous…
 Tax & Fees
 - Tax (6%) 14.40
 2 EA 120.00 21 days 240.00
 Subtotal (USD) 533.00
 Shipping (USD) 0.00
-Taxes (USD) 31.98
+City Tax 2% on 533.00 (USD) 10.66
+State Tax 4% on 533.00 (USD) 21.32
 Total (USD) 564.98
 Acme Manufacturing Co. is registered in United States QUO-001042 Page 1 of 2",
   "TERMS & CONDITIONS
@@ -445,10 +391,18 @@ Customer Ref: PO-88421
 Payment Terms: Net 30
 Shipping: Ground
 Shipping Terms: FOB Origin
+Seller Tax ID: MI-0001234
+SHIP TO
+Globex Corporation
+88 Harbor Road
+Dock 3
+Springfield
+IL 62701
+United States
 NOTES
 Thank you for your business.
 # Description Qty Unit Price Total
-1 WIDGET-100
+1 WIDGET-100 (C-100 Rev 3)
 Precision Widget, anodized
 Tax & Fees
 - Tax (6%) 11.76
@@ -464,8 +418,10 @@ Tax & Fees
 Subtotal (USD) 293.00
 Discount (USD) -49.00
 Add-Ons (USD) 5.00
-Taxes (USD) 14.94
+City Tax 2% on 249.00 (USD) 4.98
+State Tax 4% on 249.00 (USD) 9.96
 Total (USD) 263.94
+Sales tax charged at the combined state and city rate.
 Acme Manufacturing Co. is registered in United States INV-001042 Page 1 of 2",
   "TERMS & CONDITIONS
 Payment due within 30 days. Late payments accrue 1.5% monthly interest.
@@ -486,16 +442,30 @@ Globex Corporation
 Chicago
 IL 60601
 United States
+SHIP TO
+Globex Corporation
+88 Harbor Road
+Dock 3
+Springfield
+IL 62701
+United States
 ORDER DETAILS
 Date: Jun 1, 2026
 Customer Ref: PO-88421
 Requested: Jun 20, 2026
 Payment Terms: Net 30
 Shipping: Ground
+BILL TO
+Globex Holdings
+200 Finance Plaza
+Suite 400
+Chicago
+IL 60603
+United States
 NOTES
 Thank you for your business.
 Description Qty Unit Price Total
-WIDGET-100
+WIDGET-100 (C-100 Rev 3)
 Precision Widget, anodized
 Tax & Fees
 - Tax (6%) 14.70
@@ -508,7 +478,8 @@ Tax & Fees
 4 EA 12.00 56.18
 Subtotal (USD) 293.00
 Add-Ons (USD) 5.00
-Taxes (USD) 17.88
+City Tax 2% on 298.00 (USD) 5.96
+State Tax 4% on 298.00 (USD) 11.92
 Total (USD) 315.88
 Acme Manufacturing Co. is registered in United States SO-001042 Page 1 of 2",
   "TERMS & CONDITIONS
@@ -574,6 +545,9 @@ Stock Transfer: ST-001042
 Location: Main Warehouse
 Assignee: Jordan Lee
 Description Transfer Qty Pick
+Nylon Spacer
+SPACER-8
+Any ’ Bin C2 100 EA
 Precision Widget, anodized
 WIDGET-100
 Bin A1 ’ Bin B3 50 EA

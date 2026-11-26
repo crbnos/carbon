@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { ValidatedForm } from "@carbon/form";
 import {
   HStack,
@@ -66,8 +67,8 @@ const RevisionFormBody = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has(anyOf(ITEM_PAGES, "Edit"))
+    : !permissions.has(anyOf(ITEM_PAGES, "Create"));
 
   const [openChangeNotice, setOpenChangeNotice] = useState(false);
   // Offer the "open a change notice" shortcut only when creating a new revision of
@@ -78,7 +79,6 @@ const RevisionFormBody = ({
     !hasSizesInsteadOfRevisions &&
     (initialValues.type === "Part" || initialValues.type === "Tool");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     // The "open a change notice" path posts straight to the create+attach route
     // (see the form action below), which redirects to the new CO — so it never
@@ -90,6 +90,7 @@ const RevisionFormBody = ({
     if (fetcher.data?.success === false) {
       toastError(fetcher.data.message, fetcher.data);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [fetcher.data]);
 
   return (
