@@ -244,6 +244,17 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     module: "production", page: "production.materialPlanning",
     actions: ["view", "create", "update"]
   },
+  // Applying a purchasing action needs Edit on either page: the body checks
+  // each action's own page (a PO line needs Purchase Orders).
+  purchasing_applyPlanningActions: {
+    module: "purchasing",
+    actions: ["view", "create", "update"],
+    oneOf: {
+      pages: ["purchasing.purchaseOrders", "purchasing.materialPlanning"],
+      level: "Edit",
+      by: []
+    }
+  },
   // API keys are on Settings → API Keys (was users).
   settings_getApiKeys: {
     module: "settings", page: "settings.apiKeys",

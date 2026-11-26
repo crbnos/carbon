@@ -5073,7 +5073,10 @@ const CHANGE_ACTION_TYPES = [
  * Draft project stock transfer (`applyTransferPlanningActions`, which needs
  * Edit on Projects). Returns what was `applied`, the `transfers` created,
  * what needs review, `warnings` (applied, with a follow-up step that failed)
- * and `errors`. Needs Edit on Jobs as well as Material Planning.
+ * and `errors`. Needs Edit on Material Planning; an action on a job also
+ * needs Edit on Jobs, else it is listed in `errors`. Every read comes before
+ * the first write, so once something is applied a later failure is listed in
+ * `errors` and the answer still names what was applied.
  *
  * @mcp
  */
@@ -5118,6 +5121,9 @@ export const applyPlanningActions = defineServiceFn({
           }
         };
 
+        // Every read comes before the first write: once a write has
+        // committed (a transfer, a planned order), a later failure is an
+        // `errors` line in the answer, never an error that hides `applied`.
         const actionRows = await service.getPlanningActionsByIds(db, {
           ids: planningActionIds,
           companyId
@@ -5143,17 +5149,14 @@ export const applyPlanningActions = defineServiceFn({
                 row.status === "Open"
               );
             });
-        const transferOutcome = await applyTransferPlanningActions({
-          db: ctx.asSystem.pg,
-          companyId,
-          userId,
-          planningActionIds: transferIds,
-          canEditProjects: ctx.can({ "projects.projects": "Edit" })
-        });
-        applied.push(...transferOutcome.applied);
-        errors.push(...transferOutcome.errors);
         const transferIdSet = new Set(transferIds);
 
+        // The gate is Material Planning; each action needs the page of what it
+        // changes: a job Edit on Jobs, a Make planned order Material Planning.
+        const canEditJobs = ctx.can(utils.applyPlanningJobActionsPermission);
+        const canChangePlannedOrders = ctx.can(
+          utils.plannedOrderChangePages.Make
+        );
         const eligible: { planningActionId: string; row: PlanningActionRow }[] =
           [];
         const plannedOrderTargets: service.PlannedOrderPlanningAction[] = [];
@@ -5182,17 +5185,20 @@ export const applyPlanningActions = defineServiceFn({
           }
           if (row.plannedOrderId) {
             // A Make planned order: edited (and firmed) or deleted below.
-            plannedOrderTargets.push({
-              planningActionId,
-              plannedOrderId: row.plannedOrderId,
-              type: row.type as service.PlannedOrderPlanningAction["type"],
-              suggestedDate: row.suggestedDate ?? null,
-              suggestedQuantity:
-                row.suggestedQuantity === null ||
-                row.suggestedQuantity === undefined
-                  ? null
-                  : Number(row.suggestedQuantity)
-            });
+            const target = service.plannedOrderTargetOf(row);
+            if (!target) {
+              errors.push(
+                `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
+              );
+              continue;
+            }
+            if (!canChangePlannedOrders) {
+              errors.push(
+                `Planning action ${planningActionId} changes a planned order, which needs Edit on Production → Material Planning`
+              );
+              continue;
+            }
+            plannedOrderTargets.push(target);
             continue;
           }
           if (!row.jobId) {
@@ -5201,41 +5207,13 @@ export const applyPlanningActions = defineServiceFn({
             );
             continue;
           }
-          eligible.push({ planningActionId, row });
-        }
-
-        // Planned orders: one transaction for the whole batch. No scheduler
-        // notice — a planned order is not a job the scheduler places.
-        if (plannedOrderTargets.length > 0) {
-          let outcome: Awaited<
-            ReturnType<typeof service.applyPlannedOrderPlanningActions>
-          >;
-          try {
-            outcome = await service.applyPlannedOrderPlanningActions(db, {
-              companyId,
-              userId,
-              orderType: "Make",
-              actions: plannedOrderTargets
-            });
-          } catch (err) {
-            return ctx.error(
-              "internal",
-              `Failed to apply planning actions to planned orders: ${getErrorMessage(err, "unknown error")}`,
-              err
+          if (!canEditJobs) {
+            errors.push(
+              `Planning action ${planningActionId} changes a job, which needs Edit on Jobs`
             );
+            continue;
           }
-          applied.push(...outcome.applied);
-          // MRP re-plans once the whole batch is written, as after a firm or an
-          // edit (`replanAfterPlannedOrderChanges`).
-          for (const id of outcome.changedPlannedOrderIds) {
-            changedPlannedOrderIds.add(id);
-          }
-          for (const id of outcome.alreadyApplied) {
-            errors.push(`Planning action ${id} was already applied`);
-          }
-          for (const refusal of outcome.refused) {
-            errors.push(`Planning action ${refusal.id}: ${refusal.message}`);
-          }
+          eligible.push({ planningActionId, row });
         }
 
         // One statement: the id list is a parameter, never a PostgREST URL.
@@ -5282,6 +5260,33 @@ export const applyPlanningActions = defineServiceFn({
           toClaim.push(target);
         }
 
+        // ── Writes ──
+        const transferOutcome = await applyTransferPlanningActions({
+          db: ctx.asSystem.pg,
+          companyId,
+          userId,
+          planningActionIds: transferIds,
+          canEditProjects: ctx.can({ "projects.projects": "Edit" })
+        });
+        applied.push(...transferOutcome.applied);
+        errors.push(...transferOutcome.errors);
+
+        // Planned orders: one transaction for the whole batch. No scheduler
+        // notice — a planned order is not a job the scheduler places. MRP
+        // re-plans once the whole batch is written, as after a firm or an
+        // edit (`replanAfterPlannedOrderChanges`).
+        const plannedOutcome = await service.applyPlannedOrderTargets(db, {
+          companyId,
+          userId,
+          orderType: "Make",
+          targets: plannedOrderTargets
+        });
+        applied.push(...plannedOutcome.applied);
+        errors.push(...plannedOutcome.errors);
+        for (const id of plannedOutcome.changedPlannedOrderIds) {
+          changedPlannedOrderIds.add(id);
+        }
+
         // Dates: ONE transaction for every Expedite / Defer, then ONE scheduler
         // event (a "reorder" event re-stamps the whole company whatever its job).
         const dateActions = toClaim.filter(
@@ -5290,9 +5295,11 @@ export const applyPlanningActions = defineServiceFn({
             row.suggestedDate
         );
         if (dateActions.length > 0) {
-          let outcome: Awaited<
-            ReturnType<typeof service.applyProductionPlanningDateActions>
-          >;
+          let outcome:
+            | Awaited<
+                ReturnType<typeof service.applyProductionPlanningDateActions>
+              >
+            | undefined;
           try {
             outcome = await service.applyProductionPlanningDateActions(db, {
               companyId,
@@ -5304,27 +5311,33 @@ export const applyPlanningActions = defineServiceFn({
               }))
             });
           } catch (err) {
-            return ctx.error(
-              "internal",
-              `Failed to reschedule jobs: ${getErrorMessage(err, "unknown error")}`,
-              err
+            // One transaction: none of the dates moved, the actions stay Open.
+            logger.error("Failed to reschedule jobs from planning", {
+              companyId,
+              planningActionIds: dateActions.map((a) => a.planningActionId),
+              error: err
+            });
+            errors.push(
+              `Failed to reschedule jobs: ${getErrorMessage(err, "unknown error")}`
             );
           }
-          applied.push(...outcome.applied);
-          requiresManualAction.push(...outcome.refused);
-          for (const id of outcome.alreadyApplied) {
-            errors.push(`Planning action ${id} was already applied`);
-          }
-          if (outcome.applied.length > 0) {
-            const notified = await service.notifyScheduleInputsChanged(
-              ctx.company.id,
-              "reorder",
-              `Planning rescheduled ${outcome.applied.length} job(s)`
-            );
-            if (!notified) {
-              warnings.push(
-                `${outcome.applied.length} due date(s) are saved, but the schedule was not refreshed`
+          if (outcome) {
+            applied.push(...outcome.applied);
+            requiresManualAction.push(...outcome.refused);
+            for (const id of outcome.alreadyApplied) {
+              errors.push(`Planning action ${id} was already applied`);
+            }
+            if (outcome.applied.length > 0) {
+              const notified = await service.notifyScheduleInputsChanged(
+                ctx.company.id,
+                "reorder",
+                `Planning rescheduled ${outcome.applied.length} job(s)`
               );
+              if (!notified) {
+                warnings.push(
+                  `${outcome.applied.length} due date(s) are saved, but the schedule was not refreshed`
+                );
+              }
             }
           }
         }
@@ -5357,11 +5370,9 @@ export const applyPlanningActions = defineServiceFn({
             return null;
           }
           return {
-            suggestedQuantity:
-              row.suggestedQuantity === null ||
-              row.suggestedQuantity === undefined
-                ? null
-                : Number(row.suggestedQuantity)
+            suggestedQuantity: service.planningActionQuantity(
+              row.suggestedQuantity
+            )
           };
         };
 
@@ -5515,9 +5526,10 @@ export const firmPlannedOrder = defineServiceFn({
  *
  * @remarks
  * The order becomes Planned again, with no firm stamp, and the next MRP run
- * may change or delete it. A Make planned order needs `update: production`, a
- * Buy planned order `update: purchasing`. A Planned order is left as it is; a
- * Converted one is refused.
+ * may change or delete it. A Make planned order needs Edit on production's
+ * Material Planning, a Buy planned order Edit on purchasing's
+ * (`plannedOrderChangePages`). A Planned order is left as it is; a Converted
+ * one is refused. MRP runs after the change (`replanAfterChange`).
  */
 export const unfirmPlannedOrder = defineServiceFn({
   input: plannedOrderIdValidator,

@@ -331,6 +331,11 @@ export type PlanningActionHandlers = {
    *  Finalize modal; production: the job release). Absent, the button links
    *  to the order instead. */
   onRelease?: (action: PlanningAction) => void;
+  /** Whether this person may Apply this action (or create its transfer),
+   *  when that is decided per action — purchasing: a PO line needs Edit on
+   *  Purchase Orders, a planned order Edit on Material Planning. Absent,
+   *  `canUpdate` decides. */
+  canApply?: (action: PlanningAction) => boolean;
 };
 
 /** The trailing controls of one action, wherever it is listed: ONE button
@@ -348,6 +353,7 @@ export function PlanningActionRowActions({
   onOrder,
   purchaseOrderMenuItems,
   onRelease,
+  canApply,
   purchaseOrder
 }: PlanningActionHandlers & {
   action: PlanningAction;
@@ -366,6 +372,7 @@ export function PlanningActionRowActions({
   const orderMenuItems =
     order && purchaseOrderMenuItems ? purchaseOrderMenuItems(order) : null;
   const isMine = action.assignee === currentUserId;
+  const mayApply = canApply ? canApply(action) : canUpdate;
 
   return (
     <div className="flex items-center justify-end gap-1">
@@ -406,7 +413,7 @@ export function PlanningActionRowActions({
         <Button
           size="sm"
           variant="secondary"
-          isDisabled={!canUpdate || isBusy}
+          isDisabled={!mayApply || isBusy}
           onClick={() => onApply([action.id])}
         >
           <Trans>Create transfer</Trans>
@@ -426,7 +433,7 @@ export function PlanningActionRowActions({
         <Button
           size="sm"
           variant="secondary"
-          isDisabled={!canUpdate || isBusy}
+          isDisabled={!mayApply || isBusy}
           onClick={() => onApply([action.id])}
         >
           <Trans>Apply</Trans>

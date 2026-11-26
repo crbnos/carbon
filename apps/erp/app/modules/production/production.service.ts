@@ -284,7 +284,11 @@ import {
   type scrapReasonValidator,
   WEEKDAYS_MONDAY_FIRST
 } from "./production.models";
-import { plannedOrderChangePages } from "./production.utils";
+import {
+  isInDrawScope,
+  plannedOrderChangePages,
+  plannedOrderDrawScope
+} from "./production.utils";
 import type {
   ItemOrderStatus,
   ItemShortfall,
@@ -12702,13 +12706,13 @@ const conversionRowKey = (row: ConversionRow) =>
   );
 
 /** One weekly period, as the convert reads it. */
-export type ConversionWeek = { id: string; startDate: string; endDate: string };
+type ConversionWeek = { id: string; startDate: string; endDate: string };
 
 /**
  * The weeks a convert sorts planned orders into: the first holds `today`
  * when there is one. Without `today` no planned order is overdue.
  */
-export type ConversionCalendar = {
+type ConversionCalendar = {
   weeks: ConversionWeek[];
   today: string | null;
   /** Settled actions' weeks before the current one: an action MRP has not
@@ -12791,11 +12795,12 @@ function conversionWeekOf(
  *    none.
  * 2. The other documents convert the planned orders of their week left over,
  *    per (item, location, segment, week, type): first each to one of equal
- *    quantity (Planned before Firm, then `splitIndex`), then each one left to
- *    the next Planned order by `splitIndex` — by the rule of 1: a document
- *    smaller than what is left of that order only reduces it. One LARGER
- *    than it converts it and takes the excess off the week's next Planned
- *    orders by `splitIndex`: each drops by what is left of the excess, and
+ *    quantity (Planned before Firm, then by due date and `splitIndex`), then
+ *    each one left to the next Planned order by due date, then `splitIndex`
+ *    — by the rule of 1: a document smaller than what is left of that order
+ *    only reduces it. One LARGER than it converts it and takes the excess
+ *    off the week's next Planned orders in the same order: each drops by
+ *    what is left of the excess, and
  *    one the excess covers whole is deleted (`deletions`). A Firm order is
  *    the planner's number, so only its id or its quantity converts it, and an
  *    excess never touches it. A planned order counts in the week
@@ -12806,7 +12811,10 @@ function conversionWeekOf(
  *    overdue orders (due before the current week's start): that action
  *    counted them. A document of the current week then takes only the
  *    current week's orders, as it does when the row has an Open or
- *    Dismissed action of a past week (`pastWeekActionRows`). Orders are
+ *    Dismissed action of a past week (`pastWeekActionRows`). Which of its
+ *    week's orders a document draws on is `plannedOrderDrawScope`, the
+ *    drawer's rule, except that every past week's document takes the overdue
+ *    ones (the drawer offers them to the latest Open one only). Orders are
  *    taken by due date, then `splitIndex`, as the suggestions list them.
  */
 export function matchPlannedOrdersToDocuments(
@@ -12863,11 +12871,18 @@ export function matchPlannedOrdersToDocuments(
     const rows =
       candidatesByKey.get(documentConversionKey(document, calendar)) ?? [];
     if (!currentWeek) return rows;
-    if (isPastWeekDocument(document)) return rows.filter(isOverdue);
-    return document.periodId === currentWeek.id &&
-      rowsWithPastWeekAction.has(conversionRowKey(document))
-      ? rows.filter((row) => !isOverdue(row))
-      : rows;
+    const scope = plannedOrderDrawScope({
+      pastWeek: isPastWeekDocument(document),
+      // every past week's document: the drawer offers the overdue orders to
+      // the latest Open one only, but a document of another past week that
+      // converted none would leave its planned order counted beside it
+      takesOverdue: true,
+      currentWeek: document.periodId === currentWeek.id,
+      rowHasPastWeekAction: rowsWithPastWeekAction.has(
+        conversionRowKey(document)
+      )
+    });
+    return rows.filter((row) => isInDrawScope(scope, isOverdue(row)));
   };
   // the document's week's Planned orders not yet converted, in split order
   const plannedOfWeek = (document: PlannedOrderConversion) =>
@@ -13003,8 +13018,9 @@ function restatedPlannedOrderScrap(quantity: RawBuilder<unknown>) {
  * sizes it again. Two orders merged into one PO line are two documents, so
  * both planned orders point at that line.
  *
- * One read of the weeks, one read (`FOR UPDATE`), one statement per kind of
- * change and one delete of actions for the batch. Throws on failure; call it
+ * One read of the weeks, one read of the rows' past-week Order / Make
+ * actions (`pastWeekActionRows`), one read (`FOR UPDATE`), one statement per
+ * kind of change and one delete of actions for the batch. Throws on failure; call it
  * inside the transaction that settles the actions (`withTransaction` joins
  * one), under the planning lock.
  */
@@ -13296,7 +13312,7 @@ async function readConversionCalendar(
 }
 
 /** A planned order as a person's change reads it. */
-export type PlannedOrderForChange = {
+type PlannedOrderForChange = {
   id: string;
   locationId: string;
   orderType: "Make" | "Buy" | "Transfer";
@@ -13441,14 +13457,14 @@ export async function unfirmPlannedOrder(
 }
 
 /** A person's edit of one planned order: a new quantity, a new due date, or both. */
-export type PlannedOrderEdit = {
+type PlannedOrderEdit = {
   id: string;
   quantity?: number | null;
   dueDate?: string | null;
 };
 
 /** The refusal of a planned order due date no planning week holds. */
-export const PLANNED_ORDER_OUTSIDE_HORIZON_MESSAGE =
+const PLANNED_ORDER_OUTSIDE_HORIZON_MESSAGE =
   "Pick a due date inside the planning horizon";
 
 /** A planned order edit to a due date no weekly period holds. */
@@ -13463,7 +13479,7 @@ export class PlannedOrderOutsideHorizonError extends Error {
  * The due dates no weekly `period` holds. A planned order belongs to the week
  * of its due date, so it cannot move to one of these.
  */
-export async function plannedOrderDueDatesWithoutWeek(
+async function plannedOrderDueDatesWithoutWeek(
   db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
   dueDates: string[]
 ): Promise<string[]> {
@@ -13556,12 +13572,122 @@ export async function updatePlannedOrders(
 export type PlannedOrderPlanningAction = {
   planningActionId: string;
   plannedOrderId: string;
-  type: "Expedite" | "Defer" | "Increase" | "Decrease" | "Cancel";
+  type: PlanningChangeActionType;
   suggestedDate: string | null;
   suggestedQuantity: number | null;
 };
 
-export type PlannedOrderPlanningApplyResult = {
+/** The change actions Apply batches, on a job, a PO line or a planned order. */
+const PLANNING_CHANGE_ACTION_TYPES = [
+  "Expedite",
+  "Defer",
+  "Increase",
+  "Decrease",
+  "Cancel"
+] as const;
+
+type PlanningChangeActionType = (typeof PLANNING_CHANGE_ACTION_TYPES)[number];
+
+function isPlanningChangeActionType(
+  type: string
+): type is PlanningChangeActionType {
+  return (PLANNING_CHANGE_ACTION_TYPES as readonly string[]).includes(type);
+}
+
+/** A stored suggested quantity (NUMERIC may arrive as text), or null. */
+export function planningActionQuantity(
+  value: number | string | null | undefined
+): number | null {
+  return value === null || value === undefined ? null : Number(value);
+}
+
+/**
+ * The planned-order change a stored planning action stands for: null when it
+ * targets no planned order or is not a change action (Order, Make, Release,
+ * Transfer, Borrow). The type, date and quantity come from the stored row,
+ * never the caller.
+ */
+export function plannedOrderTargetOf(row: {
+  id: string;
+  plannedOrderId: string | null;
+  type: string;
+  suggestedDate?: string | null;
+  suggestedQuantity?: number | string | null;
+}): PlannedOrderPlanningAction | null {
+  if (!row.plannedOrderId || !isPlanningChangeActionType(row.type)) return null;
+  return {
+    planningActionId: row.id,
+    plannedOrderId: row.plannedOrderId,
+    type: row.type,
+    suggestedDate: row.suggestedDate ?? null,
+    suggestedQuantity: planningActionQuantity(row.suggestedQuantity)
+  };
+}
+
+/**
+ * Apply's planned-order half, for both worklists: runs
+ * `applyPlannedOrderPlanningActions` on `targets` and turns its outcome into
+ * the Apply answer's lists — what was `applied`, one `errors` line per
+ * action already applied or refused, and the planned orders changed (the
+ * caller re-plans for them). Never throws: the apply is one transaction, so
+ * a failure rolls back every target, which is reported as one error. The
+ * caller may have committed other writes already (transfers), so the answer
+ * must still go out.
+ */
+export async function applyPlannedOrderTargets(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    orderType: "Make" | "Buy";
+    targets: PlannedOrderPlanningAction[];
+  }
+): Promise<{
+  applied: string[];
+  errors: string[];
+  changedPlannedOrderIds: string[];
+}> {
+  if (args.targets.length === 0) {
+    return { applied: [], errors: [], changedPlannedOrderIds: [] };
+  }
+  let outcome: PlannedOrderPlanningApplyResult;
+  try {
+    outcome = await applyPlannedOrderPlanningActions(db, {
+      companyId: args.companyId,
+      userId: args.userId,
+      orderType: args.orderType,
+      actions: args.targets
+    });
+  } catch (err) {
+    logger.error("Failed to apply planning actions to planned orders", {
+      companyId: args.companyId,
+      orderType: args.orderType,
+      planningActionIds: args.targets.map((t) => t.planningActionId),
+      error: err
+    });
+    return {
+      applied: [],
+      errors: [
+        `Failed to apply planning actions to planned orders: ${getErrorMessage(err, "unknown error")}`
+      ],
+      changedPlannedOrderIds: []
+    };
+  }
+  return {
+    applied: outcome.applied,
+    errors: [
+      ...outcome.alreadyApplied.map(
+        (id) => `Planning action ${id} was already applied`
+      ),
+      ...outcome.refused.map(
+        (refusal) => `Planning action ${refusal.id}: ${refusal.message}`
+      )
+    ],
+    changedPlannedOrderIds: outcome.changedPlannedOrderIds
+  };
+}
+
+type PlannedOrderPlanningApplyResult = {
   /** changed (or deleted, for a Cancel) and marked Actioned */
   applied: string[];
   /** marked Actioned by another apply since the page loaded; nothing changed */
@@ -13591,7 +13717,7 @@ export type PlannedOrderPlanningApplyResult = {
  * Two actions on one order that set the same field (an Expedite and a Defer)
  * cannot both apply: the first is applied, the second refused.
  */
-export async function applyPlannedOrderPlanningActions(
+async function applyPlannedOrderPlanningActions(
   db: Kysely<KyselyDatabase>,
   args: {
     companyId: string;

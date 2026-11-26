@@ -86,16 +86,23 @@ import {
   type RefusedPlanningOrder
 } from "~/modules/production/production.models";
 import {
-  applyPlannedOrderPlanningActions,
+  applyPlannedOrderTargets,
   assignPlanningActions,
   dismissPlanningActions,
   getPlanningActionsByIds,
   type PlannedOrderPlanningAction,
+  planningActionQuantity,
+  plannedOrderTargetOf,
   reopenDismissedPlanningActions,
   replanAfterPlannedOrderChanges,
   runMRP,
   settleNewSupplyPlanningActions
 } from "~/modules/production/production.service";
+import {
+  applyPurchasingLineActionsPermission,
+  applyPurchasingPlanningActionsGate,
+  plannedOrderChangePages
+} from "~/modules/production/production.utils";
 import { pegMovesForSettledActions } from "~/modules/projects/peg-transfer-plan";
 import {
   applyTransferPlanningActions,
@@ -3913,11 +3920,20 @@ export const confirmReturnOrder = defineServiceFn({
  * orders are still placed. An order joins an existing line only
  * when the line has the same conversion factor. The orders
  * raised keep their planning approval bypass, the supply forecast is
- * recorded, and the Order suggestions they answer are settled.
+ * recorded, and the Order suggestions they answer are settled. The same
+ * settle converts the Buy planned orders the new lines stand for: an order
+ * with a `plannedOrderId` converts that planned order while it is still
+ * Planned or Firm for the same item, location and segment; any other order
+ * converts one of its week's planned orders by quantity.
  *
  * Existing lines are changed with `purchasing_updatePlanningPurchaseOrderLine` or
  * `purchasing_applyPlanningActions`, never here. Refused when nothing could be
  * ordered; otherwise the problems are listed in `errors`.
+ *
+ * @param items - One entry per planning row (item and netting segment), with
+ * the orders to place. An order's `plannedOrderId` names the Buy planned
+ * order it stands for (from the suggested orders); leave it out for an order
+ * the planner added.
  *
  * @mcp
  */
@@ -4789,8 +4805,13 @@ type PlanningLine = {
  * listed in `requiresManualAction` to review on the order. With `apply`, an
  * Open Transfer or Borrow creates a Draft project stock transfer
  * (`applyTransferPlanningActions`, which needs Edit on Projects), returned
- * in `transfers`. Everything else is written in one transaction. `success` is false when an action failed or
- * nothing could be applied.
+ * in `transfers`. The PO lines are written in one transaction, the planned
+ * orders in another. Needs Edit on Purchase Orders or on Purchasing →
+ * Material Planning; an action on a PO line needs the first, one on a
+ * planned order the second, else it is listed in `errors`. Every read comes
+ * before the first write, so once something is applied a later failure is
+ * listed in `errors` and the answer still names what was applied. `success`
+ * is false when an action failed or nothing could be applied.
  *
  * @mcp
  */
@@ -4806,7 +4827,8 @@ export const applyPlanningActions = defineServiceFn({
       "cancel"
     ])
   }),
-  permission: { "purchasing.purchaseOrders": "Edit" },
+  // Either page lets the call in; the body checks each action's page.
+  permission: { anyOf: applyPurchasingPlanningActionsGate },
 
   run: (ctx, { planningActionIds: ids, type }) =>
     replanAfterPlannedOrderChanges(ctx, async (changedPlannedOrderIds) => {
@@ -4819,8 +4841,10 @@ export const applyPlanningActions = defineServiceFn({
       }[] = [];
       const errors: string[] = [];
 
-      // Two reads for the whole batch decide what is eligible, then ONE
-      // transaction applies all of it.
+      // Two reads for the whole batch decide what is eligible, then the
+      // writes. Every read comes before the first write: once a write has
+      // committed (a transfer, a planned order), a later failure is an
+      // `errors` line in the answer, never an error that hides `applied`.
       const actionRows = await getPlanningActionsByIds(db, { ids, companyId });
       if (actionRows.error) {
         return ctx.error(
@@ -4844,17 +4868,13 @@ export const applyPlanningActions = defineServiceFn({
               );
             })
           : [];
-      const transferOutcome = await applyTransferPlanningActions({
-        db: ctx.asSystem.pg,
-        companyId,
-        userId: ctx.auditUserId,
-        planningActionIds: transferIds,
-        canEditProjects: ctx.can({ "projects.projects": "Edit" })
-      });
-      applied.push(...transferOutcome.applied);
-      errors.push(...transferOutcome.errors);
       const transferIdSet = new Set(transferIds);
 
+      // Either page lets the call in; each action needs the page of what it
+      // changes: a PO line Edit on Purchase Orders, a Buy planned order Edit
+      // on Purchasing → Material Planning.
+      const canEditLines = ctx.can(applyPurchasingLineActionsPermission);
+      const canChangePlannedOrders = ctx.can(plannedOrderChangePages.Buy);
       const eligible: {
         planningActionId: string;
         row: (typeof actionRows.data)[number];
@@ -4885,17 +4905,20 @@ export const applyPlanningActions = defineServiceFn({
         }
         if (row.plannedOrderId) {
           // A Buy planned order: edited (and firmed) or deleted below.
-          plannedOrderTargets.push({
-            planningActionId,
-            plannedOrderId: row.plannedOrderId,
-            type: row.type as PlannedOrderPlanningAction["type"],
-            suggestedDate: row.suggestedDate ?? null,
-            suggestedQuantity:
-              row.suggestedQuantity === null ||
-              row.suggestedQuantity === undefined
-                ? null
-                : Number(row.suggestedQuantity)
-          });
+          const target = plannedOrderTargetOf(row);
+          if (!target) {
+            errors.push(
+              `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
+            );
+            continue;
+          }
+          if (!canChangePlannedOrders) {
+            errors.push(
+              `Planning action ${planningActionId} changes a planned order, which needs Edit on Purchasing → Material Planning`
+            );
+            continue;
+          }
+          plannedOrderTargets.push(target);
           continue;
         }
         if (!row.purchaseOrderLineId) {
@@ -4904,44 +4927,13 @@ export const applyPlanningActions = defineServiceFn({
           );
           continue;
         }
-        eligible.push({ planningActionId, row });
-      }
-
-      // Planned orders: one transaction for the whole batch. Deleting a planned
-      // order for a Cancel needs no delete permission: it is a suggestion, not
-      // a document.
-      if (plannedOrderTargets.length > 0) {
-        let plannedOutcome: Awaited<
-          ReturnType<typeof applyPlannedOrderPlanningActions>
-        >;
-        try {
-          plannedOutcome = await applyPlannedOrderPlanningActions(db, {
-            companyId,
-            userId: ctx.auditUserId,
-            orderType: "Buy",
-            actions: plannedOrderTargets
-          });
-        } catch (err) {
-          return ctx.error(
-            "internal",
-            `Failed to apply planning actions to planned orders: ${
-              err instanceof Error ? err.message : "unknown error"
-            }`,
-            err
+        if (!canEditLines) {
+          errors.push(
+            `Planning action ${planningActionId} changes a purchase order line, which needs Edit on Purchase Orders`
           );
+          continue;
         }
-        applied.push(...plannedOutcome.applied);
-        // MRP re-plans once the whole batch is written, as after a firm or an
-        // edit (`replanAfterPlannedOrderChanges`).
-        for (const id of plannedOutcome.changedPlannedOrderIds) {
-          changedPlannedOrderIds.add(id);
-        }
-        for (const id of plannedOutcome.alreadyApplied) {
-          errors.push(`Planning action ${id} was already applied`);
-        }
-        for (const refusal of plannedOutcome.refused) {
-          errors.push(`Planning action ${refusal.id}: ${refusal.message}`);
-        }
+        eligible.push({ planningActionId, row });
       }
 
       // One statement: the id list goes to Postgres as a parameter, never into
@@ -5020,11 +5012,37 @@ export const applyPlanningActions = defineServiceFn({
         toClaim.push({ planningActionId, row, line });
       }
 
-      let outcome: Awaited<
-        ReturnType<typeof service.applyPurchasingPlanningActions>
-      >;
+      // ── Writes ──
+      const transferOutcome = await applyTransferPlanningActions({
+        db: ctx.asSystem.pg,
+        companyId,
+        userId: ctx.auditUserId,
+        planningActionIds: transferIds,
+        canEditProjects: ctx.can({ "projects.projects": "Edit" })
+      });
+      applied.push(...transferOutcome.applied);
+      errors.push(...transferOutcome.errors);
+
+      // Planned orders: one transaction for the whole batch. Deleting a planned
+      // order for a Cancel needs no delete permission: it is a suggestion, not
+      // a document. MRP re-plans once the whole batch is written, as after a
+      // firm or an edit (`replanAfterPlannedOrderChanges`).
+      const plannedOutcome = await applyPlannedOrderTargets(db, {
+        companyId,
+        userId: ctx.auditUserId,
+        orderType: "Buy",
+        targets: plannedOrderTargets
+      });
+      applied.push(...plannedOutcome.applied);
+      errors.push(...plannedOutcome.errors);
+      for (const id of plannedOutcome.changedPlannedOrderIds) {
+        changedPlannedOrderIds.add(id);
+      }
+
+      // PO lines: ONE transaction. A failure rolls all of them back (their
+      // actions stay Open) and is listed, since the writes above stand.
       try {
-        outcome = await service.applyPurchasingPlanningActions(db, {
+        const outcome = await service.applyPurchasingPlanningActions(db, {
           companyId,
           companyGroupId: ctx.company.groupId,
           userId: ctx.auditUserId,
@@ -5039,29 +5057,31 @@ export const applyPlanningActions = defineServiceFn({
             lineId: line.id,
             purchaseOrderId: line.purchaseOrderId,
             suggestedDate: row.suggestedDate ?? null,
-            suggestedQuantity:
-              row.suggestedQuantity === null ||
-              row.suggestedQuantity === undefined
-                ? null
-                : Number(row.suggestedQuantity)
+            suggestedQuantity: planningActionQuantity(row.suggestedQuantity)
           }))
         });
+        applied.push(...outcome.applied);
+        requiresManualAction.push(...outcome.refused);
+        for (const id of outcome.alreadyApplied) {
+          errors.push(`Planning action ${id} was already applied`);
+        }
+        for (const failure of outcome.failed) {
+          errors.push(`Planning action ${failure.id}: ${failure.message}`);
+        }
       } catch (err) {
-        return ctx.error(
-          "internal",
+        logger.error(
+          "Failed to apply planning actions to purchase order lines",
+          {
+            companyId,
+            planningActionIds: toClaim.map((a) => a.planningActionId),
+            error: err
+          }
+        );
+        errors.push(
           `Failed to apply planning actions: ${
             err instanceof Error ? err.message : "unknown error"
-          }`,
-          err
+          }`
         );
-      }
-      applied.push(...outcome.applied);
-      requiresManualAction.push(...outcome.refused);
-      for (const id of outcome.alreadyApplied) {
-        errors.push(`Planning action ${id} was already applied`);
-      }
-      for (const failure of outcome.failed) {
-        errors.push(`Planning action ${failure.id}: ${failure.message}`);
       }
 
       // Committed targets are not failures, but "Applied 0" as a success is a

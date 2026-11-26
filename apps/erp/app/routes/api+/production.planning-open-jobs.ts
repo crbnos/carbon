@@ -8,6 +8,7 @@ import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+import { getPlanningOpenJobs } from "~/modules/production/production.utils";
 
 const logger = getLogger("erp", "planning-open-jobs");
 
@@ -16,10 +17,8 @@ const planningOpenJobsQueryValidator = z.object({
   locationId: z.string().min(1)
 });
 
-// The production planning drawer's Open Jobs: one item's make-to-stock jobs at
-// one location that are not finished — Draft and Planned (editable) and the
-// released ones, listed read-only so an action on them has a row to sit on.
-// Read as the caller, so RLS applies. The drawer maps the rows to its weeks.
+// The production planning drawer's Open Jobs (`getPlanningOpenJobs`): read as
+// the caller, so RLS applies. The drawer maps the rows to its weeks.
 export async function loader({ request }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
   const parsed = planningOpenJobsQueryValidator.safeParse({
@@ -41,16 +40,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     "production.materialPlanning": "View"
   });
 
-  const jobs = await client
-    .from("job")
-    .select("id, jobId, status, quantity, startDate, dueDate, deadlineType")
-    .eq("companyId", companyId)
-    .eq("itemId", itemId)
-    // this page's location only: the rows are editable and charted there
-    .eq("locationId", locationId)
-    .is("salesOrderId", null)
-    .is("salesOrderLineId", null)
-    .in("status", ["Draft", "Planned", "Ready", "In Progress", "Paused"]);
+  const jobs = await getPlanningOpenJobs(client, {
+    companyId,
+    itemId,
+    locationId
+  });
   if (jobs.error) {
     logger.error("Failed to read the item's open jobs", {
       itemId,

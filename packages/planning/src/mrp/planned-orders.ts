@@ -20,6 +20,7 @@ import type { Database } from "@carbon/database";
 import {
   type BomExplosionInput,
   COMMON_SEGMENT,
+  effectiveReplenishment,
   KEY_SEP,
   makeLocationItemKey,
   type PlannedSupplyResult
@@ -32,7 +33,6 @@ import {
   round,
   scrapAllowance
 } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
 import { itemLocationSegmentKey } from "./open-supply-orders.ts";
 import type {
   ChangeCandidate,
@@ -40,18 +40,23 @@ import type {
   PlanningActionCandidate
 } from "./planning-action-types.ts";
 import {
+  addDays,
   daysBetween,
   type PlanningPolicyRow,
   sizeRowSupply,
-  supplyTarget
+  supplyTarget,
+  weekIndexOn
 } from "./row-sizing.ts";
 
 /**
  * One item's planning settings at one location: the base columns of a
- * planning RPC row (`item` ⋈ `itemReplenishment` ⋈ `itemPlanning`), as read.
- * The RPCs do not COALESCE the policy columns, so each may be null.
+ * planning RPC row (`item` ⋈ `itemReplenishment` ⋈ `itemPlanning`). The RPCs
+ * do not COALESCE the policy columns, so the reader passes them through
+ * `planningPolicyRowOf` (`row-sizing.ts`): a null is 0, a null accumulation
+ * period one week. `lotSize` and `leadTime` (calendar days) are
+ * `itemReplenishment`'s.
  */
-export type PlanningPolicyInput = {
+export type PlanningPolicyInput = PlanningPolicyRow & {
   itemId: string;
   locationId: string;
   /** `item.active` */
@@ -61,18 +66,6 @@ export type PlanningPolicyInput = {
   /** `item.replenishmentSystem`: Make plans jobs, Buy and Buy and Make plan purchases. */
   replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"];
   reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"];
-  reorderPoint: number | null;
-  reorderQuantity: number | null;
-  minimumOrderQuantity: number | null;
-  maximumOrderQuantity: number | null;
-  orderMultiple: number | null;
-  /** `itemReplenishment.lotSize` */
-  lotSize: number | null;
-  maximumInventoryQuantity: number | null;
-  demandAccumulationPeriod: number | null;
-  demandAccumulationSafetyStock: number | null;
-  /** `itemReplenishment.leadTime`, in calendar days. */
-  leadTime: number | null;
   /** `itemPlanning.planningTimeFenceDays`; null takes the location's. */
   planningTimeFenceDays: number | null;
 };
@@ -132,8 +125,6 @@ export type CreatePlanSupplyInputs = PlannedOrderInputs & {
    * demand passes through to their children, as in Phase 1.
    */
   inlineProductionItemIds: ReadonlySet<string>;
-  /** Each item's low-level code; absent is 0. */
-  lowLevelCodeByItem?: ReadonlyMap<string, number>;
 };
 
 export type PlannedOrderTrace = {
@@ -268,52 +259,16 @@ export function withPlannedOrderIds(
   );
 }
 
-/** A Buy or Buy and Make item plans purchases; a Make item plans jobs. */
-function sizingKindOf(
-  replenishmentSystem: string | null | undefined
-): "Order" | "Make" | null {
-  if (replenishmentSystem === "Make") return "Make";
-  if (replenishmentSystem === "Buy" || replenishmentSystem === "Buy and Make") {
-    return "Order";
-  }
-  return null;
-}
-
-/**
- * The policy as `deriveRowActions` reads an RPC row: `sizeRowSupply` turns
- * each null into 0, and a null accumulation period into 1.
- */
-function policyRowOf(policy: PlanningPolicyInput): PlanningPolicyRow {
-  return {
-    reorderingPolicy: policy.reorderingPolicy,
-    reorderPoint: Number(policy.reorderPoint) || 0,
-    reorderQuantity: Number(policy.reorderQuantity) || 0,
-    minimumOrderQuantity: Number(policy.minimumOrderQuantity) || 0,
-    maximumOrderQuantity: Number(policy.maximumOrderQuantity) || 0,
-    orderMultiple: Number(policy.orderMultiple) || 0,
-    lotSize: Number(policy.lotSize) || 0,
-    maximumInventoryQuantity: Number(policy.maximumInventoryQuantity) || 0,
-    demandAccumulationPeriod: Number(policy.demandAccumulationPeriod) || 1,
-    demandAccumulationSafetyStock:
-      Number(policy.demandAccumulationSafetyStock) || 0,
-    leadTime: Number(policy.leadTime) || 0
-  };
-}
-
 /**
  * The RPCs' stock-driven row: a reorder point on Fixed Reorder Quantity or
  * Maximum Quantity gives the item a row with no demand and no supply.
  */
 function hasBufferPolicy(policy: PlanningPolicyInput): boolean {
   return (
-    (Number(policy.reorderPoint) || 0) > 0 &&
+    policy.reorderPoint > 0 &&
     (policy.reorderingPolicy === "Fixed Reorder Quantity" ||
       policy.reorderingPolicy === "Maximum Quantity")
   );
-}
-
-function addDays(dateIso: string, days: number): string {
-  return parseDate(dateIso).add({ days }).toString();
 }
 
 export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
@@ -328,16 +283,10 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
   }));
   const periodIndexById = new Map(periods.map((p, i) => [p.id, i]));
 
-  // The last week that starts on or before the date; the first week for an
-  // earlier date, the last for a later one.
-  const periodIndexOn = (dateIso: string): number => {
-    let index = 0;
-    for (const [i, period] of periods.entries()) {
-      if (daysBetween(period.startDate, dateIso) <= 0) index = i;
-      else break;
-    }
-    return index;
-  };
+  // The week holding the date; the first week for an earlier date, the last
+  // for a later one.
+  const periodIndexOn = (dateIso: string): number =>
+    weekIndexOn(periods, dateIso);
   // The week a planned order counts in: an overdue order in the first week,
   // one past the last week in none. One rule with the drawer and convert.
   const weekIndexOf = (dueDate: string): number | null =>
@@ -351,17 +300,20 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
     );
   }
 
-  // The planning row's kind, or null when the worklist has no row that sizes
-  // new supply for the key (the RPCs' base_items filters).
+  // The planning row's kind (a Buy or Buy and Make item plans purchases, a
+  // Make item jobs) and its planned orders' type, or null when the worklist
+  // has no row that sizes new supply for the key (the RPCs' base_items
+  // filters).
   const eligibleOf = (locationId: string, itemId: string) => {
     if (inputs.supersededItemIds.has(itemId)) return null;
     if (inputs.inlineProductionItemIds.has(itemId)) return null;
     const policy = policyByKey.get(makeLocationItemKey(locationId, itemId));
     if (!policy || !policy.active) return null;
     if (policy.itemTrackingType === "Non-Inventory") return null;
-    const kind = sizingKindOf(policy.replenishmentSystem);
-    if (!kind) return null;
-    return { policy, kind };
+    const orderType = effectiveReplenishment(policy.replenishmentSystem);
+    if (!orderType) return null;
+    const kind: "Order" | "Make" = orderType === "Make" ? "Make" : "Order";
+    return { policy, kind, orderType };
   };
 
   // The item's fence, else the location's. An item with no planning row at
@@ -372,8 +324,6 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
         ?.planningTimeFenceDays,
       inputs.locationTimeFenceDays.get(locationId)
     );
-  const fenceDaysOf = (policy: PlanningPolicyInput): number =>
-    fenceDaysAt(policy.locationId, policy.itemId);
 
   // Held orders: Firm, or Planned and released inside the fence. They keep
   // their quantity and dates and count as supply.
@@ -385,6 +335,9 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
   // decide. Deleting a Firm or fence-held order silently would undo a
   // planner's decision.
   const ineligibleHeld: { order: ExistingPlannedOrder; reason: string }[] = [];
+  // Held orders of the reserved Transfer type: MRP plans no Transfer, so one
+  // is left as it is — kept, never supply, never exploded, no action.
+  const reservedHeld: ExistingPlannedOrder[] = [];
   for (const order of inputs.existingPlannedOrders) {
     if ((order.planningSegmentId || COMMON_SEGMENT) !== COMMON_SEGMENT) {
       continue;
@@ -401,6 +354,10 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
       continue;
     }
     if (!isPlannedOrderHeld(order, fenceDays, todayDate)) {
+      continue;
+    }
+    if (order.orderType !== "Make" && order.orderType !== "Buy") {
+      reservedHeld.push(order);
       continue;
     }
     const wrongType = wrongTypeReason(order.orderType, eligible.kind);
@@ -453,14 +410,12 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
     if (args.segmentId !== COMMON_SEGMENT) return null;
     const eligible = eligibleOf(locationId, itemId);
     if (!eligible) return null;
-    const { policy, kind } = eligible;
-    const orderType = kind === "Make" ? "Make" : "Buy";
-    const policyRow = policyRowOf(policy);
-    const leadTime = policyRow.leadTime;
+    const { policy, kind, orderType } = eligible;
+    const { leadTime } = policy;
     const scrapRate = inputs.scrapRateByItem.get(itemId) ?? 0;
     const explosionOf = (quantity: number) =>
       quantity + scrapAllowance(quantity, scrapRate);
-    const fenceDays = fenceDaysOf(policy);
+    const fenceDays = fenceDaysAt(locationId, itemId);
     const fenceDate = planningTimeFenceDate(todayDate, fenceDays);
     const rowKey = itemLocationSegmentKey(itemId, locationId);
     const held = heldByKey.get(makeLocationItemKey(locationId, itemId)) ?? [];
@@ -515,7 +470,7 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
       projections,
       demandByPeriod,
       openOrders,
-      policy: policyRow,
+      policy,
       preferredSupplierId: inputs.preferredSupplierByItem.get(itemId) ?? null,
       toleranceDays: inputs.toleranceDays,
       todayDate,
@@ -524,9 +479,7 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
       // covers from that date read as short on every run, and each run added
       // another order the fence moved onto the same date.
       earliestNewSupplyIndex:
-        fenceDays > 0
-          ? periodIndexOn(addDays(fenceDate, Number(leadTime) || 0))
-          : undefined
+        fenceDays > 0 ? periodIndexOn(addDays(fenceDate, leadTime)) : undefined
     });
 
     documentChangeActionsByRow.set(
@@ -591,7 +544,8 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
     }
 
     const explosions: PlannedSupplyResult["explosions"] = [];
-    const lowLevelCode = inputs.lowLevelCodeByItem?.get(itemId) ?? 0;
+    // The level the engine plans the key at, not one computed apart from it.
+    const { lowLevelCode } = args;
 
     const rowSupply = shifted.map((candidate) => {
       if (!isNewOrder(candidate)) return candidate;
@@ -745,7 +699,8 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
       plannedOrders,
       heldPlannedOrderIds: [
         ...[...heldByKey.values()].flat(),
-        ...ineligibleHeld.map(({ order }) => order)
+        ...ineligibleHeld.map(({ order }) => order),
+        ...reservedHeld
       ].map((order) => order.id),
       plannedOrderSignals,
       plannedOrderChangeActions,
@@ -756,9 +711,9 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
 }
 
 /**
- * Why a held order of an item MRP plans is no longer one it plans: a Make
- * order of an item now bought, or a Buy order of an item now made. Null when
- * the type matches (a reserved Transfer order is left as it is).
+ * Why a held Make or Buy order of an item MRP plans is no longer one it
+ * plans: a Make order of an item now bought, or a Buy order of an item now
+ * made. Null when the type matches.
  */
 function wrongTypeReason(
   orderType: ExistingPlannedOrder["orderType"],

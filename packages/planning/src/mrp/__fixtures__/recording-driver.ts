@@ -23,25 +23,68 @@ export type LoggedStep = {
   parameters: readonly unknown[];
 };
 
+/** One WHERE predicate of a statement, with its bound value(s). */
+type Predicate = {
+  column: string;
+  test: (value: unknown) => boolean;
+};
+
+/**
+ * The WHERE predicates of a compiled statement that compare a column with
+ * bound parameters: `= $n`, `!= $n`, `in ($n, …)` and `= any($n)`. A
+ * predicate on a column a fixture row does not carry is not applied to it,
+ * so a test states only the columns it is about.
+ */
+function predicatesOf(sqlText: string, params: unknown[]): Predicate[] {
+  const where = sqlText.split(/ where /i)[1] ?? "";
+  const param = (n: string) => params[Number(n) - 1];
+  const predicates: Predicate[] = [];
+  for (const m of where.matchAll(/"(\w+)" = any\(\$(\d+)\)/g)) {
+    const values = param(m[2]!) as unknown[];
+    predicates.push({ column: m[1]!, test: (v) => values.includes(v) });
+  }
+  for (const m of where.matchAll(/"(\w+)" (=|!=|<>) \$(\d+)/g)) {
+    const value = param(m[3]!);
+    const equal = m[2] === "=";
+    predicates.push({
+      column: m[1]!,
+      test: (v) => (v === value) === equal
+    });
+  }
+  for (const m of where.matchAll(/"(\w+)" in \(([^)]*)\)/g)) {
+    const values = [...m[2]!.matchAll(/\$(\d+)/g)].map((n) => param(n[1]!));
+    predicates.push({ column: m[1]!, test: (v) => values.includes(v) });
+  }
+  return predicates;
+}
+
+function matches(row: Record<string, unknown>, predicates: Predicate[]) {
+  return predicates.every(
+    ({ column, test }) => !(column in row) || test(row[column])
+  );
+}
+
 /**
  * A `plannedOrder` table in memory, for tests of the planning writers. It
  * records every statement and applies the ones the writers send: the
- * planned-order check (the Planned and Firm rows), a read by status, the
- * DELETE (by id and status), the `UPDATE … FROM (VALUES …)` and the
- * INSERT … RETURNING. A try of an advisory lock is refused while
- * `lockBusyTries` is above 0 (each try counts it down), else granted. Any
- * other statement reads nothing. `log` also records each transaction's
- * begin, commit and rollback, per connection.
+ * planned-order check (the Planned and Firm rows), a SELECT and a DELETE by
+ * their WHERE predicates (`predicatesOf`: every column a row carries,
+ * `companyId` and `locationId` included), the `UPDATE … FROM (VALUES …)`
+ * and the INSERT … RETURNING. A SELECT from another table reads `tables`
+ * (none by default). Any other statement reads nothing. `log` also records
+ * each transaction's begin, commit and rollback, per connection.
  */
 export class RecordingDriver implements Driver {
   readonly sent: CompiledQuery[] = [];
   readonly log: LoggedStep[] = [];
-  /** How many more tries of an advisory lock another session wins. */
-  lockBusyTries = 0;
   private nextId = 1;
   private connections = 0;
   private readonly connectionIds = new WeakMap<DatabaseConnection, number>();
-  constructor(readonly rows: Row[]) {}
+  constructor(
+    readonly rows: Row[],
+    /** Rows of the other tables a SELECT reads (`job`, `purchaseOrderLine`). */
+    readonly tables: Record<string, Record<string, unknown>[]> = {}
+  ) {}
 
   // No pool to open, release or close.
   async init() {
@@ -59,16 +102,15 @@ export class RecordingDriver implements Driver {
   private apply(query: CompiledQuery): unknown[] {
     const params = query.parameters as unknown[];
     const sqlText = query.sql;
-    if (sqlText.includes("pg_try_advisory_xact_lock")) {
-      if (this.lockBusyTries > 0) {
-        this.lockBusyTries--;
-        return [{ locked: false }];
-      }
-      return [{ locked: true }];
-    }
+    const table = sqlText.match(/ from "(\w+)"/)?.[1];
     if (sqlText.includes('"createdSinceRead"')) {
+      const companyId = params[0];
       return this.rows
-        .filter((row) => row.status === "Planned" || row.status === "Firm")
+        .filter(
+          (row) =>
+            (!("companyId" in row) || row.companyId === companyId) &&
+            (row.status === "Planned" || row.status === "Firm")
+        )
         .map((row) => ({
           id: row.id,
           status: row.status,
@@ -77,27 +119,29 @@ export class RecordingDriver implements Driver {
         }));
     }
     if (sqlText.startsWith("select")) {
-      const status = params[1];
-      return this.rows.filter((row) => row.status === status);
+      const rows = table === "plannedOrder" ? this.rows : this.tables[table!];
+      const predicates = predicatesOf(sqlText, params);
+      return (rows ?? []).filter((row) => matches(row, predicates));
     }
-    if (sqlText.startsWith("delete")) {
-      const [, status, ...ids] = params;
+    if (sqlText.startsWith("delete") && table === "plannedOrder") {
+      const predicates = predicatesOf(sqlText, params);
       for (let i = this.rows.length - 1; i >= 0; i--) {
-        const row = this.rows[i]!;
-        if (row.status === status && ids.includes(row.id)) {
-          this.rows.splice(i, 1);
-        }
+        if (matches(this.rows[i]!, predicates)) this.rows.splice(i, 1);
       }
       return [];
     }
     if (sqlText.trimStart().startsWith("UPDATE")) {
       // updatedBy, updatedAt, then 8 values per row, then companyId
       const values = params.slice(2, -1);
+      const companyId = params.at(-1);
       for (let i = 0; i < values.length; i += 8) {
         const [id, quantity, scrapQuantity, dueDate, releaseDate] =
           values.slice(i, i + 8);
         const row = this.rows.find(
-          (r) => r.id === id && r.status === "Planned"
+          (r) =>
+            r.id === id &&
+            r.status === "Planned" &&
+            (!("companyId" in r) || r.companyId === companyId)
         );
         if (!row) continue;
         Object.assign(row, {
@@ -172,8 +216,11 @@ export class RecordingDriver implements Driver {
   }
 }
 
-export function recordingDatabase(rows: Row[] = []) {
-  const driver = new RecordingDriver(rows);
+export function recordingDatabase(
+  rows: Row[] = [],
+  tables: Record<string, Record<string, unknown>[]> = {}
+) {
+  const driver = new RecordingDriver(rows, tables);
   const db = new Kysely<DB>({
     dialect: {
       createAdapter: () => new PostgresAdapter(),

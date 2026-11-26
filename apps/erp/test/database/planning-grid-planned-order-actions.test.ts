@@ -13,57 +13,39 @@ import { afterEach, beforeEach, describe, expect } from "vitest";
 import {
   alwaysPostFixture,
   type Fixture,
-  seed,
-  USER
+  seed
 } from "./fixtures/always-post";
 import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
+import {
+  type PlanningWeek,
+  seedPlannedOrder,
+  seedPlanningAction,
+  seedPlanningWeeks
+} from "./fixtures/planning";
 
 let f: Fixture;
-let week: string;
+let week: PlanningWeek;
+let removeWeeks: () => Promise<void>;
 
 /** A Planned order with an Open Expedite on it, the item's only action. */
 async function expediteOnPlannedOrder(
   itemId: string,
   orderType: "Make" | "Buy"
 ) {
-  const plannedOrderId = `${f.prefix}-planned-${itemId}`;
-  await seed(f, async (trx) => {
-    await trx
-      .insertInto("plannedOrder")
-      .values({
-        id: plannedOrderId,
-        companyId: f.companyId,
-        itemId,
-        locationId: f.locationId,
-        planningSegmentId: "",
-        orderType,
-        status: "Planned",
-        quantity: 10,
-        dueDate: "2295-01-05",
-        releaseDate: "2295-01-01",
-        periodId: week,
-        splitIndex: 0,
-        createdBy: USER
-      })
-      .execute();
-    await trx
-      .insertInto("planningAction")
-      .values({
-        companyId: f.companyId,
-        type: "Expedite",
-        status: "Open",
-        itemId,
-        locationId: f.locationId,
-        periodId: week,
-        planningSegmentId: "",
-        plannedOrderId,
-        requiresManualAction: false,
-        suggestedQuantity: 10,
-        suggestedDate: "2295-01-02",
-        horizonDate: f.today,
-        createdBy: USER
-      })
-      .execute();
+  const plannedOrderId = await seedPlannedOrder(f, {
+    key: itemId,
+    week,
+    itemId,
+    orderType
+  });
+  await seedPlanningAction(f, {
+    key: `expedite-${itemId}`,
+    type: "Expedite",
+    itemId,
+    periodId: week.id,
+    plannedOrderId,
+    requiresManualAction: false,
+    suggestedDate: "2295-01-02"
   });
 }
 
@@ -73,7 +55,7 @@ async function gridIds(grid: "production" | "purchasing") {
     SELECT "id" FROM ${fn}(
       ${f.companyId},
       ${f.locationId},
-      ${[week]}::text[],
+      ${[week.id]}::text[],
       action_types => ${["Expedite"]}::text[]
     )
   `.execute(f.db);
@@ -85,20 +67,12 @@ describe.skipIf(!hasLocalDatabase)(
   () => {
     beforeEach(async () => {
       f = await alwaysPostFixture();
-      week = `${f.prefix}-week`;
-      // `period` has no company: this one is the test's own, removed after.
-      await seed(f, async (trx) => {
-        await trx
-          .insertInto("period")
-          .values({
-            id: week,
-            startDate: "2295-01-01",
-            endDate: "2295-01-07",
-            periodType: "Week"
-          })
-          .execute();
-        // a reorder point gives each item a grid row with no demand
-        await trx
+      const seeded = await seedPlanningWeeks(f, 1, "2295-01-01");
+      [week] = seeded.weeks;
+      removeWeeks = seeded.cleanup;
+      // a reorder point gives each item a grid row with no demand
+      await seed(f, (trx) =>
+        trx
           .updateTable("itemPlanning")
           .set({
             reorderingPolicy: "Fixed Reorder Quantity",
@@ -108,13 +82,12 @@ describe.skipIf(!hasLocalDatabase)(
           .where("companyId", "=", f.companyId)
           .where("locationId", "=", f.locationId)
           .where("itemId", "in", [f.assemblyId, f.partId])
-          .execute();
-      });
+          .execute()
+      );
     });
 
     afterEach(async () => {
-      // the planned orders and their actions go with the period (ON DELETE CASCADE)
-      await f.db.deleteFrom("period").where("id", "=", week).execute();
+      await removeWeeks();
       await f.cleanup();
     });
 

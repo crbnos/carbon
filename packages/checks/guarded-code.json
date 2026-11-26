@@ -130,6 +130,22 @@
       "tests": [
         "apps/erp/test/database/tracked-consumption-concurrency.test.ts"
       ]
+    },
+    {
+      "file": "packages/planning/src/mrp/planned-order-write.ts",
+      "functions": [
+        "plannedOrdersChangedSince",
+        "assertPlannedOrdersUnchanged",
+        "readPlannedOrderSnapshot",
+        "retryOnPlannedOrderChange",
+        "writePlannedOrderDiff"
+      ],
+      "tests": ["apps/erp/test/database/planned-order-run-race.test.ts"]
+    },
+    {
+      "file": "packages/planning/src/mrp/planning-action-write.ts",
+      "functions": ["writePlanningActions"],
+      "tests": ["apps/erp/test/database/planned-order-run-race.test.ts"]
     }
   ]
 }

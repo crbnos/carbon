@@ -95,8 +95,9 @@ export async function action(args: ActionFunctionArgs) {
           assignee: request.assignee ?? undefined
         })
       );
-    // Planned orders are production's operations; a Buy one needs
-    // `update: purchasing`, which the operation checks.
+    // Planned orders are production's operations; a Buy one needs Edit on
+    // Purchasing → Material Planning (`plannedOrderChangePages`), which the
+    // operation checks.
     case "firmPlannedOrder":
       return respond(
         await api.production.firmPlannedOrder({

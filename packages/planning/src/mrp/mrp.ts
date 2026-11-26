@@ -28,29 +28,27 @@ import {
   newestRunSaves
 } from "../run-order.ts";
 import { toIsoDate } from "../scheduling/date-utils.ts";
-import { buildOpenSupplyOrders } from "./open-supply-orders.ts";
-import { activeMethodIdByItem, planCompany } from "./plan-company.ts";
 import {
-  PLANNED_ORDER_UPDATED_AT,
+  activeMethodIdByItem,
+  type PlanCompanyInputs,
+  type PlanCompanyOutputs,
+  planCompany
+} from "./plan-company.ts";
+import { loadPlannedOrderInputs } from "./planned-order-inputs.ts";
+import {
   type PlannedOrderSnapshot,
   PlannedOrdersChangedError,
   readPlannedOrderSnapshot,
   retryOnPlannedOrderChange,
   writePlannedOrderDiff
 } from "./planned-order-write.ts";
-import {
-  type ExistingPlannedOrder,
-  type PlannedOrderInputs,
-  withPlannedOrderIds
-} from "./planned-orders.ts";
-import {
-  generatePlanningActions,
-  loadOpenSupplyDetails
-} from "./planning-actions.ts";
+import { withPlannedOrderIds } from "./planned-orders.ts";
+import { generatePlanningActions } from "./planning-actions.ts";
 
 const logger = getLogger("planning", "mrp");
 
 const WEEKS_TO_FORECAST = 18 * 4;
+const BATCH_SIZE = 500;
 
 // The period objects this module builds carry CalendarDate start/end (via
 // parseDate) and are compared with CalendarDate.compare — the previous
@@ -140,24 +138,7 @@ export async function runMrp(
   payload: unknown,
   deps?: MrpDeps
 ): Promise<MrpResult> {
-  const parsedPayload = payloadValidator.parse(payload);
-
-  // No lock spans the whole run: a run holds no connection it does not use,
-  // so it works on any pool size (a lock held on one connection while the
-  // run works on another hung a run on a one-connection pool). Its two writes
-  // take the planning lock and first check the planned orders against what
-  // the run read (or wrote); an overlapping run or a person's change makes
-  // the attempt plan again (`retryOnPlannedOrderChange`), never overwrite.
-  return runMrpLocked(client, db, parsedPayload, deps);
-}
-
-async function runMrpLocked(
-  client: SupabaseClient<Database>,
-  db: Kysely<DB>,
-  parsedPayload: MrpPayload,
-  deps: MrpDeps | undefined
-): Promise<MrpResult> {
-  const { type, companyId, userId } = parsedPayload;
+  const { type, companyId, userId } = payloadValidator.parse(payload);
 
   logger.info("run started", { type, companyId, userId });
 
@@ -172,6 +153,10 @@ async function runMrpLocked(
   if (locations.error) throw locations.error;
 
   try {
+    // No lock spans the whole run: a run holds no connection it does not
+    // use, so it works on any pool size (a lock held on one connection while
+    // the run works on another hung a run on a one-connection pool).
+    //
     // A convert, firm, edit or cancel that commits between the run's reads
     // and its writes would be overwritten: a converted week planned again is
     // a second Make. Each write checks, under the planning lock, that the
@@ -225,13 +210,15 @@ async function runMrpLocked(
           userId,
           runStartedAt,
           commonSurplusDraws,
-          newSupplyByRow,
-          documentChangeActionsByRow,
-          plannedOrderChangeActions,
-          plannedOrderSignals,
-          plannedOrderIdByKey,
-          heldPlannedOrderIds,
-          plannedOrderSnapshot,
+          plannedOrders: {
+            newSupplyByRow,
+            documentChangeActionsByRow,
+            changeActions: plannedOrderChangeActions,
+            signals: plannedOrderSignals,
+            idByKey: plannedOrderIdByKey,
+            heldIds: heldPlannedOrderIds,
+            snapshot: plannedOrderSnapshot
+          },
           planningGroups,
           pegging:
             planningGroupsEnabled && deps
@@ -255,13 +242,12 @@ async function runMrpLocked(
               : undefined
         });
       } catch (err) {
+        // Any other error is logged once, by the run's catch below.
         if (err instanceof PlannedOrdersChangedError) {
           logger.info(
             "planned orders changed before the worklist write; planning again",
             { companyId, attempt }
           );
-        } else {
-          logger.error("write phase failed", { companyId, error: err });
         }
         throw err;
       }
@@ -302,9 +288,110 @@ async function loadPlanAndWrite(
   const runStartedAt = await databaseNow(db);
   logger.info("run attempt started", { companyId, attempt, runStartedAt });
 
-  // FIRST: the planned orders and the database's clock, before any other
-  // input, so every change after this read is one the write can see.
-  const plannedOrderSnapshot = await loadPlannedOrderSnapshot(db, companyId);
+  const {
+    plannedOrderSnapshot,
+    planInputs,
+    planningGroupsEnabled,
+    planningGroupRows,
+    groupMemberRows
+  } = await loadMrpInputs(client, db, {
+    companyId,
+    userId,
+    today,
+    periods,
+    locations,
+    deps
+  });
+
+  // ──────────────────────────────────────────────────────────────
+  // PHASES 3–6: the pure planning core (plan-company.ts)
+  // ──────────────────────────────────────────────────────────────
+
+  const plan = planCompany(planInputs);
+
+  if (plan.cycleItemIds.length > 0) {
+    logger.warning(
+      "BOM cycle detected — cycle items were planned as leaf items (no explosion through them)",
+      { companyId, itemIds: plan.cycleItemIds }
+    );
+  }
+
+  try {
+    // One transaction for the whole delete-and-rewrite: these statements
+    // previously ran independently, so a crash mid-sequence (or a reader
+    // between the delete and the inserts) saw planning data half-written —
+    // fresh forecasts with empty actuals. All-or-nothing now; Kysely rolls
+    // everything back on any throw.
+    const written = await db.transaction().execute((trx) =>
+      writeMrpPlan(trx, {
+        companyId,
+        userId,
+        runStartedAt,
+        locationIds: locations.map((l) => l.id),
+        plan,
+        snapshot: plannedOrderSnapshot
+      })
+    );
+
+    if (!written) {
+      logger.info("run skipped: a run that started later already saved", {
+        companyId,
+        runStartedAt
+      });
+      return null;
+    }
+
+    return {
+      runStartedAt,
+      plannedOrderIdByKey: written.idByKey,
+      plannedOrderSnapshot: written.committedSnapshot,
+      commonSurplusDraws: plan.commonSurplusDraws,
+      groupPegInputs: plan.groupPegInputs,
+      heldPlannedOrderIds: plan.heldPlannedOrderIds,
+      plannedOrderSignals: plan.plannedOrderSignals,
+      plannedOrderChangeActions: plan.plannedOrderChangeActions,
+      newSupplyByRow: plan.newSupplyByRow,
+      documentChangeActionsByRow: plan.documentChangeActionsByRow,
+      planningGroups: planInputs.planningGroups ?? [],
+      planningGroupsEnabled,
+      planningGroupRows,
+      groupMemberRows
+    };
+  } catch (err) {
+    // Any other error is logged once, by `runMrp`'s catch.
+    if (err instanceof PlannedOrdersChangedError) {
+      logger.info("planned orders changed during the run; planning again", {
+        companyId,
+        attempt
+      });
+    }
+    throw err;
+  }
+}
+
+/**
+ * PHASES 1–2: every input of one attempt, as `planCompany` takes it. The
+ * planned orders and the database's clock are read FIRST
+ * (`readPlannedOrderSnapshot`), before any other input, so every change
+ * after this read is one the write can see.
+ */
+async function loadMrpInputs(
+  client: SupabaseClient<Database>,
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    today: CalendarDate;
+    periods: DemandPeriod[];
+    locations: Database["public"]["Tables"]["location"]["Row"][];
+    deps: MrpDeps | undefined;
+  }
+) {
+  const { companyId, userId, today, periods, locations, deps } = args;
+
+  const plannedOrderSnapshot = await readPlannedOrderSnapshot(db, companyId, {
+    withOrders: true
+  });
 
   // ──────────────────────────────────────────────────────────────
   // PHASE 1: Bulk data pre-loading
@@ -422,7 +509,7 @@ async function loadPlanAndWrite(
       .execute(),
     db
       .selectFrom("itemReplenishment")
-      .select(["itemId", "leadTime"])
+      .select(["itemId", "leadTime", "scrapPercentage"])
       .where("companyId", "=", companyId)
       .execute()
   ]);
@@ -627,30 +714,16 @@ async function loadPlanAndWrite(
     todayDate: today.toString(),
     locations,
     plannedOrderRows: plannedOrderSnapshot.orders,
+    replenishments: allReplenishments,
     productionLines: productionLines.data ?? [],
     purchaseOrderLines: purchaseOrderLines.data ?? []
   });
 
   // ──────────────────────────────────────────────────────────────
-  // PHASES 3–6: the pure planning core (plan-company.ts)
+  // The inputs of the pure planning core (plan-company.ts)
   // ──────────────────────────────────────────────────────────────
 
-  const {
-    demandForecastUpserts,
-    demandForecastSourceInserts,
-    demandActualUpserts,
-    supplyActualUpserts,
-    consumptionUpdates,
-    cycleItemIds,
-    commonSurplusDraws,
-    groupPegInputs,
-    plannedOrders,
-    heldPlannedOrderIds,
-    plannedOrderSignals,
-    plannedOrderChangeActions,
-    newSupplyByRow,
-    documentChangeActionsByRow
-  } = planCompany({
+  const planInputs: PlanCompanyInputs = {
     companyId,
     userId,
     today: today.toString(),
@@ -685,446 +758,227 @@ async function loadPlanAndWrite(
     existingDemandActuals: existingDemandActuals ?? [],
     existingSupplyActuals: existingSupplyActuals ?? [],
     plannedOrderInputs
-  });
+  };
 
-  if (cycleItemIds.length > 0) {
-    logger.warning(
-      "BOM cycle detected — cycle items were planned as leaf items (no explosion through them)",
-      { companyId, itemIds: cycleItemIds }
-    );
+  return {
+    plannedOrderSnapshot,
+    planInputs,
+    planningGroupsEnabled,
+    planningGroupRows,
+    groupMemberRows
+  };
+}
+
+/**
+ * PHASE 7: persist one attempt's plan, inside the caller's transaction.
+ * Returns null, writing nothing, when a run that started later already
+ * saved; else the id of every planned order by natural key and the planned
+ * orders as this transaction leaves them.
+ */
+async function writeMrpPlan(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    runStartedAt: string;
+    locationIds: string[];
+    plan: PlanCompanyOutputs;
+    snapshot: PlannedOrderSnapshot;
   }
+): Promise<{
+  idByKey: Map<string, string>;
+  committedSnapshot: PlannedOrderSnapshot;
+} | null> {
+  const { companyId, userId, runStartedAt, locationIds, plan } = args;
+  const {
+    demandForecastUpserts,
+    demandForecastSourceInserts,
+    demandActualUpserts,
+    supplyActualUpserts,
+    consumptionUpdates
+  } = plan;
 
-  // ──────────────────────────────────────────────────────────────
-  // PHASE 7: Persist results (chunked batch writes)
-  // ──────────────────────────────────────────────────────────────
-
-  const BATCH_SIZE = 500;
-
-  try {
-    // One transaction for the whole delete-and-rewrite: these statements
-    // previously ran independently, so a crash mid-sequence (or a reader
-    // between the delete and the inserts) saw planning data half-written —
-    // fresh forecasts with empty actuals. All-or-nothing now; Kysely rolls
-    // everything back on any throw.
-    const written = await db.transaction().execute(async (trx) => {
-      // Two runs for one company overlap (the cron and the route-triggered
-      // runs): both would delete, then both insert, and demandForecastSource
-      // has no natural key, so its rows would double. The second run waits
-      // here for the first to commit. A key apart from the planning lock;
-      // every other writer takes the planning lock alone, so the two
-      // never wait on each other in opposite orders.
-      await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`mrp:${companyId}`}, 0))`.execute(
-        trx
-      );
-      // Read under the lock: a run that started later and saved first read
-      // newer inputs, and this older plan must not replace it. Only this
-      // transaction writes the value, under the same lock.
-      if (
-        !newestRunSaves(
-          runStartedAt,
-          await lastSavedMrpRunStartedAt(trx, companyId)
-        )
-      ) {
-        return null;
-      }
-
-      // Then the planned orders. `writePlannedOrderDiff` takes the
-      // company's planning lock before any other statement of this
-      // transaction, so the ERP's convert (which takes it too) never
-      // interleaves with the run, and no row lock is held while waiting
-      // for it. Under the lock it compares the planned orders with the
-      // run's snapshot and throws `PlannedOrdersChangedError` when someone
-      // changed them, which rolls this transaction back before any write.
-      // `generatePlanningActions` takes the same lock in its own
-      // transaction, after this one commits and releases it.
-      const idByKey = await writePlannedOrderDiff(trx, {
-        companyId,
-        userId,
-        locationIds: locations.map((l) => l.id),
-        generated: plannedOrders,
-        heldPlannedOrderIds,
-        updatedAt: datetime.timestamp(),
-        snapshot: plannedOrderSnapshot
-      });
-      await trx
-        .updateTable("companySettings")
-        .set({ lastMrpRunStartedAt: runStartedAt })
-        .where("id", "=", companyId)
-        .execute();
-
-      // Delete existing MRP forecasts
-      await trx
-        .deleteFrom("demandForecast")
-        .where("companyId", "=", companyId)
-        .where("forecastMethod", "=", "mrp")
-        .execute();
-
-      // Delete existing MRP forecast source rows. The demandForecast delete
-      // above removes the parent rows; this removes their attribution rows.
-      // demandForecastSource only ever holds MRP-derived rows.
-      await trx
-        .deleteFrom("demandForecastSource")
-        .where("companyId", "=", companyId)
-        .execute();
-
-      // Guarded: an empty array renders as `IN ()`, which is a syntax error
-      // (42601), so a company with no locations configured crashed the whole
-      // run. Nothing to clear in that case anyway.
-      if (locations.length > 0) {
-        await trx
-          .deleteFrom("supplyForecast")
-          .where(
-            "locationId",
-            "in",
-            locations.map((l) => l.id)
-          )
-          .where("companyId", "=", companyId)
-          .execute();
-      }
-
-      // Insert demand forecasts in batches
-      for (let i = 0; i < demandForecastUpserts.length; i += BATCH_SIZE) {
-        const batch = demandForecastUpserts.slice(i, i + BATCH_SIZE);
-        await trx
-          .insertInto("demandForecast")
-          .values(batch)
-          .onConflict((oc) =>
-            oc
-              .columns([
-                "itemId",
-                "locationId",
-                "periodId",
-                "planningSegmentId"
-              ])
-              .doUpdateSet({
-                forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
-                forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
-                updatedAt: datetime.timestamp(),
-                updatedBy: userId
-              })
-          )
-          .execute();
-      }
-
-      // Insert demand forecast source rows in batches. No onConflict — the
-      // upstream delete guarantees no key collisions.
-      for (let i = 0; i < demandForecastSourceInserts.length; i += BATCH_SIZE) {
-        const batch = demandForecastSourceInserts.slice(i, i + BATCH_SIZE);
-        await trx.insertInto("demandForecastSource").values(batch).execute();
-      }
-
-      // Insert demand actuals in batches
-      for (let i = 0; i < demandActualUpserts.length; i += BATCH_SIZE) {
-        const batch = demandActualUpserts.slice(i, i + BATCH_SIZE);
-        await trx
-          .insertInto("demandActual")
-          .values(batch)
-          .onConflict((oc) =>
-            oc
-              .columns([
-                "itemId",
-                "locationId",
-                "periodId",
-                "sourceType",
-                "planningSegmentId"
-              ])
-              .doUpdateSet({
-                actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
-                updatedAt: datetime.timestamp(),
-                updatedBy: userId
-              })
-          )
-          .execute();
-      }
-
-      // Insert supply actuals in batches
-      for (let i = 0; i < supplyActualUpserts.length; i += BATCH_SIZE) {
-        const batch = supplyActualUpserts.slice(i, i + BATCH_SIZE);
-        await trx
-          .insertInto("supplyActual")
-          .values(batch)
-          .onConflict((oc) =>
-            oc
-              .columns([
-                "itemId",
-                "locationId",
-                "periodId",
-                "sourceType",
-                "planningSegmentId"
-              ])
-              .doUpdateSet({
-                actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
-                updatedAt: datetime.timestamp(),
-                updatedBy: userId
-              })
-          )
-          .execute();
-      }
-
-      // Persist forecast consumption in batches — an UPDATE, not an upsert,
-      // so a projection deleted mid-run can never be resurrected by the
-      // write phase. Every loaded projection has a row here (0 included),
-      // so stale consumption from a prior run is always overwritten.
-      // Consumption is derived data, not an edit: the row's updatedAt /
-      // updatedBy stay with the planner who entered the forecast, and a row
-      // whose consumption did not change is not written at all.
-      for (let i = 0; i < consumptionUpdates.length; i += BATCH_SIZE) {
-        const batch = consumptionUpdates.slice(i, i + BATCH_SIZE);
-        await sql`
-          UPDATE "demandProjection" AS dp
-          SET "consumedQuantity" = v."consumedQuantity"::numeric
-          FROM (VALUES ${sql.join(
-            batch.map(
-              (r) =>
-                sql`(${r.itemId}, ${r.locationId}, ${r.periodId}, ${r.consumedQuantity})`
-            )
-          )}) AS v("itemId", "locationId", "periodId", "consumedQuantity")
-          WHERE dp."itemId" = v."itemId"
-            AND dp."locationId" = v."locationId"
-            AND dp."periodId" = v."periodId"
-            AND dp."companyId" = ${companyId}
-            AND dp."consumedQuantity" IS DISTINCT FROM v."consumedQuantity"::numeric
-        `.execute(trx);
-      }
-
-      // LAST: the planned orders as this transaction leaves them, for the
-      // worklist write to check against after the commit.
-      const committedSnapshot = await readPlannedOrderSnapshot(trx, companyId);
-
-      return { idByKey, committedSnapshot };
-    });
-
-    if (!written) {
-      logger.info("run skipped: a run that started later already saved", {
-        companyId,
-        runStartedAt
-      });
-      return null;
-    }
-
-    return {
+  // Two runs for one company overlap (the cron and the route-triggered
+  // runs): both would delete, then both insert, and demandForecastSource
+  // has no natural key, so its rows would double. The second run waits
+  // here for the first to commit. A key apart from the planning lock;
+  // every other writer takes the planning lock alone, so the two
+  // never wait on each other in opposite orders.
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`mrp:${companyId}`}, 0))`.execute(
+    trx
+  );
+  // Read under the lock: a run that started later and saved first read
+  // newer inputs, and this older plan must not replace it. Only this
+  // transaction writes the value, under the same lock.
+  if (
+    !newestRunSaves(
       runStartedAt,
-      plannedOrderIdByKey: written.idByKey,
-      plannedOrderSnapshot: written.committedSnapshot,
-      commonSurplusDraws,
-      groupPegInputs,
-      heldPlannedOrderIds,
-      plannedOrderSignals,
-      plannedOrderChangeActions,
-      newSupplyByRow,
-      documentChangeActionsByRow,
-      planningGroups,
-      planningGroupsEnabled,
-      planningGroupRows,
-      groupMemberRows
-    };
-  } catch (err) {
-    if (err instanceof PlannedOrdersChangedError) {
-      logger.info("planned orders changed during the run; planning again", {
-        companyId,
-        attempt
-      });
-    } else {
-      logger.error("write phase failed", { companyId, error: err });
-    }
-    throw err;
+      await lastSavedMrpRunStartedAt(trx, companyId)
+    )
+  ) {
+    return null;
   }
+
+  // Then the planned orders. `writePlannedOrderDiff` takes the
+  // company's planning lock before any other statement of this
+  // transaction, so the ERP's convert (which takes it too) never
+  // interleaves with the run, and no row lock is held while waiting
+  // for it. Under the lock it compares the planned orders with the
+  // run's snapshot and throws `PlannedOrdersChangedError` when someone
+  // changed them, which rolls this transaction back before any write.
+  // `generatePlanningActions` takes the same lock in its own
+  // transaction, after this one commits and releases it.
+  const idByKey = await writePlannedOrderDiff(trx, {
+    companyId,
+    userId,
+    locationIds,
+    generated: plan.plannedOrders,
+    heldPlannedOrderIds: plan.heldPlannedOrderIds,
+    updatedAt: datetime.timestamp(),
+    snapshot: args.snapshot
+  });
+  await trx
+    .updateTable("companySettings")
+    .set({ lastMrpRunStartedAt: runStartedAt })
+    .where("id", "=", companyId)
+    .execute();
+
+  // Delete existing MRP forecasts
+  await trx
+    .deleteFrom("demandForecast")
+    .where("companyId", "=", companyId)
+    .where("forecastMethod", "=", "mrp")
+    .execute();
+
+  // Delete existing MRP forecast source rows. The demandForecast delete
+  // above removes the parent rows; this removes their attribution rows.
+  // demandForecastSource only ever holds MRP-derived rows.
+  await trx
+    .deleteFrom("demandForecastSource")
+    .where("companyId", "=", companyId)
+    .execute();
+
+  // Guarded: an empty array renders as `IN ()`, which is a syntax error
+  // (42601), so a company with no locations configured crashed the whole
+  // run. Nothing to clear in that case anyway.
+  if (locationIds.length > 0) {
+    await trx
+      .deleteFrom("supplyForecast")
+      .where("locationId", "in", locationIds)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+
+  // Insert demand forecasts in batches
+  for (let i = 0; i < demandForecastUpserts.length; i += BATCH_SIZE) {
+    const batch = demandForecastUpserts.slice(i, i + BATCH_SIZE);
+    await trx
+      .insertInto("demandForecast")
+      .values(batch)
+      .onConflict((oc) =>
+        oc
+          .columns(["itemId", "locationId", "periodId", "planningSegmentId"])
+          .doUpdateSet({
+            forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
+            forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
+            updatedAt: datetime.timestamp(),
+            updatedBy: userId
+          })
+      )
+      .execute();
+  }
+
+  // Insert demand forecast source rows in batches. No onConflict — the
+  // upstream delete guarantees no key collisions.
+  for (let i = 0; i < demandForecastSourceInserts.length; i += BATCH_SIZE) {
+    const batch = demandForecastSourceInserts.slice(i, i + BATCH_SIZE);
+    await trx.insertInto("demandForecastSource").values(batch).execute();
+  }
+
+  // Insert demand actuals in batches
+  for (let i = 0; i < demandActualUpserts.length; i += BATCH_SIZE) {
+    const batch = demandActualUpserts.slice(i, i + BATCH_SIZE);
+    await trx
+      .insertInto("demandActual")
+      .values(batch)
+      .onConflict((oc) =>
+        oc
+          .columns([
+            "itemId",
+            "locationId",
+            "periodId",
+            "sourceType",
+            "planningSegmentId"
+          ])
+          .doUpdateSet({
+            actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+            updatedAt: datetime.timestamp(),
+            updatedBy: userId
+          })
+      )
+      .execute();
+  }
+
+  // Insert supply actuals in batches
+  for (let i = 0; i < supplyActualUpserts.length; i += BATCH_SIZE) {
+    const batch = supplyActualUpserts.slice(i, i + BATCH_SIZE);
+    await trx
+      .insertInto("supplyActual")
+      .values(batch)
+      .onConflict((oc) =>
+        oc
+          .columns([
+            "itemId",
+            "locationId",
+            "periodId",
+            "sourceType",
+            "planningSegmentId"
+          ])
+          .doUpdateSet({
+            actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+            updatedAt: datetime.timestamp(),
+            updatedBy: userId
+          })
+      )
+      .execute();
+  }
+
+  // Persist forecast consumption in batches — an UPDATE, not an upsert,
+  // so a projection deleted mid-run can never be resurrected by the
+  // write phase. Every loaded projection has a row here (0 included),
+  // so stale consumption from a prior run is always overwritten.
+  // Consumption is derived data, not an edit: the row's updatedAt /
+  // updatedBy stay with the planner who entered the forecast, and a row
+  // whose consumption did not change is not written at all.
+  for (let i = 0; i < consumptionUpdates.length; i += BATCH_SIZE) {
+    const batch = consumptionUpdates.slice(i, i + BATCH_SIZE);
+    await sql`
+      UPDATE "demandProjection" AS dp
+      SET "consumedQuantity" = v."consumedQuantity"::numeric
+      FROM (VALUES ${sql.join(
+        batch.map(
+          (r) =>
+            sql`(${r.itemId}, ${r.locationId}, ${r.periodId}, ${r.consumedQuantity})`
+        )
+      )}) AS v("itemId", "locationId", "periodId", "consumedQuantity")
+      WHERE dp."itemId" = v."itemId"
+        AND dp."locationId" = v."locationId"
+        AND dp."periodId" = v."periodId"
+        AND dp."companyId" = ${companyId}
+        AND dp."consumedQuantity" IS DISTINCT FROM v."consumedQuantity"::numeric
+    `.execute(trx);
+  }
+
+  // LAST: the planned orders as this transaction leaves them, for the
+  // worklist write to check against after the commit.
+  const committedSnapshot = await readPlannedOrderSnapshot(trx, companyId);
+
+  return { idByKey, committedSnapshot };
 }
 
 // ──────────────────────────────────────────────────────────────
 // Helper functions
 // ──────────────────────────────────────────────────────────────
-
-/**
- * MRP v2: what `planCompany` needs to plan the common segment with planned
- * orders (`PlannedOrderInputs`). Kysely reads, so no PostgREST row cap.
- *
- * - The policy rows join `itemPlanning`, `item` and `itemReplenishment` with
- *   INNER JOINs, as the planning RPCs do: an item with no `itemPlanning` row
- *   at a location has no planning row there and gets no planned order.
- * - The open jobs and PO lines are the views `runMrp` already read, built
- *   into orders by `buildOpenSupplyOrders` as the planning actions build them.
- * - The existing planned orders are the run's snapshot
- *   (`loadPlannedOrderSnapshot`), read before every other input.
- */
-async function loadPlannedOrderInputs(
-  db: Kysely<DB>,
-  args: {
-    companyId: string;
-    todayDate: string;
-    locations: { id: string; planningTimeFenceDays: number | null }[];
-    plannedOrderRows: ExistingPlannedOrder[];
-    productionLines: Parameters<typeof buildOpenSupplyOrders>[0]["jobRows"];
-    purchaseOrderLines: Parameters<
-      typeof buildOpenSupplyOrders
-    >[0]["poLineRows"];
-  }
-): Promise<PlannedOrderInputs> {
-  const { companyId } = args;
-  const [policyRows, settings, openSupplyDetails] = await Promise.all([
-    db
-      .selectFrom("itemPlanning as ip")
-      .innerJoin("item as i", (join) =>
-        join.onRef("i.id", "=", "ip.itemId").on("i.companyId", "=", companyId)
-      )
-      .innerJoin("itemReplenishment as ir", (join) =>
-        join
-          .onRef("ir.itemId", "=", "ip.itemId")
-          .on("ir.companyId", "=", companyId)
-      )
-      .select([
-        "ip.itemId",
-        "ip.locationId",
-        "i.active",
-        "i.itemTrackingType",
-        "i.replenishmentSystem",
-        "ip.reorderingPolicy",
-        "ip.reorderPoint",
-        "ip.reorderQuantity",
-        "ip.minimumOrderQuantity",
-        "ip.maximumOrderQuantity",
-        "ip.orderMultiple",
-        "ip.maximumInventoryQuantity",
-        "ip.demandAccumulationPeriod",
-        "ip.demandAccumulationSafetyStock",
-        "ip.planningTimeFenceDays",
-        "ir.lotSize",
-        "ir.leadTime",
-        "ir.scrapPercentage",
-        "ir.preferredSupplierId"
-      ])
-      .where("ip.companyId", "=", companyId)
-      .execute(),
-    db
-      .selectFrom("companySettings")
-      .select(["rescheduleToleranceDays"])
-      .where("id", "=", companyId)
-      .executeTakeFirst(),
-    loadOpenSupplyDetails(db, companyId)
-  ]);
-
-  const toNumber = (value: unknown): number | null =>
-    value === null || value === undefined ? null : Number(value);
-
-  const scrapRateByItem = new Map<string, number>();
-  const preferredSupplierByItem = new Map<string, string | null>();
-  for (const row of policyRows) {
-    scrapRateByItem.set(row.itemId, Number(row.scrapPercentage) || 0);
-    preferredSupplierByItem.set(row.itemId, row.preferredSupplierId ?? null);
-  }
-
-  return {
-    planningPolicies: policyRows.map((row) => ({
-      itemId: row.itemId,
-      locationId: row.locationId,
-      active: row.active,
-      itemTrackingType: row.itemTrackingType,
-      replenishmentSystem: row.replenishmentSystem,
-      reorderingPolicy: row.reorderingPolicy,
-      reorderPoint: toNumber(row.reorderPoint),
-      reorderQuantity: toNumber(row.reorderQuantity),
-      minimumOrderQuantity: toNumber(row.minimumOrderQuantity),
-      maximumOrderQuantity: toNumber(row.maximumOrderQuantity),
-      orderMultiple: toNumber(row.orderMultiple),
-      lotSize: toNumber(row.lotSize),
-      maximumInventoryQuantity: toNumber(row.maximumInventoryQuantity),
-      demandAccumulationPeriod: toNumber(row.demandAccumulationPeriod),
-      demandAccumulationSafetyStock: toNumber(
-        row.demandAccumulationSafetyStock
-      ),
-      leadTime: toNumber(row.leadTime),
-      planningTimeFenceDays: toNumber(row.planningTimeFenceDays)
-    })),
-    locationTimeFenceDays: new Map(
-      args.locations.map((location) => [
-        location.id,
-        Number(location.planningTimeFenceDays) || 0
-      ])
-    ),
-    scrapRateByItem,
-    preferredSupplierByItem,
-    openSupplyOrders: buildOpenSupplyOrders({
-      poLineRows: args.purchaseOrderLines,
-      jobRows: args.productionLines,
-      jobDetailsById: openSupplyDetails.jobDetailsById,
-      conversionFactorByLineId: openSupplyDetails.conversionFactorByLineId,
-      todayDate: args.todayDate
-    }),
-    existingPlannedOrders: args.plannedOrderRows,
-    toleranceDays: Number(settings?.rescheduleToleranceDays ?? 7)
-  };
-}
-
-/**
- * The run's snapshot of the company's planned orders, read before any other
- * input: the database's `now()`, then every Planned and Firm row. The rows
- * are the plan's existing planned orders; their id, status and `updatedAt`
- * let the write see any change made since (`plannedOrdersChangedSince`).
- */
-async function loadPlannedOrderSnapshot(
-  db: Kysely<DB>,
-  companyId: string
-): Promise<PlannedOrderSnapshot & { orders: ExistingPlannedOrder[] }> {
-  const clock = await sql<{
-    now: string;
-  }>`SELECT now()::text AS "now"`.execute(db);
-  const readStart = clock.rows[0]?.now;
-  if (!readStart) throw new Error("Failed to read the database clock");
-
-  const rows = await db
-    .selectFrom("plannedOrder")
-    .select([
-      "id",
-      "itemId",
-      "locationId",
-      "planningSegmentId",
-      "orderType",
-      "status",
-      "quantity",
-      "scrapQuantity",
-      "dueDate",
-      "releaseDate",
-      "periodId",
-      "splitIndex",
-      "supplierId",
-      "quantityTrace",
-      PLANNED_ORDER_UPDATED_AT
-    ])
-    .where("companyId", "=", companyId)
-    .where("status", "in", ["Planned", "Firm"])
-    .execute();
-
-  const orders: ExistingPlannedOrder[] = [];
-  for (const row of rows) {
-    if (row.status !== "Planned" && row.status !== "Firm") continue;
-    orders.push({
-      id: row.id,
-      itemId: row.itemId,
-      locationId: row.locationId,
-      planningSegmentId: row.planningSegmentId,
-      orderType: row.orderType,
-      status: row.status,
-      quantity: Number(row.quantity),
-      scrapQuantity: Number(row.scrapQuantity),
-      dueDate: toIsoDate(row.dueDate)!,
-      releaseDate: toIsoDate(row.releaseDate)!,
-      periodId: row.periodId,
-      splitIndex: row.splitIndex,
-      supplierId: row.supplierId,
-      quantityTrace:
-        (row.quantityTrace as ExistingPlannedOrder["quantityTrace"]) ?? null
-    });
-  }
-  return {
-    readStart,
-    rows: rows.map((row) => ({
-      id: row.id,
-      status: row.status,
-      updatedAt: row.updatedAt
-    })),
-    orders
-  };
-}
 
 /**
  * Whether the company has the commercial PLANNING_GROUPS feature. The check

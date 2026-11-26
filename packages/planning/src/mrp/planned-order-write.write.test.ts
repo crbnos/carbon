@@ -135,6 +135,24 @@ describe("writePlannedOrderDiff", () => {
     expect(driver.rows.map((row) => row.id)).toEqual(["plo-held"]);
   });
 
+  // Another location's rows are not this run's, nor are another company's.
+  it("diffs only the company's Planned rows at the planned locations", async () => {
+    const { kinds, driver } = await write(
+      [
+        stored("plo-own", { companyId: "co-1" }),
+        stored("plo-elsewhere", { companyId: "co-1", locationId: "loc-2" }),
+        stored("plo-other-company", { companyId: "co-2" })
+      ],
+      []
+    );
+    expect(kinds).toEqual(["lock", "select", "delete"]);
+    expect(driver.sent[2]!.parameters).toEqual(["co-1", "Planned", "plo-own"]);
+    expect(driver.rows.map((row) => row.id)).toEqual([
+      "plo-elsewhere",
+      "plo-other-company"
+    ]);
+  });
+
   it("never touches a Firm or Converted row, even on the same natural key", async () => {
     const firm = stored("plo-firm", { status: "Firm", quantity: 99 });
     const converted = stored("plo-conv", {
@@ -309,35 +327,53 @@ describe("plannedOrdersChangedSince", () => {
 });
 
 describe("retryOnPlannedOrderChange", () => {
+  // The random pause between attempts, counted instead of waited for.
+  const pauses = () => {
+    const counter = { count: 0, pause: async () => void counter.count++ };
+    return counter;
+  };
+
   it("plans again after a change and returns the attempt that wrote", async () => {
     const attempts: number[] = [];
-    const result = await retryOnPlannedOrderChange(async (attempt) => {
-      attempts.push(attempt);
-      if (attempt < 2) throw new PlannedOrdersChangedError();
-      return "written";
-    });
-    expect([result, attempts]).toEqual(["written", [1, 2]]);
+    const counter = pauses();
+    const result = await retryOnPlannedOrderChange(
+      async (attempt) => {
+        attempts.push(attempt);
+        if (attempt < 2) throw new PlannedOrdersChangedError();
+        return "written";
+      },
+      { pause: counter.pause }
+    );
+    expect([result, attempts, counter.count]).toEqual(["written", [1, 2], 1]);
   });
 
   it("gives up after five changed attempts", async () => {
     const attempts: number[] = [];
+    const counter = pauses();
     await expect(
-      retryOnPlannedOrderChange(async (attempt) => {
-        attempts.push(attempt);
-        throw new PlannedOrdersChangedError();
-      })
+      retryOnPlannedOrderChange(
+        async (attempt) => {
+          attempts.push(attempt);
+          throw new PlannedOrdersChangedError();
+        },
+        { pause: counter.pause }
+      )
     ).rejects.toMatchObject({ cause: expect.any(PlannedOrdersChangedError) });
-    expect(attempts).toEqual([1, 2, 3, 4, 5]);
+    expect([attempts, counter.count]).toEqual([[1, 2, 3, 4, 5], 4]);
   });
 
   it("does not retry any other failure", async () => {
     const attempts: number[] = [];
+    const counter = pauses();
     await expect(
-      retryOnPlannedOrderChange(async (attempt) => {
-        attempts.push(attempt);
-        throw new Error("connection lost");
-      })
+      retryOnPlannedOrderChange(
+        async (attempt) => {
+          attempts.push(attempt);
+          throw new Error("connection lost");
+        },
+        { pause: counter.pause }
+      )
     ).rejects.toThrow("connection lost");
-    expect(attempts).toEqual([1]);
+    expect([attempts, counter.count]).toEqual([[1], 0]);
   });
 });

@@ -11,10 +11,9 @@ import type { Database } from "@carbon/database";
 import {
   type BomChild,
   COMMON_SEGMENT,
-  computeLowLevelCodes,
   type DemandContributor,
-  effectiveReplenishment,
   explodeBom,
+  isInlineProduction,
   KEY_SEP,
   type MethodType,
   makeActualKey,
@@ -1056,8 +1055,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
         inlineProductionItemIds: inlineProductionItemIds(
           bomByItem,
           replenishmentSystemByItem
-        ),
-        lowLevelCodeByItem: computeLowLevelCodes(bomByItem).llc
+        )
       })
     : null;
 
@@ -1384,9 +1382,7 @@ function inlineProductionItemIds(
   for (const children of bomByItem.values()) {
     for (const child of children) {
       if (
-        child.methodType === "Make to Order" &&
-        effectiveReplenishment(replenishmentSystemByItem.get(child.itemId)) ===
-          "Make"
+        isInlineProduction(child, replenishmentSystemByItem.get(child.itemId))
       ) {
         itemIds.add(child.itemId);
       }

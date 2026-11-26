@@ -23,7 +23,7 @@ import { formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
@@ -36,24 +36,30 @@ import {
 import type { DrawerPlannedOrder } from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import { DrawerPlannedOrders } from "~/modules/production/ui/Planning/DrawerPlannedOrders";
+import {
+  type OpenOrderField,
+  type OpenOrderRow,
+  OpenOrdersGrid
+} from "~/modules/production/ui/Planning/OpenOrdersGrid";
 import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
+import { actionForOrder } from "~/modules/production/ui/Planning/planning-review";
 import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   BeyondFenceButton,
   PlanningPolicySummary,
   periodIdFor
 } from "~/modules/production/ui/Planning/PlanningDrawerParts";
-import type {
-  OpenOrderField,
-  OpenOrderRow
-} from "~/modules/production/ui/Planning/PlanningOrderGrids";
+import { DeferredDrawerSections } from "~/modules/production/ui/Planning/PlanningOrderGridParts";
+import { SuggestedOrdersGrid } from "~/modules/production/ui/Planning/SuggestedOrdersGrid";
 import {
-  actionForOrder,
-  DeferredDrawerSections,
-  OpenOrdersGrid,
-  SuggestedOrdersGrid
-} from "~/modules/production/ui/Planning/PlanningOrderGrids";
+  useAnswerOverlay,
+  useDrawerSuggestions,
+  useRefetchOnKey,
+  useSaveOrderCell,
+  withEdits,
+  withOrphanActionRows
+} from "~/modules/production/ui/Planning/useDrawerOrders";
 import { useJobPlanningRelease } from "~/modules/production/ui/Planning/useJobPlanningRelease";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { loader as openJobsLoader } from "~/routes/api+/production.planning-open-jobs";
@@ -74,9 +80,9 @@ type OpenProductionOrder = ProductionOrder & {
  * The item's open make-to-stock jobs at the location, read through
  * `api+/production.planning-open-jobs`. Any action through the router marks
  * the read stale (the root invalidation middleware), so it follows an Apply
- * and an order placed. `refreshKey` reads again after a change the router
- * does not see (Plan and a cell save are plain fetches), and after the drawer
- * re-seeds, which drops the row's copy of the planned orders.
+ * and an order placed. `refreshKey` reads again after Plan (a plain fetch),
+ * a Release, and an order that left the drawer open. A cell save refetches
+ * the list itself (`useSaveOrderCell`).
  */
 function useDrawerOpenJobs(args: { url: string | null; refreshKey: number }) {
   const { url, refreshKey } = args;
@@ -86,15 +92,21 @@ function useDrawerOpenJobs(args: { url: string | null; refreshKey: number }) {
     // while a closed drawer slides out
     keepPreviousData: true
   });
-  const { refetch } = query;
-  const lastRefreshKey = useRef(refreshKey);
-  useEffect(() => {
-    if (refreshKey === lastRefreshKey.current) return;
-    lastRefreshKey.current = refreshKey;
-    if (url) void refetch();
-  }, [refreshKey, url, refetch]);
+  useRefetchOnKey(query, url, refreshKey);
   return query;
 }
+
+/** The edit an Open Jobs row holds: its quantity and due date. */
+const openJobEdit = (row: OpenOrderRow) =>
+  row.quantity === null
+    ? null
+    : ([row.id, { quantity: row.quantity, dueDate: row.dueDate }] as const);
+
+/** What the jobs route answers a cell save (`updateJob`). */
+type UpdateJobResult = {
+  data: { warning: string | null } | null;
+  error: { message: string } | null;
+};
 
 type ProductionPlanningOrderDrawerProps = {
   /**
@@ -108,14 +120,14 @@ type ProductionPlanningOrderDrawerProps = {
   /** Suggested orders required AFTER the row's time fence. The drawer opens
    *  without them; one button extends the fence to take them in. */
   beyondFenceOrders: ProductionOrder[];
-  /** The row's time fence (ISO date), or null when it has none. */
-  timeFenceDate: string | null;
-  /** True when the fence was moved on screen, away from the saved horizon. */
-  isTimeFenceOverridden: boolean;
-  /** Move this row's fence without leaving the drawer — the same on-screen
-   *  override as the grid's Planning Horizon cell. `null` clears the fence
-   *  for this view. The suggested orders re-split around the new date. */
-  onTimeFenceChange: (date: string | null) => void;
+  /** The row's planning horizon (ISO date), or null when it has none. */
+  horizonDate: string | null;
+  /** True when the horizon was moved on screen, away from the saved one. */
+  isHorizonOverridden: boolean;
+  /** Move this row's horizon without leaving the drawer — the same on-screen
+   *  override as the grid's Planning Horizon cell. `null` clears it for this
+   *  view. The suggested orders re-split around the new date. */
+  onHorizonChange: (date: string | null) => void;
   /** The item's change actions on existing jobs, inside the fence. Each one is
    *  shown on the row of the job it targets. */
   actions: PlanningAction[];
@@ -149,9 +161,9 @@ export const ProductionPlanningOrderDrawer = memo(
     row,
     orders,
     beyondFenceOrders,
-    timeFenceDate,
-    isTimeFenceOverridden,
-    onTimeFenceChange,
+    horizonDate,
+    isHorizonOverridden,
+    onHorizonChange,
     actions,
     actionHandlers,
     setOrders,
@@ -168,16 +180,23 @@ export const ProductionPlanningOrderDrawer = memo(
     const { revalidate } = useRevalidator();
     const { t } = useLingui();
     const pastStartToast = usePastStartToast();
-    // Bumped when the rows are re-read, to close any cell editor left open.
-    const [suggestionsVersion, setSuggestionsVersion] = useState(0);
-    const reseedSuggestions = useCallback(() => {
-      onSuggestionsStale(row);
-      setSuggestionsVersion((version) => version + 1);
-    }, [onSuggestionsStale, row]);
+    const {
+      suggestionsVersion,
+      bumpSuggestionsVersion,
+      reseedSuggestions,
+      onPlannedOrdersRead,
+      // an action on a planned order sits on its row in the Planned Orders grid
+      orderActions: jobActions
+    } = useDrawerSuggestions({
+      row,
+      actions,
+      onSuggestionsStale,
+      onPlannedOrdersLoaded
+    });
     const reseedAfterReplan = useCallback(() => {
       onPlanReran();
-      setSuggestionsVersion((version) => version + 1);
-    }, [onPlanReran]);
+      bumpSuggestionsVersion();
+    }, [onPlanReran, bumpSuggestionsVersion]);
     const submittedOrders = useRef<ProductionOrder[]>([]);
     // A refusal is toasted by useAction. On success the orders refused for
     // starting in the past stay in the drawer as they were sent; with none,
@@ -191,7 +210,7 @@ export const ProductionPlanningOrderDrawer = memo(
         );
         if (refused.length > 0) {
           setOrders(row, refused);
-          setSuggestionsVersion((version) => version + 1);
+          bumpSuggestionsVersion();
         } else {
           reseedSuggestions();
         }
@@ -214,8 +233,8 @@ export const ProductionPlanningOrderDrawer = memo(
       }
     });
     const { locale } = useLocale();
-    const fenceLabel = timeFenceDate
-      ? formatDate(timeFenceDate, undefined, locale)
+    const horizonLabel = horizonDate
+      ? formatDate(horizonDate, undefined, locale)
       : null;
 
     // ── Open jobs: the item's existing make-to-stock jobs ───────────────────
@@ -240,53 +259,40 @@ export const ProductionPlanningOrderDrawer = memo(
       refreshKey: openJobsVersion
     });
 
-    // A cell's saved edit, shown until the read that follows it lands. Kept
-    // against the answer it edited, so a newer answer replaces it.
-    const [openJobEdits, setOpenJobEdits] = useState<{
-      of: unknown;
-      byId: Map<string, { quantity: number; dueDate: string | null }>;
-    } | null>(null);
+    // A cell's saved edit, shown until the read that follows it lands. The
+    // edited row stays where it is until then, so it does not move under the
+    // cursor; the read that follows sorts it by its new date.
+    const openJobsOverlay = useAnswerOverlay(openJobsQuery, openJobEdit);
 
     const openJobs = useMemo<OpenProductionOrder[] | null | Error>(() => {
-      if (openJobsQuery.error) {
-        return openJobsQuery.error instanceof Error
-          ? openJobsQuery.error
-          : new Error(String(openJobsQuery.error));
-      }
-      if (!openJobsQuery.data) return null;
-      const byId =
-        openJobEdits?.of === openJobsQuery.data ? openJobEdits.byId : null;
-      return openJobsQuery.data.jobs
-        .map((job): OpenProductionOrder => {
-          const edit = byId?.get(job.id);
-          return {
-            existingId: job.id,
-            existingReadableId: job.jobId,
-            // a Draft job is not supply yet, so all of it is new to the chart
-            existingQuantity: job.status === "Draft" ? 0 : job.quantity,
-            existingStatus: job.status,
-            startDate: job.startDate ?? null,
-            dueDate: edit ? edit.dueDate : (job.dueDate ?? null),
-            quantity: edit ? edit.quantity : job.quantity,
-            loadedQuantity: job.quantity,
-            isASAP: job.deadlineType === "ASAP",
-            periodId: periodIdFor(periods, job.dueDate)
-          };
-        })
+      if (openJobsOverlay.error) return openJobsOverlay.error;
+      if (!openJobsOverlay.answer) return null;
+      const jobs = openJobsOverlay.answer.jobs
+        .map((job): OpenProductionOrder => ({
+          existingId: job.id,
+          existingReadableId: job.jobId,
+          // a Draft job is not supply yet, so all of it is new to the chart
+          existingQuantity: job.status === "Draft" ? 0 : job.quantity,
+          existingStatus: job.status,
+          startDate: job.startDate ?? null,
+          dueDate: job.dueDate ?? null,
+          quantity: job.quantity,
+          loadedQuantity: job.quantity,
+          isASAP: job.deadlineType === "ASAP",
+          periodId: periodIdFor(periods, job.dueDate)
+        }))
         .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
-    }, [openJobsQuery.data, openJobsQuery.error, openJobEdits, periods]);
-
-    const onPlannedOrdersRead = useCallback(
-      (plannedOrders: DrawerPlannedOrder[]) =>
-        onPlannedOrdersLoaded(row, plannedOrders),
-      [onPlannedOrdersLoaded, row]
-    );
-
-    // An action on a planned order sits on its row in the Planned Orders grid.
-    const jobActions = useMemo(
-      () => actions.filter((action) => !action.plannedOrderId),
-      [actions]
-    );
+      return withEdits(
+        jobs,
+        openJobsOverlay.editsById,
+        (job) => job.existingId
+      );
+    }, [
+      openJobsOverlay.answer,
+      openJobsOverlay.error,
+      openJobsOverlay.editsById,
+      periods
+    ]);
 
     const openJobRows = useMemo<OpenOrderRow[] | null | Error>(() => {
       if (!Array.isArray(openJobs)) return openJobs;
@@ -309,90 +315,43 @@ export const ProductionPlanningOrderDrawer = memo(
         };
       });
 
-      // An action whose job is not in the list still has to be shown — a
-      // suggestion that silently drops out of the drawer reads as "nothing to
-      // do". It gets a read-only row built from the action itself.
-      for (const action of jobActions) {
-        if (rows.some((r) => r.action?.id === action.id)) continue;
-        rows.push({
-          id: action.id,
-          documentPath: action.jobId ? path.to.job(action.jobId) : null,
-          readableId: action.jobReadableId ?? "—",
-          status: action.jobStatus ?? null,
-          quantity: null,
-          dueDate: null,
-          isEditable: false,
-          action,
-          suggestedQuantity: Number(action.suggestedQuantity)
-        });
-      }
-
-      return rows;
+      // An action whose job is not in the list gets a read-only row built
+      // from the action itself.
+      return withOrphanActionRows(rows, jobActions, (action) => ({
+        id: action.id,
+        documentPath: action.jobId ? path.to.job(action.jobId) : null,
+        readableId: action.jobReadableId ?? "—",
+        status: action.jobStatus ?? null,
+        quantity: null,
+        dueDate: null,
+        isEditable: false,
+        action,
+        suggestedQuantity: Number(action.suggestedQuantity)
+      }));
     }, [openJobs, jobActions]);
 
-    const openJobsData = openJobsQuery.data;
-    const onOpenJobsChange = useCallback(
-      (rows: OpenOrderRow[]) => {
-        if (!openJobsData) return;
-        const byId = new Map<
-          string,
-          { quantity: number; dueDate: string | null }
-        >();
-        for (const updated of rows) {
-          if (updated.quantity === null) continue;
-          byId.set(updated.id, {
-            quantity: updated.quantity,
-            dueDate: updated.dueDate
-          });
-        }
-        setOpenJobEdits({ of: openJobsData, byId });
-      },
-      [openJobsData]
-    );
+    const onOpenJobsChange = openJobsOverlay.keepEdits;
 
-    // One cell, one field, one request. The route re-reads the job under the
-    // company and refuses one that has been released, so a stale row here
-    // cannot edit a job on the floor.
-    const { refetch: refetchOpenJobs } = openJobsQuery;
-    const onSaveOpenJob = useCallback(
-      async (
-        openRow: OpenOrderRow,
-        field: OpenOrderField,
-        value: number | string
-      ) => {
-        try {
-          const response = await fetch(path.to.bulkUpdateProductionPlanning, {
-            method: "post",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "updateJob",
-              locationId,
-              job: { id: openRow.id, field, value }
-            })
-          });
-          const result = (await response.json().catch(() => null)) as {
-            data: { warning: string | null } | null;
-            error: { message: string } | null;
-          } | null;
-          if (response.ok && result?.data) {
-            // Saved, but a follow-up step failed: keep the new value and say so.
-            if (result.data.warning) toast.error(result.data.warning);
-            // A plain fetch bypasses the router's invalidation: read the open
-            // jobs again, and refresh the grid row behind the drawer, which
-            // otherwise shows the old value until the next navigation.
-            void refetchOpenJobs();
-            void revalidate();
-            return true;
-          }
-          toast.error(result?.error?.message ?? t`Failed to update job`);
-          return false;
-        } catch {
-          toast.error(t`Failed to update job`);
-          return false;
-        }
-      },
-      [locationId, refetchOpenJobs, revalidate, t]
-    );
+    // Saved, but a follow-up step failed (recalculating requirements, telling
+    // the scheduler): the new value stands and the warning is shown.
+    const onSaveOpenJob = useSaveOrderCell<
+      OpenOrderRow,
+      OpenOrderField,
+      UpdateJobResult
+    >({
+      url: path.to.bulkUpdateProductionPlanning,
+      bodyOf: (openRow, field, value) => ({
+        action: "updateJob",
+        locationId,
+        job: { id: openRow.id, field, value }
+      }),
+      outcomeOf: (ok, result) =>
+        ok && result?.data
+          ? { saved: true, warning: result.data.warning }
+          : { saved: false, message: result?.error?.message },
+      failureMessage: t`Failed to update job`,
+      refetch: openJobsQuery.refetch
+    });
 
     // Plan: a Draft job becomes Planned, so MRP counts it as supply. Draft is
     // the planner's own unfinished job; without this it sat beside a Make
@@ -563,17 +522,17 @@ export const ProductionPlanningOrderDrawer = memo(
       [beyondFenceOrders]
     );
 
-    // A new fence re-seeds the rows too.
-    const onFenceChange = useCallback(
-      (date: Parameters<typeof onTimeFenceChange>[0]) => {
-        onTimeFenceChange(date);
-        setSuggestionsVersion((version) => version + 1);
+    // A new horizon re-seeds the rows too.
+    const onHorizonDateChange = useCallback(
+      (date: Parameters<typeof onHorizonChange>[0]) => {
+        onHorizonChange(date);
+        bumpSuggestionsVersion();
       },
-      [onTimeFenceChange]
+      [onHorizonChange, bumpSuggestionsVersion]
     );
     const onIncludeBeyondFence = useCallback(() => {
-      if (lastBeyondFenceDate) onFenceChange(lastBeyondFenceDate);
-    }, [lastBeyondFenceDate, onFenceChange]);
+      if (lastBeyondFenceDate) onHorizonDateChange(lastBeyondFenceDate);
+    }, [lastBeyondFenceDate, onHorizonDateChange]);
 
     // Memoize handlers
     const onAddOrder = useCallback(() => {
@@ -647,9 +606,9 @@ export const ProductionPlanningOrderDrawer = memo(
             <div className="flex flex-col gap-4  w-full">
               <PlanningPolicySummary
                 item={row}
-                fenceDate={timeFenceDate}
-                isFenceOverridden={isTimeFenceOverridden}
-                onFenceChange={onFenceChange}
+                horizonDate={horizonDate}
+                isHorizonOverridden={isHorizonOverridden}
+                onHorizonChange={onHorizonDateChange}
               />
 
               <DeferredDrawerSections>
@@ -673,10 +632,10 @@ export const ProductionPlanningOrderDrawer = memo(
                   title={<Trans>Suggested Jobs</Trans>}
                   titleAction={
                     lastBeyondFenceDate &&
-                    timeFenceDate && (
+                    horizonDate && (
                       <BeyondFenceButton
                         count={beyondFenceOrders.length}
-                        fenceLabel={fenceLabel}
+                        fenceLabel={horizonLabel}
                         onClick={onIncludeBeyondFence}
                       />
                     )
@@ -709,7 +668,7 @@ export const ProductionPlanningOrderDrawer = memo(
                   itemId={row.id}
                   locationId={locationId}
                   safetyStock={row.demandAccumulationSafetyStock}
-                  timeFenceDate={timeFenceDate}
+                  timeFenceDate={horizonDate}
                   plannedOrders={chartOrders}
                 />
               </DeferredDrawerSections>
@@ -760,10 +719,10 @@ export const ProductionPlanningOrderDrawer = memo(
         isOpen,
         chartOrders,
         locationToday,
-        timeFenceDate,
-        isTimeFenceOverridden,
-        onFenceChange,
-        fenceLabel,
+        horizonDate,
+        isHorizonOverridden,
+        onHorizonDateChange,
+        horizonLabel,
         openJobsVersion,
         onPlannedOrdersRead,
         t

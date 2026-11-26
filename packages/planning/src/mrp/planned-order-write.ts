@@ -12,11 +12,12 @@ import { lockCompanyPlanning } from "@carbon/database/planning-lock";
 import { equals } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { toIsoDate } from "../scheduling/date-utils.ts";
+import { jsonEquals } from "./json-equals.ts";
 import {
+  type ExistingPlannedOrder,
   type GeneratedPlannedOrder,
   plannedOrderNaturalKey
 } from "./planned-orders.ts";
-import { jsonEquals } from "./planning-actions.ts";
 
 const BATCH_SIZE = 500;
 
@@ -132,38 +133,112 @@ export async function assertPlannedOrdersUnchanged(
 }
 
 /**
- * The company's planned orders as they stand in `db`'s transaction: its
- * `now()` (the transaction's start, so rows it inserted itself do not read
- * as created since), then each Planned and Firm row's id, status and
- * `updatedAt`. Read at the end of the Phase-7 transaction, it is what the
+ * The company's planned orders as they stand in `db` (or its transaction):
+ * the database's `now()` (in a transaction, its start, so rows it inserted
+ * itself do not read as created since), then each Planned and Firm row's id,
+ * status and `updatedAt`, which let a write see any change made since
+ * (`plannedOrdersChangedSince`).
+ *
+ * Read twice per attempt of a run: FIRST, before any other input, with
+ * `withOrders` — the rows are then also the plan's existing planned orders
+ * (`orders`); and at the end of the Phase-7 transaction, where it is what the
  * run committed, and the worklist write checks against it.
  */
 export async function readPlannedOrderSnapshot(
   db: Kysely<DB>,
   companyId: string
-): Promise<PlannedOrderSnapshot> {
+): Promise<PlannedOrderSnapshot>;
+export async function readPlannedOrderSnapshot(
+  db: Kysely<DB>,
+  companyId: string,
+  options: { withOrders: true }
+): Promise<PlannedOrderSnapshot & { orders: ExistingPlannedOrder[] }>;
+export async function readPlannedOrderSnapshot(
+  db: Kysely<DB>,
+  companyId: string,
+  options?: { withOrders: true }
+): Promise<PlannedOrderSnapshot & { orders?: ExistingPlannedOrder[] }> {
   const clock = await sql<{
     now: string;
   }>`SELECT now()::text AS "now"`.execute(db);
   const readStart = clock.rows[0]?.now;
   if (!readStart) throw new Error("Failed to read the database clock");
-  const rows = await db
+
+  const live = db
     .selectFrom("plannedOrder")
-    .select(["id", "status", PLANNED_ORDER_UPDATED_AT])
     .where("companyId", "=", companyId)
-    .where("status", "in", ["Planned", "Firm"])
+    .where("status", "in", ["Planned", "Firm"]);
+
+  if (!options?.withOrders) {
+    const rows = await live
+      .select(["id", "status", PLANNED_ORDER_UPDATED_AT])
+      .execute();
+    return { readStart, rows };
+  }
+
+  const rows = await live
+    .select([
+      "id",
+      "itemId",
+      "locationId",
+      "planningSegmentId",
+      "orderType",
+      "status",
+      "quantity",
+      "scrapQuantity",
+      "dueDate",
+      "releaseDate",
+      "periodId",
+      "splitIndex",
+      "supplierId",
+      "quantityTrace",
+      PLANNED_ORDER_UPDATED_AT
+    ])
+    // the WHERE above admits these two statuses only
+    .$narrowType<{ status: "Planned" | "Firm" }>()
     .execute();
-  return { readStart, rows };
+  return {
+    readStart,
+    rows: rows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      updatedAt: row.updatedAt
+    })),
+    orders: rows.map((row) => ({
+      id: row.id,
+      itemId: row.itemId,
+      locationId: row.locationId,
+      planningSegmentId: row.planningSegmentId,
+      orderType: row.orderType,
+      status: row.status,
+      quantity: Number(row.quantity),
+      scrapQuantity: Number(row.scrapQuantity),
+      dueDate: toIsoDate(row.dueDate)!,
+      releaseDate: toIsoDate(row.releaseDate)!,
+      periodId: row.periodId,
+      splitIndex: row.splitIndex,
+      supplierId: row.supplierId,
+      quantityTrace:
+        (row.quantityTrace as ExistingPlannedOrder["quantityTrace"]) ?? null
+    }))
+  };
 }
 
 /**
  * Runs `attempt` again, up to `maxAttempts` times in all, while it throws
  * `PlannedOrdersChangedError`. Any other error, or the last attempt's, ends it.
+ * Between attempts it pauses a random time of up to `MAX_RETRY_PAUSE_MS`, so
+ * two runs that keep changing each other's planned orders stop retrying in
+ * step; `pause` replaces that wait (a test passes one that returns at once).
  */
 export async function retryOnPlannedOrderChange<T>(
   attempt: (attemptNumber: number) => Promise<T>,
-  maxAttempts = MAX_PLAN_ATTEMPTS
+  options: {
+    maxAttempts?: number;
+    pause?: () => Promise<void>;
+  } = {}
 ): Promise<T> {
+  const { maxAttempts = MAX_PLAN_ATTEMPTS, pause = randomRetryPause } = options;
   for (let attemptNumber = 1; ; attemptNumber++) {
     try {
       return await attempt(attemptNumber);
@@ -175,13 +250,16 @@ export async function retryOnPlannedOrderChange<T>(
           { cause: err }
         );
       }
-      // a random pause, so two runs that keep changing each other's planned
-      // orders stop retrying in step
-      await new Promise((resolve) =>
-        setTimeout(resolve, Math.floor(Math.random() * MAX_RETRY_PAUSE_MS))
-      );
+      await pause();
     }
   }
+}
+
+/** A random pause of up to `MAX_RETRY_PAUSE_MS`. */
+function randomRetryPause(): Promise<void> {
+  return new Promise((resolve) =>
+    setTimeout(resolve, Math.floor(Math.random() * MAX_RETRY_PAUSE_MS))
+  );
 }
 
 /** A `plannedOrder` row with status Planned, as the diff reads it. */

@@ -9012,6 +9012,9 @@ msgstr "无法准备区域图像以进行分析"
 msgid "Could not read the document: {0}"
 msgstr "无法读取文件：{0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "无法读取计划订单。已改为根据计划行动确定订单数量。"
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")

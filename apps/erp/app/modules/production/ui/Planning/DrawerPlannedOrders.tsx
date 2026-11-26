@@ -22,13 +22,19 @@ import type { DrawerPlannedOrder } from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import type { loader as plannedOrdersLoader } from "~/routes/api+/production.planned-orders";
 import { path } from "~/utils/path";
-import type { PlanningActionHandlers } from "./PlanningActionLines";
 import {
-  actionForOrder,
   type PlannedOrderField,
   type PlannedOrderRow,
   PlannedOrdersGrid
-} from "./PlanningOrderGrids";
+} from "./PlannedOrdersGrid";
+import { actionForOrder } from "./planning-review";
+import type { PlanningActionHandlers } from "./PlanningActionLines";
+import {
+  useAnswerOverlay,
+  useRefetchOnKey,
+  withEdits,
+  withOrphanActionRows
+} from "./useDrawerOrders";
 
 type DrawerPlannedOrdersProps = {
   title: ReactNode;
@@ -66,6 +72,12 @@ type PlannedOrderChangeResult = {
   error?: { message: string } | null;
 };
 
+/** The edit a Planned Orders row holds: both cells, or none. */
+const plannedOrderEdit = (row: PlannedOrderRow) =>
+  row.quantity === null || row.dueDate === null
+    ? null
+    : ([row.id, { quantity: row.quantity, dueDate: row.dueDate }] as const);
+
 /**
  * The item's planned orders and time fence at the location, read through
  * `api+/production.planned-orders`. Any action through the router marks the
@@ -89,17 +101,14 @@ function useDrawerPlannedOrders(args: {
     // since (Recalculate, a firm on another item) may have changed them
     refetchOnMount: "always"
   });
-  const { refetch } = query;
-  const lastRefreshKey = useRef(refreshKey);
-  useEffect(() => {
-    if (refreshKey === lastRefreshKey.current) return;
-    lastRefreshKey.current = refreshKey;
-    if (url) void refetch();
-  }, [refreshKey, url, refetch]);
+  useRefetchOnKey(query, url, refreshKey);
 
   // The latest callback, so a new function from the parent re-reads nothing.
+  // Updated before the effect below reads it.
   const onLoadedRef = useRef(args.onLoaded);
-  onLoadedRef.current = args.onLoaded;
+  useEffect(() => {
+    onLoadedRef.current = args.onLoaded;
+  });
   // On every read, not only a changed answer: the parent drops its copy when
   // it re-seeds (an order placed, MRP re-ran) and the read after that often
   // answers the same orders, which keeps the same `data` reference. Never
@@ -155,27 +164,18 @@ export function DrawerPlannedOrders({
   });
   const fenceDays = query.data?.fenceDays ?? 0;
 
-  // A cell's saved edit, shown until the read that follows it lands. Kept
-  // against the answer it edited, so a newer answer replaces it.
-  const [edits, setEdits] = useState<{
-    of: unknown;
-    byId: Map<string, { quantity: number; dueDate: string }>;
-  } | null>(null);
+  // A cell's saved edit, shown until the read that follows it lands.
+  const overlay = useAnswerOverlay(query, plannedOrderEdit);
 
   const orders = useMemo<DrawerPlannedOrder[] | null | Error>(() => {
-    if (query.error) {
-      return query.error instanceof Error
-        ? query.error
-        : new Error(String(query.error));
-    }
-    if (!query.data) return null;
-    const byId = edits?.of === query.data ? edits.byId : null;
-    if (!byId) return query.data.orders;
-    return query.data.orders.map((order) => {
-      const edit = byId.get(order.id);
-      return edit ? { ...order, ...edit } : order;
-    });
-  }, [query.data, query.error, edits]);
+    if (overlay.error) return overlay.error;
+    if (!overlay.answer) return null;
+    return withEdits(
+      overlay.answer.orders,
+      overlay.editsById,
+      (order) => order.id
+    );
+  }, [overlay.answer, overlay.error, overlay.editsById]);
 
   const plannedOrderActions = useMemo(
     () => actions.filter((action) => action.plannedOrderId),
@@ -184,7 +184,7 @@ export function DrawerPlannedOrders({
 
   const rows = useMemo<PlannedOrderRow[] | null | Error>(() => {
     if (!Array.isArray(orders)) return orders;
-    const result: PlannedOrderRow[] = orders.map((order) => {
+    const listed: PlannedOrderRow[] = orders.map((order) => {
       const action = actionForOrder(
         plannedOrderActions,
         (a) => a.plannedOrderId === order.id
@@ -208,22 +208,18 @@ export function DrawerPlannedOrders({
 
     // An action whose planned order is not in the list (converted or
     // deleted since MRP ran) still shows, read-only, as the open orders do.
-    for (const action of plannedOrderActions) {
-      if (result.some((row) => row.action?.id === action.id)) continue;
-      result.push({
-        id: action.id,
-        status: action.plannedOrderStatus ?? null,
-        quantity: null,
-        dueDate: null,
-        releaseDate: null,
-        quantityTrace: null,
-        isFenceHeld: false,
-        isEditable: false,
-        action,
-        suggestedQuantity: Number(action.suggestedQuantity)
-      });
-    }
-    return result;
+    return withOrphanActionRows(listed, plannedOrderActions, (action) => ({
+      id: action.id,
+      status: action.plannedOrderStatus ?? null,
+      quantity: null,
+      dueDate: null,
+      releaseDate: null,
+      quantityTrace: null,
+      isFenceHeld: false,
+      isEditable: false,
+      action,
+      suggestedQuantity: Number(action.suggestedQuantity)
+    }));
   }, [
     orders,
     fenceDays,
@@ -232,19 +228,7 @@ export function DrawerPlannedOrders({
     actionHandlers.canUpdate
   ]);
 
-  const answerData = query.data;
-  const onRowsChange = useCallback(
-    (next: PlannedOrderRow[]) => {
-      if (!answerData) return;
-      const byId = new Map<string, { quantity: number; dueDate: string }>();
-      for (const row of next) {
-        if (row.quantity === null || row.dueDate === null) continue;
-        byId.set(row.id, { quantity: row.quantity, dueDate: row.dueDate });
-      }
-      setEdits({ of: answerData, byId });
-    },
-    [answerData]
-  );
+  const onRowsChange = overlay.keepEdits;
 
   const post = useCallback(
     async (body: Record<string, unknown>): Promise<string | null> => {

@@ -4,9 +4,10 @@
 -- only Order / Make actions and actions on a PO line or job, so a row whose only
 -- action is on a planned order was hidden by an Actions filter. Each grid now
 -- also counts actions on a planned order of its own type (Buy for purchasing,
--- Make for production). Bodies copied from their newest definitions
--- (get_production_planning_grid: 20261021004800; get_purchasing_planning_grid:
--- 20261102032700), changed only in those clauses.
+-- Make for production). Each body changes only in those clauses.
+--
+-- get_purchasing_planning_grid: Forked from 20261102032700_merge-main-non-nettable-and-project-stripes.sql
+-- get_production_planning_grid: Forked from 20261021004800_planning-rpcs-segment.sql
 
 CREATE OR REPLACE FUNCTION get_purchasing_planning_grid(
   company_id TEXT,
@@ -96,10 +97,10 @@ AS $$
         AND a."status" = 'Open'
         AND (a."type" = 'Order' OR a."purchaseOrderLineId" IS NOT NULL
              OR EXISTS (
-               SELECT 1 FROM "plannedOrder" po
-               WHERE po."id" = a."plannedOrderId"
-                 AND po."companyId" = a."companyId"
-                 AND po."orderType" = 'Buy'
+               SELECT 1 FROM "plannedOrder" plo
+               WHERE plo."id" = a."plannedOrderId"
+                 AND plo."companyId" = a."companyId"
+                 AND plo."orderType" = 'Buy'
              ))
     ) AS "latestOrderDate",
     (
@@ -176,14 +177,14 @@ AS $$
         AND a."status" = 'Open'
         AND (a."type" = 'Order' OR a."purchaseOrderLineId" IS NOT NULL
              OR EXISTS (
-               SELECT 1 FROM "plannedOrder" po
-               WHERE po."id" = a."plannedOrderId"
-                 AND po."companyId" = a."companyId"
-                 AND po."orderType" = 'Buy'
+               SELECT 1 FROM "plannedOrder" plo
+               WHERE plo."id" = a."plannedOrderId"
+                 AND plo."companyId" = a."companyId"
+                 AND plo."orderType" = 'Buy'
              ))
         -- A Release applies only while its order is Planned; between runs the
         -- order can move on (sent, released) and the stale row must not match.
-        -- Compared as text: the enum value is added by a later migration.
+        -- Compared as text, as in the forked body (it predates the enum value).
         AND (
           a."type"::TEXT <> 'Release'
           OR EXISTS (
@@ -286,10 +287,10 @@ AS $$
         AND a."status" = 'Open'
         AND (a."type" = 'Make' OR a."jobId" IS NOT NULL
              OR EXISTS (
-               SELECT 1 FROM "plannedOrder" po
-               WHERE po."id" = a."plannedOrderId"
-                 AND po."companyId" = a."companyId"
-                 AND po."orderType" = 'Make'
+               SELECT 1 FROM "plannedOrder" plo
+               WHERE plo."id" = a."plannedOrderId"
+                 AND plo."companyId" = a."companyId"
+                 AND plo."orderType" = 'Make'
              ))
     ) AS "latestOrderDate",
     (
@@ -351,14 +352,14 @@ AS $$
         AND a."status" = 'Open'
         AND (a."type" = 'Make' OR a."jobId" IS NOT NULL
              OR EXISTS (
-               SELECT 1 FROM "plannedOrder" po
-               WHERE po."id" = a."plannedOrderId"
-                 AND po."companyId" = a."companyId"
-                 AND po."orderType" = 'Make'
+               SELECT 1 FROM "plannedOrder" plo
+               WHERE plo."id" = a."plannedOrderId"
+                 AND plo."companyId" = a."companyId"
+                 AND plo."orderType" = 'Make'
              ))
         -- A Release applies only while its order is Planned; between runs the
         -- order can move on (sent, released) and the stale row must not match.
-        -- Compared as text: the enum value is added by a later migration.
+        -- Compared as text, as in the forked body (it predates the enum value).
         AND (
           a."type"::TEXT <> 'Release'
           OR EXISTS (

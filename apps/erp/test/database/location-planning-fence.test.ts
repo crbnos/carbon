@@ -17,6 +17,7 @@ let f: Fixture;
 
 const location = () => ({
   id: f.locationId,
+  companyId: f.companyId,
   name: `${f.prefix} plant`,
   addressLine1: "1 Main St",
   city: "Chicago",

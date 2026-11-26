@@ -1137,7 +1137,8 @@ it("visits a key with a buffer policy and no demand, and explodes its order", ()
       segmentId: "",
       grossByPeriod: [0, 0, 0],
       supplyByPeriod: [0, 0, 0],
-      onHand: 0
+      onHand: 0,
+      lowLevelCode: 0
     },
     {
       locationId: "loc",
@@ -1145,7 +1146,8 @@ it("visits a key with a buffer policy and no demand, and explodes its order", ()
       segmentId: "",
       grossByPeriod: [8, 0, 0],
       supplyByPeriod: [0, 0, 0],
-      onHand: 0
+      onHand: 0,
+      lowLevelCode: 1
     }
   ]);
 });
@@ -1193,7 +1195,8 @@ it("runs the Phase 1 path for a key the hook returns null for", () => {
     segmentId: "",
     grossByPeriod: [0, 0, 3],
     supplyByPeriod: [0, 1, 0],
-    onHand: 1
+    onHand: 1,
+    lowLevelCode: 0
   });
 });
 

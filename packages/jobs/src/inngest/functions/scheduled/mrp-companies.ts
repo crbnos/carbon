@@ -133,12 +133,15 @@ export async function companiesWithPlanningWork(
     // A run clears the worklist of a company whose demand is gone; without
     // this a company with no other planning work keeps its stale actions.
     .union(db.selectFrom("planningAction").select("companyId"))
-    // A Firm planned order is the planner's supply: it still explodes.
+    // A Firm planned order is the planner's supply: it still explodes. A
+    // Planned one is a run's output, which the next run deletes when nothing
+    // needs it; one due after the worklist's weeks has no planningAction, so
+    // without it a company whose demand is gone kept it.
     .union(
       db
         .selectFrom("plannedOrder")
         .select("companyId")
-        .where("status", "=", "Firm")
+        .where("status", "in", ["Planned", "Firm"])
     )
     .union(
       db

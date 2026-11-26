@@ -30,6 +30,10 @@ import type {
   ProductionOrder,
   RefusedPlanningOrder
 } from "~/modules/production/production.models";
+import {
+  isInDrawScope,
+  plannedOrderDrawScope
+} from "~/modules/production/production.utils";
 import type { PlannedOrder } from "~/modules/purchasing/purchasing.models";
 import { planningRowKey } from "./planning-action-scope";
 
@@ -141,20 +145,54 @@ export type RowPlanningAction = {
   suggestedDate?: string;
 };
 
-/** Where a week's planned orders come from. */
-type PlannedOrderContext = {
+/** What a row's suggestions read its planned orders from. */
+type PlannedOrderInputs = {
   plannedOrders?: SuggestablePlannedOrder[];
   /** Every action of the row: a Cancel on a planned order leaves it out. */
   rowActions?: RowPlanningAction[];
   weeks?: PlanningWeek[];
   /** Today on the location's calendar (else the first week's start). */
   todayDate?: string;
+};
+
+/**
+ * What every action of one row reads when it picks its week's planned
+ * orders, worked out once for the row rather than once per action.
+ */
+type WeekContext = {
+  plannedOrders: SuggestablePlannedOrder[];
+  /** The page's weeks in date order, so the first is the one holding today. */
+  weeks: PlanningWeek[];
+  todayDate?: string;
+  /** The planned orders MRP is cancelling (`plannedOrdersBeingCancelled`). */
+  cancelled: Set<string>;
   /** The row has an Open or Dismissed action of a week already past. */
-  hasPastWeekAction?: boolean;
+  hasPastWeekAction: boolean;
   /** The one past week's action that takes the overdue planned orders
    *  (`overdueOwnerOf`); null when none may. */
-  overdueOwner?: string | null;
+  overdueOwner: string | null;
 };
+
+function weekContextOf(
+  type: "Order" | "Make",
+  actions: NewSupplyActionFields[],
+  inputs: PlannedOrderInputs
+): WeekContext {
+  const weeks = sortedWeeks(inputs.weeks);
+  return {
+    plannedOrders: inputs.plannedOrders ?? [],
+    weeks,
+    todayDate: inputs.todayDate,
+    cancelled: plannedOrdersBeingCancelled(inputs.rowActions),
+    hasPastWeekAction: hasPastWeekAction(
+      type,
+      actions,
+      inputs.rowActions,
+      weeks
+    ),
+    overdueOwner: overdueOwnerOf(type, actions, inputs.rowActions, weeks)
+  };
+}
 
 /**
  * The planned orders MRP is cancelling. MRP leaves a held order it cancels
@@ -190,39 +228,39 @@ function sortedWeeks(weeks: PlanningWeek[] | undefined): PlanningWeek[] {
  * of its due date) — MRP's own rule — and not in its stored week. One MRP is
  * cancelling is left out. An action of a later week not on the page has none.
  *
- * An action of a week already past (the week turned before MRP ran again)
- * counted only what is overdue now: the planned orders due before the first
- * week. Only the latest Open one takes them (`overdueOwnerOf`); another past
- * week's action takes none and is split by its policy. The current week's
- * action counted those too only when the row has no such action, Open or
- * Dismissed; with one, it takes the orders due inside the first week, so no
- * planned order is offered twice, and a dismissed one's orders are not
- * offered at all.
+ * Which of the week's orders the action draws on is the convert's own rule
+ * (`plannedOrderDrawScope`): an action of a week already past (the week
+ * turned before MRP ran again) counted only what is overdue now, the planned
+ * orders due before the first week, and only the latest Open one takes them
+ * (`overdueOwnerOf`); another past week's action takes none and is split by
+ * its policy. The current week's action counted those too only when the row
+ * has no such action, Open or Dismissed; with one, it takes the orders due
+ * inside the first week, so no planned order is offered twice, and a
+ * dismissed one's orders are not offered at all.
  */
 function plannedOrdersOfWeek(
   action: NewSupplyActionFields,
-  context: PlannedOrderContext
+  context: WeekContext
 ): SuggestablePlannedOrder[] {
-  const weeks = sortedWeeks(context.weeks);
+  const { weeks } = context;
   const index = actionWeekIndex(action, weeks);
   if (index === null) return [];
   const firstWeekStart = weeks[0].startDate;
   const today = context.todayDate ?? firstWeekStart;
-  const cancelled = plannedOrdersBeingCancelled(context.rowActions);
-  const pastWeek = isPastWeekAction(action, weeks);
-  // ISO dates order as strings
-  const isOverdue = (order: SuggestablePlannedOrder) =>
-    order.dueDate < firstWeekStart;
-  return (context.plannedOrders ?? [])
+  const scope = plannedOrderDrawScope({
+    pastWeek: isPastWeekAction(action, weeks),
+    takesOverdue: pastWeekActionKey(action) === context.overdueOwner,
+    currentWeek: index === 0,
+    rowHasPastWeekAction: context.hasPastWeekAction
+  });
+  return context.plannedOrders
     .filter(
       (order) =>
         (order.status === "Planned" || order.status === "Firm") &&
-        !cancelled.has(order.id) &&
+        !context.cancelled.has(order.id) &&
         plannedOrderWeekIndex(order.dueDate, weeks, today) === index &&
-        (pastWeek
-          ? pastWeekActionKey(action) === context.overdueOwner &&
-            isOverdue(order)
-          : index !== 0 || !context.hasPastWeekAction || !isOverdue(order))
+        // ISO dates order as strings
+        isInDrawScope(scope, order.dueDate < firstWeekStart)
     )
     .sort(
       (a, b) =>
@@ -294,17 +332,16 @@ function rowNewSupplyActions(
  * current week; when several weeks turned before it ran, the latest is the
  * one that counted what is overdue now. A Dismissed one never takes them: a
  * dismissal is the planner's "no". `actions` are the ones offered (all
- * Open); `rowActions` every action of the row.
+ * Open); `rowActions` every action of the row; `weeks` in date order.
  */
 function overdueOwnerOf(
   type: "Order" | "Make",
   actions: NewSupplyActionFields[],
   rowActions: RowPlanningAction[] | undefined,
-  weeks: PlanningWeek[] | undefined
+  weeks: PlanningWeek[]
 ): string | null {
-  const sorted = sortedWeeks(weeks);
   const keys = [...actions, ...rowNewSupplyActions(type, rowActions, ["Open"])]
-    .filter((action) => isPastWeekAction(action, sorted))
+    .filter((action) => isPastWeekAction(action, weeks))
     .map(pastWeekActionKey)
     // ISO dates order as strings
     .sort();
@@ -315,18 +352,18 @@ function overdueOwnerOf(
  * Whether the row has an Order / Make of a week already past, Open or
  * Dismissed: MRP counted the overdue planned orders in that action, not in
  * the current week's, and a dismissal does not move them back. `actions` are
- * the ones offered; `rowActions` every action of the row.
+ * the ones offered; `rowActions` every action of the row; `weeks` in date
+ * order.
  */
 function hasPastWeekAction(
   type: "Order" | "Make",
   actions: NewSupplyActionFields[],
   rowActions: RowPlanningAction[] | undefined,
-  weeks: PlanningWeek[] | undefined
+  weeks: PlanningWeek[]
 ): boolean {
-  const sorted = sortedWeeks(weeks);
   const ofRow = rowNewSupplyActions(type, rowActions, ["Open", "Dismissed"]);
   return [...actions, ...ofRow].some((action) =>
-    isPastWeekAction(action, sorted)
+    isPastWeekAction(action, weeks)
   );
 }
 
@@ -341,7 +378,7 @@ function suggestionsOf(
   action: NewSupplyActionFields,
   item: ItemOrderSizing,
   asapToday: string | undefined,
-  context: PlannedOrderContext
+  context: WeekContext
 ): {
   quantity: number;
   startDate: string;
@@ -406,21 +443,7 @@ export function productionOrdersFromActions(
     weeks?: PlanningWeek[];
   } = {}
 ): ProductionOrder[] {
-  const weekContext = {
-    ...context,
-    hasPastWeekAction: hasPastWeekAction(
-      "Make",
-      actions,
-      context.rowActions,
-      context.weeks
-    ),
-    overdueOwner: overdueOwnerOf(
-      "Make",
-      actions,
-      context.rowActions,
-      context.weeks
-    )
-  };
+  const weekContext = weekContextOf("Make", actions, context);
   return actions.flatMap((action) =>
     suggestionsOf(
       action,
@@ -473,31 +496,14 @@ export function plannedOrdersFromActions(
   }
 ): PlannedOrder[] {
   const { conversionFactor } = context;
-  const weekContext = {
-    ...context,
-    hasPastWeekAction: hasPastWeekAction(
-      "Order",
-      actions,
-      context.rowActions,
-      context.weeks
-    ),
-    overdueOwner: overdueOwnerOf(
-      "Order",
-      actions,
-      context.rowActions,
-      context.weeks
-    )
-  };
+  const weekContext = weekContextOf("Order", actions, context);
   return actions.flatMap((action) =>
     suggestionsOf(action, context.item ?? {}, undefined, weekContext).map(
       (batch) => ({
         startDate: batch.startDate,
         dueDate: batch.dueDate,
         periodId: action.periodId,
-        quantity:
-          conversionFactor > 0
-            ? round(batch.quantity / conversionFactor, 0, RoundingMode.Up)
-            : batch.quantity,
+        quantity: purchaseUnitsFor(batch.quantity, conversionFactor),
         supplierId: context.supplierId ?? action.supplierId ?? undefined,
         planningActionId: action.id,
         plannedOrderId: batch.plannedOrderId,
@@ -510,6 +516,21 @@ export function plannedOrdersFromActions(
       })
     )
   );
+}
+
+/**
+ * An inventory quantity in whole purchase units, rounded up as Apply rounds
+ * a PO line's suggestion. The inner round strips float noise (0.07 / 0.01 is
+ * 7.000000000000001), which would otherwise ceil it a whole purchase unit
+ * up. A factor of 0 or less leaves the quantity as it is.
+ */
+export function purchaseUnitsFor(
+  inventoryQuantity: number,
+  conversionFactor: number
+): number {
+  return conversionFactor > 0
+    ? round(round(inventoryQuantity / conversionFactor), 0, RoundingMode.Up)
+    : inventoryQuantity;
 }
 
 /** MRP writes the policy's trigger values as a flat object of numbers. */
@@ -586,36 +607,4 @@ export function withoutRowDraft<O>(
   if (!(key in drafts)) return drafts;
   const { [key]: _dropped, ...rest } = drafts;
   return rest;
-}
-
-/**
- * The rows an Apply re-planned: those of the applied actions that target a
- * planned order. The server runs MRP after such an Apply, so the rows'
- * suggested orders (a draft built from the old actions and planned orders)
- * are stale. One per row, in the order of `actions`.
- */
-export function rowsReplannedByApply(
-  actions: {
-    id: string;
-    itemId: string;
-    planningSegmentId?: string | null;
-    plannedOrderId?: string | null;
-  }[],
-  appliedIds: string[]
-): { id: string; planningSegmentId: string | null }[] {
-  const applied = new Set(appliedIds);
-  const rows = new Map<
-    string,
-    { id: string; planningSegmentId: string | null }
-  >();
-  for (const action of actions) {
-    if (!action.plannedOrderId || !applied.has(action.id)) continue;
-    const row = {
-      id: action.itemId,
-      planningSegmentId: action.planningSegmentId ?? null
-    };
-    const key = planningRowKey(row);
-    if (!rows.has(key)) rows.set(key, row);
-  }
-  return [...rows.values()];
 }

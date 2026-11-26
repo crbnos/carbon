@@ -30,6 +30,47 @@ export function daysBetween(a: string, b: string): number {
   return parseDate(a).compare(parseDate(b));
 }
 
+/** An ISO calendar date moved by `days` (negative: earlier). */
+export function addDays(dateIso: string, days: number): string {
+  return parseDate(dateIso).add({ days }).toString();
+}
+
+/**
+ * The index of the week holding a date: the last of `periods` (chronological)
+ * that starts on or before it. A date before the first week is in the first
+ * week, and one after the last week's start in the last week. 0 when there
+ * are no weeks.
+ */
+export function weekIndexOn(
+  periods: readonly { startDate: string }[],
+  dateIso: string
+): number {
+  let index = 0;
+  for (const [i, period] of periods.entries()) {
+    if (daysBetween(period.startDate, dateIso) <= 0) index = i;
+    else break;
+  }
+  return index;
+}
+
+/**
+ * `weekIndexOn`, but null for a date after the last week ends: such a date
+ * is outside the horizon, not in its last week.
+ */
+export function weekIndexInHorizon(
+  periods: readonly { startDate: string }[],
+  dateIso: string
+): number | null {
+  const lastPeriod = periods[periods.length - 1];
+  if (
+    lastPeriod &&
+    daysBetween(dateIso, lastPeriod.startDate) >= DAYS_PER_PERIOD
+  ) {
+    return null;
+  }
+  return weekIndexOn(periods, dateIso);
+}
+
 /** The earlier of two ISO calendar dates. */
 export function earlierDate(a: string, b: string): string {
   return daysBetween(a, b) <= 0 ? a : b;
@@ -57,7 +98,7 @@ export function quantityAfterApply(
     order.conversionFactor && order.conversionFactor > 0
       ? order.conversionFactor
       : 1;
-  // Strip float noise before the ceil: 1.1 / 0.1 is 11.000000000000002,
+  // Strip float noise before the ceil: 0.07 / 0.01 is 7.000000000000001,
   // which would otherwise ceil a whole purchase unit up to the next one.
   const purchaseUnits = round(round(quantity / factor), 0, RoundingMode.Up);
   return round(purchaseUnits * factor);
@@ -278,14 +319,8 @@ export function deriveChangeActions(
 
   if (openOrders.length === 0) return [];
 
-  const periodFor = (dateIso: string): { id: string; startDate: string } => {
-    let match = periods[0];
-    for (const p of periods) {
-      if (daysBetween(p.startDate, dateIso) <= 0) match = p;
-      else break;
-    }
-    return match ?? { id: "", startDate: dateIso };
-  };
+  const periodFor = (dateIso: string): { id: string; startDate: string } =>
+    periods[weekIndexOn(periods, dateIso)] ?? { id: "", startDate: dateIso };
 
   const orders = walkOrderCoverage(input);
 
@@ -437,21 +472,10 @@ export function projectionsWithExpedites(args: {
 }): number[] {
   const { projections, periods, changeActions, openOrders } = args;
   const adjusted = [...projections];
-  const lastPeriod = periods[periods.length - 1];
 
-  const weekOf = (dateIso: string): number => {
-    if (
-      lastPeriod &&
-      daysBetween(dateIso, lastPeriod.startDate) >= DAYS_PER_PERIOD
-    ) {
-      return periods.length;
-    }
-    let index = 0;
-    periods.forEach((p, i) => {
-      if (daysBetween(p.startDate, dateIso) <= 0) index = i;
-    });
-    return index;
-  };
+  // past the last week: after every week of the projection
+  const weekOf = (dateIso: string): number =>
+    weekIndexInHorizon(periods, dateIso) ?? periods.length;
 
   // Each order moves once, to the week it is needed. An Expedite names that
   // week itself; the walk's first need covers the rest.
@@ -602,7 +626,8 @@ function policyFloorFor(row: {
 
 /**
  * The reorder policy fields the sizing reads: the RPC row's columns, or the
- * engine's own copy of `itemPlanning` and `itemReplenishment`.
+ * engine's own copy of `itemPlanning` and `itemReplenishment`, each through
+ * `planningPolicyRowOf`.
  */
 export type PlanningPolicyRow = {
   reorderingPolicy: string;
@@ -617,6 +642,43 @@ export type PlanningPolicyRow = {
   demandAccumulationSafetyStock: number;
   leadTime: number;
 };
+
+type NullableNumber = number | string | null | undefined;
+
+/**
+ * The policy fields as the sizing reads them, from a planning RPC row or the
+ * engine's own read of `itemPlanning` and `itemReplenishment`, neither of
+ * which COALESCEs them: a null (or unreadable) value is 0, and a null
+ * accumulation period is one week.
+ */
+export function planningPolicyRowOf(row: {
+  reorderingPolicy: string;
+  reorderPoint: NullableNumber;
+  reorderQuantity: NullableNumber;
+  minimumOrderQuantity: NullableNumber;
+  maximumOrderQuantity: NullableNumber;
+  orderMultiple: NullableNumber;
+  lotSize: NullableNumber;
+  maximumInventoryQuantity: NullableNumber;
+  demandAccumulationPeriod: NullableNumber;
+  demandAccumulationSafetyStock: NullableNumber;
+  leadTime: NullableNumber;
+}): PlanningPolicyRow {
+  return {
+    reorderingPolicy: row.reorderingPolicy,
+    reorderPoint: Number(row.reorderPoint) || 0,
+    reorderQuantity: Number(row.reorderQuantity) || 0,
+    minimumOrderQuantity: Number(row.minimumOrderQuantity) || 0,
+    maximumOrderQuantity: Number(row.maximumOrderQuantity) || 0,
+    orderMultiple: Number(row.orderMultiple) || 0,
+    lotSize: Number(row.lotSize) || 0,
+    maximumInventoryQuantity: Number(row.maximumInventoryQuantity) || 0,
+    demandAccumulationPeriod: Number(row.demandAccumulationPeriod) || 1,
+    demandAccumulationSafetyStock:
+      Number(row.demandAccumulationSafetyStock) || 0,
+    leadTime: Number(row.leadTime) || 0
+  };
+}
 
 export type RowSizingInput = {
   kind: "Order" | "Make";
@@ -731,7 +793,7 @@ export function sizeRowSupply(input: RowSizingInput): RowSizingResult {
           minimumReserveQuantity: input.minimumReserveQuantity
         })
   };
-  const leadTime = Number(policy.leadTime) || 0;
+  const { leadTime } = policy;
   // lot-for-lot in a project segment: one order per short week, sized to the
   // shortfall
   const sizingPolicy = isProjectSegment
@@ -751,16 +813,15 @@ export function sizeRowSupply(input: RowSizingInput): RowSizingResult {
         leadTime
       }
     : {
-        reorderPoint: Number(policy.reorderPoint) || 0,
-        reorderQuantity: Number(policy.reorderQuantity) || 0,
-        minimumOrderQuantity: Number(policy.minimumOrderQuantity) || 0,
-        maximumOrderQuantity: Number(policy.maximumOrderQuantity) || 0,
-        orderMultiple: Number(policy.orderMultiple) || 0,
-        lotSize: Number(policy.lotSize) || 0,
-        maximumInventoryQuantity: Number(policy.maximumInventoryQuantity) || 0,
-        demandAccumulationPeriod: Number(policy.demandAccumulationPeriod) || 1,
-        demandAccumulationSafetyStock:
-          Number(policy.demandAccumulationSafetyStock) || 0,
+        reorderPoint: policy.reorderPoint,
+        reorderQuantity: policy.reorderQuantity,
+        minimumOrderQuantity: policy.minimumOrderQuantity,
+        maximumOrderQuantity: policy.maximumOrderQuantity,
+        orderMultiple: policy.orderMultiple,
+        lotSize: policy.lotSize,
+        maximumInventoryQuantity: policy.maximumInventoryQuantity,
+        demandAccumulationPeriod: policy.demandAccumulationPeriod,
+        demandAccumulationSafetyStock: policy.demandAccumulationSafetyStock,
         leadTime
       };
   const orderRules = orderSizingRules(
@@ -787,7 +848,7 @@ export function sizeRowSupply(input: RowSizingInput): RowSizingResult {
     const firstPeriod = periods[0];
     if (shortfall > 0 && firstPeriod) {
       const startDate = parseDate(firstPeriod.startDate)
-        .subtract({ days: Number(policy.leadTime) || 0 })
+        .subtract({ days: leadTime })
         .toString();
       sizing = [
         {
@@ -808,7 +869,7 @@ export function sizeRowSupply(input: RowSizingInput): RowSizingResult {
           triggerValues: {
             projectedStock: Number(input.quantityOnHand) || 0,
             reorderPoint: Number(input.minimumReserveQuantity) || 0,
-            leadTime: Number(policy.leadTime) || 0
+            leadTime
           }
         }
       ];

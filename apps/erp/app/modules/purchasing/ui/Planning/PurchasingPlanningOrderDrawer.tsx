@@ -2,13 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  cachedApiQuery,
-  type LoaderData,
-  RefreshRate,
-  useLoaderQuery,
-  useRevalidator
-} from "@carbon/query";
+import { RefreshRate, useAction, useLoaderQuery } from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -19,47 +13,42 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  Table as TableBase,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
   toast,
-  toastError,
-  useDisclosure
+  toastError
 } from "@carbon/react";
-import {
-  distinctItemText,
-  formatDate,
-  RoundingMode,
-  round
-} from "@carbon/utils";
+import { distinctItemText, formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { Dispatch, SetStateAction } from "react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuCircleCheck, LuCirclePlus, LuExternalLink } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { LuExternalLink } from "react-icons/lu";
+import { Link } from "react-router";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useQuantityFormatter } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
-import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { SupplierPartPrice } from "~/modules/items/ui/Item/SupplierParts";
 import type { RefusedPlanningOrder } from "~/modules/production/production.models";
 import type { DrawerPlannedOrder } from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import { DrawerPlannedOrders } from "~/modules/production/ui/Planning/DrawerPlannedOrders";
-import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
-import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
+import {
+  type OpenOrderField,
+  type OpenOrderRow,
+  OpenOrdersGrid
+} from "~/modules/production/ui/Planning/OpenOrdersGrid";
+import {
+  purchaseUnitsFor,
+  refusedOrdersOfRow,
+  supplierConversionFactor
+} from "~/modules/production/ui/Planning/planned-orders-from-actions";
+import { actionForOrder } from "~/modules/production/ui/Planning/planning-review";
 import {
   type PlanningActionHandlers,
   reviewPathFor
@@ -69,19 +58,17 @@ import {
   PlanningPolicySummary,
   periodIdFor
 } from "~/modules/production/ui/Planning/PlanningDrawerParts";
-import type {
-  OpenOrderField,
-  OpenOrderRow
-} from "~/modules/production/ui/Planning/PlanningOrderGrids";
+import { DeferredDrawerSections } from "~/modules/production/ui/Planning/PlanningOrderGridParts";
+import { SuggestedOrdersGrid } from "~/modules/production/ui/Planning/SuggestedOrdersGrid";
 import {
-  actionForOrder,
-  DeferredDrawerSections,
-  OpenOrdersGrid,
-  SuggestedOrdersGrid
-} from "~/modules/production/ui/Planning/PlanningOrderGrids";
+  useAnswerOverlay,
+  useDrawerSuggestions,
+  useSaveOrderCell,
+  withEdits,
+  withOrphanActionRows
+} from "~/modules/production/ui/Planning/useDrawerOrders";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { loader as openLinesLoader } from "~/routes/api+/purchasing.planning-open-lines";
-import type { loader as supplierPartsLoader } from "~/routes/api+/purchasing.planning-supplier-parts";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { path } from "~/utils/path";
 import type {
@@ -94,17 +81,19 @@ import {
 } from "../../purchasing.models";
 import type { PurchasingPlanningItem } from "../../types";
 import { PurchasingStatus } from "../PurchaseOrder";
+import { DrawerSuppliersTab } from "./DrawerSuppliersTab";
+import {
+  type OpenPurchaseOrder,
+  openOrdersForChart
+} from "./open-orders-chart";
 
-/** An existing PO line in the planned-order shape the chart reads, plus the
- *  factor between its purchase units and inventory units, and the quantity it
- *  was read at (so the chart can tell a planner's edit from the stored line). */
-type OpenPurchaseOrder = PlannedOrder & {
-  existingLineId: string;
-  conversionFactor: number;
-  /** Purchase units already received, on a line whose quantity is the ordered
-   *  total (an editable one); 0 on a sent line, which shows what is to come. */
-  receivedOffset: number;
-  loadedQuantity: number;
+/** What `orderPlannedPurchases` returns, read from the route's merged answer. */
+type OrderPlannedPurchasesOutcome = {
+  purchaseOrders?: { id: string; readableId: string }[];
+  refusedOrders?: RefusedPlanningOrder[];
+  processedItems?: number;
+  warnings?: string[];
+  errors?: string[];
 };
 
 /**
@@ -112,7 +101,8 @@ type OpenPurchaseOrder = PlannedOrder & {
  * `api+/purchasing.planning-open-lines`. Every change that moves them here
  * (an Apply, an order placed, a PO reopened or finalized) posts through a
  * router fetcher, and the root invalidation middleware marks the read stale.
- * A line edited in the drawer posts with a plain fetch and refetches itself.
+ * A line edited in the drawer posts with a plain fetch and refetches itself
+ * (`useSaveOrderCell`).
  */
 function useDrawerOpenPurchaseOrderLines(url: string | null) {
   return useLoaderQuery<typeof openLinesLoader>(url, {
@@ -122,6 +112,15 @@ function useDrawerOpenPurchaseOrderLines(url: string | null) {
     keepPreviousData: true
   });
 }
+
+/** The edit an Open Orders row holds: its quantity and due date. */
+const openLineEdit = (row: OpenOrderRow) =>
+  row.quantity === null
+    ? null
+    : ([row.id, { quantity: row.quantity, dueDate: row.dueDate }] as const);
+
+/** What the purchasing route answers a cell save (`updateLine`). */
+type UpdateLineResult = { success?: boolean; message?: string };
 
 type PurchasingPlanningOrderDrawerProps = {
   /**
@@ -136,14 +135,14 @@ type PurchasingPlanningOrderDrawerProps = {
   /** Suggested orders required AFTER the row's time fence. The drawer opens
    *  without them; one button extends the fence to take them in. */
   beyondFenceOrders: PlannedOrder[];
-  /** The row's time fence (ISO date), or null when it has none. */
-  timeFenceDate: string | null;
-  /** True when the fence was moved on screen, away from the saved horizon. */
-  isTimeFenceOverridden: boolean;
-  /** Move this row's fence without leaving the drawer — the same on-screen
-   *  override as the grid's Planning Horizon cell. `null` clears the fence
-   *  for this view. The suggested orders re-split around the new date. */
-  onTimeFenceChange: (date: string | null) => void;
+  /** The row's planning horizon (ISO date), or null when it has none. */
+  horizonDate: string | null;
+  /** True when the horizon was moved on screen, away from the saved one. */
+  isHorizonOverridden: boolean;
+  /** Move this row's horizon without leaving the drawer — the same on-screen
+   *  override as the grid's Planning Horizon cell. `null` clears it for this
+   *  view. The suggested orders re-split around the new date. */
+  onHorizonChange: (date: string | null) => void;
   /** The item's change actions on existing orders, inside the fence. Each one
    *  is shown on the row of the order it targets. */
   actions: PlanningAction[];
@@ -175,9 +174,9 @@ export const PurchasingPlanningOrderDrawer = memo(
     setSelectedItem,
     orders,
     beyondFenceOrders,
-    timeFenceDate,
-    isTimeFenceOverridden,
-    onTimeFenceChange,
+    horizonDate,
+    isHorizonOverridden,
+    onHorizonChange,
     actions,
     actionHandlers,
     setOrders,
@@ -194,67 +193,112 @@ export const PurchasingPlanningOrderDrawer = memo(
   }: PurchasingPlanningOrderDrawerProps) => {
     const { t } = useLingui();
     const { locale } = useLocale();
-    const fenceLabel = timeFenceDate
-      ? formatDate(timeFenceDate, undefined, locale)
+    const horizonLabel = horizonDate
+      ? formatDate(horizonDate, undefined, locale)
       : null;
-    const fetcher = useFetcher<typeof bulkUpdateAction>();
     const pastStartToast = usePastStartToast();
-    const { revalidate } = useRevalidator();
 
     const formatQuantity = useQuantityFormatter();
     const unitOfMeasureOptions = useUnitOfMeasure();
 
     const [activeTab, setActiveTab] = useState("ordering");
+    const showOrdering = useCallback(() => setActiveTab("ordering"), []);
 
-    // Bumped when the rows are re-read, to close any cell editor left open.
-    const [suggestionsVersion, setSuggestionsVersion] = useState(0);
+    const {
+      suggestionsVersion,
+      bumpSuggestionsVersion,
+      // A planned order firmed, unfirmed or edited here re-ran MRP: the
+      // suggestions are rebuilt from the re-planned actions and orders.
+      reseedSuggestions,
+      onPlannedOrdersRead,
+      // an action on a planned order sits on its row in the Planned Orders grid
+      orderActions: lineActions
+    } = useDrawerSuggestions({
+      row: selectedItem,
+      actions,
+      onSuggestionsStale,
+      onPlannedOrdersLoaded
+    });
     // Bumped to read the planned orders again after an order placed with the
     // drawer left open: it converted some, and the re-seed dropped the row's
     // copy of them.
     const [plannedOrdersVersion, setPlannedOrdersVersion] = useState(0);
     const submittedOrders = useRef<PlannedOrder[]>([]);
-    // A planned order firmed, unfirmed or edited here re-ran MRP: the
-    // suggestions are rebuilt from the re-planned actions and orders.
-    const reseedSuggestions = useCallback(() => {
-      onSuggestionsStale(selectedItem);
-      setSuggestionsVersion((version) => version + 1);
-    }, [onSuggestionsStale, selectedItem]);
-    const onPlannedOrdersRead = useCallback(
-      (plannedOrders: DrawerPlannedOrder[]) =>
-        onPlannedOrdersLoaded(selectedItem, plannedOrders),
-      [onPlannedOrdersLoaded, selectedItem]
-    );
 
-    // A supplier part was added on the Suppliers tab: the drawer's row is the
-    // grid's row as it was when opened, so read the item's suppliers again.
-    // The first supplier of an item is also chosen for its orders.
-    const onSupplierPartSaved = useCallback(async () => {
-      const itemId = selectedItem.id;
-      if (!itemId) return;
-      let suppliers: SupplierPart[];
-      try {
-        ({ suppliers } = await cachedApiQuery<
-          LoaderData<typeof supplierPartsLoader>
-        >(path.to.api.planningSupplierParts(itemId), { staleTime: 0 }));
-      } catch (error) {
-        toastError(t`Failed to load the suppliers`, error);
-        return;
+    // The order's answer. A refusal is toasted here. On success the orders
+    // refused for starting in the past stay in the drawer as they were sent;
+    // with none it re-seeds from the suggestions, which keep what was not
+    // ordered.
+    const fetcher = useAction<typeof bulkUpdateAction>({
+      onError: (result) => {
+        if ("message" in result && result.message) {
+          toastError(result.message, result);
+        }
+      },
+      onSuccess: (result) => {
+        if (!("purchaseOrders" in result)) return;
+        // The route's `respond` spreads each action's data into one
+        // `{ success, message }` union, so the order's fields are read here.
+        const {
+          purchaseOrders = [],
+          refusedOrders,
+          processedItems = 0,
+          warnings = [],
+          errors = []
+        } = result as OrderPlannedPurchasesOutcome;
+        const refused = refusedOrdersOfRow(
+          {
+            ...selectedItem,
+            id: selectedItem.id!,
+            orders: submittedOrders.current
+          },
+          refusedOrders
+        );
+        const problems = [...warnings, ...errors];
+        if (problems.length > 0) toast.error(problems.join(" · "));
+        bumpSuggestionsVersion();
+        if (refused.length > 0) {
+          setOrders(selectedItem, refused);
+          toast.error(pastStartToast(processedItems, refused.length));
+        } else {
+          onSuggestionsStale(selectedItem);
+          setPlannedOrdersVersion((version) => version + 1);
+        }
+
+        if (purchaseOrders.length === 0) {
+          if (refused.length === 0 && errors.length === 0) {
+            toast.success(t`Orders submitted`);
+          }
+        } else {
+          toast.success(
+            <div className="flex gap-1">
+              <span>{t`Orders submitted`}</span>
+              <span className="flex flex-wrap gap-2 text-xs">
+                {purchaseOrders.map((po) => (
+                  <Link
+                    key={po.id}
+                    to={path.to.purchaseOrder(po.id)}
+                    className="underline underline-offset-2 hover:opacity-80"
+                  >
+                    {po.readableId}
+                  </Link>
+                ))}
+              </span>
+            </div>,
+            { duration: 8000 }
+          );
+        }
+
+        // the router's invalidation reads the open lines again
+        if (refused.length > 0 || errors.length > 0) return;
+        onClose();
       }
-      setSelectedItem((prev) =>
-        prev?.id === itemId ? { ...prev, suppliers } : prev
-      );
-      if (suppliers.length !== 1) return;
-      onSupplierChange(itemId, suppliers[0].supplierId);
-      setOrders(
-        selectedItem,
-        orders.map((order) => ({
-          ...order,
-          supplierId: suppliers[0].supplierId
-        }))
-      );
-      toast.success(t`Supplier added and selected`);
-      setActiveTab("ordering");
-    }, [selectedItem, setSelectedItem, onSupplierChange, setOrders, orders, t]);
+    });
+
+    // The chosen supplier's part: its purchase unit and conversion factor.
+    const supplierPart = (selectedItem.suppliers as SupplierPart[])?.find(
+      (s) => s.supplierId === selectedSupplier
+    );
 
     // ── Open orders: the item's existing PO lines ───────────────────────────
     // Not in the grid's draft list: a cell edit on one of these is SAVED
@@ -270,77 +314,63 @@ export const PurchasingPlanningOrderDrawer = memo(
         : null
     );
 
-    // A cell's saved edit, shown until the read that follows it lands. Kept
-    // against the answer it edited, so a newer answer replaces it.
-    const [openOrderEdits, setOpenOrderEdits] = useState<{
-      of: unknown;
-      byId: Map<string, { quantity: number; dueDate: string | null }>;
-    } | null>(null);
+    // A cell's saved edit, shown until the read that follows it lands.
+    const openLinesOverlay = useAnswerOverlay(openLinesQuery, openLineEdit);
 
     // `null` while loading, an Error when the read failed.
     const openOrders = useMemo<OpenPurchaseOrder[] | null | Error>(() => {
-      if (openLinesQuery.error) {
-        return openLinesQuery.error instanceof Error
-          ? openLinesQuery.error
-          : new Error(String(openLinesQuery.error));
-      }
-      const answer = openLinesQuery.data;
+      if (openLinesOverlay.error) return openLinesOverlay.error;
+      const answer = openLinesOverlay.answer;
       if (!answer) return null;
-      const editById =
-        openOrderEdits?.of === answer ? openOrderEdits.byId : null;
       const detailById = new Map(
         answer.details.map((detail) => [detail.id, detail])
       );
 
-      return (
-        answer.lines
-          .flatMap((line): OpenPurchaseOrder[] => {
-            if (!line.id) return [];
-            const detail = detailById.get(line.id);
-            const isLocked = isPurchaseOrderLocked(line.status);
-            // purchase units: what is still to come on a sent line, the
-            // ordered quantity on one that can still be changed
-            const quantity = Number(
-              (isLocked
-                ? detail?.quantityToReceive
-                : detail?.purchaseQuantity) ?? 0
-            );
-            return [
-              {
-                existingId: line.purchaseOrderId ?? undefined,
-                existingLineId: line.id,
-                existingReadableId: line.purchaseOrderReadableId ?? undefined,
-                // inventory units, as the chart's supply rows are
-                existingQuantity:
-                  line.status === "Draft" ? 0 : (line.quantityToReceive ?? 0),
-                existingStatus: line.status ?? undefined,
-                startDate: line.orderDate ?? null,
-                dueDate: line.dueDate ?? null,
-                quantity,
-                loadedQuantity: quantity,
-                receivedOffset: isLocked
-                  ? 0
-                  : Number(detail?.quantityReceived ?? 0),
-                periodId: periodIdFor(periods, line.dueDate),
-                supplierId: line.supplierId ?? undefined,
-                conversionFactor: Number(detail?.conversionFactor ?? 1) || 1
-              }
-            ];
-          })
-          .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
-          // an edit stays on its row: it moves on the read that follows it
-          .map((order) => {
-            const edit = editById?.get(order.existingLineId);
-            return edit ? { ...order, ...edit } : order;
-          })
+      const lines = answer.lines
+        .flatMap((line): OpenPurchaseOrder[] => {
+          if (!line.id) return [];
+          const detail = detailById.get(line.id);
+          const isLocked = isPurchaseOrderLocked(line.status);
+          // purchase units: what is still to come on a sent line, the
+          // ordered quantity on one that can still be changed
+          const quantity = Number(
+            (isLocked ? detail?.quantityToReceive : detail?.purchaseQuantity) ??
+              0
+          );
+          return [
+            {
+              existingId: line.purchaseOrderId ?? undefined,
+              existingLineId: line.id,
+              existingReadableId: line.purchaseOrderReadableId ?? undefined,
+              // inventory units, as the chart's supply rows are
+              existingQuantity: line.quantityToReceive ?? 0,
+              existingStatus: line.status ?? undefined,
+              startDate: line.orderDate ?? null,
+              dueDate: line.dueDate ?? null,
+              quantity,
+              loadedQuantity: quantity,
+              receivedOffset: isLocked
+                ? 0
+                : Number(detail?.quantityReceived ?? 0),
+              periodId: periodIdFor(periods, line.dueDate),
+              supplierId: line.supplierId ?? undefined,
+              conversionFactor: Number(detail?.conversionFactor ?? 1) || 1
+            }
+          ];
+        })
+        .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
+      // an edit stays on its row: it moves on the read that follows it
+      return withEdits(
+        lines,
+        openLinesOverlay.editsById,
+        (order) => order.existingLineId
       );
-    }, [openLinesQuery.data, openLinesQuery.error, openOrderEdits, periods]);
-
-    // An action on a planned order sits on its row in the Planned Orders grid.
-    const lineActions = useMemo(
-      () => actions.filter((action) => !action.plannedOrderId),
-      [actions]
-    );
+    }, [
+      openLinesOverlay.answer,
+      openLinesOverlay.error,
+      openLinesOverlay.editsById,
+      periods
+    ]);
 
     const openOrderRows = useMemo<OpenOrderRow[] | null | Error>(() => {
       if (!Array.isArray(openOrders)) return openOrders;
@@ -368,10 +398,9 @@ export const PurchasingPlanningOrderDrawer = memo(
           // ordered total — the quantity Apply writes
           suggestedQuantity: action
             ? order.receivedOffset +
-              round(
-                Number(action.suggestedQuantity) / order.conversionFactor,
-                0,
-                RoundingMode.Up
+              purchaseUnitsFor(
+                Number(action.suggestedQuantity),
+                order.conversionFactor
               )
             : null,
           purchaseOrder: order.existingId
@@ -386,88 +415,42 @@ export const PurchasingPlanningOrderDrawer = memo(
         };
       });
 
-      // An action whose order is not in the list still has to be shown — a
-      // suggestion that silently drops out of the drawer reads as "nothing to
-      // do". It gets a read-only row built from the action itself.
-      for (const action of lineActions) {
-        if (rows.some((row) => row.action?.id === action.id)) continue;
-        rows.push({
-          id: action.id,
-          documentPath: reviewPathFor(action),
-          readableId: action.purchaseOrderReadableId ?? "—",
-          status: action.purchaseOrderStatus ?? null,
-          quantity: null,
-          dueDate: null,
-          isEditable: false,
-          action,
-          suggestedQuantity: Number(action.suggestedQuantity)
-        });
-      }
-
-      return rows;
+      // An action whose line is not in the list gets a read-only row built
+      // from the action itself.
+      return withOrphanActionRows(rows, lineActions, (action) => ({
+        id: action.id,
+        documentPath: reviewPathFor(action),
+        readableId: action.purchaseOrderReadableId ?? "—",
+        status: action.purchaseOrderStatus ?? null,
+        quantity: null,
+        dueDate: null,
+        isEditable: false,
+        action,
+        suggestedQuantity: Number(action.suggestedQuantity)
+      }));
     }, [openOrders, lineActions]);
 
-    const openLinesAnswer = openLinesQuery.data;
-    const onOpenOrdersChange = useCallback(
-      (rows: OpenOrderRow[]) => {
-        if (!openLinesAnswer) return;
-        const byId = new Map<
-          string,
-          { quantity: number; dueDate: string | null }
-        >();
-        for (const row of rows) {
-          if (row.quantity === null) continue;
-          byId.set(row.id, { quantity: row.quantity, dueDate: row.dueDate });
-        }
-        setOpenOrderEdits({ of: openLinesAnswer, byId });
-      },
-      [openLinesAnswer]
-    );
+    const onOpenOrdersChange = openLinesOverlay.keepEdits;
 
-    // One cell, one field, one request. The route re-reads the line under the
-    // company and refuses a PO that has been sent, so a stale row here cannot
-    // edit a committed order.
-    const { refetch: refetchOpenLines } = openLinesQuery;
-    const onSaveOpenOrder = useCallback(
-      async (
-        row: OpenOrderRow,
-        field: OpenOrderField,
-        value: number | string
-      ) => {
-        try {
-          const response = await fetch(path.to.bulkUpdatePurchasingPlanning, {
-            method: "post",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "updateLine",
-              locationId,
-              line: { id: row.id, field, value }
-            })
-          });
-          const result = (await response.json().catch(() => null)) as {
-            success?: boolean;
-            message?: string;
-          } | null;
-          if (response.ok && result?.success) {
-            // A plain fetch bypasses the router's invalidation: read the open
-            // lines again, and refresh the grid row behind the drawer, which
-            // otherwise shows the old value until the next navigation.
-            void refetchOpenLines();
-            void revalidate();
-            return true;
-          }
-          toastError(
-            result?.message ?? t`Failed to update purchase order line`,
-            result
-          );
-          return false;
-        } catch {
-          toast.error(t`Failed to update purchase order line`);
-          return false;
-        }
-      },
-      [locationId, refetchOpenLines, revalidate, t]
-    );
+    const onSaveOpenOrder = useSaveOrderCell<
+      OpenOrderRow,
+      OpenOrderField,
+      UpdateLineResult
+    >({
+      url: path.to.bulkUpdatePurchasingPlanning,
+      bodyOf: (row, field, value) => ({
+        action: "updateLine",
+        locationId,
+        line: { id: row.id, field, value }
+      }),
+      outcomeOf: (ok, result) =>
+        ok && result?.success
+          ? { saved: true }
+          : { saved: false, message: result?.message },
+      failureMessage: t`Failed to update purchase order line`,
+      reportFailure: (message, result) => toastError(message, result),
+      refetch: openLinesQuery.refetch
+    });
 
     const renderOpenOrderStatus = useCallback(
       (status: string) => (
@@ -480,38 +463,12 @@ export const PurchasingPlanningOrderDrawer = memo(
     );
 
     // What the chart overlays as planned supply: the draft orders, plus the
-    // open orders so an edit to one shows before MRP runs again — at its open
-    // Increase, which took the place of a draft order. The chart reads
-    // existing orders in inventory units (see mergePlannedOrders), and only
-    // what is still to come: received units are already on hand.
+    // open orders (`openOrdersForChart`).
     const chartOrders = useMemo<PlannedOrder[]>(
       () => [
         ...orders,
         ...(Array.isArray(openOrders)
-          ? openOrders.map(
-              ({
-                conversionFactor,
-                loadedQuantity,
-                receivedOffset,
-                ...order
-              }) => ({
-                ...order,
-                quantity: chartedOrderQuantity({
-                  quantity:
-                    Math.max(order.quantity - receivedOffset, 0) *
-                    conversionFactor,
-                  loadedQuantity:
-                    Math.max(loadedQuantity - receivedOffset, 0) *
-                    conversionFactor,
-                  increase: actionForOrder(
-                    actions,
-                    (a) =>
-                      a.type === "Increase" &&
-                      a.purchaseOrderLineId === order.existingLineId
-                  )
-                })
-              })
-            )
+          ? openOrdersForChart(openOrders, actions)
           : [])
       ],
       [orders, openOrders, actions]
@@ -534,17 +491,17 @@ export const PurchasingPlanningOrderDrawer = memo(
       [beyondFenceOrders]
     );
 
-    // A new fence re-seeds the rows too.
-    const onFenceChange = useCallback(
-      (date: Parameters<typeof onTimeFenceChange>[0]) => {
-        onTimeFenceChange(date);
-        setSuggestionsVersion((version) => version + 1);
+    // A new horizon re-seeds the rows too.
+    const onHorizonDateChange = useCallback(
+      (date: Parameters<typeof onHorizonChange>[0]) => {
+        onHorizonChange(date);
+        bumpSuggestionsVersion();
       },
-      [onTimeFenceChange]
+      [onHorizonChange, bumpSuggestionsVersion]
     );
     const onIncludeBeyondFence = useCallback(() => {
-      if (lastBeyondFenceDate) onFenceChange(lastBeyondFenceDate);
-    }, [lastBeyondFenceDate, onFenceChange]);
+      if (lastBeyondFenceDate) onHorizonDateChange(lastBeyondFenceDate);
+    }, [lastBeyondFenceDate, onHorizonDateChange]);
 
     const onSuggestedOrdersChange = useCallback(
       (next: PlannedOrder[]) => setOrders(selectedItem, next),
@@ -553,22 +510,15 @@ export const PurchasingPlanningOrderDrawer = memo(
 
     const onAddOrder = useCallback(() => {
       if (selectedItem.id) {
-        // Get the conversion factor from the selected supplier
-        const supplier = (selectedItem.suppliers as SupplierPart[])?.find(
-          (s) => s.supplierId === selectedSupplier
-        );
-        const conversionFactor = supplier?.conversionFactor ?? 1;
-
-        // Convert inventory quantity to purchase quantity
+        // the item's lot size in the chosen supplier's purchase units,
+        // rounded up as the suggested orders are
         const inventoryQuantity =
           selectedItem.lotSize ?? selectedItem.minimumOrderQuantity ?? 0;
-        const purchaseQuantity =
-          conversionFactor > 0
-            ? Math.ceil(inventoryQuantity / conversionFactor)
-            : inventoryQuantity;
-
         const newOrder: PlannedOrder = {
-          quantity: purchaseQuantity,
+          quantity: purchaseUnitsFor(
+            inventoryQuantity,
+            supplierConversionFactor(selectedItem.suppliers, selectedSupplier)
+          ),
           dueDate: parseDate(locationToday)
             .add({ days: selectedItem.leadTime ?? 0 })
             .toString(),
@@ -634,84 +584,6 @@ export const PurchasingPlanningOrderDrawer = memo(
       ]
     );
 
-    useEffect(() => {
-      if (fetcher.state !== "idle" || !fetcher.data) {
-        return;
-      }
-
-      if (fetcher.data?.success === false && fetcher?.data?.message) {
-        toastError(fetcher.data.message, fetcher.data);
-      }
-
-      if (fetcher.data?.success === true) {
-        const {
-          purchaseOrders = [],
-          refusedOrders,
-          processedItems = 0,
-          warnings = [],
-          errors = []
-        } = fetcher.data as {
-          purchaseOrders?: { id: string; readableId: string }[];
-          refusedOrders?: RefusedPlanningOrder[];
-          processedItems?: number;
-          warnings?: string[];
-          errors?: string[];
-        };
-        const refused = refusedOrdersOfRow(
-          {
-            ...selectedItem,
-            id: selectedItem.id!,
-            orders: submittedOrders.current
-          },
-          refusedOrders
-        );
-        const problems = [...warnings, ...errors];
-        if (problems.length > 0) toast.error(problems.join(" · "));
-        setSuggestionsVersion((version) => version + 1);
-        // The orders refused for starting in the past stay in the drawer as
-        // they were sent. With none it re-seeds from the suggestions, which
-        // keep what was not ordered.
-        if (refused.length > 0) {
-          setOrders(selectedItem, refused);
-          toast.error(pastStartToast(processedItems, refused.length));
-        } else {
-          onSuggestionsStale(selectedItem);
-          setPlannedOrdersVersion((version) => version + 1);
-        }
-
-        if (purchaseOrders.length === 0) {
-          if (refused.length === 0 && errors.length === 0) {
-            toast.success(t`Orders submitted`);
-          }
-        } else {
-          toast.success(
-            <div className="flex gap-1">
-              <span>{t`Orders submitted`}</span>
-              <span className="flex flex-wrap gap-2 text-xs">
-                {purchaseOrders.map((po) => (
-                  <Link
-                    key={po.id}
-                    to={path.to.purchaseOrder(po.id)}
-                    className="underline underline-offset-2 hover:opacity-80"
-                  >
-                    {po.readableId}
-                  </Link>
-                ))}
-              </span>
-            </div>,
-            { duration: 8000 }
-          );
-        }
-
-        // the router's invalidation reads the open lines again
-        if (refused.length > 0 || errors.length > 0) return;
-        onClose();
-      }
-      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
-    }, [fetcher.state, fetcher.data]);
-
-    const supplierDisclosure = useDisclosure();
-
     return (
       <Drawer
         open={isOpen}
@@ -756,117 +628,22 @@ export const PurchasingPlanningOrderDrawer = memo(
             <DrawerBody>
               <div className="flex flex-col gap-4  w-full">
                 <TabsContent value="suppliers" className="flex flex-col gap-4">
-                  <TableBase>
-                    <Thead>
-                      <Tr>
-                        <Th>
-                          <Trans>Supplier</Trans>
-                        </Th>
-                        <Th>
-                          <Trans>Unit</Trans>
-                        </Th>
-                        <Th>
-                          <Trans>Conversion</Trans>
-                        </Th>
-                        <Th>
-                          <Trans>Unit Price</Trans>
-                        </Th>
-                        <Th />
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {(selectedItem.suppliers as SupplierPart[])?.map(
-                        (part) => (
-                          <Tr key={part.id}>
-                            <Td>
-                              <SupplierAvatar supplierId={part.supplierId} />
-                            </Td>
-                            <Td>
-                              {
-                                unitOfMeasureOptions.find(
-                                  (uom) =>
-                                    uom.value === part.supplierUnitOfMeasureCode
-                                )?.label
-                              }
-                            </Td>
-                            <Td>{part.conversionFactor}</Td>
-                            <Td>
-                              <SupplierPartPrice
-                                price={part.supplierUnitPrice}
-                                currencyCode={part.currencyCode}
-                              />
-                            </Td>
-                            <Td className="text-end">
-                              <Button
-                                variant="secondary"
-                                isDisabled={
-                                  selectedSupplier === part.supplierId
-                                }
-                                leftIcon={<LuCircleCheck />}
-                                onClick={() => {
-                                  if (selectedItem.id) {
-                                    onSupplierChange(
-                                      selectedItem.id,
-                                      part.supplierId
-                                    );
-
-                                    const updatedOrders = orders.map(
-                                      (order) => ({
-                                        ...order,
-                                        supplierId: part.supplierId
-                                      })
-                                    );
-                                    setOrders(selectedItem, updatedOrders);
-
-                                    toast.success(t`Supplier updated`);
-                                    setActiveTab("ordering");
-                                  }
-                                }}
-                              >
-                                <Trans>Select</Trans>
-                              </Button>
-                            </Td>
-                          </Tr>
-                        )
-                      )}
-                    </Tbody>
-                  </TableBase>
-                  <div>
-                    <Button
-                      variant="secondary"
-                      leftIcon={<LuCirclePlus />}
-                      onClick={supplierDisclosure.onOpen}
-                    >
-                      <Trans>Add Supplier</Trans>
-                    </Button>
-                    {supplierDisclosure.openCount > 0 && (
-                      <SupplierPartForm
-                        key={`supplierDisclosure-${supplierDisclosure.openCount}`}
-                        open={supplierDisclosure.isOpen}
-                        type="Part"
-                        initialValues={{
-                          itemId: selectedItem.id,
-                          supplierId: "",
-                          supplierPartId: "",
-                          supplierUnitPrice: 0,
-                          supplierUnitOfMeasureCode: "EA",
-                          minimumOrderQuantity: 1,
-                          orderMultiple: 1,
-                          conversionFactor: 1
-                        }}
-                        unitOfMeasureCode={selectedItem.unitOfMeasureCode ?? ""}
-                        onSaved={onSupplierPartSaved}
-                        onClose={supplierDisclosure.onClose}
-                      />
-                    )}
-                  </div>
+                  <DrawerSuppliersTab
+                    item={selectedItem}
+                    setItem={setSelectedItem}
+                    selectedSupplier={selectedSupplier}
+                    onSupplierChange={onSupplierChange}
+                    orders={orders}
+                    setOrders={setOrders}
+                    onSupplierChosen={showOrdering}
+                  />
                 </TabsContent>
                 <TabsContent value="ordering" className="flex flex-col gap-4">
                   <PlanningPolicySummary
                     item={selectedItem}
-                    fenceDate={timeFenceDate}
-                    isFenceOverridden={isTimeFenceOverridden}
-                    onFenceChange={onFenceChange}
+                    horizonDate={horizonDate}
+                    isHorizonOverridden={isHorizonOverridden}
+                    onHorizonChange={onHorizonDateChange}
                   >
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
@@ -882,19 +659,14 @@ export const PurchasingPlanningOrderDrawer = memo(
                         {unitOfMeasureOptions.find(
                           (uom) =>
                             uom.value ===
-                            (selectedItem.suppliers as SupplierPart[])?.find(
-                              (s) => s.supplierId === selectedSupplier
-                            )?.supplierUnitOfMeasureCode
+                            supplierPart?.supplierUnitOfMeasureCode
                         )?.label ??
                           selectedItem.unitOfMeasureCode ??
                           "EA"}
                       </span>
                     </HStack>
                     {(() => {
-                      const supplier = (
-                        selectedItem.suppliers as SupplierPart[]
-                      )?.find((s) => s.supplierId === selectedSupplier);
-                      const factor = supplier?.conversionFactor ?? 1;
+                      const factor = supplierPart?.conversionFactor ?? 1;
                       const conversionFactor = formatQuantity(factor);
                       return factor !== 1 ? (
                         <HStack className="justify-between w-full">
@@ -932,10 +704,10 @@ export const PurchasingPlanningOrderDrawer = memo(
                       title={<Trans>Suggested Orders</Trans>}
                       titleAction={
                         lastBeyondFenceDate &&
-                        timeFenceDate && (
+                        horizonDate && (
                           <BeyondFenceButton
                             count={beyondFenceOrders.length}
-                            fenceLabel={fenceLabel}
+                            fenceLabel={horizonLabel}
                             onClick={onIncludeBeyondFence}
                           />
                         )
@@ -967,13 +739,9 @@ export const PurchasingPlanningOrderDrawer = memo(
                       itemId={selectedItem.id}
                       locationId={locationId}
                       safetyStock={selectedItem.demandAccumulationSafetyStock}
-                      timeFenceDate={timeFenceDate}
+                      timeFenceDate={horizonDate}
                       plannedOrders={chartOrders}
-                      conversionFactor={
-                        (selectedItem.suppliers as SupplierPart[])?.find(
-                          (s) => s.supplierId === selectedSupplier
-                        )?.conversionFactor ?? 1
-                      }
+                      conversionFactor={supplierPart?.conversionFactor ?? 1}
                     />
                   </DeferredDrawerSections>
                 </TabsContent>

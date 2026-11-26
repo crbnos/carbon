@@ -26,11 +26,12 @@ import {
   openNewSupplyActions,
   plannedOrdersFromActions,
   productionOrdersFromActions,
+  purchaseUnitsFor,
   refusedOrdersOfRow,
-  rowsReplannedByApply,
   supplierConversionFactor,
   withoutRowDraft
 } from "../app/modules/production/ui/Planning/planned-orders-from-actions";
+import { rowsReplannedByApply } from "../app/modules/production/ui/Planning/usePlanningActions";
 
 type Action = Parameters<typeof plannedOrdersFromActions>[0][number];
 
@@ -412,6 +413,28 @@ describe("supplierConversionFactor", () => {
   it("is 1 for a supplier with no part, or no supplier data", () => {
     expect(supplierConversionFactor(suppliers, "sup3")).toBe(1);
     expect(supplierConversionFactor(null, "sup1")).toBe(1);
+  });
+});
+
+// An order the planner adds in the purchasing drawer, and an Open Orders
+// row's suggested quantity, are in whole purchase units, rounded up as Apply
+// rounds them (`toReceive`, purchasing.models.ts).
+describe("purchaseUnitsFor", () => {
+  it("rounds an inventory quantity up to whole purchase units", () => {
+    expect(purchaseUnitsFor(25, 10)).toBe(3);
+    expect(purchaseUnitsFor(10.5, 1)).toBe(11);
+  });
+
+  it("does not round float noise up a whole purchase unit", () => {
+    expect(purchaseUnitsFor(1.1, 0.1)).toBe(11);
+    // 0.07 / 0.01 is 7.000000000000001 in floating point
+    expect(purchaseUnitsFor(0.07, 0.01)).toBe(7);
+    expect(purchaseUnitsFor(0.33, 0.03)).toBe(11);
+  });
+
+  it("keeps the quantity when the factor is not usable", () => {
+    expect(purchaseUnitsFor(7, 0)).toBe(7);
+    expect(purchaseUnitsFor(7, -2)).toBe(7);
   });
 });
 

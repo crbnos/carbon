@@ -24,7 +24,6 @@ import {
   ItemSupersessionForm
 } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { getLocationPlanningTimeFence } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -71,19 +70,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const [
-    partPlanning,
-    supersession,
-    supersessionChain,
-    quantities,
-    locationFence
-  ] = await Promise.all([
-    api.items.getItemPlanning({ itemId, locationId }),
-    api.items.getItemSupersession({ itemId }),
-    api.items.getSupersessionChain({ itemId }).then(dataOrThrow),
-    api.items.getItemQuantities({ itemId, locationId }),
-    getLocationPlanningTimeFence(client, locationId, companyId)
-  ]);
+  const [partPlanning, supersession, supersessionChain, quantities] =
+    await Promise.all([
+      api.items.getItemPlanning({ itemId, locationId }),
+      api.items.getItemSupersession({ itemId }),
+      api.items.getSupersessionChain({ itemId }).then(dataOrThrow),
+      api.items.getItemQuantities({ itemId, locationId })
+    ]);
 
   if (partPlanning.error || !partPlanning.data) {
     throw redirect(
@@ -95,14 +88,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const { locationPlanningTimeFenceDays, ...planning } = partPlanning.data;
   return {
-    partPlanning: partPlanning.data,
+    partPlanning: planning,
     supersession: supersession.data,
     supersessionChain: supersessionChain.chain,
     supersededBy: supersessionChain.supersededBy,
     quantityOnHand: quantities.data?.quantityOnHand ?? 0,
     // the placeholder of the item's empty fence; a failed read shows none
-    locationTimeFenceDays: locationFence.data?.planningTimeFenceDays,
+    locationTimeFenceDays: locationPlanningTimeFenceDays ?? undefined,
     locationId
   };
 }
@@ -169,6 +163,8 @@ export async function action(args: ActionFunctionArgs) {
   if (validation.error) return validationError(validation.error);
   const result = await api.items.updateItemPlanning({
     ...validation.data,
+    // the form always posts the fence: an emptied field inherits
+    planningTimeFenceDays: validation.data.planningTimeFenceDays ?? null,
     itemId,
     customFields: setCustomFields(formData)
   });

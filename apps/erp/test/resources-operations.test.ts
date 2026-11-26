@@ -82,6 +82,8 @@ function client(
   refused: readonly string[] = []
 ) {
   const writes: { op: string; table: string; payload?: unknown }[] = [];
+  /** The `.eq()` filters of each write, in call order. */
+  const writeFilters: { table: string; column: string; value: unknown }[] = [];
   const answer = (key: string): Answer => {
     const value = answers[key];
     return value && typeof value === "object" && "error" in value
@@ -104,6 +106,10 @@ function client(
     ]) {
       chain[method] = () => chain;
     }
+    chain.eq = (column: string, value: unknown) => {
+      if (wrote && !denied) writeFilters.push({ table, column, value });
+      return chain;
+    };
     for (const op of ["insert", "update", "upsert", "delete"]) {
       chain[op] = (payload?: unknown) => {
         wrote = true;
@@ -122,7 +128,7 @@ function client(
     return chain;
   };
   const rpc = (name: string) => Promise.resolve(answer(`rpc:${name}`));
-  return { from, rpc, writes };
+  return { from, rpc, writes, writeFilters };
 }
 
 function contextWith(
@@ -143,7 +149,7 @@ function contextWith(
     pg: () => ({}) as never,
     kv: () => ({}) as never
   });
-  return { ctx, writes: db.writes };
+  return { ctx, writes: db.writes, writeFilters: db.writeFilters };
 }
 
 const scheduleNotices = () =>
@@ -795,5 +801,44 @@ describe("a location's planning time fence", () => {
     await updateLocation(ctx, { ...location, planningTimeFenceDays: 0 });
 
     expect(updated(writes)).toMatchObject({ planningTimeFenceDays: 0 });
+  });
+});
+
+describe("updating a location", () => {
+  const location = {
+    id: "loc-1",
+    name: "Plant",
+    addressLine1: "1 Main St",
+    city: "Chicago",
+    postalCode: "60601",
+    countryCode: "US",
+    timezone: "America/New_York"
+  };
+
+  it("writes only the caller's company's location", async () => {
+    const { ctx, writeFilters } = contextWith({
+      location: [{ id: "loc-1" }]
+    });
+
+    const result = await updateLocation(ctx, location);
+
+    expect(result).toEqual({ data: { id: "loc-1" }, error: null });
+    expect(writeFilters).toEqual([
+      { table: "location", column: "id", value: "loc-1" },
+      { table: "location", column: "companyId", value: "company-1" }
+    ]);
+  });
+
+  // Another company's location, or one deleted since, matches no row.
+  it("answers not found when the update matched no location", async () => {
+    const { ctx } = contextWith({
+      "location:read": null,
+      location: []
+    });
+
+    const result = await updateLocation(ctx, location);
+
+    expect(result.error?.category).toBe("notFound");
+    expect(scheduleNotices()).toEqual([]);
   });
 });

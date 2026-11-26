@@ -21,18 +21,10 @@
 // planned on its own; a project segment is lot-for-lot, with no reorder
 // point, safety stock or Stock Only reserve.
 //
-// Change actions follow the SAP "rescheduling check on a firmed receipt" model:
-// open orders are matched to dated requirements chronologically; a date gap
-// STRICTLY greater than companySettings.rescheduleToleranceDays fires
-// Expedite/Defer; exactly ONE action is emitted per target document
-// (Cancel → Expedite/Defer → Increase/Decrease).
-//
-// Persistence is a DIFF-WRITE keyed on the natural key (item, location, type,
-// period, target document): Open rows update in place (a human-overridden
-// assignee is never re-resolved), Dismissed rows stay dismissed unless the
-// suggestion changed materially, vanished Open/Dismissed rows are deleted so a
-// returning need re-surfaces, and Actioned rows are terminal. Failures
-// PROPAGATE to the caller — a run must not report success with stale actions.
+// This file reads the inputs and orchestrates (`generatePlanningActions`).
+// One row's actions are `row-actions.ts` (the change actions follow the SAP
+// "rescheduling check on a firmed receipt" model); the diff-write keyed on
+// each action's natural key is `planning-action-write.ts`.
 //
 // Actions are generated over the WHOLE planning window. The per-item planning
 // horizon (time fence) is a read-time lens applied by the planning grids, which
@@ -44,20 +36,17 @@ import { getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { COMMON_SEGMENT, KEY_SEP } from "@carbon/database/mrp-engine";
-import { lockCompanyPlanning } from "@carbon/database/planning-lock";
 import type {
   GroupPegInput,
   MemberMove,
   MemberPosition,
-  PegPriorityRule,
-  WriteGroupPegs
+  PegPriorityRule
 } from "@carbon/ee/pegging";
 import { getLogger } from "@carbon/logger";
-import { datetime, equals, round } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { type Kysely, sql } from "kysely";
-import { lastSavedMrpRunStartedAt, newestRunSaves } from "../run-order.ts";
+import type { Kysely } from "kysely";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 import {
   buildOpenSupplyOrders,
@@ -65,596 +54,37 @@ import {
   type OpenJobDetails
 } from "./open-supply-orders.ts";
 import { groupByProjectOf, planningSegmentOf } from "./plan-company.ts";
-import {
-  assertPlannedOrdersUnchanged,
-  type PlannedOrderSnapshot
-} from "./planned-order-write.ts";
+import type { PlannedOrderSnapshot } from "./planned-order-write.ts";
 import type {
   PlannedOrderChangeAction,
   PlannedOrderSignal
 } from "./planned-orders.ts";
 import type {
   ChangeCandidate,
-  OpenSupplyOrder,
-  PlanningActionCandidate,
-  PlanningActionSegment,
-  PlanningActionType
+  PlanningActionCandidate
 } from "./planning-action-types.ts";
+import {
+  naturalKey,
+  type PlanningActionPegging,
+  writePlanningActions
+} from "./planning-action-write.ts";
 import { loadResponsibleEmployeeResolver } from "./responsible-employee.ts";
+import {
+  deriveRowActions,
+  type ProductionPlanningRow,
+  plannedOrderActions,
+  type RpcPlanningRow
+} from "./row-actions.ts";
 import {
   DAYS_PER_PERIOD,
   daysBetween,
-  drawsByPeriod,
-  earlierDate,
   laterDate,
-  sizeRowSupply,
-  supplyTarget
-} from "./row-sizing.ts";
-
-export {
-  earlierRelease,
-  isCommittedJobStatus,
-  isCommittedPurchaseOrderStatus,
-  itemLocationSegmentKey,
-  releaseByDate
-} from "./open-supply-orders.ts";
-export type {
-  OpenSupplyOrder,
-  PlannedOrderRelease,
-  PlanningActionCandidate,
-  PlanningActionSegment,
-  PlanningActionType
-} from "./planning-action-types.ts";
-export {
-  convertOrdersToIncreases,
-  type DeriveChangeActionsInput,
-  daysBetween,
-  deriveChangeActions,
-  earlierDate,
-  firstNeedPeriodByOrder,
-  isOrderFrozen,
-  laterDate,
-  projectionsWithExpedites,
-  quantityAfterApply
+  weekIndexOn
 } from "./row-sizing.ts";
 
 const logger = getLogger("planning", "planning-actions");
 
 const WEEKS_TO_PLAN = 48;
-const BATCH_SIZE = 500;
-/**
- * A Release is raised this many days before its release day, not earlier.
- * Every planned order has one, so raised the moment the order exists it is a
- * standing row weeks ahead of anything anyone can do about it.
- */
-const RELEASE_NOTICE_DAYS = 1;
-
-export type ExistingPlanningAction = {
-  id: string;
-  itemId: string;
-  locationId: string;
-  periodId: string;
-  type: PlanningActionType;
-  status: "Open" | "Dismissed";
-  suggestedQuantity: number;
-  suggestedDate: string;
-  horizonDate: string;
-  latestOrderDate: string | null;
-  isASAP: boolean;
-  purchaseOrderLineId: string | null;
-  jobId: string | null;
-  plannedOrderId: string | null;
-  requiresManualAction: boolean;
-  supplierId: string | null;
-  policyName: string | null;
-  reason: string | null;
-  triggerValues: unknown;
-  assignee: string | null;
-  assigneeOverridden: boolean;
-} & PlanningActionSegment;
-
-/**
- * One Release per planned order (`OpenSupplyOrder.release`), dated the last
- * day to release it, raised only from `RELEASE_NOTICE_DAYS` before that day.
- * Released from the order itself — the planning pages link to it — so it is
- * never applied. An order MRP would Cancel gets none, and so does a planned
- * order: MRP converts it, nobody releases it.
- */
-export function deriveReleaseActions(args: {
-  openOrders: OpenSupplyOrder[];
-  changeActions: Pick<
-    ChangeCandidate,
-    "type" | "purchaseOrderLineId" | "jobId" | "plannedOrderId"
-  >[];
-  periods: { id: string; startDate: string }[];
-  todayDate: string;
-}): ChangeCandidate[] {
-  const { openOrders, changeActions, periods, todayDate } = args;
-  const cancelled = new Set(
-    changeActions.filter((a) => a.type === "Cancel").map((a) => supplyTarget(a))
-  );
-  // the week a date falls in; an earlier date is the first week
-  const periodFor = (dateIso: string) => {
-    let match = periods[0];
-    for (const p of periods) {
-      if (daysBetween(p.startDate, dateIso) <= 0) match = p;
-      else break;
-    }
-    return match;
-  };
-
-  const actions: ChangeCandidate[] = [];
-  for (const order of openOrders) {
-    const release = order.release;
-    if (!release || order.plannedOrderId) continue;
-    // not yet: the run on the day before raises it
-    if (daysBetween(release.date, todayDate) > RELEASE_NOTICE_DAYS) continue;
-    if (cancelled.has(supplyTarget(order))) {
-      continue;
-    }
-    const period = periodFor(release.date);
-    if (!period) continue;
-    actions.push({
-      type: "Release",
-      periodId: period.id,
-      suggestedQuantity: order.quantity,
-      suggestedDate: release.date,
-      horizonDate: release.date,
-      // the latest-order-date column is for new supply, not this
-      latestOrderDate: null,
-      // its day has come (or gone): release it now
-      isASAP: daysBetween(release.date, todayDate) <= 0,
-      purchaseOrderLineId: order.purchaseOrderLineId ?? null,
-      jobId: order.jobId ?? null,
-      plannedOrderId: null,
-      requiresManualAction: false,
-      supplierId: order.supplierId ?? null,
-      policyName: null,
-      reason: `Due ${release.dueDate} with a ${release.leadTime}-day lead time`,
-      triggerValues: { leadTime: release.leadTime }
-    });
-  }
-  return actions;
-}
-
-/**
- * The identity an action keeps from run to run.
- *
- * Every action belongs to its netting segment, so one item and week can hold
- * a common Order and a project's Order. A Transfer is also keyed on the owners
- * it moves stock between ('' when common): two Transfers into one segment
- * from different owners are two actions.
- *
- * A change action belongs to its ORDER: item, location, type and target. Its
- * period (the week of the need it was measured against) is data, so a need
- * that moves a week updates the same row instead of replacing it.
- *
- * A new-supply action (Order / Make) has no order yet, so its week is its
- * identity — except that every week up to the current one is one "now" key
- * (`keyPeriod`). MRP puts all current and overdue demand in the first week,
- * which is a different week every Sunday; keyed on it, a shortage that went on
- * got a new row each week and lost its dismissal and its hand-set assignee.
- */
-export function naturalKey(
-  action: {
-    itemId: string;
-    locationId: string;
-    type: string;
-    periodId: string;
-    purchaseOrderLineId: string | null;
-    jobId: string | null;
-    plannedOrderId: string | null;
-  } & PlanningActionSegment,
-  keyPeriod: (periodId: string) => string = (periodId) => periodId
-): string {
-  const target = supplyTarget(action);
-  return [
-    action.itemId,
-    action.locationId,
-    action.planningSegmentId ?? COMMON_SEGMENT,
-    action.type,
-    target ? `order:${target}` : `period:${keyPeriod(action.periodId)}`,
-    action.fromProjectId ?? "",
-    action.toProjectId ?? ""
-  ].join(KEY_SEP);
-}
-
-/**
- * `naturalKey`'s period mapping for one run: the current week, and any week
- * before it (a row written in an earlier week), are all "now".
- */
-export function keyPeriodFor(
-  periods: { id: string }[]
-): (periodId: string) => string {
-  const current = periods[0]?.id;
-  const later = new Set(periods.slice(1).map((p) => p.id));
-  return (periodId) =>
-    periodId === current || !later.has(periodId) ? "now" : periodId;
-}
-
-export type PlanningActionDiff = {
-  inserts: PlanningActionCandidate[];
-  updates: {
-    id: string;
-    patch: Record<string, unknown>;
-  }[];
-  deleteIds: string[];
-};
-
-/**
- * JSON-value equality independent of object key order. Postgres jsonb returns
- * keys in length-then-bytewise order while candidates build insertion-ordered
- * literals, so a raw JSON.stringify comparison re-patched identical
- * triggerValues on every run — breaking the two-identical-runs-produce-zero-
- * changes invariant and churning updatedAt/updatedBy.
- */
-export function jsonEquals(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (
-    typeof a !== "object" ||
-    typeof b !== "object" ||
-    a === null ||
-    b === null
-  ) {
-    return false;
-  }
-  if (Array.isArray(a) || Array.isArray(b)) {
-    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
-      return false;
-    }
-    return a.every((value, index) => jsonEquals(value, b[index]));
-  }
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-  if (aKeys.length !== bKeys.length) return false;
-  return aKeys.every((key) =>
-    jsonEquals(
-      (a as Record<string, unknown>)[key],
-      (b as Record<string, unknown>)[key]
-    )
-  );
-}
-
-/**
- * Diff-write plan: never delete-and-recreate — assignment and dismissal state
- * must survive a run. Two identical consecutive runs produce zero changes.
- */
-export function diffPlanningActions(args: {
-  existing: ExistingPlanningAction[];
-  candidates: PlanningActionCandidate[];
-  toleranceDays: number;
-  /** This run's weeks, current first; their ids decide what is "now". */
-  periods?: { id: string }[];
-}): PlanningActionDiff {
-  const { existing, candidates, toleranceDays } = args;
-  const keyPeriod = args.periods ? keyPeriodFor(args.periods) : undefined;
-  const keyOf = (action: Parameters<typeof naturalKey>[0]) =>
-    naturalKey(action, keyPeriod);
-
-  // Two stored rows can share a "now" key (last week's current-week row and
-  // one written for this week): keep the one already on the current week; the
-  // other is deleted below as unseen.
-  const currentPeriodId = args.periods?.[0]?.id;
-  const existingByKey = new Map<string, ExistingPlanningAction>();
-  for (const row of existing) {
-    const key = keyOf(row);
-    const kept = existingByKey.get(key);
-    if (!kept || row.periodId === currentPeriodId) existingByKey.set(key, row);
-  }
-  const keptIds = new Set([...existingByKey.values()].map((row) => row.id));
-  const seen = new Set<string>();
-
-  const inserts: PlanningActionCandidate[] = [];
-  const updates: PlanningActionDiff["updates"] = [];
-
-  for (const candidate of candidates) {
-    const key = keyOf(candidate);
-    if (seen.has(key)) continue; // one action per natural key
-    seen.add(key);
-
-    const current = existingByKey.get(key);
-    if (!current) {
-      inserts.push(candidate);
-      continue;
-    }
-
-    const materialChange =
-      !equals(current.suggestedQuantity, candidate.suggestedQuantity) ||
-      Math.abs(daysBetween(current.suggestedDate, candidate.suggestedDate)) >
-        toleranceDays;
-
-    const patch: Record<string, unknown> = {};
-    // The week and the grid-facing dates track the candidate on every row,
-    // dismissed ones included: keeping them current never re-opens anything.
-    if (current.periodId !== candidate.periodId) {
-      patch.periodId = candidate.periodId;
-    }
-    if (current.horizonDate !== candidate.horizonDate) {
-      patch.horizonDate = candidate.horizonDate;
-    }
-    if ((current.latestOrderDate ?? null) !== candidate.latestOrderDate) {
-      patch.latestOrderDate = candidate.latestOrderDate;
-    }
-
-    if (current.status === "Dismissed" && !materialChange) {
-      // dismissed suppresses a persisting, unchanged need
-      if (Object.keys(patch).length > 0) {
-        updates.push({ id: current.id, patch });
-      }
-      continue;
-    }
-
-    if (current.status === "Dismissed") patch.status = "Open";
-    if (!equals(current.suggestedQuantity, candidate.suggestedQuantity)) {
-      patch.suggestedQuantity = candidate.suggestedQuantity;
-    }
-    if (current.suggestedDate !== candidate.suggestedDate) {
-      patch.suggestedDate = candidate.suggestedDate;
-    }
-    if (current.isASAP !== candidate.isASAP) patch.isASAP = candidate.isASAP;
-    if (current.requiresManualAction !== candidate.requiresManualAction) {
-      patch.requiresManualAction = candidate.requiresManualAction;
-    }
-    if (
-      (current.plannedOrderId ?? null) !== (candidate.plannedOrderId ?? null)
-    ) {
-      patch.plannedOrderId = candidate.plannedOrderId ?? null;
-    }
-    if ((current.supplierId ?? null) !== candidate.supplierId) {
-      patch.supplierId = candidate.supplierId;
-    }
-    if ((current.policyName ?? null) !== candidate.policyName) {
-      patch.policyName = candidate.policyName;
-    }
-    if ((current.reason ?? null) !== candidate.reason) {
-      patch.reason = candidate.reason;
-    }
-    if (
-      !jsonEquals(
-        current.triggerValues ?? null,
-        candidate.triggerValues ?? null
-      )
-    ) {
-      patch.triggerValues = candidate.triggerValues;
-    }
-    if (
-      !current.assigneeOverridden &&
-      (current.assignee ?? null) !== candidate.assignee
-    ) {
-      patch.assignee = candidate.assignee;
-    }
-
-    if (Object.keys(patch).length > 0) {
-      updates.push({ id: current.id, patch });
-    }
-  }
-
-  const deleteIds = existing
-    .filter((e) => !keptIds.has(e.id) || !seen.has(keyOf(e)))
-    .map((e) => e.id);
-
-  return { inserts, updates, deleteIds };
-}
-
-/**
- * The Postgres type of every column a diff patch can set: the cast each
- * `VALUES` column needs, since a bound parameter arrives untyped. A patch key
- * missing here is a programming error and throws before anything is written.
- */
-const PATCH_COLUMN_TYPES: Record<string, string> = {
-  periodId: "text",
-  horizonDate: "date",
-  latestOrderDate: "date",
-  status: '"planningActionStatus"',
-  suggestedQuantity: "numeric",
-  suggestedDate: "date",
-  isASAP: "boolean",
-  requiresManualAction: "boolean",
-  plannedOrderId: "text",
-  supplierId: "text",
-  policyName: "text",
-  reason: "text",
-  triggerValues: "jsonb",
-  assignee: "text"
-};
-
-/**
- * The diff's updates grouped by the columns they change, one group per
- * statement, each row as its `VALUES` tuple (`id`, then the group's columns).
- * Throws on a column with no known type before anything is written.
- */
-export function groupPatchUpdates(
-  updates: PlanningActionDiff["updates"]
-): { columns: string[]; rows: unknown[][] }[] {
-  const groups = new Map<string, PlanningActionDiff["updates"]>();
-  for (const update of updates) {
-    const shape = Object.keys(update.patch).sort().join(",");
-    const group = groups.get(shape);
-    if (group) group.push(update);
-    else groups.set(shape, [update]);
-  }
-
-  return [...groups].map(([shape, group]) => {
-    const columns = shape.split(",");
-    for (const column of columns) {
-      if (!PATCH_COLUMN_TYPES[column]) {
-        throw new Error(`No column type for planning action patch "${column}"`);
-      }
-    }
-    return {
-      columns,
-      rows: group.map((row) => [
-        row.id,
-        ...columns.map((column) => {
-          const value = row.patch[column] ?? null;
-          return column === "triggerValues" && value !== null
-            ? JSON.stringify(value)
-            : value;
-        })
-      ])
-    };
-  });
-}
-
-/**
- * Writes one run's diff inside the caller's transaction.
- *
- * The run read the actions before it computed this diff, so a row a planner
- * applied in between still reads as Open or Dismissed here. Every DELETE and
- * UPDATE therefore skips `Actioned` rows itself: without that, the run deleted
- * an applied action (and its claim) or reopened it with a `status: "Open"`
- * patch, offering it to be applied twice.
- *
- * Updates are grouped by the columns they change and sent as one
- * `UPDATE … FROM (VALUES …)` per group and chunk. They were one statement per
- * row — thousands of round trips on the weekly roll of the first period, with
- * the transaction holding a connection of the job pool throughout. Each row
- * keeps its own patch: writing every column would also move a dismissed row's
- * stored quantity, and a changed need would then never cross the tolerance.
- */
-export async function writePlanningActionDiff(
-  trx: Kysely<DB>,
-  args: {
-    companyId: string;
-    userId: string;
-    diff: PlanningActionDiff;
-    updatedAt: string;
-  }
-): Promise<void> {
-  const { companyId, userId, diff, updatedAt } = args;
-
-  for (let i = 0; i < diff.deleteIds.length; i += BATCH_SIZE) {
-    await trx
-      .deleteFrom("planningAction")
-      .where("companyId", "=", companyId)
-      .where("status", "!=", "Actioned")
-      .where("id", "in", diff.deleteIds.slice(i, i + BATCH_SIZE))
-      .execute();
-  }
-
-  for (const { columns, rows } of groupPatchUpdates(diff.updates)) {
-    // The diff skipped an overridden assignee when it READ the row, but a
-    // planner can assign between that read and this write (Assign does not
-    // take the run's lock), so the statement re-checks the flag on the row.
-    const assignments = sql.join(
-      columns.map((column) =>
-        column === "assignee"
-          ? sql`"assignee" = CASE WHEN t."assigneeOverridden" THEN t."assignee" ELSE v."assignee"::text END`
-          : sql`${sql.id(column)} = v.${sql.id(column)}::${sql.raw(
-              PATCH_COLUMN_TYPES[column]!
-            )}`
-      )
-    );
-    const valueColumns = sql.join(["id", ...columns].map((c) => sql.id(c)));
-
-    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-      const values = sql.join(
-        rows.slice(i, i + BATCH_SIZE).map((row) => sql`(${sql.join(row)})`)
-      );
-      await sql`
-        UPDATE "planningAction" AS t
-        SET ${assignments}, "updatedBy" = ${userId}, "updatedAt" = ${updatedAt}
-        FROM (VALUES ${values}) AS v(${valueColumns})
-        WHERE t."id" = v."id"
-          AND t."companyId" = ${companyId}
-          AND t."status" <> 'Actioned'
-      `.execute(trx);
-    }
-  }
-
-  for (let i = 0; i < diff.inserts.length; i += BATCH_SIZE) {
-    const chunk = diff.inserts.slice(i, i + BATCH_SIZE);
-    await trx
-      .insertInto("planningAction")
-      .values(
-        chunk.map((candidate) => ({
-          companyId,
-          itemId: candidate.itemId,
-          locationId: candidate.locationId,
-          periodId: candidate.periodId,
-          type: candidate.type,
-          suggestedQuantity: candidate.suggestedQuantity,
-          suggestedDate: candidate.suggestedDate,
-          horizonDate: candidate.horizonDate,
-          latestOrderDate: candidate.latestOrderDate,
-          isASAP: candidate.isASAP,
-          purchaseOrderLineId: candidate.purchaseOrderLineId,
-          jobId: candidate.jobId,
-          plannedOrderId: candidate.plannedOrderId ?? null,
-          requiresManualAction: candidate.requiresManualAction,
-          supplierId: candidate.supplierId,
-          policyName: candidate.policyName,
-          reason: candidate.reason,
-          triggerValues: candidate.triggerValues
-            ? JSON.stringify(candidate.triggerValues)
-            : null,
-          assignee: candidate.assignee,
-          planningSegmentId: candidate.planningSegmentId ?? COMMON_SEGMENT,
-          fromProjectId: candidate.fromProjectId ?? null,
-          toProjectId: candidate.toProjectId ?? null,
-          createdBy: userId
-        }))
-      )
-      .execute();
-  }
-}
-
-/**
- * Projects Phase 3: adds each planned Order / Make of a planning group
- * segment to its peg input, as a `Planning Action` supply named by the
- * action's id. A candidate maps to the stored action with its natural key;
- * one with no stored action (not written) is left out.
- */
-export function withPlannedPegSupplies(args: {
-  inputs: GroupPegInput[];
-  candidates: PlanningActionCandidate[];
-  /** `naturalKey` (with this run's `keyPeriod`) -> the stored action id. */
-  actionIdByKey: ReadonlyMap<string, string>;
-  keyPeriod: (periodId: string) => string;
-  groupIds: ReadonlySet<string>;
-}): GroupPegInput[] {
-  const byKey = new Map<string, GroupPegInput>();
-  const inputs = args.inputs.map((input) => {
-    const copy = { ...input, supplies: [...input.supplies] };
-    byKey.set(
-      [input.planningGroupId, input.itemId, input.locationId].join(KEY_SEP),
-      copy
-    );
-    return copy;
-  });
-  const placed = new Set<string>();
-  for (const candidate of args.candidates) {
-    if (candidate.type !== "Order" && candidate.type !== "Make") continue;
-    const groupId = candidate.planningSegmentId ?? COMMON_SEGMENT;
-    if (!args.groupIds.has(groupId)) continue;
-    const actionId = args.actionIdByKey.get(
-      naturalKey(candidate, args.keyPeriod)
-    );
-    if (!actionId || placed.has(actionId)) continue;
-    placed.add(actionId);
-    const key = [groupId, candidate.itemId, candidate.locationId].join(KEY_SEP);
-    let input = byKey.get(key);
-    if (!input) {
-      input = {
-        planningGroupId: groupId,
-        itemId: candidate.itemId,
-        locationId: candidate.locationId,
-        demands: [],
-        supplies: []
-      };
-      byKey.set(key, input);
-      inputs.push(input);
-    }
-    input.supplies.push({
-      supplyType: "Planning Action",
-      supplyId: actionId,
-      ownerProjectId: null,
-      availableDate: candidate.suggestedDate,
-      quantity: candidate.suggestedQuantity
-    });
-  }
-  return inputs;
-}
 
 const MEMBER_TRANSFER_REASON = "Sibling stock not needed within the horizon";
 const MEMBER_BORROW_REASON = "Sibling stock lent until the sibling needs it";
@@ -715,14 +145,8 @@ export function memberMoveCandidates(
   const membersByGroup = new Map(
     args.planningGroups.map((group) => [group.id, group.memberProjectIds])
   );
-  const periodFor = (dateIso: string) => {
-    let match = periods[0]!;
-    for (const p of periods) {
-      if (daysBetween(p.startDate, dateIso) <= 0) match = p;
-      else break;
-    }
-    return match;
-  };
+  const periodFor = (dateIso: string) =>
+    periods[weekIndexOn(periods, dateIso)]!;
 
   const byKey = new Map<string, PlanningActionCandidate>();
   const inputs = args.inputs.map((input) => {
@@ -801,15 +225,6 @@ export function memberMoveCandidates(
   });
   return { candidates: [...byKey.values()], inputs };
 }
-
-// ──────────────────────────────────────────────────────────────
-// Orchestrator
-// ──────────────────────────────────────────────────────────────
-
-type RpcPlanningRow =
-  Database["public"]["Functions"]["get_purchasing_planning"]["Returns"][number];
-type ProductionPlanningRow =
-  Database["public"]["Functions"]["get_production_planning"]["Returns"][number];
 
 /**
  * On-hand per item, location and netting segment (`itemLocationSegmentKey`).
@@ -919,340 +334,47 @@ export type CommonSurplusDraw = {
   quantity: number;
 };
 
-const TRANSFER_REASON = "Common stock not needed within the horizon";
-
-export type DeriveRowActionsInput = {
-  /** One planning RPC row: one item in one segment at the location. */
-  row: RpcPlanningRow | ProductionPlanningRow;
-  kind: "Order" | "Make";
-  /** This run's weeks, current first. */
-  periods: { id: string; startDate: string }[];
-  /** Demand of the item in the row's segment, by period id. */
-  demandByPeriod: Map<string, number>;
-  /** Open PO lines or jobs of the item in the row's segment. */
-  openOrders: OpenSupplyOrder[];
-  /** On-hand of the item in the row's segment. */
-  onHand: number;
-  /** What the row's segment takes from common stock, per period. */
-  draws: { periodId: string; quantity: number }[];
-  toleranceDays: number;
-  todayDate: string;
+/** MRP v2: what the run's planned-order write leaves for the worklist. */
+export type PlannedOrderWorklistInputs = {
   /**
-   * MRP v2: the row's new supply as the engine sized it with planned orders
-   * (`planCompany`'s `newSupplyByRow`): each new Order / Make and each
-   * Increase. When set it replaces the sizing of the RPC row.
+   * The engine's new supply per common row (`itemLocationSegmentKey`). A row
+   * present here takes its Order, Make and Increase actions from it instead
+   * of sizing the RPC row again.
    */
-  engineSupply?: ChangeCandidate[];
-  /**
-   * MRP v2: the change actions on the row's open jobs and PO lines as the
-   * engine sized them (`planCompany`'s `documentChangeActionsByRow`), with
-   * the held planned orders as supply. With `engineSupply` they replace the
-   * RPC row's: its projection has no planned order in it, so it would
-   * Expedite a job a Firm order already covers.
-   */
-  engineChangeActions?: ChangeCandidate[];
-};
-
-/**
- * Every action for one planning row: the change actions on its open orders,
- * the new supply its projection needs, the releases of its planned orders,
- * and, in a project segment, a Transfer per period that draws common stock.
- *
- * A project segment is lot-for-lot: no reorder point, safety stock or Stock
- * Only reserve. A draw counts as the segment's own stock from its period on,
- * so the segment's Order or Make covers only the remainder.
- *
- * An open Project Borrow is firm: MRP books it as demand on the borrower and
- * supply on the lender, in the row's projection, but it is never one of
- * `openOrders`, so no change action (Expedite, Defer, Cancel, Increase,
- * Decrease) ever targets it. An overdue borrow is an exception the planning
- * worklist and the project header show instead.
- */
-export function deriveRowActions(
-  input: DeriveRowActionsInput
-): ChangeCandidate[] {
-  const {
-    row,
-    kind,
-    periods,
-    demandByPeriod,
-    openOrders,
-    toleranceDays,
-    todayDate
-  } = input;
-  const segmentId = row.planningSegmentId || COMMON_SEGMENT;
-  const isProjectSegment = segmentId !== COMMON_SEGMENT;
-
-  const drawByPeriod = drawsByPeriod(isProjectSegment ? input.draws : []);
-
-  const { changeActions: rpcChangeActions, newSupply: rpcSupply } =
-    sizeRowSupply({
-      kind,
-      isProjectSegment,
-      supersessionMode: row.supersessionMode,
-      quantityToOrder: row.quantityToOrder,
-      minimumReserveQuantity: row.minimumReserveQuantity,
-      quantityOnHand: row.quantityOnHand,
-      onHand: input.onHand,
-      draws: input.draws,
-      periods,
-      projections: periods.map(
-        (_, i) => Number(row[`week${i + 1}` as keyof typeof row]) || 0
-      ),
-      demandByPeriod,
-      openOrders,
-      policy: row,
-      preferredSupplierId: (row as RpcPlanningRow).preferredSupplierId ?? null,
-      toleranceDays,
-      todayDate
-    });
-  // A row the engine planned takes its change actions and its new supply
-  // from the engine's one sizing; any other row keeps the RPC row's.
-  const changeActions =
-    input.engineSupply && input.engineChangeActions
-      ? input.engineChangeActions
-      : rpcChangeActions;
-  const merged = input.engineSupply
-    ? engineNewSupply(input.engineSupply, changeActions)
-    : rpcSupply;
-
-  // Lot-size splitting can emit several new-supply suggestions in one
-  // period; persist ONE action per (type, period) with the summed quantity
-  // — the natural key would otherwise collide and silently drop batches.
-  // The planning pages split the action back into the orders its policy
-  // sized (`splitIntoOrders`): a batch, a fixed reorder quantity, a
-  // maximum order quantity each.
-  const aggregated = new Map<string, ChangeCandidate>();
-  const passthrough: ChangeCandidate[] = [];
-  for (const candidate of merged) {
-    const isNewSupply =
-      (candidate.type === "Order" || candidate.type === "Make") &&
-      !supplyTarget(candidate);
-    if (!isNewSupply) {
-      passthrough.push(candidate);
-      continue;
-    }
-    const key = `${candidate.type}${KEY_SEP}${candidate.periodId}`;
-    const current = aggregated.get(key);
-    if (current) {
-      current.suggestedQuantity += candidate.suggestedQuantity;
-      current.isASAP = current.isASAP || candidate.isASAP;
-      current.suggestedDate = earlierDate(
-        current.suggestedDate,
-        candidate.suggestedDate
-      );
-      current.horizonDate = earlierDate(
-        current.horizonDate,
-        candidate.horizonDate
-      );
-      if (candidate.latestOrderDate) {
-        current.latestOrderDate = current.latestOrderDate
-          ? earlierDate(current.latestOrderDate, candidate.latestOrderDate)
-          : candidate.latestOrderDate;
-      }
-    } else {
-      aggregated.set(key, { ...candidate });
-    }
-  }
-
-  const releaseActions = deriveReleaseActions({
-    openOrders,
-    changeActions,
-    periods,
-    todayDate
-  });
-
-  // One Transfer per period a draw lands in: common stock into the project.
-  const transfers: ChangeCandidate[] = [];
-  for (const period of periods) {
-    const quantity = drawByPeriod.get(period.id) ?? 0;
-    if (quantity <= 0) continue;
-    transfers.push({
-      type: "Transfer",
-      periodId: period.id,
-      suggestedQuantity: quantity,
-      suggestedDate: period.startDate,
-      horizonDate: period.startDate,
-      latestOrderDate: null,
-      isASAP: daysBetween(period.startDate, todayDate) < 0,
-      purchaseOrderLineId: null,
-      jobId: null,
-      plannedOrderId: null,
-      requiresManualAction: false,
-      supplierId: null,
-      policyName: null,
-      reason: TRANSFER_REASON,
-      triggerValues: null,
-      fromProjectId: null,
-      toProjectId: segmentId
-    });
-  }
-
-  return [
-    ...aggregated.values(),
-    ...passthrough,
-    ...changeActions,
-    ...releaseActions,
-    ...transfers
-  ].map((action) => ({ ...action, planningSegmentId: segmentId }));
-}
-
-/**
- * The engine's new supply for a row, as actions. Each engine Order or Make is
- * one planned order (new or held); the action stands for every planned order
- * of its week, so it names none (`plannedOrderKey` and `plannedOrderId` are
- * dropped) and `deriveRowActions` sums the week's orders into it. One action
- * per order: an Increase on an order that a change action of the row already
- * targets is left out, as `convertOrdersToIncreases` leaves it out when it
- * sizes the row itself.
- */
-function engineNewSupply(
-  engineSupply: ChangeCandidate[],
-  changeActions: ChangeCandidate[]
-): ChangeCandidate[] {
-  const targeted = new Set(changeActions.map((a) => supplyTarget(a) ?? ""));
-  return engineSupply.flatMap(({ plannedOrderKey: _key, ...candidate }) => {
-    if (candidate.type === "Order" || candidate.type === "Make") {
-      return [{ ...candidate, plannedOrderId: null }];
-    }
-    const target = supplyTarget(candidate);
-    if (target && targeted.has(target)) return [];
-    return [candidate];
-  });
-}
-
-/** Which action wins on one order: Cancel, then a date, then a quantity. */
-const CHANGE_PRECEDENCE: Partial<Record<PlanningActionType, number>> = {
-  Cancel: 0,
-  Expedite: 1,
-  Defer: 1,
-  Increase: 2,
-  Decrease: 2
-};
-
-/**
- * MRP v2: the actions on planned orders that no planning row carries. They
- * are raised whether or not the item has a planning RPC row this run (a
- * held planned order with no demand left gets its Cancel).
- *
- * 1. Each change action the engine raised on a held planned order
- *    (Expedite, Defer, Decrease, Cancel). Only a held order gets one. The
- *    engine plans past the worklist's last week; an action in a later week
- *    goes in the last week, with its own date, so a person still sees it.
- * 2. An Expedite for each new planned order the time fence moved, to the
- *    date it is needed (`expediteTo`; never before today, as
- *    `deriveChangeActions` dates a need). Its quantity is the order's.
- *
- * Each planned order gets one action: the precedence of
- * `deriveChangeActions` (Cancel, then Expedite / Defer, then Increase /
- * Decrease) decides.
- */
-export function plannedOrderActions(args: {
-  changeActions: PlannedOrderChangeAction[];
-  signals: PlannedOrderSignal[];
-  /** `planCompany`'s `newSupplyByRow`: the signalled orders' quantities. */
   newSupplyByRow: ReadonlyMap<string, ChangeCandidate[]>;
-  /** `plannedOrderNaturalKey` -> `plannedOrder.id`, as written this run. */
-  plannedOrderIdByKey: ReadonlyMap<string, string>;
-  /** The planned orders held this run. */
-  heldPlannedOrderIds: ReadonlySet<string>;
-  periods: { id: string; startDate: string }[];
-  todayDate: string;
-}): Omit<PlanningActionCandidate, "assignee">[] {
-  const { periods, todayDate } = args;
-  const periodFor = (dateIso: string) => {
-    let match = periods[0];
-    for (const p of periods) {
-      if (daysBetween(p.startDate, dateIso) <= 0) match = p;
-      else break;
-    }
-    return match;
-  };
-
-  const periodIds = new Set(periods.map((p) => p.id));
-  const lastPeriodId = periods.at(-1)?.id;
-  const actions: Omit<PlanningActionCandidate, "assignee">[] = [];
-  for (const action of args.changeActions) {
-    if (!action.plannedOrderId) continue;
-    if (!args.heldPlannedOrderIds.has(action.plannedOrderId)) continue;
-    const periodId =
-      periodIds.has(action.periodId) || !lastPeriodId
-        ? action.periodId
-        : lastPeriodId;
-    actions.push({ ...action, periodId, requiresManualAction: false });
-  }
-
-  // The new orders by natural key. A held Firm order may share a new order's
-  // natural key (only Planned rows are unique on it); it names its own id.
-  const orderByKey = new Map<string, ChangeCandidate>();
-  for (const supply of args.newSupplyByRow.values()) {
-    for (const candidate of supply) {
-      const key = candidate.plannedOrderKey;
-      if (!key) continue;
-      if (
-        candidate.plannedOrderId &&
-        candidate.plannedOrderId !== args.plannedOrderIdByKey.get(key)
-      ) {
-        continue;
-      }
-      orderByKey.set(key, candidate);
-    }
-  }
-  for (const signal of args.signals) {
-    if (!signal.expediteTo) continue;
-    const plannedOrderId = args.plannedOrderIdByKey.get(signal.naturalKey);
-    const order = orderByKey.get(signal.naturalKey);
-    const period = periodFor(signal.expediteTo);
-    if (!plannedOrderId || !order || !period) continue;
-    const [itemId, locationId, planningSegmentId] =
-      signal.naturalKey.split(KEY_SEP);
-    if (!itemId || !locationId) continue;
-    const suggestedDate = laterDate(signal.expediteTo, todayDate);
-    actions.push({
-      itemId,
-      locationId,
-      planningSegmentId: planningSegmentId ?? COMMON_SEGMENT,
-      type: "Expedite",
-      periodId: period.id,
-      suggestedQuantity: round(order.suggestedQuantity),
-      suggestedDate,
-      horizonDate: earlierDate(order.suggestedDate, suggestedDate),
-      latestOrderDate: null,
-      isASAP: daysBetween(signal.expediteTo, todayDate) < 0,
-      purchaseOrderLineId: null,
-      jobId: null,
-      plannedOrderId,
-      requiresManualAction: false,
-      supplierId: order.supplierId,
-      policyName: null,
-      reason: `Needed ${daysBetween(order.suggestedDate, suggestedDate)} days earlier than the planning time fence allows`,
-      triggerValues: null
-    });
-  }
-  return actions;
-}
+  /**
+   * The engine's change actions on the open jobs and PO lines of each row in
+   * `newSupplyByRow`. Such a row takes them instead of the RPC row's
+   * (`deriveRowActions`' `engine`).
+   */
+  documentChangeActionsByRow: ReadonlyMap<string, ChangeCandidate[]>;
+  /** The engine's change actions on held planned orders. */
+  changeActions: PlannedOrderChangeAction[];
+  /** The new planned orders the time fence moved. */
+  signals: PlannedOrderSignal[];
+  /** `plannedOrderNaturalKey` -> `plannedOrder.id`, as written. */
+  idByKey: ReadonlyMap<string, string>;
+  /** The planned orders held this run (Firm, or Planned inside the time fence). */
+  heldIds: string[];
+  /**
+   * The planned orders as the run's Phase-7 write committed them
+   * (`readPlannedOrderSnapshot`). The write checks them under its lock
+   * (`writePlanningActions`).
+   */
+  snapshot: PlannedOrderSnapshot;
+};
 
 /**
- * One action per planned order across all of a run's candidates, by
- * `CHANGE_PRECEDENCE`; the first of equal rank stays. Candidates on no
- * planned order pass through.
+ * The engine's sizing of one row, when the engine planned it: the planned
+ * key has both its new supply and its document change actions.
  */
-export function onePerPlannedOrder<
-  T extends Pick<PlanningActionCandidate, "type" | "plannedOrderId">
->(candidates: T[]): T[] {
-  const best = new Map<string, T>();
-  for (const candidate of candidates) {
-    if (!candidate.plannedOrderId) continue;
-    const current = best.get(candidate.plannedOrderId);
-    const rank = CHANGE_PRECEDENCE[candidate.type] ?? 3;
-    const currentRank = current ? (CHANGE_PRECEDENCE[current.type] ?? 3) : 4;
-    if (rank < currentRank) best.set(candidate.plannedOrderId, candidate);
-  }
-  return candidates.filter(
-    (candidate) =>
-      !candidate.plannedOrderId ||
-      best.get(candidate.plannedOrderId) === candidate
-  );
+function engineRowOf(
+  plannedOrders: PlannedOrderWorklistInputs | undefined,
+  rowKey: string
+): { supply: ChangeCandidate[]; changeActions: ChangeCandidate[] } | undefined {
+  const supply = plannedOrders?.newSupplyByRow.get(rowKey);
+  const changeActions = plannedOrders?.documentChangeActionsByRow.get(rowKey);
+  return supply && changeActions ? { supply, changeActions } : undefined;
 }
 
 export async function generatePlanningActions(
@@ -1279,44 +401,12 @@ export async function generatePlanningActions(
     planningGroups?: { id: string; memberProjectIds: string[] }[];
     /**
      * Projects Phase 3: the peg writer's inputs, passed only when the company
-     * has PLANNING_GROUPS. The pegs are diff-written in this function's
-     * transaction, after the actions, so a planned supply has its action id.
-     * `writeGroupPegs` is the commercial writer, injected by the server-side
-     * caller (`MrpDeps`): this package imports no `.server` module.
+     * has PLANNING_GROUPS (`PlanningActionPegging`), diff-written in this
+     * function's transaction after the actions.
      */
-    pegging?: {
-      writeGroupPegs: WriteGroupPegs;
-      runId: string;
-      inputs: GroupPegInput[];
-      priorityRuleByGroup: Record<string, PegPriorityRule>;
-      priorityByProject: Record<string, number>;
-    };
-    /**
-     * MRP v2: the engine's new supply per common row
-     * (`itemLocationSegmentKey`). A row present here takes its Order, Make
-     * and Increase actions from it instead of sizing the RPC row again.
-     */
-    newSupplyByRow?: ReadonlyMap<string, ChangeCandidate[]>;
-    /**
-     * MRP v2: the engine's change actions on the open jobs and PO lines of
-     * each row in `newSupplyByRow`. Such a row takes them instead of the RPC
-     * row's (`deriveRowActions`' `engineChangeActions`).
-     */
-    documentChangeActionsByRow?: ReadonlyMap<string, ChangeCandidate[]>;
-    /** MRP v2: the engine's change actions on held planned orders. */
-    plannedOrderChangeActions?: PlannedOrderChangeAction[];
-    /** MRP v2: the new planned orders the time fence moved. */
-    plannedOrderSignals?: PlannedOrderSignal[];
-    /** MRP v2: `plannedOrderNaturalKey` -> `plannedOrder.id`, as written. */
-    plannedOrderIdByKey?: ReadonlyMap<string, string>;
-    /** MRP v2: the planned orders held this run (Firm, or Planned inside the time fence). */
-    heldPlannedOrderIds?: string[];
-    /**
-     * MRP v2: the planned orders as the run's Phase-7 write committed them
-     * (`readPlannedOrderSnapshot`). The write checks them under its lock
-     * (`writePlanningActions`).
-     */
-    plannedOrderSnapshot?: PlannedOrderSnapshot;
+    pegging?: PlanningActionPegging;
+    /** MRP v2: the engine's planned-order outputs, as the run wrote them. */
+    plannedOrders?: PlannedOrderWorklistInputs;
   }
 ): Promise<{ inserted: number; updated: number; deleted: number }> {
   const { companyId, userId } = args;
@@ -1574,8 +664,7 @@ export async function generatePlanningActions(
         draws: drawsByItemLocation.get(key) ?? [],
         toleranceDays,
         todayDate,
-        engineSupply: args.newSupplyByRow?.get(key),
-        engineChangeActions: args.documentChangeActionsByRow?.get(key)
+        engine: engineRowOf(args.plannedOrders, key)
       });
 
       leadTimeByItemLocation.set(
@@ -1605,13 +694,14 @@ export async function generatePlanningActions(
   }
 
   // ── MRP v2: the actions on planned orders, with or without an RPC row
-  if (args.plannedOrderChangeActions || args.plannedOrderSignals) {
+  const { plannedOrders } = args;
+  if (plannedOrders) {
     for (const action of plannedOrderActions({
-      changeActions: args.plannedOrderChangeActions ?? [],
-      signals: args.plannedOrderSignals ?? [],
-      newSupplyByRow: args.newSupplyByRow ?? new Map(),
-      plannedOrderIdByKey: args.plannedOrderIdByKey ?? new Map(),
-      heldPlannedOrderIds: new Set(args.heldPlannedOrderIds ?? []),
+      changeActions: plannedOrders.changeActions,
+      signals: plannedOrders.signals,
+      newSupplyByRow: plannedOrders.newSupplyByRow,
+      plannedOrderIdByKey: plannedOrders.idByKey,
+      heldPlannedOrderIds: new Set(plannedOrders.heldIds),
       periods,
       todayDate
     })) {
@@ -1657,7 +747,7 @@ export async function generatePlanningActions(
     periods,
     toleranceDays,
     pegging,
-    plannedOrderSnapshot: args.plannedOrderSnapshot,
+    plannedOrderSnapshot: plannedOrders?.snapshot,
     runStartedAt: args.runStartedAt
   });
   if (!diff) return { inserted: 0, updated: 0, deleted: 0 };
@@ -1674,197 +764,4 @@ export async function generatePlanningActions(
     updated: diff.updates.length,
     deleted: diff.deleteIds.length
   };
-}
-
-/**
- * The worklist's diff-write, in one transaction that holds the company's
- * planning lock across the read and the write: two runs for one company
- * could overlap (the cron racing a route-triggered run), and both reading
- * "no row" for a natural key then inserting fails the second on
- * planningAction_natural_key_idx — which rolls back the whole write. Under
- * the lock the second run reads the first run's rows and updates them in
- * place instead.
- *
- * With `plannedOrderSnapshot` (what the run's planned-order write committed),
- * it first checks, under the lock, that no one changed the planned orders
- * since, and throws `PlannedOrdersChangedError` before any read or write
- * when someone did: a Cancel deleted a planned order a candidate names (its
- * insert would fail on the foreign key), or a convert left a week this
- * worklist would offer again. `runMrp` then plans again.
- */
-export async function writePlanningActions(
-  db: Kysely<DB>,
-  args: {
-    companyId: string;
-    userId: string;
-    candidates: PlanningActionCandidate[];
-    periods: { id: string; startDate: string }[];
-    toleranceDays: number;
-    pegging?: Parameters<typeof generatePlanningActions>[2]["pegging"];
-    plannedOrderSnapshot?: PlannedOrderSnapshot;
-    /** When the calling MRP run started (`databaseNow`): when a run that
-     *  started later has saved since, it writes the actions and this one
-     *  writes none (null). */
-    runStartedAt?: string;
-  }
-): Promise<PlanningActionDiff | null> {
-  const { companyId, userId, candidates, periods, pegging } = args;
-  return db.transaction().execute(async (trx) => {
-    await lockCompanyPlanning(trx, companyId);
-    // A newer run that saved changed the planned orders too: skip before the
-    // snapshot check, which would otherwise make this older run plan again.
-    if (
-      args.runStartedAt &&
-      !newestRunSaves(
-        args.runStartedAt,
-        await lastSavedMrpRunStartedAt(trx, companyId)
-      )
-    ) {
-      logger.info("planning actions skipped: a newer MRP run saved", {
-        companyId,
-        runStartedAt: args.runStartedAt
-      });
-      return null;
-    }
-    if (args.plannedOrderSnapshot) {
-      await assertPlannedOrdersUnchanged(
-        trx,
-        companyId,
-        args.plannedOrderSnapshot
-      );
-    }
-
-    const existingRows = await trx
-      .selectFrom("planningAction")
-      .select([
-        "id",
-        "itemId",
-        "locationId",
-        "periodId",
-        "type",
-        "status",
-        "suggestedQuantity",
-        "suggestedDate",
-        "horizonDate",
-        "latestOrderDate",
-        "isASAP",
-        "purchaseOrderLineId",
-        "jobId",
-        "plannedOrderId",
-        "requiresManualAction",
-        "supplierId",
-        "policyName",
-        "reason",
-        "triggerValues",
-        "assignee",
-        "assigneeOverridden",
-        "planningSegmentId",
-        "fromProjectId",
-        "toProjectId"
-      ])
-      .where("companyId", "=", companyId)
-      .where("status", "!=", "Actioned")
-      .execute();
-
-    const existing: ExistingPlanningAction[] = existingRows.map((row) => ({
-      ...row,
-      type: row.type as PlanningActionType,
-      status: row.status as "Open" | "Dismissed",
-      suggestedQuantity: Number(row.suggestedQuantity),
-      suggestedDate: toIsoDate(row.suggestedDate as unknown as string | Date)!,
-      horizonDate: toIsoDate(row.horizonDate as unknown as string | Date)!,
-      latestOrderDate: row.latestOrderDate
-        ? toIsoDate(row.latestOrderDate as unknown as string | Date)
-        : null,
-      triggerValues: row.triggerValues ?? null
-    }));
-
-    const diff = diffPlanningActions({
-      existing,
-      candidates: onePerPlannedOrder(candidates),
-      periods,
-      toleranceDays: args.toleranceDays
-    });
-
-    await writePlanningActionDiff(trx, {
-      companyId,
-      userId,
-      diff,
-      updatedAt: datetime.timestamp()
-    });
-
-    if (pegging) {
-      const pegs = await writePegs(trx, {
-        companyId,
-        userId,
-        pegging,
-        candidates,
-        keyPeriod: keyPeriodFor(periods)
-      });
-      logger.info("project pegs written", { companyId, ...pegs });
-    }
-
-    return diff;
-  });
-}
-
-/**
- * Reads the stored Order / Make actions of the planning groups, adds them to
- * the peg inputs as planned supply, and runs the commercial peg writer. Runs
- * in the planning-action transaction, which holds the company's lock.
- */
-async function writePegs(
-  trx: Kysely<DB>,
-  args: {
-    companyId: string;
-    userId: string;
-    pegging: NonNullable<
-      Parameters<typeof generatePlanningActions>[2]["pegging"]
-    >;
-    candidates: PlanningActionCandidate[];
-    keyPeriod: (periodId: string) => string;
-  }
-) {
-  const { companyId, userId, pegging } = args;
-  const groupIds = new Set(Object.keys(pegging.priorityRuleByGroup));
-  const actionRows =
-    groupIds.size > 0
-      ? await trx
-          .selectFrom("planningAction")
-          .select([
-            "id",
-            "itemId",
-            "locationId",
-            "periodId",
-            "type",
-            "purchaseOrderLineId",
-            "jobId",
-            "plannedOrderId",
-            "planningSegmentId",
-            "fromProjectId",
-            "toProjectId"
-          ])
-          .where("companyId", "=", companyId)
-          .where("status", "!=", "Actioned")
-          .where("type", "in", ["Order", "Make"])
-          .where("planningSegmentId", "in", [...groupIds])
-          .execute()
-      : [];
-  const actionIdByKey = new Map(
-    actionRows.map((row) => [naturalKey(row, args.keyPeriod), row.id])
-  );
-  return pegging.writeGroupPegs(trx, {
-    companyId,
-    userId,
-    runId: pegging.runId,
-    inputs: withPlannedPegSupplies({
-      inputs: pegging.inputs,
-      candidates: args.candidates,
-      actionIdByKey,
-      keyPeriod: args.keyPeriod,
-      groupIds
-    }),
-    priorityRuleByGroup: pegging.priorityRuleByGroup,
-    priorityByProject: pegging.priorityByProject
-  });
 }

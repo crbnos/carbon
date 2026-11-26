@@ -5,9 +5,13 @@
 import { describe, expect, it } from "vitest";
 import {
   buildOpenSupplyOrders,
+  earlierRelease,
+  isCommittedJobStatus,
+  isCommittedPurchaseOrderStatus,
   itemLocationSegmentKey,
   type OpenProductionOrderRow,
-  type OpenPurchaseOrderLineRow
+  type OpenPurchaseOrderLineRow,
+  releaseByDate
 } from "./open-supply-orders";
 
 const TODAY = "2026-10-06";
@@ -140,5 +144,54 @@ describe("buildOpenSupplyOrders", () => {
         release: { date: "2026-10-14", dueDate: "2026-10-20", leadTime: 5 }
       }
     ]);
+  });
+});
+
+describe("commitment gates", () => {
+  it("PO: Draft and Planned are NOT committed; sent statuses are", () => {
+    expect(isCommittedPurchaseOrderStatus("Draft")).toBe(false);
+    expect(isCommittedPurchaseOrderStatus("Planned")).toBe(false);
+    for (const status of [
+      "To Receive",
+      "To Receive and Invoice",
+      "To Invoice",
+      "Completed",
+      "Closed"
+    ] as const) {
+      expect(isCommittedPurchaseOrderStatus(status)).toBe(true);
+    }
+  });
+
+  it("job: Ready and later are committed; Draft/Planned are not", () => {
+    expect(isCommittedJobStatus("Draft")).toBe(false);
+    expect(isCommittedJobStatus("Planned")).toBe(false);
+    expect(isCommittedJobStatus("Ready")).toBe(true);
+    expect(isCommittedJobStatus("In Progress")).toBe(true);
+    expect(isCommittedJobStatus("Paused")).toBe(true);
+  });
+});
+
+describe("releaseByDate", () => {
+  it("is the day before the due date less the lead time", () => {
+    // due in 8 days with a 7-day lead time: release today
+    expect(releaseByDate("2026-10-14", 7)).toBe("2026-10-06");
+  });
+
+  it("is the day before the due date with no lead time", () => {
+    expect(releaseByDate("2026-10-14", 0)).toBe("2026-10-13");
+  });
+});
+
+describe("earlierRelease", () => {
+  const release = (date: string) => ({ date, dueDate: date, leadTime: 0 });
+
+  it("keeps the release that comes first, whichever is passed first", () => {
+    expect(
+      earlierRelease(release("2026-10-08"), release("2026-10-12")).date
+    ).toBe("2026-10-08");
+    expect(
+      earlierRelease(release("2026-10-12"), release("2026-10-08")).date
+    ).toBe("2026-10-08");
+    expect(earlierRelease(null, release("2026-10-12")).date).toBe("2026-10-12");
   });
 });

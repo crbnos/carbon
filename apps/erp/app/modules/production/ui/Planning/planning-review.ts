@@ -171,3 +171,19 @@ export function purchaseOrderPlanningMenu(order: PlanningPurchaseOrder): {
     canFinalize: isEditable
   };
 }
+
+/**
+ * The one planning action to show on an order's row: MRP emits at most one
+ * change per target document, but a dismissed one can coexist with a newer
+ * open one — the open action wins — and a planned order also carries its
+ * Release. A change comes first (make it, then release the order); the
+ * Release shows when there is nothing to change.
+ */
+export function actionForOrder<A extends { type: string; status: string }>(
+  actions: A[],
+  matches: (action: A) => boolean
+): A | null {
+  const mine = actions.filter(matches);
+  const open = mine.filter((a) => a.status === "Open");
+  return open.find((a) => a.type !== "Release") ?? open[0] ?? mine[0] ?? null;
+}

@@ -5,17 +5,16 @@
 import { useAction } from "@carbon/query";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { createElement, useCallback, useMemo, useRef } from "react";
+import { createElement, useCallback, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router";
 import { actionsOfTypes } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
-import { rowsReplannedByApply } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { planningRowKey } from "~/modules/production/ui/Planning/planning-action-scope";
 import { actionsInsideFence } from "~/modules/production/ui/Planning/planning-fence";
 import { isStaleRelease } from "~/modules/production/ui/Planning/planning-review";
 import {
-  type FenceRow,
-  useTimeFenceOverrides
+  type HorizonRow,
+  usePlanningHorizonOverrides
 } from "~/modules/production/ui/Planning/PlanningFence";
 import { path } from "~/utils/path";
 
@@ -34,7 +33,7 @@ export function usePlanningActions({
   canUpdate,
   onRowsReplanned
 }: {
-  data: (FenceRow & { planningSegmentId?: string | null })[];
+  data: (HorizonRow & { planningSegmentId?: string | null })[];
   planningActions: PlanningAction[];
   /** The Actions-column filter; null shows every type. */
   actionTypes: string[] | null;
@@ -56,11 +55,14 @@ export function usePlanningActions({
   // The actions an Apply submitted, as they were: MRP re-plans after it, and
   // may delete or rewrite them before the answer arrives.
   const lastApplied = useRef<PlanningAction[]>([]);
+  // The latest, so the submit (and the handlers) stay the same function.
+  // Both are read only after a render has committed.
   const onRowsReplannedRef = useRef(onRowsReplanned);
-  onRowsReplannedRef.current = onRowsReplanned;
-  // the latest, so the submit (and the handlers) stay the same function
   const planningActionsRef = useRef(planningActions);
-  planningActionsRef.current = planningActions;
+  useEffect(() => {
+    onRowsReplannedRef.current = onRowsReplanned;
+    planningActionsRef.current = planningActions;
+  });
   const actionsFetcher = useAction<PlanningActionsResult>({
     onSuccess: (result) => {
       // Purchasing answers `applied` at the top level; production's service
@@ -142,10 +144,10 @@ export function usePlanningActions({
     return map;
   }, [planningActions]);
 
-  // A row surfaces only what falls on or before its fence date (today + the
-  // item's planning horizon). Moving a row's fence here is page state: it
-  // re-filters what is already loaded and never touches the item.
-  const timeFence = useTimeFenceOverrides();
+  // A row surfaces only what falls on or before its horizon date (today +
+  // the item's planning horizon). Moving a row's horizon here is page state:
+  // it re-filters what is already loaded and never touches the item.
+  const horizon = usePlanningHorizonOverrides();
 
   const fencedActionsByRowKey = useMemo(() => {
     const map = new Map<string, PlanningAction[]>();
@@ -153,11 +155,11 @@ export function usePlanningActions({
       const key = planningRowKey(row);
       const actions = actionsByRowKey.get(key);
       if (!actions) continue;
-      const fenced = actionsInsideFence(actions, timeFence.fenceDateFor(row));
+      const fenced = actionsInsideFence(actions, horizon.horizonDateFor(row));
       if (fenced.length > 0) map.set(key, fenced);
     }
     return map;
-  }, [data, actionsByRowKey, timeFence]);
+  }, [data, actionsByRowKey, horizon]);
 
   // What the GRID shows and acts on: under the Actions-column filter, only
   // the filtered types. The order drawer keeps every fenced action — it lists
@@ -226,12 +228,44 @@ export function usePlanningActions({
   return {
     actionHandlers,
     isActionsBusy,
-    timeFence,
+    horizon,
     actionsByRowKey,
     fencedActionsByRowKey,
     visibleActionsByRowKey,
     submitActions
   };
+}
+
+/**
+ * The rows an Apply re-planned: those of the applied actions that target a
+ * planned order. The server runs MRP after such an Apply, so the rows'
+ * suggested orders (a draft built from the old actions and planned orders)
+ * are stale. One per row, in the order of `actions`.
+ */
+export function rowsReplannedByApply(
+  actions: {
+    id: string;
+    itemId: string;
+    planningSegmentId?: string | null;
+    plannedOrderId?: string | null;
+  }[],
+  appliedIds: string[]
+): { id: string; planningSegmentId: string | null }[] {
+  const applied = new Set(appliedIds);
+  const rows = new Map<
+    string,
+    { id: string; planningSegmentId: string | null }
+  >();
+  for (const action of actions) {
+    if (!action.plannedOrderId || !applied.has(action.id)) continue;
+    const row = {
+      id: action.itemId,
+      planningSegmentId: action.planningSegmentId ?? null
+    };
+    const key = planningRowKey(row);
+    if (!rows.has(key)) rows.set(key, row);
+  }
+  return [...rows.values()];
 }
 
 /**

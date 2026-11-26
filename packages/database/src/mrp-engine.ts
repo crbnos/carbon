@@ -115,6 +115,12 @@ export type BomExplosionInput = {
     /** Open jobs, POs and borrows per period. */
     supplyByPeriod: number[];
     onHand: number;
+    /**
+     * The level the engine plans the item at: its low-level code over the
+     * BOM the engine levels (segment and Consume First edges included; a
+     * cycle item one past the deepest clean level).
+     */
+    lowLevelCode: number;
   }) => PlannedSupplyResult | null;
   /**
    * MRP v2: `makeLocationItemKey` keys (common segment) with a buffer policy.
@@ -238,6 +244,40 @@ export function effectiveReplenishment(
   return repSys === "Buy and Make"
     ? "Buy"
     : (repSys as "Buy" | "Make" | undefined);
+}
+
+/**
+ * A BOM line built inside its parent's job: Make to Order on a made item.
+ * The parent's job spawns its subjob at release, so its demand is not
+ * written as BOM-derived demand (it would count twice once the subjob
+ * exists), and it adds its own scrap when it explodes, not here.
+ */
+export function isInlineProduction(
+  child: Pick<BomChild, "methodType">,
+  childReplenishment: ReplenishmentSystem | undefined
+): boolean {
+  return (
+    child.methodType === "Make to Order" &&
+    effectiveReplenishment(childReplenishment) === "Make"
+  );
+}
+
+/**
+ * What one BOM line needs for `parentQuantity` of its parent: the line's
+ * quantity per parent, plus the child's scrap as job creation adds it
+ * (`computeJobQuantities`) when the run has scrap rates — except on a line
+ * made inline (`isInlineProduction`), whose own explosion adds it.
+ */
+export function childDemand(
+  child: Pick<BomChild, "itemId" | "quantity">,
+  parentQuantity: number,
+  scrapRateByItem: ReadonlyMap<string, number> | undefined,
+  inline: boolean
+): number {
+  const target = child.quantity * parentQuantity;
+  return scrapRateByItem && !inline
+    ? target + scrapAllowance(target, scrapRateByItem.get(child.itemId) ?? 0)
+    : target;
 }
 
 // Low-level code = the deepest level at which an item appears in any BOM,
@@ -427,7 +467,8 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
                   makeKey(locationId, period.id, itemId, segmentId)
                 ) ?? 0
             ),
-            onHand: running
+            onHand: running,
+            lowLevelCode: llc.get(itemId) ?? 0
           })
         : null;
 
@@ -496,25 +537,19 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
 
       const children = explodable.get(itemId) ?? [];
       for (const child of children) {
-        const childEffRepSys = effectiveReplenishment(
-          replenishmentSystemByItem.get(child.itemId)
-        );
-
         // MTO + Make = "subjob will be auto-spawned at parent release";
         // skip the forecast write to avoid double-counting once it exists.
-        const isInlineProduction =
-          child.methodType === "Make to Order" && childEffRepSys === "Make";
-
+        const inline = isInlineProduction(
+          child,
+          replenishmentSystemByItem.get(child.itemId)
+        );
         // A child that is made inline adds its scrap when it explodes.
-        const childTarget = child.quantity * explosionQty;
-        const childQty =
-          scrapRateByItem && !isInlineProduction
-            ? childTarget +
-              scrapAllowance(
-                childTarget,
-                scrapRateByItem.get(child.itemId) ?? 0
-              )
-            : childTarget;
+        const childQty = childDemand(
+          child,
+          explosionQty,
+          scrapRateByItem,
+          inline
+        );
 
         const childKey = makeKey(
           locationId,
@@ -523,7 +558,7 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
           segmentId
         );
         grossDemand.set(childKey, (grossDemand.get(childKey) ?? 0) + childQty);
-        if (!isInlineProduction) {
+        if (!inline) {
           bomDerivedDemand.set(
             childKey,
             (bomDerivedDemand.get(childKey) ?? 0) + childQty
@@ -602,20 +637,18 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
       );
 
       for (const [line, child] of (explodable.get(itemId) ?? []).entries()) {
-        const childEffRepSys = effectiveReplenishment(
+        const inline = isInlineProduction(
+          child,
           replenishmentSystemByItem.get(child.itemId)
         );
-        const isInlineProduction =
-          child.methodType === "Make to Order" && childEffRepSys === "Make";
-
-        const target = child.quantity * explosion.quantity;
         // A Make to Order child that is made gets its own job, which adds
         // the scrap itself.
-        const childQty =
-          scrapRateByItem && !isInlineProduction
-            ? target +
-              scrapAllowance(target, scrapRateByItem.get(child.itemId) ?? 0)
-            : target;
+        const childQty = childDemand(
+          child,
+          explosion.quantity,
+          scrapRateByItem,
+          inline
+        );
 
         const childKey = makeKey(
           locationId,
@@ -624,7 +657,7 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
           segmentId
         );
         grossDemand.set(childKey, (grossDemand.get(childKey) ?? 0) + childQty);
-        if (!isInlineProduction) {
+        if (!inline) {
           bomDerivedDemand.set(
             childKey,
             (bomDerivedDemand.get(childKey) ?? 0) + childQty

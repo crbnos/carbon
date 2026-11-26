@@ -15,7 +15,6 @@ import { useRouteData } from "~/hooks";
 import { itemPlanningValidator } from "~/modules/items/items.models";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { getLocationPlanningTimeFence } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -62,10 +61,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const [consumablePlanning, locationFence] = await Promise.all([
-    api.items.getItemPlanning({ itemId, locationId }),
-    getLocationPlanningTimeFence(client, locationId, companyId)
-  ]);
+  const consumablePlanning = await api.items.getItemPlanning({
+    itemId,
+    locationId
+  });
 
   if (consumablePlanning.error || !consumablePlanning.data) {
     throw redirect(
@@ -77,10 +76,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const { locationPlanningTimeFenceDays, ...planning } =
+    consumablePlanning.data;
   return {
-    consumablePlanning: consumablePlanning.data,
+    consumablePlanning: planning,
     // the placeholder of the item's empty fence; a failed read shows none
-    locationTimeFenceDays: locationFence.data?.planningTimeFenceDays,
+    locationTimeFenceDays: locationPlanningTimeFenceDays ?? undefined,
     locationId
   };
 }
@@ -94,6 +95,8 @@ export async function action(args: ActionFunctionArgs) {
   const { api } = await authorize(args.request);
   const result = await api.items.updateItemPlanning({
     ...input.data,
+    // the form always posts the fence: an emptied field inherits
+    planningTimeFenceDays: input.data.planningTimeFenceDays ?? null,
     itemId,
     customFields: input.formData && setCustomFields(input.formData)
   });

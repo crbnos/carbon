@@ -10,7 +10,12 @@ import { trigger } from "@carbon/jobs";
 import { postSuggestionToCarbonSlack } from "@carbon/lib/slack.server";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { datetime, requireAffected, unchecked } from "@carbon/utils";
+import {
+  datetime,
+  NOT_APPLIED_CODE,
+  requireAffected,
+  unchecked
+} from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -294,8 +299,12 @@ export const updateLocation = defineServiceFn({
     const update = await service.upsertLocation(ctx.asCaller.supabase, {
       id,
       ...location,
+      companyId: ctx.company.id,
       updatedBy: ctx.auditUserId
     });
+    if (update.error?.code === NOT_APPLIED_CODE) {
+      return ctx.error("notFound", "The location could not be found");
+    }
     if (update.error) {
       return ctx.error("internal", "Failed to update location.", update.error);
     }

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import { fetchAllByIds } from "@carbon/database";
+import { fetchAllByIds, fetchAllRecords } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
@@ -43,21 +43,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     "purchasing.materialPlanning": "View"
   });
 
-  const lines = await client
-    .from("openPurchaseOrderLines")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("itemId", itemId)
-    // this page's location only: the rows are editable and charted there
-    .eq("locationId", locationId)
-    .in("status", [
-      "To Review",
-      "Needs Approval",
-      "Planned",
-      "To Receive",
-      "To Receive and Invoice",
-      "To Invoice"
-    ]);
+  // The view keeps only the statuses MRP counts as supply (Planned, To
+  // Receive, To Receive and Invoice), so no status filter here. Paged: a bare
+  // select stops at PostgREST's max_rows, and the drawer would show a partial
+  // list as the whole.
+  const lines = await fetchAllRecords(() =>
+    client
+      .from("openPurchaseOrderLines")
+      .select("*")
+      .eq("companyId", companyId)
+      .eq("itemId", itemId)
+      // this page's location only: the rows are editable and charted there
+      .eq("locationId", locationId)
+      .order("id", { ascending: true })
+  );
   if (lines.error) {
     logger.error("Failed to read the item's open purchase order lines", {
       itemId,

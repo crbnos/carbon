@@ -9012,6 +9012,9 @@ msgstr "分析用の領域画像を準備できませんでした"
 msgid "Could not read the document: {0}"
 msgstr "文書が読み込めません: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "計画オーダーを読み込めませんでした。代わりに計画提案から数量を決定しました。"
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")

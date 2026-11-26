@@ -148,7 +148,7 @@ describe("planJobFromPlanning", () => {
 });
 
 describe("applyPlanningActions", () => {
-  it("refuses a role with Material Planning but not Jobs, before any write", async () => {
+  it("refuses a job action of a role with Material Planning but not Jobs, before any write", async () => {
     const { ctx, writes } = planning({
       planningAction: [
         { id: "pa1", status: "Open", type: "Cancel", jobId: "j1" }
@@ -161,7 +161,10 @@ describe("applyPlanningActions", () => {
     const result = await applyPlanningActions(ctx, {
       planningActionIds: ["pa1"]
     });
-    expect(result.error?.category).toBe("forbidden");
+    expect(result.error).toBeNull();
+    expect(result.data?.errors).toEqual([
+      "Planning action pa1 changes a job, which needs Edit on Jobs"
+    ]);
     expect(writes).toEqual([]);
   });
 

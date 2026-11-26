@@ -9012,6 +9012,9 @@ msgstr "Bölge görüntüsü analiz için hazırlanamadı"
 msgid "Could not read the document: {0}"
 msgstr "Belge okunamadı: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "Planlanan siparişler okunamadı. Siparişler bunun yerine planlama aksiyonlarına göre boyutlandırıldı."
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")

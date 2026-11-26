@@ -14,7 +14,10 @@ import {
 } from "@carbon/api/service-fn.server";
 import { afterEach, beforeEach, describe, expect } from "vitest";
 import { pageClaims } from "../page-claims";
-import { runMRP } from "../../app/modules/production/production.service";
+import {
+  applyPlannedOrderTargets,
+  runMRP
+} from "../../app/modules/production/production.service";
 import {
   applyPlanningActions,
   dismissProductionPlanningActions,
@@ -36,108 +39,53 @@ import {
 import { systemServiceOf } from "./fixtures/handles";
 import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
+import {
+  type PlanningWeek,
+  seedJob,
+  seedPlannedOrder,
+  seedPlanningAction,
+  seedPlanningWeeks,
+  seedScrapRate
+} from "./fixtures/planning";
 
 let f: Fixture;
 // The system with no Supabase client: the MRP run a change starts fails at
 // its first read, and the change must stand.
 let service: ServiceContext;
-let week: string;
-let nextWeek: string;
+let week: PlanningWeek;
+let nextWeek: PlanningWeek;
+let removeWeeks: () => Promise<void>;
 
-async function plannedOrder(
+function plannedOrder(
   key: string,
-  overrides: {
-    orderType?: "Make" | "Buy";
-    status?: "Planned" | "Firm" | "Converted";
-    splitIndex?: number;
-    jobId?: string;
-  } = {}
-): Promise<string> {
-  const id = `${f.prefix}-planned-${key}`;
-  const status = overrides.status ?? "Planned";
-  await seed(f, (trx) =>
-    trx
-      .insertInto("plannedOrder")
-      .values({
-        id,
-        companyId: f.companyId,
-        itemId: f.partId,
-        locationId: f.locationId,
-        planningSegmentId: "",
-        orderType: overrides.orderType ?? "Make",
-        status,
-        firmedBy: status === "Firm" ? USER : null,
-        firmedAt: status === "Firm" ? f.today : null,
-        jobId: overrides.jobId ?? null,
-        quantity: 10,
-        dueDate: "2297-01-05",
-        releaseDate: "2297-01-01",
-        periodId: week,
-        splitIndex: overrides.splitIndex ?? 0,
-        createdBy: USER
-      })
-      .execute()
-  );
-  return id;
+  overrides: Omit<Parameters<typeof seedPlannedOrder>[1], "key" | "week"> = {}
+) {
+  return seedPlannedOrder(f, { key, week, ...overrides });
 }
 
-async function changeAction(
+function changeAction(
   type: "Expedite" | "Defer" | "Increase" | "Decrease" | "Cancel",
   plannedOrderId: string,
   suggested: { date?: string; quantity?: number } = {}
-): Promise<string> {
-  const id = `${f.prefix}-action-${type}-${plannedOrderId}`;
-  await seed(f, (trx) =>
-    trx
-      .insertInto("planningAction")
-      .values({
-        id,
-        companyId: f.companyId,
-        type,
-        status: "Open",
-        itemId: f.partId,
-        locationId: f.locationId,
-        periodId: week,
-        planningSegmentId: "",
-        plannedOrderId,
-        requiresManualAction: false,
-        suggestedQuantity: suggested.quantity ?? 10,
-        suggestedDate: suggested.date ?? "2297-01-05",
-        horizonDate: f.today,
-        createdBy: USER
-      })
-      .execute()
-  );
-  return id;
+) {
+  return seedPlanningAction(f, {
+    key: `${type}-${plannedOrderId}`,
+    type,
+    periodId: week.id,
+    plannedOrderId,
+    requiresManualAction: false,
+    suggestedQuantity: suggested.quantity ?? 10,
+    suggestedDate: suggested.date ?? "2297-01-05"
+  });
 }
 
-async function job(key: string): Promise<string> {
-  const id = `${f.prefix}-job-${key}`;
-  await seed(f, (trx) =>
-    trx
-      .insertInto("job")
-      .values({
-        id,
-        jobId: `J-${key}`,
-        itemId: f.partId,
-        quantity: 10,
-        status: "Planned",
-        unitOfMeasureCode: "EA",
-        locationId: f.locationId,
-        companyId: f.companyId,
-        createdBy: USER
-      })
-      .execute()
-  );
-  return id;
-}
-
-async function read(id: string) {
-  const row = await f.db
+async function read(id: string, fixture: Fixture = f) {
+  const row = await fixture.db
     .selectFrom("plannedOrder")
     .select([
       "status",
       "quantity",
+      "scrapQuantity",
       "dueDate",
       "releaseDate",
       "splitIndex",
@@ -146,17 +94,23 @@ async function read(id: string) {
       "periodId"
     ])
     .where("id", "=", id)
-    .where("companyId", "=", f.companyId)
+    .where("companyId", "=", fixture.companyId)
     .executeTakeFirst();
-  return row && { ...row, quantity: Number(row.quantity) };
+  return (
+    row && {
+      ...row,
+      quantity: Number(row.quantity),
+      scrapQuantity: Number(row.scrapQuantity)
+    }
+  );
 }
 
-async function actionStatus(id: string) {
-  const row = await f.db
+async function actionStatus(id: string, fixture: Fixture = f) {
+  const row = await fixture.db
     .selectFrom("planningAction")
     .select("status")
     .where("id", "=", id)
-    .where("companyId", "=", f.companyId)
+    .where("companyId", "=", fixture.companyId)
     .executeTakeFirst();
   return row?.status ?? null;
 }
@@ -168,36 +122,13 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
       { db: f.db, companyId: f.companyId, userId: USER },
       f.service.company.groupId
     );
-    week = `${f.prefix}-week`;
-    nextWeek = `${f.prefix}-next-week`;
-    // `period` has no company: these are the test's own, removed after.
-    await seed(f, (trx) =>
-      trx
-        .insertInto("period")
-        .values([
-          {
-            id: week,
-            startDate: "2297-01-01",
-            endDate: "2297-01-07",
-            periodType: "Week"
-          },
-          {
-            id: nextWeek,
-            startDate: "2297-01-08",
-            endDate: "2297-01-14",
-            periodType: "Week"
-          }
-        ])
-        .execute()
-    );
+    const seeded = await seedPlanningWeeks(f, 2, "2297-01-01");
+    [week, nextWeek] = seeded.weeks;
+    removeWeeks = seeded.cleanup;
   });
 
   afterEach(async () => {
-    // the planned orders and their actions go with the period (ON DELETE CASCADE)
-    await f.db
-      .deleteFrom("period")
-      .where("id", "in", [week, nextWeek])
-      .execute();
+    await removeWeeks();
     await f.cleanup();
   });
 
@@ -250,9 +181,11 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
   );
 
   databaseTest(
-    "an edit firms the order and moves the release date with the due date",
+    "an edit firms the order, restates a Make order's scrap and moves the release date with the due date",
     async () => {
+      await seedScrapRate(f, f.partId, 0.15);
       const id = await plannedOrder("edit");
+      const buy = await plannedOrder("edit-buy", { orderType: "Buy" });
 
       const result = await updatePlannedOrder(service, {
         id,
@@ -265,10 +198,67 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
         status: "Firm",
         firmedBy: USER,
         quantity: 12,
+        // 12 at 15 % = 1.8, rounded up
+        scrapQuantity: 2,
         dueDate: "2297-01-12",
         // 2297-01-01 moved by the same 7 days
         releaseDate: "2297-01-08"
       });
+
+      // a Buy order of the same item carries no scrap
+      const bought = await updatePlannedOrder(service, {
+        id: buy,
+        locationId: f.locationId,
+        quantity: 12
+      });
+      expect(bought.error).toBeNull();
+      expect(await read(buy)).toMatchObject({ quantity: 12, scrapQuantity: 0 });
+    }
+  );
+
+  databaseTest(
+    "another company's planned order is not found by firm, unfirm, edit or Apply, and is left as it is",
+    async () => {
+      const other = await alwaysPostFixture();
+      try {
+        const foreign = await seedPlannedOrder(other, {
+          key: "foreign",
+          week,
+          status: "Firm"
+        });
+        const foreignAction = await seedPlanningAction(other, {
+          key: "foreign-increase",
+          type: "Increase",
+          periodId: week.id,
+          plannedOrderId: foreign,
+          suggestedQuantity: 15
+        });
+        // the other company's own location: the read fails before the
+        // location check
+        const elsewhere = { id: foreign, locationId: other.locationId };
+
+        for (const result of [
+          await firmPlannedOrder(service, elsewhere),
+          await unfirmPlannedOrder(service, elsewhere),
+          await updatePlannedOrder(service, { ...elsewhere, quantity: 12 })
+        ]) {
+          expect(result.error).toMatchObject({ category: "notFound" });
+        }
+        const applied = await applyPlanningActions(f.service, {
+          planningActionIds: [foreignAction]
+        });
+        expect(applied.data).toMatchObject({ applied: [] });
+        expect(applied.data?.errors).toHaveLength(1);
+
+        expect(await read(foreign, other)).toMatchObject({
+          status: "Firm",
+          quantity: 10,
+          firmedBy: USER
+        });
+        expect(await actionStatus(foreignAction, other)).toBe("Open");
+      } finally {
+        await other.cleanup();
+      }
     }
   );
 
@@ -305,7 +295,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
       expect(result.error).toBeNull();
       expect(await read(moved)).toMatchObject({
         dueDate: "2297-01-10",
-        periodId: nextWeek
+        periodId: nextWeek.id
       });
 
       // no weekly period holds the new date: refused, nothing changes
@@ -324,7 +314,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
         status: "Planned",
         quantity: 10,
         dueDate: "2297-01-05",
-        periodId: week
+        periodId: week.id
       });
 
       // a quantity edit alone leaves the week as it is
@@ -334,7 +324,10 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
         locationId: f.locationId,
         quantity: 20
       });
-      expect(await read(sized)).toMatchObject({ quantity: 20, periodId: week });
+      expect(await read(sized)).toMatchObject({
+        quantity: 20,
+        periodId: week.id
+      });
     }
   );
 
@@ -401,7 +394,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
       expect(await read(id)).toMatchObject({
         status: "Planned",
         dueDate: "2297-01-05",
-        periodId: week
+        periodId: week.id
       });
       expect(await actionStatus(actionId)).toBe("Open");
     }
@@ -432,7 +425,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
     async () => {
       const id = await plannedOrder("converted", {
         status: "Converted",
-        jobId: await job("converted")
+        jobId: await seedJob(f, { key: "converted", quantity: 10 })
       });
 
       const firmed = await firmPlannedOrder(service, {
@@ -452,6 +445,116 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
         quantity: 10
       });
       expect(await actionStatus(actionId)).toBe("Open");
+    }
+  );
+
+  databaseTest(
+    "of two actions on one order that move its date, or change its quantity, the first applies and the second stays Open",
+    async () => {
+      const id = await plannedOrder("same-field");
+      const expedite = await changeAction("Expedite", id, {
+        date: "2297-01-03"
+      });
+      const defer = await changeAction("Defer", id, { date: "2297-01-06" });
+      const increase = await changeAction("Increase", id, { quantity: 15 });
+      const decrease = await changeAction("Decrease", id, { quantity: 8 });
+
+      const result = await applyPlanningActions(f.service, {
+        planningActionIds: [expedite, defer, increase, decrease]
+      });
+      expect(result.data?.applied).toEqual([expedite, increase]);
+      expect(result.data?.errors).toHaveLength(2);
+      expect(await read(id)).toMatchObject({
+        status: "Firm",
+        dueDate: "2297-01-03",
+        quantity: 15
+      });
+      expect(await actionStatus(expedite)).toBe("Actioned");
+      expect(await actionStatus(increase)).toBe("Actioned");
+      expect(await actionStatus(defer)).toBe("Open");
+      expect(await actionStatus(decrease)).toBe("Open");
+    }
+  );
+
+  databaseTest(
+    "a Cancel and an edit of one order in one batch both apply, and the order is gone",
+    async () => {
+      const id = await plannedOrder("cancel-and-edit");
+      const increase = await changeAction("Increase", id, { quantity: 15 });
+      const cancel = await changeAction("Cancel", id);
+
+      const result = await applyPlanningActions(f.service, {
+        planningActionIds: [increase, cancel]
+      });
+      expect(result.data).toMatchObject({ errors: [] });
+      expect([...(result.data?.applied ?? [])].sort()).toEqual(
+        [increase, cancel].sort()
+      );
+      expect(await read(id)).toBeUndefined();
+      // the order's actions go with it
+      expect(await actionStatus(increase)).toBeNull();
+      expect(await actionStatus(cancel)).toBeNull();
+    }
+  );
+
+  databaseTest(
+    "production's Apply refuses an action on a Buy planned order and leaves it Open",
+    async () => {
+      const buy = await plannedOrder("buy-on-make", { orderType: "Buy" });
+      const increase = await changeAction("Increase", buy, { quantity: 15 });
+
+      const result = await applyPlanningActions(f.service, {
+        planningActionIds: [increase]
+      });
+      expect(result.data).toMatchObject({ applied: [] });
+      expect(result.data?.errors).toHaveLength(1);
+      expect(await read(buy)).toMatchObject({
+        status: "Planned",
+        quantity: 10
+      });
+      expect(await actionStatus(increase)).toBe("Open");
+    }
+  );
+
+  databaseTest(
+    "an action another apply has claimed since it was read is reported already applied, and nothing changes",
+    async () => {
+      const id = await plannedOrder("applied-twice");
+      const defer = await changeAction("Defer", id, { date: "2297-01-08" });
+      // as Apply reads it before the claim
+      const target = {
+        planningActionId: defer,
+        plannedOrderId: id,
+        type: "Defer" as const,
+        suggestedDate: "2297-01-08",
+        suggestedQuantity: 10
+      };
+      const apply = () =>
+        applyPlannedOrderTargets(f.db, {
+          companyId: f.companyId,
+          userId: USER,
+          orderType: "Make",
+          targets: [target]
+        });
+
+      expect(await apply()).toEqual({
+        applied: [defer],
+        errors: [],
+        changedPlannedOrderIds: [id]
+      });
+      // a person moves the date again before the second apply lands
+      await updatePlannedOrder(service, {
+        id,
+        locationId: f.locationId,
+        dueDate: "2297-01-10"
+      });
+      expect(await apply()).toEqual({
+        applied: [],
+        errors: [expect.stringContaining(defer)],
+        changedPlannedOrderIds: []
+      });
+      expect(await read(id)).toMatchObject({ dueDate: "2297-01-10" });
+      expect(await actionStatus(defer)).toBe("Actioned");
     }
   );
 
@@ -588,29 +691,16 @@ describe.skipIf(!client)("a planned order change re-plans", () => {
     itemId: string,
     planned: { id: string; periodId: string; dueDate: string }
   ) {
-    const id = `${f.prefix}-action-increase-${planned.id}`;
-    await seed(f, (trx) =>
-      trx
-        .insertInto("planningAction")
-        .values({
-          id,
-          companyId: f.companyId,
-          type: "Increase",
-          status: "Open",
-          itemId,
-          locationId: f.locationId,
-          periodId: planned.periodId,
-          planningSegmentId: "",
-          plannedOrderId: planned.id,
-          requiresManualAction: false,
-          suggestedQuantity: 8,
-          suggestedDate: planned.dueDate,
-          horizonDate: f.today,
-          createdBy: USER
-        })
-        .execute()
-    );
-    return id;
+    return seedPlanningAction(f, {
+      key: `increase-${planned.id}`,
+      type: "Increase",
+      itemId,
+      periodId: planned.periodId,
+      plannedOrderId: planned.id,
+      requiresManualAction: false,
+      suggestedQuantity: 8,
+      suggestedDate: planned.dueDate
+    });
   }
 
   databaseTest(

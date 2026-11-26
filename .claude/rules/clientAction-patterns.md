@@ -97,8 +97,10 @@ current. Put the read in an `api+` route and read it with `useLoaderQuery`.
 Copy `api+/production.planned-orders.ts` and `DrawerPlannedOrders`:
 
 - The loader parses its query with `safeParse` (400), calls
-  `requirePermissions` with the view the page needs, reads as the caller
-  (RLS applies), and logs and throws a 500 when the read fails.
+  `authorize(request, { "<module>.<page>": "View" })` with the page the read
+  serves (`production.materialPlanning` for a Make order,
+  `purchasing.materialPlanning` for a Buy one), reads as the caller (RLS
+  applies), and logs and throws a 500 when the read fails.
 - The component passes `null` while it must not read (with
   `keepPreviousData: true` when it stays mounted while it slides out) and
   renders `query.error`. A router action marks the read stale, so it needs no

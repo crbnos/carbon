@@ -89,8 +89,5 @@ Reopen the drawer: the order is gone from Planned Orders and the PO shows under 
 
 ## Common Failures
 - "Manufacturing requires configuration for SAT-1000" on Make: item data, not planned orders.
-- "Failed to load stock" toast on Buy items: the known forecast-route `.single()` issue.
-- The item Planning form shows an empty (NULL) fence and horizon as "0", so a save writes 0
-  for both. To keep "inherit", clear them before saving and check that the DB is NULL.
 - After a convert, the next run can raise an Expedite on the new PO line to an overdue need
   and plan its week again. That is correct netting, not a duplicate.

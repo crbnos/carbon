@@ -69,13 +69,19 @@ CREATE INDEX IF NOT EXISTS "plannedOrder_item_loc_idx" ON "plannedOrder" ("compa
 CREATE INDEX IF NOT EXISTS "plannedOrder_itemId_idx" ON "plannedOrder" ("itemId");
 CREATE INDEX IF NOT EXISTS "plannedOrder_locationId_idx" ON "plannedOrder" ("locationId");
 CREATE INDEX IF NOT EXISTS "plannedOrder_periodId_idx" ON "plannedOrder" ("periodId");
-CREATE INDEX IF NOT EXISTS "plannedOrder_jobId_idx" ON "plannedOrder" ("jobId");
-CREATE INDEX IF NOT EXISTS "plannedOrder_purchaseOrderLineId_idx" ON "plannedOrder" ("purchaseOrderLineId");
-CREATE INDEX IF NOT EXISTS "plannedOrder_supplierId_idx" ON "plannedOrder" ("supplierId");
 CREATE INDEX IF NOT EXISTS "plannedOrder_status_idx" ON "plannedOrder" ("companyId", "status");
 CREATE INDEX IF NOT EXISTS "plannedOrder_createdBy_idx" ON "plannedOrder" ("createdBy");
-CREATE INDEX IF NOT EXISTS "plannedOrder_updatedBy_idx" ON "plannedOrder" ("updatedBy");
-CREATE INDEX IF NOT EXISTS "plannedOrder_firmedBy_idx" ON "plannedOrder" ("firmedBy");
+-- The nullable foreign keys are partial: most rows hold NULL there.
+CREATE INDEX IF NOT EXISTS "plannedOrder_jobId_idx"
+  ON "plannedOrder" ("jobId") WHERE "jobId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "plannedOrder_purchaseOrderLineId_idx"
+  ON "plannedOrder" ("purchaseOrderLineId") WHERE "purchaseOrderLineId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "plannedOrder_supplierId_idx"
+  ON "plannedOrder" ("supplierId") WHERE "supplierId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "plannedOrder_updatedBy_idx"
+  ON "plannedOrder" ("updatedBy") WHERE "updatedBy" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "plannedOrder_firmedBy_idx"
+  ON "plannedOrder" ("firmedBy") WHERE "firmedBy" IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS "plannedOrder_natural_key_idx" ON "plannedOrder"
   ("companyId", "itemId", "locationId", "planningSegmentId", "orderType", "periodId", "splitIndex")
   WHERE "status" = 'Planned';
@@ -95,7 +101,8 @@ ALTER TABLE "itemPlanning" ADD CONSTRAINT "itemPlanning_planningTimeFenceDays_ch
 -- Firm or fence-held planned order. Order and Make actions keep no target:
 -- they cover every planned order of their week.
 ALTER TABLE "planningAction" ADD COLUMN IF NOT EXISTS "plannedOrderId" TEXT;
-CREATE INDEX IF NOT EXISTS "planningAction_plannedOrderId_idx" ON "planningAction" ("plannedOrderId", "companyId");
+CREATE INDEX IF NOT EXISTS "planningAction_plannedOrderId_idx"
+  ON "planningAction" ("plannedOrderId", "companyId") WHERE "plannedOrderId" IS NOT NULL;
 ALTER TABLE "planningAction" DROP CONSTRAINT IF EXISTS "planningAction_plannedOrderId_fkey";
 ALTER TABLE "planningAction" ADD CONSTRAINT "planningAction_plannedOrderId_fkey"
   FOREIGN KEY ("plannedOrderId", "companyId") REFERENCES "plannedOrder"("id", "companyId")

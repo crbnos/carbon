@@ -9012,6 +9012,9 @@ msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
 msgid "Could not read the document: {0}"
 msgstr "문서를 읽을 수 없습니다: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "계획 주문을 읽을 수 없습니다. 대신 계획 조치를 기준으로 주문 수량을 정했습니다."
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")

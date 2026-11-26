@@ -779,7 +779,7 @@ export type RequestQuoteLine = z.infer<
 >["lines"][number];
 
 /** Whole purchase units when the unit differs, as planning orders them; the
- * inner round strips float noise (1.1 / 0.1 = 11.000000000000002). */
+ * inner round strips float noise (0.07 / 0.01 = 7.000000000000001). */
 export function toPurchaseQuantity(inventoryQuantity: number, factor: number) {
   return factor === 1
     ? round(inventoryQuantity)
@@ -1662,7 +1662,7 @@ export function planningQuantityChange(
   const conversionFactor = Number(line.conversionFactor) || 1;
   // MRP suggests a whole number of purchase units already
   // (`quantityAfterApply`, @carbon/planning); the inner round strips float
-  // noise (1.1 / 0.1 = 11.000000000000002) that would otherwise ceil it a
+  // noise (0.07 / 0.01 = 7.000000000000001) that would otherwise ceil it a
   // whole purchase unit up.
   const toReceive =
     conversionFactor > 0

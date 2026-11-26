@@ -9012,6 +9012,9 @@ msgstr "विश्लेषण के लिए क्षेत्र छव�
 msgid "Could not read the document: {0}"
 msgstr "दस्तावेज़ नहीं पढ़ा जा सका: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "योजनाबद्ध ऑर्डर पढ़े नहीं जा सके। इसके बजाय ऑर्डर की मात्रा योजना कार्रवाइयों से तय की गई।"
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")

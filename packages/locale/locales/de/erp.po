@@ -9012,6 +9012,9 @@ msgstr "Konnte Regionsbild nicht für die Analyse vorbereiten"
 msgid "Could not read the document: {0}"
 msgstr "Dokument konnte nicht gelesen werden: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "Die geplanten Aufträge konnten nicht gelesen werden. Die Aufträge wurden stattdessen aus den Planungsaktionen bemessen."
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")

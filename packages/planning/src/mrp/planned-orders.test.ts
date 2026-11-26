@@ -20,7 +20,7 @@ import {
   type PlannedOrderInputs,
   type PlanningPolicyInput
 } from "./planned-orders";
-import { deriveRowActions, plannedOrderActions } from "./planning-actions";
+import { deriveRowActions, plannedOrderActions } from "./row-actions";
 
 const TODAY = "2026-11-16"; // a Monday; weeks start on Sunday
 const PERIODS = [
@@ -337,6 +337,39 @@ describe("planned orders in planCompany", () => {
     // held, so the worklist keeps its Decrease
     expect(outputs.heldPlannedOrderIds).toEqual(["plo_2"]);
     expect(childDemand(outputs)).toEqual([["w3", 18]]);
+  });
+
+  // MRP plans no Transfer: a Firm one is kept but covers nothing, so the
+  // need of 3 is a new Make 3, and the Transfer gets no action.
+  it("keeps a held Transfer order without counting it as supply", () => {
+    const outputs = planCompany(
+      base({
+        salesOrderLines: [sale("2026-12-07", 3)],
+        planned: {
+          existingPlannedOrders: [
+            heldOrder({
+              id: "plo_t",
+              orderType: "Transfer",
+              status: "Firm",
+              quantity: 8,
+              dueDate: "2026-12-07",
+              releaseDate: "2026-11-30",
+              periodId: "w4"
+            })
+          ]
+        }
+      })
+    );
+    expect(
+      outputs.plannedOrders.map((order) => [
+        order.orderType,
+        order.quantity,
+        order.periodId
+      ])
+    ).toEqual([["Make", 3, "w4"]]);
+    expect(outputs.plannedOrderChangeActions).toEqual([]);
+    expect(outputs.heldPlannedOrderIds).toEqual(["plo_t"]);
+    expect(childDemand(outputs)).toEqual([["w3", 6]]);
   });
 
   // Due 2027-01-04, after the last week (w6 ends 2026-12-26): the Firm order
@@ -809,8 +842,10 @@ describe("planned orders in planCompany", () => {
       draws: [],
       toleranceDays: 7,
       todayDate: TODAY,
-      engineSupply: outputs.newSupplyByRow.get(ROW),
-      engineChangeActions: outputs.documentChangeActionsByRow.get(ROW)
+      engine: {
+        supply: outputs.newSupplyByRow.get(ROW)!,
+        changeActions: outputs.documentChangeActionsByRow.get(ROW)!
+      }
     });
     expect(actions).toEqual([
       {
@@ -963,7 +998,8 @@ describe("planned orders in planCompany", () => {
         segmentId: "prj_1",
         grossByPeriod: [0, 0, 3, 0, 0, 0],
         supplyByPeriod: [0, 0, 0, 0, 0, 0],
-        onHand: 0
+        onHand: 0,
+        lowLevelCode: 0
       })
     ).toBeNull();
   });
@@ -1101,6 +1137,61 @@ describe("the planned-order cascade", () => {
         explosionQuantity: 22
       }
     });
+  });
+  // item_p ← 2 × item_old, a Consume First predecessor of item_new with no
+  // stock. The authored BOM has no item_new at all; the engine plans it
+  // after item_old (the redirect edge), so its order is stored at level 2.
+  it("stores the level the engine plans a Consume First successor at", () => {
+    const outputs = planCompany(
+      base({
+        parent: {
+          reorderingPolicy: "Fixed Reorder Quantity",
+          reorderPoint: 2,
+          reorderQuantity: 5
+        },
+        policies: [{ itemId: "item_new", replenishmentSystem: "Buy" }],
+        items: [
+          { id: "item_p", replenishmentSystem: "Make" },
+          { id: "item_old", replenishmentSystem: "Buy" },
+          { id: "item_new", replenishmentSystem: "Buy" }
+        ],
+        replenishments: [
+          { itemId: "item_p", leadTime: 7 },
+          { itemId: "item_old", leadTime: 7 },
+          { itemId: "item_new", leadTime: 7 }
+        ],
+        materials: [
+          {
+            id: "mat_1",
+            makeMethodId: "mm_p",
+            materialMakeMethodId: null,
+            itemId: "item_old",
+            quantity: 2,
+            methodType: "Pull from Inventory"
+          }
+        ],
+        supersessions: [
+          {
+            itemId: "item_old",
+            supersessionMode: "Consume First",
+            successorItemId: "item_new",
+            successorEffectivityDate: null,
+            conversionFactor: 1
+          }
+        ]
+      })
+    );
+    expect(
+      outputs.plannedOrders.map((order) => [
+        order.itemId,
+        order.orderType,
+        order.quantity,
+        order.lowLevelCode
+      ])
+    ).toEqual([
+      ["item_p", "Make", 5, 0],
+      ["item_new", "Buy", 10, 2]
+    ]);
   });
 });
 

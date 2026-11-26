@@ -5398,19 +5398,11 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 
 ## A component reads its data through an `api+` route, not from an effect
 
-**Context:** The MRP planning drawer read its planned orders, open jobs and open PO lines with the browser's Supabase client, from an async function started inside `useEffect` (PR #2245).
+**Context:** The MRP planning drawer read its planned orders, open jobs and open PO lines with the browser's Supabase client, from an async function started inside `useEffect`.
 
-**Problem:** Two reviews flagged the read. A rejected read was never caught, so the drawer could spin for ever. The code also needed a read counter so an old answer could not land last, a version number bumped after each change, and a flag to skip the second read the revalidation caused. Every new way to change the data needed another trigger. The query ran in the browser, so it could not log a failure or answer with a status.
+**Problem:** A rejected read was never caught, so the drawer could spin for ever. The code also needed a read counter so an old answer could not land last, a version number bumped after each change, and a flag to skip the second read the revalidation caused. Every new way to change the data needed another trigger. The query ran in the browser, so it could not log a failure or answer with a status.
 
-**Rule:** Put a component's read in an `api+` route and read it with `useLoaderQuery`, as `api+/production.planned-orders.ts` and `DrawerPlannedOrders` do:
-
-1. The loader parses its query with `safeParse` (400 when bad), calls `requirePermissions` with the view the page needs, reads as the caller, and logs and answers 500 when the read fails.
-2. The component passes `null` as the URL while it must not read, and renders `query.error` as its error state. A drawer that stays mounted while it slides out passes `keepPreviousData: true`, so its list does not go blank.
-3. An action through the router (`useAction`, a fetcher, a form) marks the read stale by itself, so it needs no trigger. After a change the router does not see (a plain `fetch`), call `refetch()`. A parent may pass a refresh key to a child's read only for such a change. Never add a skip flag or a counter for a change the router already sees.
-4. A local edit is an overlay kept against the answer it edited, never a `useState` copy of the data.
-5. Any effect left (a refetch on a parent's key, a callback with each answer) goes in one named hook.
-
-An async call in an effect stays acceptable only for a third-party API or a load started by an event (a search box, a click).
+**Rule:** Put a component's read in an `api+` route and read it with `useLoaderQuery`. Follow `.claude/rules/clientAction-patterns.md` → "A component that loads its own data"; copy `api+/production.planned-orders.ts` and `DrawerPlannedOrders`. An async call in an effect stays acceptable only for a third-party API or a load started by an event (a search box, a click).
 
 **Applies to:** Every drawer, panel or card in `apps/erp` and `apps/mes` that loads its own data. Before you write `useEffect(() => { (async () => …)() })` or `.then(` on a client read, write the route.
 
