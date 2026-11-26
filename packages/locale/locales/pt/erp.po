@@ -13180,12 +13180,6 @@ msgstr "Todo código de imposto em uso está mapeado"
 msgid "Every unit has a rate."
 msgstr "Cada unidade tem uma taxa."
 
-msgid "Every unit is numbered up front, so serials can be printed before work starts."
-msgstr "Cada unidade é numerada antecipadamente, portanto os números de série podem ser impressos antes do trabalho começar."
-
-msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-msgstr "Cada unidade é numerada quando a ordem de produção vai para o chão de fábrica, portanto as fichas de acompanhamento ainda podem ser impressas e as ordens de produção canceladas antes da liberação não consomem nenhuma."
-
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "Todo usuário que corresponde aos filtros da lista. Os usuários aos quais esta ação não se aplica serão ignorados."
 
@@ -13937,9 +13931,6 @@ msgstr "Falha ao atualizar propriedade de lote"
 
 msgid "Failed to update category markups"
 msgstr "Falha ao atualizar marcações de categoria"
-
-msgid "Failed to update configuration parameter"
-msgstr "Falha ao atualizar parâmetro de configuração"
 
 msgid "Failed to update count"
 msgstr "Falha ao atualizar contagem"
@@ -32016,6 +32007,12 @@ msgstr "O custo da ordem de produção é alocado para esta tarefa"
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "O resultado da ordem de produção entra no estoque do projeto em vez do estoque não atribuído"
+
+msgid "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "As unidades da própria ordem de produção são numeradas quando ela vai para o chão de fábrica, portanto as fichas de acompanhamento ainda podem ser impressas e as ordens de produção canceladas antes da liberação não consomem nenhum número. As unidades de um subconjunto de fabricação sob encomenda são numeradas na primeira vez que são trabalhadas."
+
+msgid "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "As unidades da própria ordem de produção são numeradas quando ela é criada, portanto os números de série podem ser impressos antes do trabalho começar. As unidades de um subconjunto de fabricação sob encomenda são numeradas na primeira vez que são trabalhadas."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "A posição do trabalho em sua fila de agendamento de localização — um número fracionário que o Carbon calcula a partir da data de vencimento e do tipo de prazo, não uma classificação Baixo/Alto."

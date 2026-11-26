@@ -2,16 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { failureModeValidator } from "~/modules/resources/resources.models";
-import { upsertFailureMode } from "~/modules/resources/resources.service";
 import FailureModeForm from "~/modules/resources/ui/FailureModes/FailureModeForm";
 import { path } from "~/utils/path";
 
@@ -40,42 +40,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await authorize(request, {
-    "resources.failureModes": "Edit"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(failureModeValidator).request(args, {
+    params: ["failureModeId"]
   });
-
-  const formData = await request.formData();
-  const validation = await validator(failureModeValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...d } = validation.data;
-  if (!id) throw new Error("id not found");
-
-  const updateFailureMode = await upsertFailureMode(client, {
-    id,
-    ...d,
-    updatedBy: userId
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  const result = await api.resources.updateFailureMode({
+    name: input.data.name,
+    type: input.data.type,
+    id: input.params.failureModeId
   });
-
-  if (updateFailureMode.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(updateFailureMode.error, "Failed to update failure mode")
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.failureModes,
-    await flash(request, success("Updated failure mode"))
-  );
+  return respond(args.request, result).redirect(path.to.failureModes, {
+    message: "Updated failure mode"
+  });
 }
 
 export default function EditFailureModeRoute() {

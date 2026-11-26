@@ -21,8 +21,10 @@ const unreachable = new Proxy(
 describe("runMrp", () => {
   // A run holds no lock or connection across its whole length: a lock held on
   // one connection while the run worked on another hung a run on a
-  // one-connection pool. A run that fails on its first read has sent nothing.
-  it("takes no lock before its first read, and leaves nothing open when it fails", async () => {
+  // one-connection pool. The only lock before its first read is the period
+  // lock of a transaction that creates missing weeks, and it is released
+  // when that transaction ends.
+  it("takes no lock outside a transaction before its first read, and leaves nothing open when it fails", async () => {
     const { db, driver } = recordingDatabase();
     await expect(
       runMrp(unreachable, db, {
@@ -33,7 +35,14 @@ describe("runMrp", () => {
       })
     ).rejects.toThrow("PostgREST is unreachable");
 
-    expect(driver.log.map(kindOf)).not.toContain("lock");
+    // every lock sits inside a transaction, which ends before the next step
+    let depth = 0;
+    for (const kind of driver.log.map(kindOf)) {
+      if (kind === "begin") depth += 1;
+      if (kind === "commit" || kind === "rollback") depth -= 1;
+      if (kind === "lock") expect(depth).toBeGreaterThan(0);
+    }
+    expect(depth).toBe(0);
     const begins = driver.log.filter((step) => kindOf(step) === "begin");
     const ends = driver.log.filter((step) =>
       ["commit", "rollback"].includes(kindOf(step))

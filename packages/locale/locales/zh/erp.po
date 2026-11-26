@@ -13180,12 +13180,6 @@ msgstr "所有使用中的税码都已映射"
 msgid "Every unit has a rate."
 msgstr "每件都有费率。"
 
-msgid "Every unit is numbered up front, so serials can be printed before work starts."
-msgstr "每个件都在前期编号，因此序列号可以在工作开始前打印。"
-
-msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-msgstr "当工单进入车间时，每个件都会编号，因此流转卡仍然可以打印，已取消的工单在下达前不消耗任何编号。"
-
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "符合列表筛选条件的每个用户。本操作不适用的用户将被跳过。"
 
@@ -13937,9 +13931,6 @@ msgstr "批处理属性更新失败"
 
 msgid "Failed to update category markups"
 msgstr "未能更新分类加价"
-
-msgid "Failed to update configuration parameter"
-msgstr "更新配置参数失败"
 
 msgid "Failed to update count"
 msgstr "更新计数失败"
@@ -32016,6 +32007,12 @@ msgstr "此工单的成本计入此任务。"
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "工作的输出进入项目的库存而不是未分配的库存"
+
+msgid "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "工单自身的件在进入车间时编号，因此流转卡仍然可以打印，在下达前取消的工单不消耗任何编号。按订单生产的子装配件的件在首次加工时编号。"
+
+msgid "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "工单自身的件在创建时编号，因此序列号可以在工作开始前打印。按订单生产的子装配件的件在首次加工时编号。"
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "工单在其地点排程队列中的位置——一个 Carbon 根据到期日和截止日期类型计算的小数，而非低/高评级。"

@@ -130,6 +130,43 @@ const admits = (
     : { keys: [permissionKey(page, action)], modules: [] };
 
 /**
+ * The children of `item` that item's SELECT reads back: its portal branches
+ * read supplierPart and customerPartToItem. A write policy on one of them
+ * cannot subquery `item`, because Postgres runs item's SELECT inside the
+ * subquery, which reads the child again, and refuses the policy as infinite
+ * recursion. Their hop to `item` is `itemTypeHop`.
+ */
+const ITEM_CHILDREN_READ_BACK: ReadonlySet<string> = new Set([
+  "supplierPart",
+  "customerPartToItem"
+]);
+
+/** A hop to the parent row `from.fk` names, in `inCompany`, where `rest` holds. */
+const parentHop = (
+  from: string,
+  fk: string,
+  to: string,
+  inCompany: RawBuilder<unknown>,
+  rest: RawBuilder<unknown>
+) =>
+  sql`EXISTS (SELECT 1 FROM ${sql.id("public", to)} WHERE ${sql.ref(`${to}.id`)} = ${sql.ref(`${from}.${fk}`)} AND ${sql.ref(`${to}.companyId`)} = ${inCompany} AND ${rest})`;
+
+/**
+ * The hop to `item` without reading `item`: `get_item_type` (SECURITY
+ * DEFINER) answers the item's type, as a one-row table named `item` so the
+ * type branches in `rest` read `item.type` as they do behind a subquery. It
+ * skips nothing: each branch still needs a page key in the row's company, and
+ * whoever holds one reads the item anyway.
+ */
+const itemTypeHop = (
+  from: string,
+  fk: string,
+  inCompany: RawBuilder<unknown>,
+  rest: RawBuilder<unknown>
+) =>
+  sql`EXISTS (SELECT 1 FROM (SELECT get_item_type(${sql.ref(`${from}.${fk}`)}, ${inCompany}) AS ${sql.id("type")}) AS ${sql.id("item")} WHERE ${rest})`;
+
+/**
  * A shared table's rows, one branch per page: the page's rows and the page's
  * key. A child table reaches its parent row through its path, one `EXISTS`
  * per hop, and checks the parent's branches. Every hop is in the company of
@@ -155,17 +192,18 @@ const branches = (
     })
   );
   if (place.kind === "shared") return arms;
+  const readsItemType =
+    place.parent === "item" && ITEM_CHILDREN_READ_BACK.has(row.table);
   const hop = (
     i: number,
     from: string,
     inCompany: RawBuilder<unknown>
   ): RawBuilder<unknown> => {
     const [fk, to] = place.path[i] as readonly [string, string];
-    const rest =
-      i + 1 < place.path.length
-        ? hop(i + 1, to, sql.ref(`${to}.companyId`))
-        : arms;
-    return sql`EXISTS (SELECT 1 FROM ${sql.id("public", to)} WHERE ${sql.ref(`${to}.id`)} = ${sql.ref(`${from}.${fk}`)} AND ${sql.ref(`${to}.companyId`)} = ${inCompany} AND ${rest})`;
+    const last = i + 1 === place.path.length;
+    if (last && readsItemType) return itemTypeHop(from, fk, inCompany, arms);
+    const rest = last ? arms : hop(i + 1, to, sql.ref(`${to}.companyId`));
+    return parentHop(from, fk, to, inCompany, rest);
   };
   return hop(0, row.ref, company);
 };

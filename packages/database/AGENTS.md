@@ -98,7 +98,7 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 
 | Subpath | Provides |
 |---------|----------|
-| `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords` (takes a query factory), `fetchAllByIds` (100 ids per `.in()` request, each group paged), `fetchRecordsInBatches`, `journalReference` (`journalLine.documentLineReference` values). The `datetime` derivation API lives in `@carbon/utils` |
+| `.` (index) | `Database` type, `PERIOD_LOCK_KEY` (the advisory lock every writer of `period` rows takes: the planning screens, MRP and the dataset seeder), `fetchAllFromTable`, `fetchAllRecords` (takes a query factory), `fetchAllByIds` (100 ids per `.in()` request, each group paged), `fetchRecordsInBatches`, `journalReference` (`journalLine.documentLineReference` values). The `datetime` derivation API lives in `@carbon/utils` |
 | `./client` | Node-only. `Kysely`, `KyselyDatabase`, `getPostgresClient`, and `getProcessPool()` (one shared pool per process — never create another, never end it outside an exiting script); registers the NUMERIC → `Number` and DATE → `YYYY-MM-DD` type parsers at module load (see `.claude/rules/numeric-precision.md`) |
 | `./methods` | Make-method helpers shared by get-method and `@carbon/planning` (`getJobMethodTree`, `getQuoteMethodTree`, `traverseJobMethod`, `calculateQuoteLinePrices`, …) |
 | `./job-quantities-engine` | `computeJobQuantities` / `flattenJobQuantityTree` — the pure job-quantity cascade behind the `recalculate` posting |

@@ -139,10 +139,10 @@ Percent Complete and the loss provision need the Business plan.
 ## Troubleshooting
 
 ### "A service contract bills on its schedule. Create a project contract for Time & Materials or Cost Plus lines."
-A Time & Materials or Cost Plus line on a contract with `billingBasis` `Schedule`. Refused by `upsertContractLine` and `insertContractLines` (code `CONTRACT_BILLING_BASIS_MISMATCH`), by Confirm, and by Amend for an added line (`post-customer-contract`). Create the line on a project contract (Sales → Agreements → Project Contracts).
+A Time & Materials or Cost Plus line on a contract with `billingBasis` `Schedule`. Refused by `insertContractLine`, `updateContractLine` and `insertContractLines` (code `CONTRACT_BILLING_BASIS_MISMATCH`), by Confirm, and by Amend for an added line (`post-customer-contract`). Create the line on a project contract (Sales → Agreements → Project Contracts).
 
 ### "A project contract line is One-time. Create a service contract for recurring charges."
-A Recurring line on a contract with `billingBasis` `Project`. `upsertContractLine` saves every project contract line as One-time (at quantity 1, unless the line names a part: then its quantity is the units to deliver), so this comes from Confirm, Amend or `insertContractLines`.
+A Recurring line on a contract with `billingBasis` `Project`. `insertContractLine` and `updateContractLine` save every project contract line as One-time (at quantity 1, unless the line names a part: then its quantity is the units to deliver), so this comes from Confirm, Amend or `insertContractLines`.
 
 ## Internals
 `customerContract.billingBasis` (enum `contractBillingBasis`: `Schedule` = service contract, `Project` = project contract; NOT NULL, default `Schedule`), on the `customerContracts` view too. Lists: `/x/sales/contracts` (Schedule) and `/x/sales/project-contracts` (Project). New: `/x/contract/new?basis=Project`, `&projectId=` picks the project. Setup steps: `details`, `products` (labelled Lines), `invoicing`, `review`; a project contract has no Revenue step. A project contract's header terms are fixed by the basis except the billing frequency: alignment Calendar, timing Arrears, renewal End. The Review step's gaps come from `projectContractGaps` (`sales.models.ts`). Fixed Price billing events are `customerContractInvoice` / `customerContractInvoiceLine` rows, drafted by `create-contract-invoices`; Time & Materials and Cost Plus invoices come from `create-project-billing-invoices`.

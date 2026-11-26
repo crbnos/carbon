@@ -5,7 +5,12 @@
 import { NotFoundError } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
-import type { AnyOfGate, PageGate } from "@carbon/database/access";
+import {
+  type AnyOfGate,
+  anyOf,
+  ITEM_PAGES,
+  type PageGate
+} from "@carbon/database/access";
 import { StripeConnect } from "@carbon/ee";
 import {
   type SyncedEntityType,
@@ -1055,6 +1060,59 @@ export const getBase64ImageFromSupabase = defineServiceFn({
     return await service.getBase64ImageFromSupabase(
       ctx.asCaller.supabase,
       input.path as never
+    );
+  }
+});
+
+/** The gates of the screens that show the planning weeks. */
+const planningScreens: AnyOfGate = {
+  anyOf: [
+    { "production.materialPlanning": "View" },
+    { "production.demandForecasts": "View" },
+    { "purchasing.materialPlanning": "View" },
+    ...anyOf(ITEM_PAGES, "View")
+  ]
+};
+
+/**
+ * List the weekly planning periods of a location.
+ *
+ * @remarks
+ * The weeks the planning screens show, from the week of the location's today,
+ * earliest first. A week runs Sunday to Saturday. It adds the weeks missing
+ * from the calendar, as each planning screen does when it opens, so it is a
+ * write. Pass the ids, in this order, as `periods` to
+ * `production_getProductionPlanning`, `production_getProductionProjections`,
+ * `purchasing_getPurchasingPlanning`, `items_getItemDemand` and
+ * `items_getDemandForecastSources`. Needs View on a page whose screen shows
+ * these weeks, as each planning screen does: Material Planning in Production
+ * or Purchasing, Demand Forecasts, or an item page.
+ *
+ * @param locationId - The location whose today starts the first week.
+ *
+ * @mcp
+ */
+export const getPlanningPeriods = defineServiceFn({
+  input: z.object({ locationId: z.string().min(1) }),
+  // Each planning screen gates on its own page, so `run` admits a viewer of
+  // any of them, exactly as their routes do.
+  permission: "employee",
+  async run(ctx, { locationId }) {
+    if (!ctx.can(planningScreens)) {
+      return ctx.error(
+        "forbidden",
+        "Planning periods need View on Material Planning, Demand Forecasts or an item page"
+      );
+    }
+    const owned = await service.refuseUnlessOwned(ctx, "location", {
+      id: locationId
+    });
+    if (owned) return owned;
+    return service.getPlanningWeeks(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      locationId,
+      ctx.company.id
     );
   }
 });

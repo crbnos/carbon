@@ -12,7 +12,15 @@ import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { addLogContext, oncePerRequest } from "@carbon/logger/context.server";
 import { annotateRequestSpan } from "@carbon/logger/span";
-import { Edition, getClientIp, Plan, redirect, safePath } from "@carbon/utils";
+import {
+  Edition,
+  getClientIp,
+  originOf,
+  Plan,
+  type RequestOrigin,
+  redirect,
+  safePath
+} from "@carbon/utils";
 import {
   isAuthRetryableFetchError,
   type AuthSession as SupabaseAuthSession,
@@ -302,6 +310,8 @@ export type Caller = {
   permissions: Record<string, Permission>;
   /** The acting user's role in the company; `null` for an API key. */
   role: CompanyRole | null;
+  /** Where the request came from: the operations read it as `ctx.origin`. */
+  origin: RequestOrigin;
 };
 
 /**
@@ -344,7 +354,8 @@ export async function authorizeApiKey(
     consoleMode: false,
     caller: "apiKey",
     permissions: key.permissions,
-    role: null
+    role: null,
+    origin: originOf(request)
   };
 }
 
@@ -421,7 +432,8 @@ async function requirePermissions(
     consoleMode,
     caller: "session",
     permissions: myClaims.permissions,
-    role: myClaims.role
+    role: myClaims.role,
+    origin: originOf(request)
   };
 }
 
@@ -442,6 +454,7 @@ export type CallerAuth = Pick<
   | "caller"
   | "permissions"
   | "role"
+  | "origin"
 >;
 
 /**

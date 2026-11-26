@@ -140023,6 +140023,78 @@ export default {
         tags: ["(rpc) upsert_integration_secret"]
       }
     },
+    "/rpc/set_record_custom_fields": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_clear: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_scope_column: {
+                  format: "text",
+                  type: "string"
+                },
+                p_scope_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_set: {
+                  format: "jsonb"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                },
+                p_updated_by: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_table",
+                "p_ids",
+                "p_scope_column",
+                "p_scope_id",
+                "p_set",
+                "p_clear",
+                "p_updated_by"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) set_record_custom_fields"]
+      }
+    },
     "/rpc/get_training_assignment_summary": {
       post: {
         parameters: [
@@ -141143,6 +141215,74 @@ export default {
           }
         },
         tags: ["(rpc) sync_update_customer_type_group_name"]
+      }
+    },
+    "/rpc/get_item_type": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_type"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                item_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["item_id", "company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_type"]
       }
     },
     "/rpc/sync_set_initial_dependency_status": {

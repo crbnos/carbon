@@ -4,6 +4,7 @@
 
 import {
   createServiceContext,
+  NO_ORIGIN,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import type { CallerAuth } from "@carbon/auth/auth.server";
@@ -14,7 +15,8 @@ import { getDatabaseClient } from "~/services/database.server";
 /**
  * The context a service function runs with for a caller `authorize` resolved
  * (or the v1 API, the same way): the user with their claims and role, or the
- * API key with its grants and its creator as the audit user.
+ * API key with its grants and its creator as the audit user, and the request
+ * origin its entry point read.
  */
 export function serviceContext(auth: CallerAuth): ServiceContext {
   return createServiceContext({
@@ -32,6 +34,7 @@ export function serviceContext(auth: CallerAuth): ServiceContext {
             role: auth.role
           },
     company: { id: auth.companyId, groupId: auth.companyGroupId },
+    origin: auth.origin,
     caller: auth.client,
     system: getCarbonServiceRole,
     pg: getDatabaseClient,
@@ -56,6 +59,7 @@ export function systemContext({
   return createServiceContext({
     actor: { type: "system", onBehalfOf },
     company: { id: companyId, groupId: companyGroupId },
+    origin: NO_ORIGIN,
     caller: getCarbonServiceRole(),
     system: getCarbonServiceRole,
     pg: getDatabaseClient,

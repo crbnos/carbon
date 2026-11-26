@@ -55,6 +55,34 @@ function trustedProxies(): number {
   return Number.isInteger(n) && n >= 1 ? n : 1;
 }
 
+/**
+ * Where a request came from: the client's IP and city as the proxy in front
+ * of the app reported them, and its user agent. Invite emails and audit
+ * records show them. Every field is absent for a call no request made.
+ */
+export type RequestOrigin = {
+  ip?: string;
+  city?: string;
+  userAgent?: string;
+};
+
+/** The origin of a call no request made: a job, a workflow, a share link. */
+export const NO_ORIGIN: RequestOrigin = Object.freeze({});
+
+/**
+ * The request's origin, read from its headers. The IP is the entry our own
+ * proxy wrote (`getClientIp`). The city is Vercel's `X-Vercel-IP-City`, so
+ * behind any other proxy the caller sets it, as it sets its user agent.
+ */
+export function originOf(input: RequestLike): RequestOrigin {
+  const headers = headersOf(input);
+  return {
+    ip: getClientIp(input) ?? undefined,
+    city: headers.get("x-vercel-ip-city") ?? undefined,
+    userAgent: headers.get("user-agent") ?? undefined
+  };
+}
+
 /** `https` or `http` as the client used it: the proxy's, else `request.url`'s. */
 export function getRequestProtocol(input: RequestLike): "http" | "https" {
   const forwarded = listOf(

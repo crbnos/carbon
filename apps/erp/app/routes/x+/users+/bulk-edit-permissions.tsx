@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { respond } from "@carbon/api/carbon.server";
+import { originOf } from "@carbon/api/service-fn.server";
 import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -10,7 +11,6 @@ import {
   bulkPermissionsAllMatchingValidator,
   bulkPermissionsValidator
 } from "~/modules/users/users.models";
-import { originOf } from "~/modules/users/users.service";
 import { getParams, path } from "~/utils/path";
 import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
@@ -44,8 +44,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { api } = await authorize(args.request);
   const result = await api.users.bulkUpdatePermissions({
-    ...input.data,
-    ip: originOf(args.request).ip
+    ...input.data
   });
   return respond(args.request, result).redirect(
     `${path.to.employeeAccounts}?${getParams(args.request)}`,

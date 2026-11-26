@@ -12,7 +12,13 @@ import {
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { describeCause, type FailureReason } from "@carbon/utils";
+import {
+  describeCause,
+  type FailureReason,
+  NO_ORIGIN,
+  originOf,
+  type RequestOrigin
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
@@ -113,9 +119,18 @@ export type Actor =
 
 type Kv = typeof redis;
 
+export type { RequestOrigin };
+export { NO_ORIGIN, originOf };
+
 export type ServiceContext = {
   actor: Actor;
   company: { id: string; groupId: string };
+  /**
+   * Where the request came from, read by the entry point that authenticated
+   * it, never from the input, so the IP in an audit record is our proxy's.
+   * `NO_ORIGIN` when no request made the call: a job, a workflow, a posting.
+   */
+  origin: RequestOrigin;
   /**
    * Runs as the caller: row-level security applies. Not part of a
    * transaction: inside `ctx.transaction` reading it throws.
@@ -167,6 +182,7 @@ export type Settled<R> = Result<
 type Handles = {
   actor: Actor;
   company: { id: string; groupId: string };
+  origin?: RequestOrigin;
   caller: SupabaseClient<Database>;
   system: () => SupabaseClient<Database>;
   pg: () => Kysely<KyselyDatabase>;
@@ -243,6 +259,7 @@ class SystemHandles {
 class Context implements ServiceContext {
   readonly actor: Actor;
   readonly company: { id: string; groupId: string };
+  readonly origin: RequestOrigin;
   readonly asCaller: CallerHandles;
   readonly asSystem: SystemHandles;
   readonly auditUserId: string;
@@ -258,6 +275,7 @@ class Context implements ServiceContext {
   constructor(handles: Handles, nested: boolean, inTransaction: boolean) {
     this.actor = handles.actor;
     this.company = handles.company;
+    this.origin = handles.origin ?? NO_ORIGIN;
     this.asCaller = new CallerHandles(handles.caller, inTransaction);
     this.asSystem = new SystemHandles(handles);
     this.auditUserId = auditUserIdOf(handles.actor);

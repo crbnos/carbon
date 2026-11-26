@@ -2,36 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
-import type { LoaderFunctionArgs } from "react-router";
-import { deleteCustomField } from "~/modules/settings/settings.service";
+import type { ActionFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    "settings.customFields": "Full"
-  });
-
+export async function action({ request, params }: ActionFunctionArgs) {
   const { table, id } = params;
   if (!table) throw new Error("table is not found");
   if (!id) throw new Error("id is not found");
-
-  const deleteField = await deleteCustomField(client, id, companyId);
-  if (deleteField.error) {
-    throw redirect(
-      path.to.attributes,
-      await flash(
-        request,
-        error(deleteField.error, "Failed to delete custom field")
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.customFieldList(table),
-    await flash(request, success("Successfully deleted custom field"))
-  );
+  const { api } = await authorize(request);
+  const result = await api.settings.deleteCustomField({ id });
+  return respond(request, result).redirect(path.to.customFieldList(table), {
+    message: "Successfully deleted custom field",
+    onError: path.to.attributes
+  });
 }

@@ -1637,7 +1637,6 @@
   "status-write-guarded::apps/erp/app/modules/inventory/inventory.service.ts::consumeTrackedEntitiesIntoOperation: trackedEntity.status",
   "status-write-guarded::apps/erp/app/modules/inventory/inventory.service.ts::issueMaterial: trackedEntity.status",
   "status-write-guarded::apps/erp/app/modules/inventory/inventory.service.ts::pickPickingListLine: pickingListLine.status",
-  "status-write-guarded::apps/erp/app/modules/inventory/inventory.service.ts::postInventoryAdjustment: trackedEntity.status",
   "status-write-guarded::apps/erp/app/modules/inventory/inventory.service.ts::postReceipt: trackedEntity.status",
   "status-write-guarded::apps/erp/app/modules/inventory/inventory.service.ts::postReceipt: warehouseTransfer.status",
   "status-write-guarded::apps/erp/app/modules/inventory/inventory.service.ts::postRentalReceipt: receipt.status",

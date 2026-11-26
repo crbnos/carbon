@@ -14,8 +14,7 @@ import { applyLineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { customerContractLineValidator } from "~/modules/sales/sales.models";
 import {
   getContract,
-  projectRevenueRefusal,
-  upsertContractLine
+  projectRevenueRefusal
 } from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
@@ -60,7 +59,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
+  const { api, client, companyId } = await authorize(request, {
     "sales.serviceContracts": "Create"
   });
 
@@ -94,17 +93,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // `upsertContractLine` refuses a contract that is not a Draft and an item
-  // that is not a Service; its refusal message is what the user reads. It
+  // `createContractLine` refuses a contract that is not a Draft and an item
+  // its basis does not take; its refusal message is what the user reads. It
   // decides the tax: a caller that does not post the field (the form does;
   // an empty one is a cleared code) takes the ship-to's or customer's code.
-  const insert = await upsertContractLine(client, {
+  const insert = await api.sales.createContractLine({
     ...line,
     taxCodeId: formData.has("taxCodeId") ? (line.taxCodeId ?? null) : undefined,
     // The contract checked above is the URL's — never the form's copy.
-    customerContractId: id,
-    companyId,
-    createdBy: userId
+    customerContractId: id
   });
 
   if (insert.error) {

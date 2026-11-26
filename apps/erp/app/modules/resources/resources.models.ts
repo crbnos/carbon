@@ -121,7 +121,6 @@ export const locationValidator = z
   });
 
 export const maintenanceDispatchCommentValidator = z.object({
-  id: zfd.text(z.string().optional()),
   maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
   comment: z.string().min(1, { message: "Comment is required" })
 });
@@ -150,17 +149,6 @@ export const maintenanceDispatchEventValidator = z
       path: ["endTime"]
     }
   );
-
-export const maintenanceDispatchItemValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
-  itemId: z.string().min(1, { message: "Item is required" }),
-  quantity: zfd.numeric(z.number().min(1)),
-  unitOfMeasureCode: z
-    .string()
-    .min(1, { message: "Unit of measure is required" }),
-  unitCost: zfd.numeric(z.number().min(0).optional())
-});
 
 export const maintenanceDispatchPriority = [
   "Low",

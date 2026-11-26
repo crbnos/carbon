@@ -30,7 +30,6 @@ import {
   convertOperatorValidator
 } from "~/modules/users/users.models";
 import type { getEmployeeTypes } from "~/modules/users/users.service";
-import { originOf } from "~/modules/users/users.service";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -72,8 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { api } = await authorize(request);
   const result = await api.users.convertConsoleOperator({
     ...validation.data,
-    operatorId,
-    ip: originOf(request).ip
+    operatorId
   });
   return respond(request, result).redirect(path.to.employeeAccounts, {
     message: "Operator converted to full user. Invite email sent.",

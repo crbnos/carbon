@@ -1800,8 +1800,6 @@ export const path = {
     maintenanceDispatchEvents: (id: string) =>
       generatePath(`${x}/maintenance/${id}/events`),
     maintenanceDispatches: `${x}/resources/maintenance`,
-    maintenanceDispatchItems: (id: string) =>
-      generatePath(`${x}/maintenance/${id}/items`),
     maintenanceDispatchStatus: (id: string) =>
       generatePath(`${x}/maintenance/${id}/status`),
     maintenanceDispatchUpdate: `${x}/maintenance/update`,
@@ -2009,8 +2007,6 @@ export const path = {
     newMaintenanceDispatch: `${x}/maintenance/new`,
     newMaintenanceDispatchEvent: (dispatchId: string) =>
       generatePath(`${x}/maintenance/${dispatchId}/event/new`),
-    newMaintenanceDispatchItem: (dispatchId: string) =>
-      generatePath(`${x}/maintenance/${dispatchId}/item/new`),
     newMaintenanceSchedule: `${x}/resources/scheduled-maintenance/new`,
     newMakeMethodVersion: `${x}/items/methods/version/new`,
     newMaterial: `${x}/material/new`,

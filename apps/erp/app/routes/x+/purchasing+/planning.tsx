@@ -35,6 +35,7 @@ import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/Purchasing
 import {
   getLocationTimeZone,
   getOrCreatePeriods,
+  PLANNING_WEEKS,
   resolveLocationId
 } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -43,8 +44,6 @@ import type { Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/list-error";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
-
-const WEEKS_TO_PLAN = 12 * 4;
 
 const logger = getLogger("erp", "purchasing", "planning");
 
@@ -82,7 +81,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const periods = await getOrCreatePeriods(
     getDatabaseClient(),
     locationToday,
-    WEEKS_TO_PLAN
+    PLANNING_WEEKS
   );
 
   // The grid's Actions and Assignee filters are not RPC

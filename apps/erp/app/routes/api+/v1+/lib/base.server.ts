@@ -4,6 +4,7 @@
 
 // oRPC context + middleware shared by the HTTP transport and the MCP/agent bridges.
 
+import type { RequestOrigin } from "@carbon/api/service-fn.server";
 import type { Database } from "@carbon/database";
 import type { ExpandedClaims } from "@carbon/database/access";
 import { os } from "@orpc/server";
@@ -32,6 +33,10 @@ export interface AuthedContext {
   /** The user's role in the company, as their entry point resolved it; `null`
    *  for an API key. */
   role: "employee" | null;
+  /** Where the request came from, read from its headers when it was
+   *  authenticated (`apiKeyContext`, `oauthContext`). A workflow passes
+   *  `NO_ORIGIN`. */
+  origin: RequestOrigin;
 }
 
 export const base = os.$context<AuthedContext>();

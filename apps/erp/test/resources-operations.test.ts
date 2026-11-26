@@ -43,8 +43,11 @@ import { pageClaims } from "./page-claims";
 await import("../app/modules/resources/resources.service");
 const {
   createAbility,
+  createMaintenanceDispatchComment,
+  createMaintenanceDispatchItem,
   createMaintenanceEvent,
   createProcess,
+  deleteMaintenanceDispatch,
   createTrainingAssignment,
   completeTrainingAssignment,
   issueMaintenancePart,
@@ -94,6 +97,7 @@ function client(
       "eq",
       "neq",
       "in",
+      "not",
       "match",
       "limit",
       "order"
@@ -121,14 +125,17 @@ function client(
   return { from, rpc, writes };
 }
 
-function contextWith(answers: Record<string, unknown> = {}) {
+function contextWith(
+  answers: Record<string, unknown> = {},
+  grants: typeof permissions = permissions
+) {
   const db = client(answers);
   const ctx = createServiceContext({
     actor: {
       type: "user",
       role: "employee",
       userId: "user-1",
-      permissions: pageClaims(permissions)
+      permissions: pageClaims(grants)
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: db as never,
@@ -209,6 +216,19 @@ describe("issuing a spare part to a dispatch", () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
+  // The stock has moved: a refusal would invite a retry that issues it again.
+  it("answers the issue when the posting reports no part id", async () => {
+    invoke.mockResolvedValue({ data: { success: true }, error: null });
+    const { ctx } = contextWith(open);
+
+    const result = await issueMaintenancePart(ctx, { ...part, quantity: 2 });
+
+    expect(result).toEqual({
+      data: { dispatchId: "md-1", itemId: "item-1" },
+      error: null
+    });
+  });
+
   it("issues tracked entities as themselves, and anything else by quantity", async () => {
     const { ctx } = contextWith(open);
     const children = [
@@ -233,6 +253,130 @@ describe("issuing a spare part to a dispatch", () => {
         itemId: "item-1",
         unitOfMeasureCode: "EA",
         quantity: 3
+      }
+    ]);
+  });
+});
+
+describe("adding a spare part by quantity", () => {
+  it("answers the new part's id", async () => {
+    invoke.mockResolvedValue({
+      data: { success: true, maintenanceDispatchItemId: "mdi-1" },
+      error: null
+    });
+    const { ctx } = contextWith({
+      maintenanceDispatch: { id: "md-1", status: "Open" },
+      item: { id: "item-1" }
+    });
+
+    const result = await createMaintenanceDispatchItem(ctx, {
+      maintenanceDispatchId: "md-1",
+      itemId: "item-1",
+      quantity: 2,
+      unitOfMeasureCode: "EA"
+    });
+
+    expect(result).toEqual({ data: { id: "mdi-1" }, error: null });
+  });
+});
+
+describe("deleting a maintenance dispatch", () => {
+  it.each(["Completed", "Cancelled"])(
+    "refuses a %s dispatch, and deletes nothing",
+    async (status) => {
+      const { ctx, writes } = contextWith({
+        maintenanceDispatch: { id: "md-1", status }
+      });
+
+      const result = await deleteMaintenanceDispatch(ctx, { dispatchId: "md-1" });
+
+      expect(result.error?.category).toBe("rule");
+      expect(writes).toEqual([]);
+    }
+  );
+
+  it("deletes an open dispatch", async () => {
+    const { ctx, writes } = contextWith({
+      "maintenanceDispatch:read": { id: "md-1", status: "Open" },
+      maintenanceDispatch: [{ id: "md-1" }]
+    });
+
+    const result = await deleteMaintenanceDispatch(ctx, { dispatchId: "md-1" });
+
+    expect(result).toEqual({ data: [{ id: "md-1" }], error: null });
+    expect(writes.map((w) => `${w.op}:${w.table}`)).toEqual([
+      "delete:maintenanceDispatch"
+    ]);
+  });
+
+  // The delete's own status predicate matched no row: the dispatch was
+  // completed, cancelled or deleted after it was read.
+  it("refuses a dispatch the delete no longer reaches", async () => {
+    const { ctx } = contextWith({
+      "maintenanceDispatch:read": { id: "md-1", status: "Open" },
+      maintenanceDispatch: []
+    });
+
+    const result = await deleteMaintenanceDispatch(ctx, { dispatchId: "md-1" });
+
+    expect(result.error).toMatchObject({
+      category: "conflict",
+      message:
+        "The dispatch was completed, cancelled or deleted since it was read"
+    });
+  });
+});
+
+describe("commenting on a maintenance dispatch", () => {
+  const comment = { maintenanceDispatchId: "md-1", comment: "Belt replaced" };
+
+  it.each(["Completed", "Cancelled"])(
+    "refuses a %s dispatch, and writes nothing",
+    async (status) => {
+      const { ctx, writes } = contextWith({
+        maintenanceDispatch: { id: "md-1", status }
+      });
+
+      const result = await createMaintenanceDispatchComment(ctx, comment);
+
+      expect(result.error?.category).toBe("rule");
+      expect(writes).toEqual([]);
+    }
+  );
+
+  it("refuses a caller with Create on dispatches but not Edit", async () => {
+    const { ctx, writes } = contextWith(
+      { maintenanceDispatch: { id: "md-1", status: "Open" } },
+      {
+        "resources.dispatches": {
+          view: ["company-1"],
+          create: ["company-1"],
+          update: [],
+          delete: []
+        }
+      }
+    );
+
+    const result = await createMaintenanceDispatchComment(ctx, comment);
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
+  });
+
+  it("adds the comment to an open dispatch", async () => {
+    const { ctx, writes } = contextWith({
+      maintenanceDispatch: { id: "md-1", status: "Open" },
+      maintenanceDispatchComment: { id: "mdc-1" }
+    });
+
+    const result = await createMaintenanceDispatchComment(ctx, comment);
+
+    expect(result).toEqual({ data: { id: "mdc-1" }, error: null });
+    expect(writes).toEqual([
+      {
+        op: "insert",
+        table: "maintenanceDispatchComment",
+        payload: [{ ...comment, companyId: "company-1", createdBy: "user-1" }]
       }
     ]);
   });

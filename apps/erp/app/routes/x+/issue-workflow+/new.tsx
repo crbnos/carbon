@@ -2,23 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { ScrollArea, useCloseRoute, useViewport } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { useSetAppBarOverride } from "~/components/Layout/Mobile";
 import { issueWorkflowValidator } from "~/modules/quality/quality.models";
-import {
-  getRequiredActionsList,
-  upsertIssueWorkflow
-} from "~/modules/quality/quality.service";
+import { getRequiredActionsList } from "~/modules/quality/quality.service";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
+import { toTiptapDoc } from "~/modules/shared/shared.models";
 import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
@@ -35,39 +31,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    "quality.issueWorkflows": "Create"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(issueWorkflowValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: _, content, ...workflow } = input.data;
+  const { api } = await authorize(args.request);
+  const result = await api.quality.createIssueWorkflow({
+    ...workflow,
+    // An untouched editor posts `{}`: an empty template.
+    content: toTiptapDoc(content)
   });
-  const formData = await request.formData();
-  const validation = await validator(issueWorkflowValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
+  if (result.error || !result.data) {
+    return respond(args.request, result).redirect(path.to.issueWorkflows);
   }
-
-  const { id, ...d } = validation.data;
-
-  const insertIssueWorkflow = await upsertIssueWorkflow(client, {
-    ...d,
-    companyId,
-    createdBy: userId
-  });
-
-  if (insertIssueWorkflow.error || !insertIssueWorkflow.data?.id) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(insertIssueWorkflow.error, "Failed to insert issue workflow")
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.issueWorkflow(insertIssueWorkflow.data.id),
-    await flash(request, success("Non-conformance workflow created"))
+  return respond(args.request, result).redirect(
+    path.to.issueWorkflow(result.data.id),
+    { message: "Non-conformance workflow created" }
   );
 }
 
