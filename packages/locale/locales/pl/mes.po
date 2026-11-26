@@ -707,9 +707,6 @@ msgstr "Wykres"
 msgid "Chart of {series}"
 msgstr "Wykres: {series}"
 
-msgid "Chat"
-msgstr "Czat"
-
 msgid "Check your email"
 msgstr "Sprawdź swoją skrzynkę e-mail"
 

@@ -2107,6 +2107,18 @@ export const JOB_SUPPLY_STATUS_PRIORITY: JobStatus[] = [
   "Planned"
 ];
 
+// What a short line asks for: a part we make and pull from stock is made;
+// anything the line buys, or a Buy and Make part, is ordered (MRP plans
+// Buy and Make as Buy).
+export function shortfallAction(
+  methodType: string | null | undefined,
+  replenishmentSystem: string | null | undefined
+): "make" | "order" {
+  return methodType === "Pull from Inventory" && replenishmentSystem === "Make"
+    ? "make"
+    : "order";
+}
+
 // The single source of truth for order-status precedence. Both the status filter
 // and JobOrderStatusBadge derive from this (the badge maps each category to its
 // icon/label), so they can never disagree. Order of the checks below IS the

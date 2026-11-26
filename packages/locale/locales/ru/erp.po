@@ -18247,6 +18247,14 @@ msgstr "Основная часть срока экономической жиз
 msgid "Make"
 msgstr "Производить"
 
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} × {substitute} for this job"
+msgstr "Изготовить {0} × {substitute} для этого производственного заказа"
+
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} for this job"
+msgstr "Изготовить {0} для этого задания"
+
 msgid "Make {amount} for {date}"
 msgstr "Произвести {amount} на {date}"
 
@@ -19405,8 +19413,8 @@ msgstr "Требуется исправление"
 msgid "Needs job"
 msgstr "Требуется задание"
 
-msgid "Needs ordering"
-msgstr "Требуется заказ"
+msgid "Needs ordering or making"
+msgstr "Нужно заказать или изготовить"
 
 msgid "Needs review"
 msgstr "Требует рассмотрения"
@@ -23759,6 +23767,9 @@ msgstr "Предикатные защиты, которые срабатываю
 
 msgid "Predict lead time"
 msgstr "Предсказать срок поставки"
+
+msgid "Predict lead time from the shop schedule"
+msgstr "Предсказать срок поставки по графику цеха"
 
 msgid "Predicting lead time…"
 msgstr "Прогнозирование сроков поставки…"

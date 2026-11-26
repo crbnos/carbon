@@ -18247,6 +18247,14 @@ msgstr "Major Part of Economic Life (%)"
 msgid "Make"
 msgstr "Make"
 
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} × {substitute} for this job"
+msgstr "Make {0} × {substitute} for this job"
+
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} for this job"
+msgstr "Make {0} for this job"
+
 msgid "Make {amount} for {date}"
 msgstr "Make {amount} for {date}"
 
@@ -19405,8 +19413,8 @@ msgstr "Needs fixing"
 msgid "Needs job"
 msgstr "Needs job"
 
-msgid "Needs ordering"
-msgstr "Needs ordering"
+msgid "Needs ordering or making"
+msgstr "Needs ordering or making"
 
 msgid "Needs review"
 msgstr "Needs review"
@@ -23759,6 +23767,9 @@ msgstr "Predicate-driven guards that fire on sales lines. Block with errors or w
 
 msgid "Predict lead time"
 msgstr "Predict lead time"
+
+msgid "Predict lead time from the shop schedule"
+msgstr "Predict lead time from the shop schedule"
 
 msgid "Predicting lead time…"
 msgstr "Predicting lead time…"

@@ -133,7 +133,8 @@ provisional; the settle pass is what applies the per-line rule.
 The job materials **Order Status** column (`getJobMaterialShortfallByItem`)
 nets a Consume First shortfall against the successor's on-hand and incoming
 supply in a second pass; `ItemOrderStatus.substituteItemId` tells the badge to
-say "In stock, the remainder as NEW" or "Order N × NEW for this job". The
+say "In stock, the remainder as NEW" or "Order N × NEW for this job"
+("Make N × NEW" when NEW is a Make item). The
 successor's own supply also drives the badge: `getJobMaterialsOrderStatus`
 loads PO lines and supply jobs for every substitute item that is not itself a
 material of the job, and `getJobOrderStatusByMaterial` reads a line's own item

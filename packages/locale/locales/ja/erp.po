@@ -18247,6 +18247,14 @@ msgstr "経済的耐用年数の主要部分 (%)"
 msgid "Make"
 msgstr "製造"
 
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} × {substitute} for this job"
+msgstr "この製造指図に{0} × {substitute}を製造"
+
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} for this job"
+msgstr "このジョブ用に{0}を製造"
+
 msgid "Make {amount} for {date}"
 msgstr "{date}に{amount}を内製"
 
@@ -19405,8 +19413,8 @@ msgstr "修理が必要です"
 msgid "Needs job"
 msgstr "ジョブが必要"
 
-msgid "Needs ordering"
-msgstr "発注が必要"
+msgid "Needs ordering or making"
+msgstr "発注または製造が必要"
 
 msgid "Needs review"
 msgstr "レビューが必要"
@@ -23759,6 +23767,9 @@ msgstr "販売明細行で起動する述語駆動ガード。エラーでブロ
 
 msgid "Predict lead time"
 msgstr "リードタイムを予測"
+
+msgid "Predict lead time from the shop schedule"
+msgstr "工場の生産計画からリードタイムを予測"
 
 msgid "Predicting lead time…"
 msgstr "リードタイムを予測中…"

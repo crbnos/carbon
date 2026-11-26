@@ -995,13 +995,22 @@ const QuoteLinePricing = ({
                   label={<Trans>Lead Time</Trans>}
                   badge={
                     isEmployee && hasCalculatedCost ? (
-                      <IconButton
-                        aria-label={t`Predict lead time`}
-                        icon={<LuCalendarClock />}
-                        variant="ghost"
-                        size="sm"
-                        onClick={leadTimeModal.onOpen}
-                      />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <IconButton
+                            aria-label={t`Predict lead time`}
+                            icon={<LuCalendarClock />}
+                            variant="ghost"
+                            size="sm"
+                            onClick={leadTimeModal.onOpen}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <Trans>
+                            Predict lead time from the shop schedule
+                          </Trans>
+                        </TooltipContent>
+                      </Tooltip>
                     ) : undefined
                   }
                 />

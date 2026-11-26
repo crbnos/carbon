@@ -707,9 +707,6 @@ msgstr "Diagramm"
 msgid "Chart of {series}"
 msgstr "Diagramm von {series}"
 
-msgid "Chat"
-msgstr "Chat"
-
 msgid "Check your email"
 msgstr "Prüfen Sie Ihre E-Mail"
 

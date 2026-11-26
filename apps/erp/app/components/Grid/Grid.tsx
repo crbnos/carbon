@@ -72,6 +72,11 @@ interface GridProps<T extends object> {
    * row is rendered and the grid is as tall as its rows.
    */
   maxHeight?: number;
+  /**
+   * Select a row the moment one is added: it scrolls into view with its first
+   * editable cell ringed. For grids whose add button sits outside the rows.
+   */
+  selectAddedRow?: boolean;
 
   withNewRow?: boolean;
   withSimpleSorting?: boolean;
@@ -88,6 +93,7 @@ const Grid = <T extends object>({
   editableComponents,
   isRowEditable,
   maxHeight,
+  selectAddedRow = false,
   defaultColumnOrder,
   defaultColumnVisibility,
   withSimpleSorting = true,
@@ -402,6 +408,23 @@ const Grid = <T extends object>({
   });
 
   const rows = table.getRowModel().rows;
+
+  // Rows keep the order of `data`, so an added row is the last one.
+  const lastRowCount = useRef(data.length);
+  useEffect(() => {
+    const added = data.length === lastRowCount.current + 1;
+    lastRowCount.current = data.length;
+    if (!selectAddedRow || !added) return;
+    const row = data.length - 1;
+    const columnCount =
+      table.getLeftVisibleLeafColumns().length +
+      table.getCenterVisibleLeafColumns().length;
+    const column = Array.from({ length: columnCount }, (_, c) => c).find((c) =>
+      isCellEditable(row, c)
+    );
+    setIsEditing(false);
+    setSelectedCell({ row, column: column ?? 0 });
+  }, [data.length, selectAddedRow, table, isCellEditable]);
 
   /* Row virtualization (only with `maxHeight`) */
   const isVirtual = maxHeight !== undefined;

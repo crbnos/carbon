@@ -1066,6 +1066,7 @@ export default function InspectionDocumentEditor({
               {bottomTab === "characteristics" ? (
                 <Grid<FeatureRow>
                   key="characteristics"
+                  selectAddedRow
                   data={featureRows}
                   columns={featureColumns}
                   editableComponents={featureEditableComponents}
@@ -1075,6 +1076,7 @@ export default function InspectionDocumentEditor({
               ) : bottomTab === "parameters" ? (
                 <Grid<ParameterRow>
                   key="parameters"
+                  selectAddedRow
                   data={parameterRows}
                   columns={parameterColumns}
                   editableComponents={parameterEditableComponents}

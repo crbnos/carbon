@@ -18247,6 +18247,14 @@ msgstr "Ekonomik Yaşamın Önemli Bölümü (%)"
 msgid "Make"
 msgstr "Üret"
 
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} × {substitute} for this job"
+msgstr "Bu iş emri için {0} × {substitute} üret"
+
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} for this job"
+msgstr "Bu iş için {0} üret"
+
 msgid "Make {amount} for {date}"
 msgstr "{date} için {amount} üretim"
 
@@ -19405,8 +19413,8 @@ msgstr "Onarılması gerekir"
 msgid "Needs job"
 msgstr "İş gerekli"
 
-msgid "Needs ordering"
-msgstr "Sipariş gerekli"
+msgid "Needs ordering or making"
+msgstr "Sipariş veya üretim gerekli"
 
 msgid "Needs review"
 msgstr "İnceleme gerekiyor"
@@ -23759,6 +23767,9 @@ msgstr "Satış satırlarında çalışan koşul tabanlı korumalar. Hatayla eng
 
 msgid "Predict lead time"
 msgstr "Tedarik süresini tahmin et"
+
+msgid "Predict lead time from the shop schedule"
+msgstr "Tedarik süresini atölye planından tahmin et"
 
 msgid "Predicting lead time…"
 msgstr "Tedarik süresi tahmin ediliyor…"

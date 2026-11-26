@@ -18247,6 +18247,14 @@ msgstr "Wesentlicher Teil der wirtschaftlichen Lebensdauer (%)"
 msgid "Make"
 msgstr "Herstellen"
 
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} × {substitute} for this job"
+msgstr "{0} × {substitute} für diesen Fertigungsauftrag fertigen"
+
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} for this job"
+msgstr "{0} für diesen Auftrag fertigen"
+
 msgid "Make {amount} for {date}"
 msgstr "{amount} bis {date} herstellen"
 
@@ -19405,8 +19413,8 @@ msgstr "Muss behoben werden"
 msgid "Needs job"
 msgstr "Benötigt Auftrag"
 
-msgid "Needs ordering"
-msgstr "Bestellung erforderlich"
+msgid "Needs ordering or making"
+msgstr "Bestellen oder fertigen nötig"
 
 msgid "Needs review"
 msgstr "Benötigt Überprüfung"
@@ -23759,6 +23767,9 @@ msgstr "Prädikatsgesteuerte Guards, die auf Verkaufszeilen ausgelöst werden. B
 
 msgid "Predict lead time"
 msgstr "Beschaffungszeit vorhersagen"
+
+msgid "Predict lead time from the shop schedule"
+msgstr "Beschaffungszeit aus dem Fertigungsplan vorhersagen"
 
 msgid "Predicting lead time…"
 msgstr "Beschaffungszeit wird vorhergesagt…"

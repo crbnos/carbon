@@ -18,6 +18,7 @@ import {
   BottomSheetContent,
   Button,
   ClientOnly,
+  Count,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -100,7 +101,10 @@ import {
 import { useFetcher, useSearchParams } from "react-router";
 import { AbilityWarning } from "~/components/AbilityWarning";
 import { TrackingTypeIcon } from "~/components/Icons";
-import { OperationChat } from "~/components/JobOperation/components/Chat";
+import {
+  OperationChat,
+  useOperationNotes
+} from "~/components/JobOperation/components/Chat";
 import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMaterialModal";
 import { MaintenanceDispatch } from "~/components/JobOperation/components/MaintenanceDispatch";
 import {
@@ -589,6 +593,7 @@ export function AssemblyView({
   const { isPhone } = useViewport();
   // Which main panel is shown: the assembly details, the 3D model, or chat.
   const [tab, setTab] = useState<"details" | "model" | "chat">("details");
+  const notes = useOperationNotes(operation?.id);
 
   const issueModal = useDisclosure();
   const qualityModal = useDisclosure();
@@ -2349,18 +2354,23 @@ export function AssemblyView({
               active={tab === "details"}
               onClick={() => setTab("details")}
             >
-              Details
+              <Trans>Details</Trans>
             </TabButton>
             {modelPath ? (
               <TabButton
                 active={tab === "model"}
                 onClick={() => setTab("model")}
               >
-                Model
+                <Trans>Model</Trans>
               </TabButton>
             ) : null}
             <TabButton active={tab === "chat"} onClick={() => setTab("chat")}>
-              Chat
+              <span className="flex items-center gap-1.5">
+                <Trans>Notes</Trans>
+                {notes.messages.length > 0 && (
+                  <Count count={notes.messages.length} />
+                )}
+              </span>
             </TabButton>
           </div>
 
@@ -2378,6 +2388,7 @@ export function AssemblyView({
             <div className="min-h-0 flex-1 overflow-hidden">
               <OperationChat
                 operation={operation as unknown as OperationWithDetails}
+                notes={notes}
               />
             </div>
           ) : (
