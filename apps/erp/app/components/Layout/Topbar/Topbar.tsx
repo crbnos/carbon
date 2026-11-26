@@ -31,8 +31,9 @@ const Topbar = () => {
     <header className="h-[var(--topbar-height)] grid grid-cols-[1fr_auto] bg-card border-b border-border text-foreground px-4 top-0 sticky z-10 items-center">
       <div className="flex-1 hidden md:flex items-center gap-3 h-full">
         <BoardSidebarToggle />
-        {/* A page without a table has no other way to reopen the sidebar. */}
-        <CollapsibleSidebarTrigger />
+        {/* A page without a table has no other way to reopen the sidebar.
+            `ml-0` lines it up with the board button in this slot. */}
+        <CollapsibleSidebarTrigger className="ml-0" />
         <Breadcrumbs />
       </div>
       <HStack spacing={1} className="flex-1 justify-end py-2">
