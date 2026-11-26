@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { checksOf, defineCheck } from "./check";
+import { defineCheck } from "./check";
 import { openRepo } from "./repo";
 
 describe("defineCheck with rule()", () => {
@@ -52,15 +52,45 @@ describe("defineCheck with rule()", () => {
   });
 });
 
-describe("checksOf", () => {
-  it("lists a file's checks in the order they are defined, not by name", () => {
-    const define = (id: string) =>
-      defineCheck({ id, description: "", files: () => [], scan: () => [] });
-    const zebra = define("zebra");
-    const apple = define("apple");
-    expect(checksOf({ apple, zebra }).map((check) => check.id)).toEqual([
-      "zebra",
-      "apple"
+describe("defineCheck with bans", () => {
+  it("finds what its banned data says, in the files it names", () => {
+    const check = defineCheck({
+      id: "no-x",
+      description: "",
+      files: () => [
+        { file: "a.ts", contents: "x\ny x" },
+        { file: "skip.ts", contents: "x" }
+      ],
+      within: "line",
+      snippet: "match",
+      except: ["skip.ts"],
+      banned: [{ pattern: /x/g, message: "no x" }]
+    });
+    expect(check.run(openRepo("/repo"))).toEqual([
+      { file: "a.ts", line: 1, snippet: "x", message: "no x" },
+      { file: "a.ts", line: 2, snippet: "x", message: "no x" }
     ]);
+    expect(check.scan("b.ts", "x").map((v) => v.file)).toEqual(["b.ts"]);
+  });
+
+  it("computes bans() on its first use, once", () => {
+    let builds = 0;
+    const check = defineCheck({
+      id: "no-x",
+      description: "",
+      files: () => [{ file: "a.ts", contents: "x" }],
+      bans() {
+        builds++;
+        return {
+          within: "file",
+          snippet: "match",
+          banned: [{ pattern: new RegExp("x", "g"), message: "no x" }]
+        };
+      }
+    });
+    expect(builds).toBe(0);
+    expect(check.scan("b.ts", "x").map((v) => v.file)).toEqual(["b.ts"]);
+    expect(check.run(openRepo("/repo")).map((v) => v.file)).toEqual(["a.ts"]);
+    expect(builds).toBe(1);
   });
 });

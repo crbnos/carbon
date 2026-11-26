@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { type Bans, findBanned } from "./sources/matches";
+
 /** A source file handed to a check: any text file, SQL or TypeScript. */
 export type SourceFile = { file: string; contents: string };
 
@@ -84,6 +86,12 @@ type FileRule = About & { files: Loader<SourceFile[]>; scan: Scan };
 /** A file rule whose `Scan`, and everything it needs, `rule()` builds on first use. */
 type LazyFileRule = About & { files: Loader<SourceFile[]>; rule(): Scan };
 
+/** A file rule that is data: what it bans in each file (`Bans`). */
+type BansRule = About & { files: Loader<SourceFile[]> } & Bans;
+
+/** A bans rule whose data `bans()` computes on first use. */
+type LazyBansRule = About & { files: Loader<SourceFile[]>; bans(): Bans };
+
 type InputsRule<T> = About & {
   reads: Loaders<T>;
   find(inputs: T): Violation[];
@@ -92,22 +100,24 @@ type InputsRule<T> = About & {
 /** An inputs rule whose `find`, and everything it needs, `rule()` builds on first use. */
 type LazyInputsRule<T> = About & { reads: Loaders<T>; rule(): Find<T> };
 
-// A module namespace lists its exports alphabetically, not as written, so each
-// check keeps the order it was defined in for `checksOf`.
-const definedAt = new WeakMap<Check, number>();
-let defined = 0;
-
 /**
- * A check, from the inputs it reads and its rule over them. A rule over one
- * file at a time names its `files` and a `scan`; a rule over several inputs
- * names them in `reads` and gets them loaded in `find`. Either may instead
- * give `rule()`, which builds that `scan` or `find` the first time the check
- * runs, so importing a check builds nothing. Neither sees the repo, so a check
- * reads only what it declares, and a test calls `scan` or `find` with its own
+ * A check, from the inputs it reads and its rule over them. The common rule
+ * bans patterns in some files: it names its `files` and gives the bans as
+ * data (`banned`, `within`, `snippet`, `except`, `mayContain`), or `bans()`
+ * when that data is computed. A rule with real logic over one file at a time
+ * names its `files` and a `scan`; a rule over several inputs names them in
+ * `reads` and gets them loaded in `find`. Either may instead give `rule()`,
+ * which builds that `scan` or `find` the first time the check runs. So
+ * importing a check builds nothing. No rule sees the repo, so a check reads
+ * only what it declares, and a test calls `scan` or `find` with its own
  * values.
  */
+// First: checked against another overload before this one, `bans()` would
+// have its literal `within` and `snippet` widened to string, and fail here.
+export function defineCheck(rule: LazyBansRule): Check & { scan: Scan };
 export function defineCheck(rule: FileRule): Check & { scan: Scan };
 export function defineCheck(rule: LazyFileRule): Check & { scan: Scan };
+export function defineCheck(rule: BansRule): Check & { scan: Scan };
 export function defineCheck<T extends Record<string, unknown>>(
   rule: InputsRule<T>
 ): Check & { find(inputs: T): Violation[] };
@@ -118,25 +128,30 @@ export function defineCheck(
   rule:
     | FileRule
     | LazyFileRule
+    | BansRule
+    | LazyBansRule
     | InputsRule<Record<string, unknown>>
     | LazyInputsRule<Record<string, unknown>>
 ): Check & {
   scan?: Scan;
   find?(inputs: Record<string, unknown>): Violation[];
 } {
-  const check = fromRule(rule);
-  definedAt.set(check, defined++);
-  return check;
-}
-
-function fromRule(
-  rule:
-    | FileRule
-    | LazyFileRule
-    | InputsRule<Record<string, unknown>>
-    | LazyInputsRule<Record<string, unknown>>
-) {
   if ("files" in rule) {
+    if ("banned" in rule) {
+      const { id, description, provenance, files, ...bans } = rule;
+      return fileCheck(
+        { id, description, provenance },
+        files,
+        () => (file, contents) => findBanned(file, contents, bans)
+      );
+    }
+    if ("bans" in rule) {
+      const { files, bans: build, ...about } = rule;
+      return fileCheck(about, files, () => {
+        const bans = build();
+        return (file, contents) => findBanned(file, contents, bans);
+      });
+    }
     if ("scan" in rule) {
       const { files, scan, ...about } = rule;
       return fileCheck(about, files, () => scan);
@@ -194,15 +209,4 @@ function once<T>(build: () => T): () => T {
     built ??= { value: build() };
     return built.value;
   };
-}
-
-/**
- * The checks of a subject file whose every export is a check, in the order the
- * file defines them. It takes the file's namespace (`import * as`), so any
- * other value the file exports is a type error.
- */
-export function checksOf(exports: Record<string, Check>): Check[] {
-  return Object.values(exports).sort(
-    (a, b) => (definedAt.get(a) ?? 0) - (definedAt.get(b) ?? 0)
-  );
 }

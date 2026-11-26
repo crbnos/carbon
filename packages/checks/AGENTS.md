@@ -12,16 +12,25 @@ fails on any violation the committed baseline does not list.
 - **Fix the code, not the baseline.** A new violation is fixed where it is. The
   baseline (`src/conformance/baseline.json`) grandfathers only the sites that
   existed before a check did.
-- **Read a check in its subject's file.** `src/conformance/` has one file per
-  subject (`migrations.ts`, `authz.ts`, `data-access.ts`, `ui.ts`, …). Each
-  check's rule, its exemptions and the incident that prompted it are in the
-  comments above it. This guide does not repeat them.
+- **Read a check in its subject's file, or its own.** `src/conformance/` has
+  one file per subject (`migrations.ts`, `authz.ts`, `data-access.ts`, `ui.ts`,
+  …), or one per check named by its id (`no-zero-concurrency.ts`, with
+  `no-zero-concurrency.test.ts`). Each check's rule, its exemptions and the
+  incident that prompted it are in the comments above it. This guide does not
+  repeat them.
 - **Add a check as one `defineCheck` and one line.** Write it
   (`src/check.ts`: `id`, `description`, `provenance`, the inputs it reads and
   its rule) in its subject's file and add it to the `checks` list at the end of
   that file. `src/checks.ts` joins those lists into `CHECKS`. Nothing else
   registers it. A check declares every input it reads, and its rule gets them
-  loaded and never sees the repo. There are two shapes; copy the closest:
+  loaded and never sees the repo. A check in a file of its own is that file's
+  only export, and `src/checks.ts` lists it by name. There are three shapes;
+  copy the closest:
+  - It bans patterns in each file: give them as data, `defineCheck({ …,
+    files: loader, within, snippet, banned, except?, mayContain? })`
+    (`Bans` in `src/sources/matches.ts`), or `bans()` that returns them when
+    they are computed. Example: `noZeroConcurrency`. A check with logic beyond
+    that gives `rule()`, which builds its `scan` on first use: `noLocalTimezone`.
   - It reads one file at a time: `defineCheck({ …, files: loader, scan })`.
     Tests call `check.scan(file, contents)` with a fixture string. Example:
     `noNumericPrecision` in `migrations.ts`.
@@ -137,10 +146,10 @@ The gate runs in four places with the same command
 | Path | Holds |
 |---|---|
 | `src/check.ts` | The types (`Check`, `Loader`, `Repo`, `Violation`, `Provenance`) and `defineCheck`, `eachFile` |
-| `src/checks.ts` | `CHECKS`: the subject files' `checks` lists, joined |
+| `src/checks.ts` | `CHECKS`: the subject files' `checks` lists and the one-check files' checks, joined |
 | `src/run.ts`, `src/run.worker.ts` | `collectFindings` (runs `CHECKS` on up to 4 worker threads, each with its own `repo`), `runChecks` (one `repo`, in process) and `newViolations` (minus the baseline) |
 | `src/repo.ts` | `openRepo`: reads each input once |
-| `src/conformance/` | One file per subject, with its tests in `<subject>.test.ts` |
+| `src/conformance/` | One file per subject or per check, with its tests in `<subject>.test.ts` / `<id>.test.ts` |
 | `src/sources/` | Loaders several checks share; `sql.ts` (parsed SQL), `syntax.ts` (parsed TypeScript) and `oxlint.ts` (plugin findings) |
 | `oxlint-plugins/carbon.mjs` | The oxlint plugin rules |
 | `src/baseline.ts`, `src/conformance/baseline.json` | The grandfathered violations |

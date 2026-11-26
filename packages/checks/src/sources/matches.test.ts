@@ -3,46 +3,80 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { bannedHits, lineViolations, matchViolations } from "./matches";
+import { type Bans, findBanned, matchViolations } from "./matches";
 
-describe("bannedHits", () => {
-  it("gives every match of each pattern, pattern by pattern", () => {
+describe("findBanned", () => {
+  const banned = [
+    { pattern: /a\s+b/g, message: "no a b" },
+    { pattern: /c/g, message: "no c" }
+  ];
+
+  it("within a file, places each match at the line it starts on, pattern by pattern", () => {
     expect(
-      bannedHits("b a b a", [
-        { pattern: /a/g, message: "no a" },
-        { pattern: /b/g, message: "no b" }
-      ])
+      findBanned("f.ts", "c a\n  b\na b c", {
+        within: "file",
+        snippet: "match",
+        banned
+      })
     ).toEqual([
-      { snippet: "a", message: "no a" },
-      { snippet: "a", message: "no a" },
-      { snippet: "b", message: "no b" },
-      { snippet: "b", message: "no b" }
+      { file: "f.ts", line: 1, snippet: "a\n  b", message: "no a b" },
+      { file: "f.ts", line: 3, snippet: "a b", message: "no a b" },
+      { file: "f.ts", line: 1, snippet: "c", message: "no c" },
+      { file: "f.ts", line: 3, snippet: "c", message: "no c" }
     ]);
   });
 
-  it("gives nothing for text no pattern matches", () => {
-    expect(bannedHits("c", [{ pattern: /a/g, message: "no a" }])).toEqual([]);
+  it("collapses the whitespace of a collapsed-match snippet", () => {
+    expect(
+      findBanned("f.ts", "a\n  b", {
+        within: "file",
+        snippet: "collapsed-match",
+        banned
+      }).map((v) => v.snippet)
+    ).toEqual(["a b"]);
   });
-});
 
-describe("lineViolations", () => {
-  const eachLetter = (line: string) =>
-    line.split("").map((c) => ({ snippet: c, message: line }));
-
-  it("places each hit at its file and 1-based line, line by line", () => {
-    expect(lineViolations("f.ts", "x\nyy\nx", /./, eachLetter)).toEqual([
-      { file: "f.ts", line: 1, snippet: "x", message: "x" },
-      { file: "f.ts", line: 2, snippet: "y", message: "yy" },
-      { file: "f.ts", line: 2, snippet: "y", message: "yy" },
-      { file: "f.ts", line: 3, snippet: "x", message: "x" }
+  it("within a line, finds no match that spans lines, line by line", () => {
+    expect(
+      findBanned("f.ts", "a\nb c a  b c", {
+        within: "line",
+        snippet: "match",
+        banned
+      })
+    ).toEqual([
+      { file: "f.ts", line: 2, snippet: "a  b", message: "no a b" },
+      { file: "f.ts", line: 2, snippet: "c", message: "no c" },
+      { file: "f.ts", line: 2, snippet: "c", message: "no c" }
     ]);
   });
 
-  it("skips a line mayMatch does not match", () => {
-    expect(lineViolations("f.ts", "x\nyy\nx", /y/, eachLetter)).toEqual([
-      { file: "f.ts", line: 2, snippet: "y", message: "yy" },
-      { file: "f.ts", line: 2, snippet: "y", message: "yy" }
+  it("gives a trimmed-line snippet once per pattern a line matches", () => {
+    expect(
+      findBanned("f.ts", "  c c a b  \nx", {
+        within: "line",
+        snippet: "trimmed-line",
+        banned
+      })
+    ).toEqual([
+      { file: "f.ts", line: 1, snippet: "c c a b", message: "no a b" },
+      { file: "f.ts", line: 1, snippet: "c c a b", message: "no c" }
     ]);
+  });
+
+  it("skips a file or line without mayContain, and an exempt file", () => {
+    const bans: Bans = {
+      within: "line",
+      snippet: "match",
+      banned,
+      mayContain: /a/,
+      except: ["skip.ts", /^gen\//]
+    };
+    expect(findBanned("f.ts", "c\na b c", bans).map((v) => v.line)).toEqual([
+      2, 2
+    ]);
+    expect(findBanned("f.ts", "c", bans)).toEqual([]);
+    expect(findBanned("skip.ts", "a b", bans)).toEqual([]);
+    expect(findBanned("gen/f.ts", "a b", bans)).toEqual([]);
   });
 });
 
