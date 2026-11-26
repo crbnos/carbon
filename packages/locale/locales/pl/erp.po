@@ -18256,6 +18256,14 @@ msgstr "Główna część okresu użytkowania (%)"
 msgid "Make"
 msgstr "Wytwórz"
 
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} × {substitute} for this job"
+msgstr "Wyprodukuj {0} × {substitute} dla tego zlecenia produkcyjnego"
+
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} for this job"
+msgstr "Wyprodukuj {0} dla tego zadania"
+
 msgid "Make {amount} for {date}"
 msgstr "Wyprodukuj {amount} na {date}"
 
@@ -19414,8 +19422,8 @@ msgstr "Wymaga naprawy"
 msgid "Needs job"
 msgstr "Wymaga zadania"
 
-msgid "Needs ordering"
-msgstr "Wymaga zamówienia"
+msgid "Needs ordering or making"
+msgstr "Wymaga zamówienia lub produkcji"
 
 msgid "Needs review"
 msgstr "Wymaga przeglądu"
@@ -23762,6 +23770,9 @@ msgstr "Strażniki sterowane orzeczeniami, które aktywują się na pozycjach sp
 
 msgid "Predict lead time"
 msgstr "Przewidź czas realizacji"
+
+msgid "Predict lead time from the shop schedule"
+msgstr "Przewidź czas realizacji na podstawie harmonogramu produkcji"
 
 msgid "Predicting lead time…"
 msgstr "Prognozowanie czasu realizacji…"

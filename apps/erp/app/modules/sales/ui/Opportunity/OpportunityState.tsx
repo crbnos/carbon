@@ -152,6 +152,8 @@ const OpportunityState = ({ opportunity }: { opportunity: Opportunity }) => {
         const to = getPath(opportunity, state);
         const items = getItems(opportunity, state);
         const hasMultipleItems = items.length > 1;
+        // A started stage names the record it opens (items[0], as getPath does).
+        const startedLabel = items[0]?.label ?? stateLabels[state];
 
         if (isStarted && to) {
           if (hasMultipleItems) {
@@ -174,7 +176,7 @@ const OpportunityState = ({ opportunity }: { opportunity: Opportunity }) => {
                   onClick: () => navigate(item.path)
                 }))}
               >
-                {stateLabels[state]}
+                {startedLabel}
               </SplitButton>
             );
           } else {
@@ -192,7 +194,7 @@ const OpportunityState = ({ opportunity }: { opportunity: Opportunity }) => {
                 variant="ghost"
                 asChild
               >
-                <Link to={to}>{stateLabels[state]}</Link>
+                <Link to={to}>{startedLabel}</Link>
               </Button>
             );
           }

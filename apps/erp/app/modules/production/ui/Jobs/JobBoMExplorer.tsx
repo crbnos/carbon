@@ -169,7 +169,13 @@ function JobNodeOrderStatus({
     ? orderStatusByMaterialId[node.data.methodMaterialId]
     : undefined;
 
-  return <JobOrderStatusBadge status={orderStatus} />;
+  return (
+    <JobOrderStatusBadge
+      status={orderStatus}
+      itemId={node.data.itemId}
+      methodType={node.data.methodType}
+    />
+  );
 }
 
 function getNodePath(node: FlatTreeItem<JobMethod>) {

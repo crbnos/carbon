@@ -707,9 +707,6 @@ msgstr "グラフ"
 msgid "Chart of {series}"
 msgstr "{series}のグラフ"
 
-msgid "Chat"
-msgstr "チャット"
-
 msgid "Check your email"
 msgstr "メールを確認してください"
 

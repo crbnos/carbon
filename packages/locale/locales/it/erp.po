@@ -18256,6 +18256,14 @@ msgstr "Parte principale della vita economica (%)"
 msgid "Make"
 msgstr "Produrre"
 
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} × {substitute} for this job"
+msgstr "Produci {0} × {substitute} per questo ordine di produzione"
+
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} for this job"
+msgstr "Produci {0} per questo lavoro"
+
 msgid "Make {amount} for {date}"
 msgstr "Produci {amount} per {date}"
 
@@ -19414,8 +19422,8 @@ msgstr "Necessita correzione"
 msgid "Needs job"
 msgstr "Necessita di lavoro"
 
-msgid "Needs ordering"
-msgstr "Da ordinare"
+msgid "Needs ordering or making"
+msgstr "Da ordinare o produrre"
 
 msgid "Needs review"
 msgstr "Necessita revisione"
@@ -23762,6 +23770,9 @@ msgstr "Guard basate su predicati che si attivano sulle righe di vendita. Blocca
 
 msgid "Predict lead time"
 msgstr "Prevedi il lead time"
+
+msgid "Predict lead time from the shop schedule"
+msgstr "Prevedi il lead time dalla pianificazione dell'officina"
 
 msgid "Predicting lead time…"
 msgstr "Previsione del lead time…"

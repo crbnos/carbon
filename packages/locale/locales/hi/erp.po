@@ -18256,6 +18256,14 @@ msgstr "आर्थिक जीवन का मुख्य भाग (%)"
 msgid "Make"
 msgstr "बनाएं"
 
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} × {substitute} for this job"
+msgstr "इस जॉब के लिए {0} × {substitute} बनाएं"
+
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} for this job"
+msgstr "इस कार्य के लिए {0} बनाएं"
+
 msgid "Make {amount} for {date}"
 msgstr "{date} के लिए {amount} का निर्माण करें"
 
@@ -19414,8 +19422,8 @@ msgstr "मरम्मत की आवश्यकता है"
 msgid "Needs job"
 msgstr "नौकरी की जरूरत है"
 
-msgid "Needs ordering"
-msgstr "ऑर्डर करने की आवश्यकता"
+msgid "Needs ordering or making"
+msgstr "ऑर्डर या निर्माण आवश्यक"
 
 msgid "Needs review"
 msgstr "समीक्षा की आवश्यकता है"
@@ -23762,6 +23770,9 @@ msgstr "विधेय-संचालित सुरक्षा गार्
 
 msgid "Predict lead time"
 msgstr "लीड टाइम की भविष्यवाणी करें"
+
+msgid "Predict lead time from the shop schedule"
+msgstr "शॉप शेड्यूल से लीड टाइम की भविष्यवाणी करें"
 
 msgid "Predicting lead time…"
 msgstr "लीड टाइम की भविष्यवाणी जारी है…"

@@ -707,9 +707,6 @@ msgstr "차트"
 msgid "Chart of {series}"
 msgstr "{series} 차트"
 
-msgid "Chat"
-msgstr "채팅"
-
 msgid "Check your email"
 msgstr "이메일을 확인하세요"
 

@@ -18256,6 +18256,14 @@ msgstr "Parte Principal da Vida Econômica (%)"
 msgid "Make"
 msgstr "Fabricar"
 
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} × {substitute} for this job"
+msgstr "Fabricar {0} × {substitute} para esta ordem de produção"
+
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} for this job"
+msgstr "Fabricar {0} para este trabalho"
+
 msgid "Make {amount} for {date}"
 msgstr "Fabricar {amount} para {date}"
 
@@ -19414,8 +19422,8 @@ msgstr "Precisa de reparo"
 msgid "Needs job"
 msgstr "Precisa de trabalho"
 
-msgid "Needs ordering"
-msgstr "Requer pedido"
+msgid "Needs ordering or making"
+msgstr "Precisa pedir ou fabricar"
 
 msgid "Needs review"
 msgstr "Precisa de revisão"
@@ -23762,6 +23770,9 @@ msgstr "Proteções orientadas por predicados que acionam nas linhas de venda. B
 
 msgid "Predict lead time"
 msgstr "Prever Lead time"
+
+msgid "Predict lead time from the shop schedule"
+msgstr "Prever lead time a partir da programação da fábrica"
 
 msgid "Predicting lead time…"
 msgstr "Prevendo Lead time…"

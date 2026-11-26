@@ -707,9 +707,6 @@ msgstr "图表"
 msgid "Chart of {series}"
 msgstr "{series}图表"
 
-msgid "Chat"
-msgstr "聊天"
-
 msgid "Check your email"
 msgstr "请查收邮件"
 

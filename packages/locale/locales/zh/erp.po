@@ -18256,6 +18256,14 @@ msgstr "经济寿命的主要部分(%)"
 msgid "Make"
 msgstr "制造"
 
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} × {substitute} for this job"
+msgstr "为此工单生产{0} × {substitute}"
+
+#. placeholder {0}: status?.shortfall
+msgid "Make {0} for this job"
+msgstr "为此作业生产 {0}"
+
 msgid "Make {amount} for {date}"
 msgstr "自制 {amount} 件至 {date}"
 
@@ -19414,8 +19422,8 @@ msgstr "需要修复"
 msgid "Needs job"
 msgstr "需要工作"
 
-msgid "Needs ordering"
-msgstr "需要订购"
+msgid "Needs ordering or making"
+msgstr "需要订购或生产"
 
 msgid "Needs review"
 msgstr "需要评审"
@@ -23762,6 +23770,9 @@ msgstr "谓词驱动的规则在销售行触发。可以使用错误阻止或发
 
 msgid "Predict lead time"
 msgstr "预测提前期"
+
+msgid "Predict lead time from the shop schedule"
+msgstr "根据车间排程预测提前期"
 
 msgid "Predicting lead time…"
 msgstr "正在预测提前期…"

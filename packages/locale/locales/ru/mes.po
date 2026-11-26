@@ -707,9 +707,6 @@ msgstr "Диаграмма"
 msgid "Chart of {series}"
 msgstr "Диаграмма: {series}"
 
-msgid "Chat"
-msgstr "Чат"
-
 msgid "Check your email"
 msgstr "Проверьте вашу электронную почту"
 
