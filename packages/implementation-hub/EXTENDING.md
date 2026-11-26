@@ -1,8 +1,9 @@
 # Extending Implementation Hub 2.0
 
 Implementation Hub 2.0 is one page per person. Carbon staff define each
-person's page card by card in a JSON page file; a person without a page sees an
-empty page. Implementation Hub 2.0 grows on **three axes**:
+person's page card by card in a JSON page file; in a company on 2.0, a person
+without a page does not see the Implementation Hub. Implementation Hub 2.0 grows
+on **three axes**:
 
 1. **Template** (code, all customers): the hub items in `src/content/*` that a
    page can place (setup items, tasks, product steps, data sets, training,

@@ -6,17 +6,17 @@ import { Alert, AlertDescription, AlertTitle, Button } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { LuRocket } from "react-icons/lu";
 import { Link } from "react-router";
-import { useUsesImplementationHub2 } from "~/hooks/useImplementationNavItem";
+import { useOpensImplementationHub2 } from "~/hooks/useImplementationNavItem";
 import { path } from "~/utils/path";
 
 // Implementation Hub 1.0 stays open to a company on Implementation Hub 2.0 (an
-// old link, a bookmark); this points its people to the version they now use.
-// Which version the company gets comes from the app shell, which reads the
-// flag with the hub row; the `hub` the 1.0 layout passes is the same row.
+// old link, a bookmark); this points the people who open 2.0 (Carbon staff
+// and the people with a page) to it. Both come from the app shell, which reads
+// the flag with the hub row; the `hub` the 1.0 layout passes is the same row.
 export function NewImplementationHubNotice(_props: {
   hub: { hubVersion?: string | null } | null | undefined;
 }) {
-  if (!useUsesImplementationHub2()) return null;
+  if (!useOpensImplementationHub2()) return null;
   return (
     <Alert variant="info" className="mb-6">
       <LuRocket />

@@ -2,26 +2,43 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Who reaches the Implementation Hub. Carbon staff reach it in every company
+// Who reaches Implementation Hub 2.0. Carbon staff reach it in every company
 // they belong to, enrolled or not, so they can set it up before anyone else
-// sees it. The company's own people reach it only once the company is
-// enrolled: enrolment is the moment the hub becomes visible to them.
+// sees it. The company's own people reach it only once the company uses 2.0,
+// and only with a page of their own: loading a person's page is what shows
+// them the Implementation Hub.
 
 import { DEFAULT_EXCLUSIONS } from "../content/registry";
 import type { StateAction } from "../models";
 import type { HubContacts, HubExclusions, HubStatus, Tier } from "../types";
 
 export type HubAccess =
-  // Enrolled: everyone in the company reaches the hub.
-  | "enrolled"
-  // Not enrolled, and the viewer is Carbon staff: only staff reach it.
-  | "staffOnly"
-  // Not enrolled, and the viewer is not Carbon staff: no hub.
+  // Carbon staff: every company they belong to, enrolled or not.
+  | "staff"
+  // The company uses 2.0 and the viewer has a page there: their own page.
+  | "page"
+  // The company is enrolled on Implementation Hub 1.0: its people use 1.0.
+  | "hub1"
+  // Not enrolled, or on 2.0 with no page for the viewer: no Implementation Hub.
   | "none";
 
-export function hubAccess(enrolled: boolean, isInternal: boolean): HubAccess {
-  if (enrolled) return "enrolled";
-  return isInternal ? "staffOnly" : "none";
+export function hubAccess(viewer: {
+  isInternal: boolean;
+  enrolled: boolean;
+  // `usesImplementationHub2` (ERP): the flag is on and the version is 2.0.
+  usesHub2: boolean;
+  hasPage: boolean;
+}): HubAccess {
+  if (viewer.isInternal) return "staff";
+  if (!viewer.enrolled) return "none";
+  if (!viewer.usesHub2) return "hub1";
+  return viewer.hasPage ? "page" : "none";
+}
+
+// Whether the viewer opens Implementation Hub 2.0. In a company on 2.0, the
+// nav item, 1.0's notice and the reopen entry show only to these viewers.
+export function opensImplementationHub2(access: HubAccess): boolean {
+  return access === "staff" || access === "page";
 }
 
 // The hub settings a company has before it is enrolled, as enrolment would

@@ -29,6 +29,7 @@ import {
   HubProvider,
   toFormFields
 } from "@carbon/implementation-hub/ui";
+import { getLogger } from "@carbon/logger";
 import { useRealtimeTable } from "@carbon/query";
 import { RecordOutlet, useRouteData } from "@carbon/react";
 import { isInternalEmail, redirect } from "@carbon/utils";
@@ -61,6 +62,8 @@ import { path } from "~/utils/path";
 import { trainingConfig } from "~/utils/training";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
+
+const logger = getLogger("erp", "implementation");
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Implementation" }];
@@ -215,37 +218,46 @@ export async function loader({ request }: LoaderFunctionArgs) {
     {}
   );
 
-  const [hub, flagOn] = await Promise.all([
+  const isStaff = isInternalEmail(email);
+  const [hub, flagOn, own] = await Promise.all([
     getImplementationHub(client, companyId),
-    implementationHub2Enabled(companyId)
+    implementationHub2Enabled(companyId),
+    isStaff
+      ? null
+      : getImplementationMember(client, { companyId, memberId: userId })
   ]);
+  if (own?.error) {
+    logger.error("Failed to read the person's Implementation Hub page", {
+      error: own.error
+    });
+  }
   const implementationHub2 = usesImplementationHub2(hub.data, flagOn);
   // Carbon staff reach Implementation Hub 2.0 in every company, enrolled or
-  // not, and opening it creates nothing. The company's own people reach it
-  // only once the company is enrolled: enrolment is when the Implementation
-  // Hub becomes visible to them.
-  const access = hubAccess(Boolean(hub.data), isInternalEmail(email));
+  // not, to load pages before a switch, and opening it creates nothing. The
+  // company's own people reach it only once the company uses 2.0, and only
+  // with a page of their own; a company on 1.0 sends them to 1.0. A refused
+  // person reads none of the hub below.
+  const access = hubAccess({
+    isInternal: isStaff,
+    enrolled: Boolean(hub.data),
+    usesHub2: implementationHub2,
+    hasPage: Boolean(own?.data)
+  });
+  if (access === "hub1") {
+    throw redirect(path.to.getStarted);
+  }
   if (access === "none") {
     throw redirect(path.to.authenticatedRoot);
   }
 
-  const isStaff = isInternalEmail(email);
-  // The company's own people use the version their company is on. Carbon
-  // staff reach 2.0 in any company, to load pages before a switch.
-  if (!isStaff && !implementationHub2) {
-    throw redirect(path.to.getStarted);
-  }
-  const [checkStates, fieldValues, rows, signals, counts, assignments, own] =
+  const [checkStates, fieldValues, rows, signals, counts, assignments] =
     await Promise.all([
       getImplementationCheckStates(client, companyId),
       getImplementationFieldValues(client, companyId),
       getImplementationRows(client, companyId),
       getImplementationSignals(client, companyId),
       getImplementationCounts(client, companyId),
-      getImplementationAssignments(client, companyId),
-      isStaff
-        ? null
-        : getImplementationMember(client, { companyId, memberId: userId })
+      getImplementationAssignments(client, companyId)
     ]);
 
   return {

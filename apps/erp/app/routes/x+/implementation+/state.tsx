@@ -8,11 +8,13 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import {
   changesImplementationHub1,
+  hubAccess,
   stateActionValidator
 } from "@carbon/implementation-hub";
 import {
   applyHubMutation,
   getImplementationHub,
+  getImplementationMember,
   type HubActor
 } from "@carbon/implementation-hub/server";
 import { isInternalEmail } from "@carbon/utils";
@@ -23,11 +25,12 @@ import { implementationHub2Enabled } from "~/modules/shared/shared.service";
 
 // Single action endpoint for every Implementation Hub state mutation. The access rules live in
 // `applyHubMutation`, shared with the MCP hub tools: toggles, finishing and a
-// customer's own objectives are open to any company employee; tailoring
+// customer's own objectives are open to the company's people; tailoring
 // (fields, rows, tier, exclusions, contacts, verification) needs Carbon staff.
-// A company on Implementation Hub 1.0 shares these records with it, so until
-// it uses Implementation Hub 2.0 only its page files, assignments and priority
-// set change here.
+// The company's own people write here only once the company uses
+// Implementation Hub 2.0 and they have a page. A company on Implementation Hub
+// 1.0 shares these records with it, so until it uses 2.0 only its page files,
+// assignments and priority set change here, and only by Carbon staff.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId, email } = await requirePermissions(
@@ -42,21 +45,46 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  if (changesImplementationHub1(validation.data.intent)) {
-    const [hub, flagOn] = await Promise.all([
+  const isInternal = isInternalEmail(email);
+  // The company's own people write only where they can open the page: a
+  // company on 2.0, with a page of their own (`hubAccess`, as the layout).
+  if (!isInternal || changesImplementationHub1(validation.data.intent)) {
+    const [hub, flagOn, own] = await Promise.all([
       getImplementationHub(client, companyId),
-      implementationHub2Enabled(companyId)
+      implementationHub2Enabled(companyId),
+      isInternal
+        ? null
+        : getImplementationMember(client, { companyId, memberId: userId })
     ]);
-    if (hub.error) {
+    if (hub.error || own?.error) {
       return data(
         { success: false, message: "Failed to read the Implementation Hub" },
         await flash(
           request,
-          error(hub.error, "Failed to read the Implementation Hub")
+          error(
+            hub.error ?? own?.error,
+            "Failed to read the Implementation Hub"
+          )
         )
       );
     }
-    if (!usesImplementationHub2(hub.data, flagOn)) {
+    const implementationHub2 = usesImplementationHub2(hub.data, flagOn);
+    if (
+      !isInternal &&
+      hubAccess({
+        isInternal,
+        enrolled: Boolean(hub.data),
+        usesHub2: implementationHub2,
+        hasPage: Boolean(own?.data)
+      }) !== "page"
+    ) {
+      const message = "You have no page in this Implementation Hub.";
+      return data(
+        { success: false, message },
+        await flash(request, error(new Error("forbidden"), message))
+      );
+    }
+    if (!implementationHub2) {
       const message = !flagOn
         ? "Implementation Hub 2.0 is off for this company. Add the company to the implementation-hub-2 flag first."
         : hub.data
@@ -69,7 +97,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const isInternal = isInternalEmail(email);
   const actor: HubActor = {
     companyId,
     userId,

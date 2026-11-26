@@ -1531,8 +1531,8 @@ msgstr "{who} ha registrato {quantity} su {element}"
 msgid "{who} reversed {amount} on {element}"
 msgstr "{warnings} necessitano di un follow-up"
 
-msgid "{withoutPage, plural, one {# active person has no page yet and will see an empty page until you load one.} other {# active people have no page yet and will see an empty page until you load one.}}"
-msgstr "{withoutPage, plural, one {# persona attiva non ha ancora una pagina e vedrà una pagina vuota finché non ne caricherai una.} other {# persone attive non hanno ancora una pagina e vedranno una pagina vuota finché non ne caricherai una.}}"
+msgid "{withoutPage, plural, one {# active person has no page yet and will not see the Implementation Hub until you load one.} other {# active people have no page yet and will not see the Implementation Hub until you load one.}}"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}ann"
@@ -16494,8 +16494,8 @@ msgstr "L'Hub di implementazione 2.0 è disattivato per questa azienda"
 msgid "Implementation Hub 2.0 is off for this company. Add it to the implementation-hub-2 flag in the CSA dashboard first."
 msgstr "L'Hub di implementazione 2.0 è disattivato per questa azienda. Aggiungilo prima al flag implementation-hub-2 nella dashboard CSA."
 
-msgid "Implementation Hub 2.0 is on for this company. Enrolling shows it to the company's people and emails its admins. Then give each person a page."
-msgstr "L'Hub di implementazione 2.0 è attivo per questa azienda. L'iscrizione lo mostra al personale dell'azienda e invia un'email agli amministratori. Poi assegna una pagina a ciascuna persona."
+msgid "Implementation Hub 2.0 is on for this company. After enrolling, each person sees it once you give them a page."
+msgstr ""
 
 msgid "Implementation Hub Settings"
 msgstr "Impostazioni dell'Hub di implementazione"
@@ -24289,6 +24289,12 @@ msgstr "Pagamento in attesa, non registrato"
 
 msgid "People"
 msgstr "Persone"
+
+msgid "People with a page see the Implementation Hub."
+msgstr ""
+
+msgid "People with a page will see it in Implementation Hub 2.0 instead of Implementation Hub 1.0. Everyone else will see no Implementation Hub. Ticks, answers and rows carry over."
+msgstr ""
 
 msgid "Per"
 msgstr "Per"
@@ -33045,20 +33051,17 @@ msgstr "L'azienda è iscritta in questi paesi, ma nessun codice fiscale attivo a
 msgid "The company template stays the same."
 msgstr "Il modello aziendale rimane invariato."
 
+msgid "The company's people do not see the Implementation Hub yet. Enrolling puts the company on Implementation Hub 2.0. Each person sees it once you load their page."
+msgstr ""
+
 msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 1.0, because Implementation Hub 2.0 is off for this company, and emails the company's admins."
 msgstr "Il personale dell'azienda non vede ancora l'Hub di implementazione. L'iscrizione mostra loro l'Hub di implementazione 1.0, perché l'Hub di implementazione 2.0 è disattivato per questa azienda, e invia un'email agli amministratori dell'azienda."
-
-msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 2.0 and emails the company's admins."
-msgstr "Il personale dell'azienda non vede ancora l'Hub di implementazione. L'iscrizione mostra loro l'Hub di implementazione 2.0 e invia un'email agli amministratori dell'azienda."
 
 msgid "The company's people see the Implementation Hub."
 msgstr "Il personale dell'azienda vede l'Hub di implementazione."
 
 msgid "The company's people will see Implementation Hub 1.0 again. Their pages stay, so you can switch back."
 msgstr "Il personale dell'azienda tornerà a vedere l'Hub di implementazione 1.0. Le loro pagine restano, quindi puoi tornare indietro."
-
-msgid "The company's people will see the page loaded for them in Implementation Hub 2.0 instead of Implementation Hub 1.0. Ticks, answers and rows carry over."
-msgstr "Il personale dell'azienda vedrà la pagina caricata per loro nell'Hub di implementazione 2.0 invece che nell'Hub di implementazione 1.0. Spunte, risposte e righe vengono riportate."
 
 msgid "The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
 msgstr "La modalità di scheda oraria dell'azienda, Normale o DCAA, attivata con Usa controlli DCAA in Impostazioni → Progetti. DCAA aggiunge la finestra di immissione, i motivi per il ritardo e l'ora modificata, la certificazione settimanale e il controllo della scheda oraria."

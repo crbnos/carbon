@@ -7,18 +7,55 @@ import {
   changesImplementationHub1,
   checkStatesForCustomer,
   hubAccess,
+  opensImplementationHub2,
   rowsForCustomer
 } from "./access";
 
 describe("hubAccess", () => {
-  it("lets everyone in once the company is enrolled", () => {
-    expect(hubAccess(true, false)).toBe("enrolled");
-    expect(hubAccess(true, true)).toBe("enrolled");
+  const viewer = {
+    isInternal: false,
+    enrolled: true,
+    usesHub2: true,
+    hasPage: true
+  };
+
+  it("lets Carbon staff in whatever the company's state", () => {
+    for (const enrolled of [true, false])
+      for (const usesHub2 of [true, false])
+        for (const hasPage of [true, false])
+          expect(
+            hubAccess({ isInternal: true, enrolled, usesHub2, hasPage })
+          ).toBe("staff");
   });
 
-  it("lets only Carbon staff into a company that is not enrolled", () => {
-    expect(hubAccess(false, true)).toBe("staffOnly");
-    expect(hubAccess(false, false)).toBe("none");
+  it("lets a person with a page in once the company uses 2.0", () => {
+    expect(hubAccess(viewer)).toBe("page");
+  });
+
+  it("keeps a person without a page out of a company on 2.0", () => {
+    expect(hubAccess({ ...viewer, hasPage: false })).toBe("none");
+  });
+
+  it("sends a company on 1.0 to 1.0, page or not", () => {
+    expect(hubAccess({ ...viewer, usesHub2: false })).toBe("hub1");
+    expect(hubAccess({ ...viewer, usesHub2: false, hasPage: false })).toBe(
+      "hub1"
+    );
+  });
+
+  it("keeps everyone but staff out of a company that is not enrolled", () => {
+    expect(hubAccess({ ...viewer, enrolled: false, usesHub2: false })).toBe(
+      "none"
+    );
+  });
+});
+
+describe("opensImplementationHub2", () => {
+  it("is true for staff and for a person with a page only", () => {
+    expect(opensImplementationHub2("staff")).toBe(true);
+    expect(opensImplementationHub2("page")).toBe(true);
+    expect(opensImplementationHub2("hub1")).toBe(false);
+    expect(opensImplementationHub2("none")).toBe(false);
   });
 });
 

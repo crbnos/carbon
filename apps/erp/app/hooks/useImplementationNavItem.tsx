@@ -54,6 +54,9 @@ export type ImplementationHubData = {
   // The `implementation-hub-2` flag is on for the company, enrolled or not:
   // the home card enrols Carbon staff straight onto Implementation Hub 2.0.
   implementationHub2Enabled: boolean;
+  // The signed-in person opens Implementation Hub 2.0: Carbon staff, or a
+  // person with a page there. In a company on 2.0, no one else sees it.
+  implementationHub2Opens: boolean;
   // False until the streamed progress lands. Until then the counts are not
   // known: show the item and the card, leave the numbers out.
   ready: boolean;
@@ -73,6 +76,7 @@ function useImplementation(): ImplementationHubData | undefined {
   const data = useRouteData<{
     implementationHub?: ImplementationHubData["implementationHub"];
     implementationHub2Enabled?: boolean;
+    implementationHub2Opens?: boolean;
     implementationProgress?: Promise<ImplementationProgress>;
   }>(path.to.authenticatedRoot);
   const progress = useResolved(data?.implementationProgress, null);
@@ -86,14 +90,17 @@ function useImplementation(): ImplementationHubData | undefined {
       data.implementationHub2Enabled ?? false
     ),
     implementationHub2Enabled: data.implementationHub2Enabled ?? false,
+    implementationHub2Opens: data.implementationHub2Opens ?? false,
     ready: progress !== null
   };
 }
 
-// Whether the company gets Implementation Hub 2.0, for a component outside
-// the nav and the home card (Implementation Hub 1.0's notice).
-export function useUsesImplementationHub2(): boolean {
-  return useImplementation()?.implementationHub2 ?? false;
+// Whether the company gets Implementation Hub 2.0 and the signed-in person
+// opens it, for a component outside the nav and the home card
+// (Implementation Hub 1.0's notice).
+export function useOpensImplementationHub2(): boolean {
+  const data = useImplementation();
+  return Boolean(data?.implementationHub2 && data.implementationHub2Opens);
 }
 
 // Whether the item and the card exist is known at first paint, so neither
@@ -116,8 +123,10 @@ export function getImplementationNavItem(
   const hub = data.implementationHub;
   if (!hub || isFinished(hub.status)) return null;
 
-  // Implementation Hub 2.0 has no gates to count: one name, no badge.
+  // Implementation Hub 2.0 has no gates to count: one name, no badge. It
+  // shows only to Carbon staff and the people with a page.
   if (data.implementationHub2) {
+    if (!data.implementationHub2Opens) return null;
     return {
       name: i18n._(implementationHub2Name),
       to: path.to.implementation,
@@ -149,6 +158,7 @@ export function useImplementationReopenItem(): Authenticated<NavItem> | null {
   const data = useImplementation();
   const hub = data?.implementationHub;
   if (!data || !hub || !isFinished(hub.status)) return null;
+  if (data.implementationHub2 && !data.implementationHub2Opens) return null;
 
   return {
     name: i18n._(labelForTier(hub.tier)),

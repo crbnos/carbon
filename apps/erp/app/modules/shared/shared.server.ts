@@ -453,15 +453,16 @@ export const enrollImplementationHub = defineServiceFn({
 });
 
 /**
- * Enroll the company in the Implementation Hub as Carbon staff, and tell its
- * admins.
+ * Enroll the company in the Implementation Hub as Carbon staff.
  *
  * @remarks
  * What `enrollImplementationHub` does, for Carbon staff (an internal email):
  * they may enroll any company they belong to, settings permission or not,
  * since they open an unenrolled hub to set it up. Anyone else is refused.
  * The company starts on Implementation Hub 2.0 when the flag is on for it,
- * and the email links there.
+ * and its admins are not emailed: on 2.0 a person sees the Implementation Hub
+ * only once staff load their page. On 1.0 the admins are emailed, as
+ * self-serve enrolment does.
  */
 export const enrollImplementationHubAsStaff = defineServiceFn({
   input: z.object({}),
@@ -491,8 +492,8 @@ export const enrollImplementationHubAsStaff = defineServiceFn({
     }
 
     // A company the implementation-hub-2 flag is on for starts on
-    // Implementation Hub 2.0, and the admins' email links there. Any other
-    // company starts on Implementation Hub 1.0, as self-serve enrolment does.
+    // Implementation Hub 2.0. Any other company starts on Implementation Hub
+    // 1.0 and its admins are emailed, as self-serve enrolment does.
     if (!(await service.implementationHub2Enabled(companyId))) {
       await service.notifyImplementationHubAdmins(ctx);
       return { enrolled: true };
@@ -510,7 +511,6 @@ export const enrollImplementationHubAsStaff = defineServiceFn({
       );
     }
 
-    await service.notifyImplementationHubAdmins(ctx, path.to.implementation);
     return { enrolled: true };
   }
 });

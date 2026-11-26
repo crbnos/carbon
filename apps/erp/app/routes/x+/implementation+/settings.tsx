@@ -116,7 +116,11 @@ export default function ImplementationSettingsRoute() {
         <SettingsPageHeading>
           <Trans>Implementation Hub Settings</Trans>
         </SettingsPageHeading>
-        <EnrolmentCard enrolled={enrolled} flagOn={flagOn} />
+        <EnrolmentCard
+          enrolled={enrolled}
+          flagOn={flagOn}
+          onHub2={hubVersion === "2.0" && flagOn}
+        />
         <VersionCard
           hubVersion={enrolled ? hubVersion : null}
           flagOn={flagOn}
@@ -127,15 +131,17 @@ export default function ImplementationSettingsRoute() {
   );
 }
 
-// Enrolment is when the Implementation Hub becomes visible to the company's own
-// people. It starts on 2.0 only while Implementation Hub 2.0 is on for the
-// company.
+// Enrolment is when Implementation Hub 1.0 becomes visible to the company's own
+// people. On 2.0, which it starts on only while Implementation Hub 2.0 is on
+// for the company, a person sees it once staff load their page.
 function EnrolmentCard({
   enrolled,
-  flagOn
+  flagOn,
+  onHub2
 }: {
   enrolled: boolean;
   flagOn: boolean;
+  onHub2: boolean;
 }) {
   const fetcher = useFetcher();
   return (
@@ -156,13 +162,15 @@ function EnrolmentCard({
           )}
         </div>
         <CardDescription className="text-pretty">
-          {enrolled ? (
+          {enrolled && onHub2 ? (
+            <Trans>People with a page see the Implementation Hub.</Trans>
+          ) : enrolled ? (
             <Trans>The company's people see the Implementation Hub.</Trans>
           ) : flagOn ? (
             <Trans>
               The company's people do not see the Implementation Hub yet.
-              Enrolling shows them Implementation Hub 2.0 and emails the
-              company's admins.
+              Enrolling puts the company on Implementation Hub 2.0. Each person
+              sees it once you load their page.
             </Trans>
           ) : (
             <Trans>
@@ -300,9 +308,9 @@ function VersionCard({
               {next === "2.0" ? (
                 <p>
                   <Trans>
-                    The company's people will see the page loaded for them in
-                    Implementation Hub 2.0 instead of Implementation Hub 1.0.
-                    Ticks, answers and rows carry over.
+                    People with a page will see it in Implementation Hub 2.0
+                    instead of Implementation Hub 1.0. Everyone else will see no
+                    Implementation Hub. Ticks, answers and rows carry over.
                   </Trans>
                 </p>
               ) : (
@@ -317,8 +325,8 @@ function VersionCard({
                 <p className="text-foreground">
                   <Plural
                     value={withoutPage}
-                    one="# active person has no page yet and will see an empty page until you load one."
-                    other="# active people have no page yet and will see an empty page until you load one."
+                    one="# active person has no page yet and will not see the Implementation Hub until you load one."
+                    other="# active people have no page yet and will not see the Implementation Hub until you load one."
                   />
                 </p>
               ) : null}

@@ -2138,14 +2138,8 @@ export async function setImplementationHubVersion(
     .maybeSingle();
 }
 
-/**
- * Email the company's active admins that their hub is ready, linking to
- * `hubPath` (Implementation Hub 1.0 unless given). Never throws.
- */
-export async function notifyImplementationHubAdmins(
-  ctx: ServiceContext,
-  hubPath: string = path.to.getStarted
-) {
+/** Email the company's active admins that their hub is ready. Never throws. */
+export async function notifyImplementationHubAdmins(ctx: ServiceContext) {
   const serviceRole = ctx.asSystem.supabase;
   const companyId = ctx.company.id;
   try {
@@ -2172,7 +2166,7 @@ export async function notifyImplementationHubAdmins(
       .in("employeeTypeId", adminTypeIds);
     if (admins.error) throw admins.error;
 
-    const hubUrl = `${ERP_URL}${hubPath}`;
+    const hubUrl = `${ERP_URL}${path.to.getStarted}`;
     for (const admin of admins.data ?? []) {
       if (!admin.email) continue;
       try {

@@ -27,6 +27,8 @@ import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
 import { evaluateBrowserFlags } from "@carbon/env/flags.server";
 import { getVapidDetails } from "@carbon/env/push.server";
+import { hubAccess, opensImplementationHub2 } from "@carbon/implementation-hub";
+import { getImplementationMember } from "@carbon/implementation-hub/server";
 import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { getImplementationCheckStates } from "@carbon/onboarding/server";
@@ -53,6 +55,7 @@ import {
   deferRootActionPost,
   Edition,
   formatDate,
+  isInternalEmail,
   redirect,
   redirectExternal,
   requiresItarEntityCertification,
@@ -174,6 +177,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Whether Implementation Hub 2.0 is on for the company: with the hub row, it
   // decides which version the nav item and the home card point to.
   const implementationHub2Promise = implementationHub2Enabled(companyId);
+  // Whether the signed-in person has a page in the company's Implementation
+  // Hub 2.0: in a company on 2.0, only they and Carbon staff see it. Read only
+  // while the flag is on for the company, and never for staff.
+  const isStaff = isInternalEmail(email);
+  const implementationPagePromise = implementationHub2Promise.then(
+    async (on) => {
+      if (!on || isStaff) return false;
+      const { data, error } = await getImplementationMember(client, {
+        companyId,
+        memberId: userId
+      });
+      if (error) {
+        log.warning("Failed to read the person's Implementation Hub page", {
+          error
+        });
+      }
+      return Boolean(data);
+    }
+  );
 
   // Only probe product signals when the company is actually enrolled, so the
   // home card + nav badge count gates the same way the hub page does.
@@ -243,7 +265,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     customFields,
     claims,
     itarCertification,
-    implementationHub2Flag
+    implementationHub2Flag,
+    implementationPage
   ] = await Promise.all([
     shellPromise,
     getStripeCustomerByCompanyId(companyId, userId),
@@ -251,7 +274,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCustomFieldsSchemas(client, { companyId }),
     getUserClaims(userId, companyId),
     itarCertificationPromise,
-    implementationHub2Promise
+    implementationHub2Promise,
+    implementationPagePromise
   ]);
 
   // The same shapes the nine separate reads returned, so what follows reads as
@@ -410,6 +434,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // The `implementation-hub-2` flag for the company, read with the hub row
     // by `useImplementationNavItem` (`usesImplementationHub2`).
     implementationHub2Enabled: implementationHub2Flag,
+    // Whether this person opens Implementation Hub 2.0 (`hubAccess`, as its
+    // layout): in a company on 2.0, its entries show to them only.
+    implementationHub2Opens: opensImplementationHub2(
+      hubAccess({
+        isInternal: isStaff,
+        enrolled: Boolean(shell.data?.implementationHub),
+        usesHub2: usesImplementationHub2(
+          shell.data?.implementationHub,
+          implementationHub2Flag
+        ),
+        hasPage: implementationPage
+      })
+    ),
     implementationProgress,
     changelog,
     itarCertification: {

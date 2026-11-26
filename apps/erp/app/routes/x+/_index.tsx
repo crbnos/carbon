@@ -249,9 +249,8 @@ export default function AppIndexRoute() {
                               {hub2 ? (
                                 <Trans>
                                   Implementation Hub 2.0 is on for this company.
-                                  Enrolling shows it to the company's people and
-                                  emails its admins. Then give each person a
-                                  page.
+                                  After enrolling, each person sees it once you
+                                  give them a page.
                                 </Trans>
                               ) : (
                                 <Trans>

@@ -1531,8 +1531,8 @@ msgstr "{who} ने {element} पर {quantity} लॉग किया"
 msgid "{who} reversed {amount} on {element}"
 msgstr "{warnings} को एक अनुवर्ती की आवश्यकता है"
 
-msgid "{withoutPage, plural, one {# active person has no page yet and will see an empty page until you load one.} other {# active people have no page yet and will see an empty page until you load one.}}"
-msgstr "{withoutPage, plural, one {# सक्रिय व्यक्ति के लिए अभी कोई पेज नहीं है और एक लोड करने तक उसे खाली पेज दिखेगा।} other {# सक्रिय व्यक्तियों के लिए अभी कोई पेज नहीं है और एक लोड करने तक उन्हें खाली पेज दिखेगा।}}"
+msgid "{withoutPage, plural, one {# active person has no page yet and will not see the Implementation Hub until you load one.} other {# active people have no page yet and will not see the Implementation Hub until you load one.}}"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}वर्ष"
@@ -16494,8 +16494,8 @@ msgstr "इस कंपनी के लिए कार्यान्वय�
 msgid "Implementation Hub 2.0 is off for this company. Add it to the implementation-hub-2 flag in the CSA dashboard first."
 msgstr "इस कंपनी के लिए कार्यान्वयन हब 2.0 बंद है। पहले इसे CSA डैशबोर्ड में implementation-hub-2 फ़्लैग में जोड़ें।"
 
-msgid "Implementation Hub 2.0 is on for this company. Enrolling shows it to the company's people and emails its admins. Then give each person a page."
-msgstr "इस कंपनी के लिए कार्यान्वयन हब 2.0 चालू है। नामांकन करने पर यह कंपनी के लोगों को दिखेगा और इसके एडमिन को ईमेल भेजा जाएगा। फिर हर व्यक्ति को एक पेज दें।"
+msgid "Implementation Hub 2.0 is on for this company. After enrolling, each person sees it once you give them a page."
+msgstr ""
 
 msgid "Implementation Hub Settings"
 msgstr "कार्यान्वयन हब सेटिंग्स"
@@ -24289,6 +24289,12 @@ msgstr "लंबित भुगतान, पोस्ट नहीं हु�
 
 msgid "People"
 msgstr "लोग"
+
+msgid "People with a page see the Implementation Hub."
+msgstr ""
+
+msgid "People with a page will see it in Implementation Hub 2.0 instead of Implementation Hub 1.0. Everyone else will see no Implementation Hub. Ticks, answers and rows carry over."
+msgstr ""
 
 msgid "Per"
 msgstr "प्रति"
@@ -33045,20 +33051,17 @@ msgstr "कंपनी इन देशों में पंजीकृत �
 msgid "The company template stays the same."
 msgstr "कंपनी का टेम्पलेट वैसा ही रहेगा।"
 
+msgid "The company's people do not see the Implementation Hub yet. Enrolling puts the company on Implementation Hub 2.0. Each person sees it once you load their page."
+msgstr ""
+
 msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 1.0, because Implementation Hub 2.0 is off for this company, and emails the company's admins."
 msgstr "कंपनी के लोग अभी कार्यान्वयन हब नहीं देखते। नामांकन करने पर उन्हें कार्यान्वयन हब 1.0 दिखेगा, क्योंकि इस कंपनी के लिए कार्यान्वयन हब 2.0 बंद है, और कंपनी के एडमिन को ईमेल भेजा जाएगा।"
-
-msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 2.0 and emails the company's admins."
-msgstr "कंपनी के लोग अभी कार्यान्वयन हब नहीं देखते। नामांकन करने पर उन्हें कार्यान्वयन हब 2.0 दिखेगा और कंपनी के एडमिन को ईमेल भेजा जाएगा।"
 
 msgid "The company's people see the Implementation Hub."
 msgstr "कंपनी के लोग कार्यान्वयन हब देखते हैं।"
 
 msgid "The company's people will see Implementation Hub 1.0 again. Their pages stay, so you can switch back."
 msgstr "कंपनी के लोग फिर से कार्यान्वयन हब 1.0 देखेंगे। उनके पेज बने रहेंगे, इसलिए आप वापस स्विच कर सकते हैं।"
-
-msgid "The company's people will see the page loaded for them in Implementation Hub 2.0 instead of Implementation Hub 1.0. Ticks, answers and rows carry over."
-msgstr "कंपनी के लोग कार्यान्वयन हब 1.0 की जगह कार्यान्वयन हब 2.0 में उनके लिए लोड किया गया पेज देखेंगे। टिक, उत्तर और पंक्तियाँ साथ जाएँगी।"
 
 msgid "The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
 msgstr "कंपनी के टाइमशीट मोड, सामान्य या DCAA, सेटिंग्स → प्रोजेक्ट्स पर DCAA नियंत्रण का उपयोग करें के साथ चालू। DCAA प्रविष्टि विंडो, देरी के कारण और समय परिवर्तन, साप्ताहिक प्रमाणन और टाइमकार्ड जांच जोड़ता है।"

@@ -1531,8 +1531,8 @@ msgstr "{who} が {element} に {quantity} をログしました"
 msgid "{who} reversed {amount} on {element}"
 msgstr "{warnings} はフォローアップが必要"
 
-msgid "{withoutPage, plural, one {# active person has no page yet and will see an empty page until you load one.} other {# active people have no page yet and will see an empty page until you load one.}}"
-msgstr "{withoutPage, plural, one {# 名の有効な人員にはまだページがなく、読み込むまで空のページが表示されます。} other {# 名の有効な人員にはまだページがなく、読み込むまで空のページが表示されます。}}"
+msgid "{withoutPage, plural, one {# active person has no page yet and will not see the Implementation Hub until you load one.} other {# active people have no page yet and will not see the Implementation Hub until you load one.}}"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}年"
@@ -16494,8 +16494,8 @@ msgstr "この会社では実施ハブ 2.0 がオフになっています"
 msgid "Implementation Hub 2.0 is off for this company. Add it to the implementation-hub-2 flag in the CSA dashboard first."
 msgstr "この会社では実施ハブ 2.0 がオフになっています。先に CSA ダッシュボードの implementation-hub-2 フラグに追加してください。"
 
-msgid "Implementation Hub 2.0 is on for this company. Enrolling shows it to the company's people and emails its admins. Then give each person a page."
-msgstr "この会社では実施ハブ 2.0 がオンになっています。登録すると、会社のメンバーに表示され、その管理者にメールが送信されます。その後、各メンバーにページを割り当ててください。"
+msgid "Implementation Hub 2.0 is on for this company. After enrolling, each person sees it once you give them a page."
+msgstr ""
 
 msgid "Implementation Hub Settings"
 msgstr "実施ハブの設定"
@@ -24289,6 +24289,12 @@ msgstr "待機中の支払（未転記）"
 
 msgid "People"
 msgstr "人員"
+
+msgid "People with a page see the Implementation Hub."
+msgstr ""
+
+msgid "People with a page will see it in Implementation Hub 2.0 instead of Implementation Hub 1.0. Everyone else will see no Implementation Hub. Ticks, answers and rows carry over."
+msgstr ""
 
 msgid "Per"
 msgstr "あたり"
@@ -33045,20 +33051,17 @@ msgstr "この会社はこれらの国で登録されていますが、税を課
 msgid "The company template stays the same."
 msgstr "会社のテンプレートは変更されません。"
 
+msgid "The company's people do not see the Implementation Hub yet. Enrolling puts the company on Implementation Hub 2.0. Each person sees it once you load their page."
+msgstr ""
+
 msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 1.0, because Implementation Hub 2.0 is off for this company, and emails the company's admins."
 msgstr "この会社のメンバーにはまだ実施ハブが表示されていません。登録すると、この会社では実施ハブ 2.0 がオフのため、メンバーには実施ハブ 1.0 が表示され、会社の管理者にメールが送信されます。"
-
-msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 2.0 and emails the company's admins."
-msgstr "この会社のメンバーにはまだ実施ハブが表示されていません。登録すると、メンバーには実施ハブ 2.0 が表示され、会社の管理者にメールが送信されます。"
 
 msgid "The company's people see the Implementation Hub."
 msgstr "この会社のメンバーには実施ハブが表示されています。"
 
 msgid "The company's people will see Implementation Hub 1.0 again. Their pages stay, so you can switch back."
 msgstr "この会社のメンバーには再び実施ハブ 1.0 が表示されます。各自のページはそのまま残るため、切り替えて戻せます。"
-
-msgid "The company's people will see the page loaded for them in Implementation Hub 2.0 instead of Implementation Hub 1.0. Ticks, answers and rows carry over."
-msgstr "この会社のメンバーには、実施ハブ 1.0 の代わりに、実施ハブ 2.0 で各自向けに読み込まれたページが表示されるようになります。チェック、回答、行は引き継がれます。"
 
 msgid "The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
 msgstr "会社のタイムシートモード（標準またはDCAA）は、設定→プロジェクトでDCAA制御を使用してオンになっています。DCAA は入力ウィンドウ、遅刻と変更時間の理由、毎週の認証とタイムカード確認を追加します。"

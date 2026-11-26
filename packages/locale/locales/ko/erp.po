@@ -1531,8 +1531,8 @@ msgstr "{who}이 {element}에 {quantity}을 기록했습니다."
 msgid "{who} reversed {amount} on {element}"
 msgstr "{warnings}개 경고가 추가 조치 필요"
 
-msgid "{withoutPage, plural, one {# active person has no page yet and will see an empty page until you load one.} other {# active people have no page yet and will see an empty page until you load one.}}"
-msgstr "{withoutPage, plural, one {사용 중인 인원 #명은 아직 페이지가 없어서 페이지를 불러올 때까지 빈 페이지가 표시됩니다.} other {사용 중인 인원 #명은 아직 페이지가 없어서 페이지를 불러올 때까지 빈 페이지가 표시됩니다.}}"
+msgid "{withoutPage, plural, one {# active person has no page yet and will not see the Implementation Hub until you load one.} other {# active people have no page yet and will not see the Implementation Hub until you load one.}}"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}년"
@@ -16494,8 +16494,8 @@ msgstr "이 회사에서는 실행 허브 2.0이 꺼져 있습니다"
 msgid "Implementation Hub 2.0 is off for this company. Add it to the implementation-hub-2 flag in the CSA dashboard first."
 msgstr "이 회사에서는 실행 허브 2.0이 꺼져 있습니다. 먼저 CSA 대시보드의 implementation-hub-2 플래그에 추가하세요."
 
-msgid "Implementation Hub 2.0 is on for this company. Enrolling shows it to the company's people and emails its admins. Then give each person a page."
-msgstr "이 회사에서는 실행 허브 2.0이 켜져 있습니다. 등록하면 회사 구성원에게 표시되고 관리자에게 이메일이 발송됩니다. 그다음 구성원마다 페이지를 지정하세요."
+msgid "Implementation Hub 2.0 is on for this company. After enrolling, each person sees it once you give them a page."
+msgstr ""
 
 msgid "Implementation Hub Settings"
 msgstr "실행 허브 설정"
@@ -24289,6 +24289,12 @@ msgstr "대기 중인 지불, 미전기"
 
 msgid "People"
 msgstr "인원"
+
+msgid "People with a page see the Implementation Hub."
+msgstr ""
+
+msgid "People with a page will see it in Implementation Hub 2.0 instead of Implementation Hub 1.0. Everyone else will see no Implementation Hub. Ticks, answers and rows carry over."
+msgstr ""
 
 msgid "Per"
 msgstr "당"
@@ -33045,20 +33051,17 @@ msgstr "회사는 이 국가들에 등록되어 있지만, 활성 세금 코드�
 msgid "The company template stays the same."
 msgstr "회사 템플릿은 그대로 유지됩니다."
 
+msgid "The company's people do not see the Implementation Hub yet. Enrolling puts the company on Implementation Hub 2.0. Each person sees it once you load their page."
+msgstr ""
+
 msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 1.0, because Implementation Hub 2.0 is off for this company, and emails the company's admins."
 msgstr "회사 구성원에게는 아직 실행 허브가 보이지 않습니다. 실행 허브 2.0이 이 회사에서 꺼져 있으므로 등록하면 구성원에게 실행 허브 1.0이 표시되고 회사 관리자에게 이메일이 발송됩니다."
-
-msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 2.0 and emails the company's admins."
-msgstr "회사 구성원에게는 아직 실행 허브가 보이지 않습니다. 등록하면 구성원에게 실행 허브 2.0이 표시되고 회사 관리자에게 이메일이 발송됩니다."
 
 msgid "The company's people see the Implementation Hub."
 msgstr "회사 구성원이 실행 허브를 봅니다."
 
 msgid "The company's people will see Implementation Hub 1.0 again. Their pages stay, so you can switch back."
 msgstr "회사 구성원은 다시 실행 허브 1.0을 보게 됩니다. 페이지는 유지되므로 다시 전환할 수 있습니다."
-
-msgid "The company's people will see the page loaded for them in Implementation Hub 2.0 instead of Implementation Hub 1.0. Ticks, answers and rows carry over."
-msgstr "회사 구성원은 실행 허브 1.0 대신 실행 허브 2.0에서 자신에게 맞게 불러온 페이지를 보게 됩니다. 체크 표시, 답변, 행은 그대로 옮겨집니다."
 
 msgid "The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
 msgstr "회사의 타임시트 모드, 보통 검사 또는 DCAA, 설정 → 프로젝트에서 DCAA 컨트롤 사용으로 켜짐. DCAA는 입력 창, 늦음 및 변경된 시간의 이유, 매주 인증 및 타임카드 확인을 추가합니다."
