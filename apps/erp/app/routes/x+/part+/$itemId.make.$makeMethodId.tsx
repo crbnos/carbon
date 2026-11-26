@@ -13,7 +13,7 @@ import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
-import { CadModel } from "~/components";
+import { CadModel, DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
 import { usePermissions } from "~/hooks/usePermissions";
 import {
@@ -25,11 +25,16 @@ import type { PartSummary } from "~/modules/items/types";
 import {
   BillOfMaterial,
   BillOfProcess,
+  ItemDocuments,
   MakeMethodTools,
   MethodCorrections
 } from "~/modules/items/ui/Item";
 import { toMethodCorrectionsProps } from "~/modules/items/ui/Item/MethodCorrections";
-import type { MethodItemType, MethodType } from "~/modules/shared/types";
+import type {
+  ItemType,
+  MethodItemType,
+  MethodType
+} from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -99,14 +104,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         configurationRules: []
       };
 
-  const methodCorrections = await getMethodCorrectionsData(
-    client,
-    makeMethodId,
-    companyId
-  );
+  // A subcomponent opens on its top-level item's route, so its type can differ
+  // from the route's: the Files card checks permissions and records uploads by it.
+  const [methodCorrections, subItem] = await Promise.all([
+    getMethodCorrectionsData(client, makeMethodId, companyId),
+    api.items.getItem({ id: makeMethod.data.itemId }).then(dataOrThrow)
+  ]);
 
   return {
     corrections: toMethodCorrectionsProps(methodCorrections.data),
+    itemType: subItem.type as ItemType,
     makeMethod: makeMethod.data,
     methodMaterials:
       methodMaterials.data?.map((m) => ({
@@ -136,6 +143,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ...configData,
     model: api.shared
       .getModelByItemId({ itemId: makeMethod.data.itemId })
+      .then(dataOrThrow),
+    files: api.items
+      .getItemFiles({ itemId: makeMethod.data.itemId })
       .then(dataOrThrow),
     makeMethods: api.items.getMakeMethods({ itemId: makeMethod.data.itemId }),
     tags: tags.data ?? [],
@@ -219,6 +229,22 @@ export default function PartMakeMethodPage() {
         revisionStatus={revisionStatus}
         releaseControl={releaseControl}
       />
+      {permissions.is("employee") && (
+        <DeferredFiles resolve={loaderData.files}>
+          {(files) => (
+            <Await resolve={loaderData.model}>
+              {(model) => (
+                <ItemDocuments
+                  files={files}
+                  itemId={makeMethod.itemId}
+                  modelUpload={model}
+                  type={loaderData.itemType}
+                />
+              )}
+            </Await>
+          )}
+        </DeferredFiles>
+      )}
       <Suspense fallback={null}>
         <Await resolve={loaderData.model}>
           {(model) => (

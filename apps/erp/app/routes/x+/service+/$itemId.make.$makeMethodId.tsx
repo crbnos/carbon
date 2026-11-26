@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,17 +12,23 @@ import { redirect } from "@carbon/utils";
 import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
-import { useRouteData } from "~/hooks";
+import { DeferredFiles } from "~/components";
+import { usePermissions, useRouteData } from "~/hooks";
 import { getMethodCorrectionsData } from "~/modules/items/items.service";
 import type { ServiceSummary } from "~/modules/items/types";
 import {
   BillOfMaterial,
   BillOfProcess,
+  ItemDocuments,
   MakeMethodTools,
   MethodCorrections
 } from "~/modules/items/ui/Item";
 import { toMethodCorrectionsProps } from "~/modules/items/ui/Item/MethodCorrections";
-import type { MethodItemType, MethodType } from "~/modules/shared/types";
+import type {
+  ItemType,
+  MethodItemType,
+  MethodType
+} from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -70,14 +77,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const methodCorrections = await getMethodCorrectionsData(
-    client,
-    makeMethodId,
-    companyId
-  );
+  // A subcomponent opens on its top-level item's route, so its type can differ
+  // from the route's: the Files card checks permissions and records uploads by it.
+  const [methodCorrections, subItem] = await Promise.all([
+    getMethodCorrectionsData(client, makeMethodId, companyId),
+    api.items.getItem({ id: makeMethod.data.itemId }).then(dataOrThrow)
+  ]);
 
   return {
     corrections: toMethodCorrectionsProps(methodCorrections.data),
+    itemType: subItem.type as ItemType,
     makeMethod: makeMethod.data,
     methodMaterials:
       methodMaterials.data?.map((m) => ({
@@ -103,6 +112,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workCenterId: operation.workCenterId ?? undefined,
         workInstruction: operation.workInstruction as JSONContent | null
       })) ?? [],
+    files: api.items
+      .getItemFiles({ itemId: makeMethod.data.itemId })
+      .then(dataOrThrow),
     makeMethods: api.items.getMakeMethods({ itemId: makeMethod.data.itemId }),
     tags: tags.data ?? []
   };
@@ -110,6 +122,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function ServiceMakeMethodPage() {
   const loaderData = useLoaderData<typeof loader>();
+  const permissions = usePermissions();
   const { makeMethod, makeMethods, methodMaterials, methodOperations, tags } =
     loaderData;
 
@@ -159,6 +172,17 @@ export default function ServiceMakeMethodPage() {
         routingOperations={methodOperations as never}
         tags={tags}
       />
+      {permissions.is("employee") && (
+        <DeferredFiles resolve={loaderData.files}>
+          {(files) => (
+            <ItemDocuments
+              files={files}
+              itemId={makeMethod.itemId}
+              type={loaderData.itemType}
+            />
+          )}
+        </DeferredFiles>
+      )}
     </VStack>
   );
 }
