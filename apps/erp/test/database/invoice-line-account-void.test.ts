@@ -30,6 +30,12 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
+import {
+  deadlocked,
+  race,
+  raceRounds,
+  raceTimeout
+} from "./fixtures/race";
 
 // The service invoice posts 100 to Sales, the supplies invoice 60 to Supplies.
 const SIDES = [
@@ -41,9 +47,11 @@ type Side = (typeof SIDES)[number]["side"];
 
 /** A posted invoice of `side`, its line, and a second account of the line's
  *  class to move it to. */
-async function postedInvoice(f: Fixture, side: Side) {
+async function postedInvoice(f: Fixture, side: Side, key = "") {
   const invoiceId =
-    side === "sales" ? await postServiceInvoice(f) : await postSuppliesInvoice(f);
+    side === "sales"
+      ? await postServiceInvoice(f, key)
+      : await postSuppliesInvoice(f, key);
   const line =
     side === "sales"
       ? await f.db
@@ -58,13 +66,13 @@ async function postedInvoice(f: Fixture, side: Side) {
           .where("invoiceId", "=", invoiceId)
           .where("companyId", "=", f.companyId)
           .executeTakeFirstOrThrow();
-  const to = `${f.prefix}-moved-to`;
+  const to = `${f.prefix}-moved-to${key}`;
   await seed(f, (trx) =>
     trx
       .insertInto("account")
       .values({
         id: to,
-        name: "moved-to",
+        name: `moved-to${key}`,
         class: side === "sales" ? "Revenue" : "Expense",
         incomeBalance: "Income Statement",
         companyGroupId: f.groupId,
@@ -75,16 +83,21 @@ async function postedInvoice(f: Fixture, side: Side) {
   return { invoiceId, lineId: line.id, to };
 }
 
-function voidInvoice(f: Fixture, side: Side, invoiceId: string) {
+function voidInvoice(
+  f: Fixture,
+  side: Side,
+  invoiceId: string,
+  db: Kysely<KyselyDatabase> = f.db
+) {
   return side === "sales"
     ? invokePosting(
-        handlesOf(f.ctx),
+        handlesOf({ ...f.ctx, db }),
         "post-sales-invoice",
         { type: "void", invoiceId },
         postSalesInvoice
       )
     : invokePosting(
-        handlesOf(f.ctx),
+        handlesOf({ ...f.ctx, db }),
         "post-purchase-invoice",
         { type: "void", invoiceId },
         postPurchaseInvoice
@@ -275,4 +288,60 @@ for (const { side, from, control } of SIDES) {
       await f.cleanup();
     }
   });
+}
+
+const VOID_ROUNDS = raceRounds(6);
+
+for (const { side, from, control } of SIDES) {
+  databaseTest(
+    `two voids of a ${side} invoice and a line account change at once reverse it once, to zero on every account`,
+    async () => {
+      const f = await alwaysPostFixture();
+      try {
+        await race({
+          rounds: VOID_ROUNDS,
+          // A void reads the invoice before it locks it; the spread lets the
+          // change run first in some rounds and last in others.
+          maxDelayMs: 40,
+          setup: (round) => postedInvoice(f, side, `-${round}`),
+          operations: {
+            firstVoid: (db, { invoiceId }) =>
+              voidInvoice(f, side, invoiceId, db),
+            secondVoid: (db, { invoiceId }) =>
+              voidInvoice(f, side, invoiceId, db),
+            change: (db, { invoiceId, lineId, to }) =>
+              changeInvoiceLineAccount(
+                systemServiceOf(
+                  { db, companyId: f.companyId, userId: USER },
+                  f.groupId
+                ),
+                { side, invoiceId, lineId, accountId: to }
+              )
+          },
+          invariant: async ({ invoiceId, to }, outcomes) => {
+            expect({
+              deadlocked: deadlocked(outcomes),
+              voided: [outcomes.firstVoid, outcomes.secondVoid].filter(
+                (outcome) => outcome.ok
+              ).length,
+              net: await netByAccount(f, invoiceId)
+            }).toEqual({
+              deadlocked: [],
+              voided: 1,
+              net: {
+                [f.account(from)]: 0,
+                [f.account(control)]: 0,
+                // A change that ran before the void moved the line; the void
+                // reversed it with the posting.
+                ...(outcomes.change.ok ? { [to]: 0 } : {})
+              }
+            });
+          }
+        });
+      } finally {
+        await f.cleanup();
+      }
+    },
+    raceTimeout(VOID_ROUNDS, 2_000)
+  );
 }

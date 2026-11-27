@@ -193,6 +193,7 @@ export namespace Xero {
     Total: z.number().optional(),
     AmountDue: z.number().optional(),
     AmountPaid: z.number().optional(),
+    AmountCredited: z.number().optional(),
     CurrencyCode: z.string().optional(),
     CurrencyRate: z.number().optional(),
     UpdatedDateUTC: z.string()

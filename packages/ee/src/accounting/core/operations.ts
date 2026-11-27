@@ -2,7 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import type { Database } from "@carbon/database";
+import { type Database, fetchAllRecords } from "@carbon/database";
 import { isUniqueViolation, quoteFilterValue } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SYNC_OPERATION_ALLOWED_TRANSITIONS } from "./models";
@@ -546,32 +546,118 @@ export async function getSyncOperationsByIds(
 }
 
 /**
+ * The entities among `operations` (claimed rows of one entity type and
+ * direction) that an earlier push attempt may already have created remotely:
+ * the row was claimed before (a Retry or a stale reclaim), or another row for
+ * the same entity was (the reconciler enqueues a new row after a failure, or
+ * when a Completed push left no mapping). Only these need a provider's
+ * recovery read before their create.
+ */
+export async function getAttemptedEntityIds(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    integration: string;
+    operations: Array<
+      Pick<
+        SyncOperation,
+        "id" | "entityType" | "entityId" | "direction" | "attemptCount"
+      >
+    >;
+  }
+): Promise<{ data: Set<string>; error: string | null }> {
+  const attempted = new Set(
+    args.operations
+      .filter((operation) => operation.attemptCount > 1)
+      .map((operation) => operation.entityId)
+  );
+  const firstAttempts = args.operations.filter(
+    (operation) => !attempted.has(operation.entityId)
+  );
+  const first = firstAttempts[0];
+  if (!first) return { data: attempted, error: null };
+
+  // Paged: an entity re-enqueued many times has many rows, and a read cut
+  // at the row cap would treat the entities past it as never attempted.
+  const earlier = await fetchAllRecords<{ entityId: string }>(() =>
+    syncOperationTable(client)
+      .select("entityId")
+      .eq("companyId", args.companyId)
+      .eq("integration", args.integration)
+      .eq("entityType", first.entityType)
+      .eq("direction", first.direction)
+      .in(
+        "entityId",
+        firstAttempts.map((operation) => operation.entityId)
+      )
+      .not(
+        "id",
+        "in",
+        `(${firstAttempts.map((operation) => quoteFilterValue(operation.id)).join(",")})`
+      )
+      .gt("attemptCount", 0)
+      .order("id")
+  );
+  if (earlier.error) return { data: attempted, error: earlier.error.message };
+
+  for (const row of earlier.data) attempted.add(row.entityId);
+  return { data: attempted, error: null };
+}
+
+/**
+ * The attempt a write speaks for: the operation as its claim returned it. A
+ * stale reclaim moves `attemptCount` on, so an attempt still running after its
+ * row was reclaimed writes nothing, instead of overwriting the newer attempt's
+ * outcome.
+ */
+export type SyncOperationAttempt = Pick<
+  SyncOperation,
+  "id" | "companyId" | "attemptCount"
+>;
+
+/**
+ * Apply `patch` to the operation only while `attempt` still holds it: its
+ * attemptCount is still the one the claim stamped. Every claim, the stale
+ * reclaim included, moves it on; a Retry does not, and needs no fence since
+ * only a closed row can be retried. Returns `data: null` (and no error) when
+ * a newer attempt owns the row.
+ */
+async function updateHeldOperation(
+  client: SupabaseClient<Database>,
+  attempt: SyncOperationAttempt,
+  patch: Record<string, unknown>
+): Promise<{ data: SyncOperation | null; error: string | null }> {
+  const updated = await syncOperationTable(client)
+    .update(patch)
+    .eq("id", attempt.id)
+    .eq("companyId", attempt.companyId)
+    .eq("attemptCount", attempt.attemptCount)
+    .select("*");
+
+  if (updated.error) return { data: null, error: updated.error.message };
+  return {
+    data: ((updated.data ?? []) as SyncOperation[])[0] ?? null,
+    error: null
+  };
+}
+
+/**
  * Replace an operation's metadata without touching its status — for
  * callers that need to persist progression on an "In Flight" operation
  * where completeOperation/failOperation don't apply (they always
  * transition the status). Same replace-not-merge metadata contract as
- * those two.
+ * those two, and the same attempt fence.
  */
 export async function updateOperationMetadata(
   client: SupabaseClient<Database>,
-  args: {
-    id: string;
-    companyId: string;
+  args: SyncOperationAttempt & {
     metadata: Record<string, unknown>;
   }
 ): Promise<{ data: SyncOperation | null; error: string | null }> {
-  const updated = await syncOperationTable(client)
-    .update({
-      metadata: args.metadata,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", args.id)
-    .eq("companyId", args.companyId)
-    .select("*")
-    .single();
-
-  if (updated.error) return { data: null, error: updated.error.message };
-  return { data: updated.data as SyncOperation, error: null };
+  return updateHeldOperation(client, args, {
+    metadata: args.metadata,
+    updatedAt: new Date().toISOString()
+  });
 }
 
 /**
@@ -584,32 +670,22 @@ export async function updateOperationMetadata(
  */
 export async function completeOperation(
   client: SupabaseClient<Database>,
-  args: {
-    id: string;
-    companyId: string;
+  args: SyncOperationAttempt & {
     externalId?: string;
     metadata?: Record<string, unknown>;
   }
 ): Promise<{ data: SyncOperation | null; error: string | null }> {
   const now = new Date().toISOString();
 
-  const updated = await syncOperationTable(client)
-    .update({
-      status: "Completed",
-      completedAt: now,
-      errorCode: null,
-      errorMessage: null,
-      updatedAt: now,
-      ...(args.externalId ? { externalId: args.externalId } : {}),
-      ...(args.metadata !== undefined ? { metadata: args.metadata } : {})
-    })
-    .eq("id", args.id)
-    .eq("companyId", args.companyId)
-    .select("*")
-    .single();
-
-  if (updated.error) return { data: null, error: updated.error.message };
-  return { data: updated.data as SyncOperation, error: null };
+  return updateHeldOperation(client, args, {
+    status: "Completed",
+    completedAt: now,
+    errorCode: null,
+    errorMessage: null,
+    updatedAt: now,
+    ...(args.externalId ? { externalId: args.externalId } : {}),
+    ...(args.metadata !== undefined ? { metadata: args.metadata } : {})
+  });
 }
 
 /**
@@ -622,32 +698,20 @@ export async function completeOperation(
  */
 export async function failOperation(
   client: SupabaseClient<Database>,
-  args: {
-    id: string;
-    companyId: string;
+  args: SyncOperationAttempt & {
     errorCode?: string;
     errorMessage: string;
     warning?: boolean;
     metadata?: Record<string, unknown>;
   }
 ): Promise<{ data: SyncOperation | null; error: string | null }> {
-  const now = new Date().toISOString();
-
-  const updated = await syncOperationTable(client)
-    .update({
-      status: args.warning ? "Warning" : "Failed",
-      errorCode: args.errorCode ?? null,
-      errorMessage: args.errorMessage,
-      updatedAt: now,
-      ...(args.metadata !== undefined ? { metadata: args.metadata } : {})
-    })
-    .eq("id", args.id)
-    .eq("companyId", args.companyId)
-    .select("*")
-    .single();
-
-  if (updated.error) return { data: null, error: updated.error.message };
-  return { data: updated.data as SyncOperation, error: null };
+  return updateHeldOperation(client, args, {
+    status: args.warning ? "Warning" : "Failed",
+    errorCode: args.errorCode ?? null,
+    errorMessage: args.errorMessage,
+    updatedAt: new Date().toISOString(),
+    ...(args.metadata !== undefined ? { metadata: args.metadata } : {})
+  });
 }
 
 /**
@@ -718,29 +782,19 @@ export async function getAccountsBlockingSync(
  */
 export async function skipOperation(
   client: SupabaseClient<Database>,
-  args: {
-    id: string;
-    companyId: string;
+  args: SyncOperationAttempt & {
     reason: string;
   }
 ): Promise<{ data: SyncOperation | null; error: string | null }> {
   const now = new Date().toISOString();
 
-  const updated = await syncOperationTable(client)
-    .update({
-      status: "Skipped",
-      errorCode: null,
-      errorMessage: args.reason,
-      completedAt: now,
-      updatedAt: now
-    })
-    .eq("id", args.id)
-    .eq("companyId", args.companyId)
-    .select("*")
-    .single();
-
-  if (updated.error) return { data: null, error: updated.error.message };
-  return { data: updated.data as SyncOperation, error: null };
+  return updateHeldOperation(client, args, {
+    status: "Skipped",
+    errorCode: null,
+    errorMessage: args.reason,
+    completedAt: now,
+    updatedAt: now
+  });
 }
 
 /**

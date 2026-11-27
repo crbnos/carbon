@@ -23,7 +23,8 @@ export interface ExternalIntegrationMapping {
 export interface LinkOptions {
   metadata?: Record<string, unknown>;
   remoteUpdatedAt?: Date | string;
-  lastSyncedAt?: Date | string;
+  /** The version the link records as synced; defaults to the link time. */
+  lastSyncedAt?: string;
   createdBy?: string;
   /**
    * When true, allows multiple Carbon entities to map to the same external ID.
@@ -61,10 +62,7 @@ export class ExternalIntegrationMappingService {
       options?.remoteUpdatedAt instanceof Date
         ? options.remoteUpdatedAt.toISOString()
         : (options?.remoteUpdatedAt ?? now);
-    const lastSyncedAt =
-      options?.lastSyncedAt instanceof Date
-        ? options.lastSyncedAt.toISOString()
-        : (options?.lastSyncedAt ?? now);
+    const lastSyncedAt = options?.lastSyncedAt ?? now;
     const allowDuplicateExternalId = options?.allowDuplicateExternalId ?? false;
 
     await this.db
@@ -338,13 +336,14 @@ export class ExternalIntegrationMappingService {
     entityType: string,
     entityId: string,
     integration: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     const now = new Date().toISOString();
     await this.db
       .updateTable("externalIntegrationMapping")
       .set({
-        lastSyncedAt: now,
+        lastSyncedAt: lastSyncedAt ?? now,
         updatedAt: now,
         ...(remoteUpdatedAt
           ? { remoteUpdatedAt: remoteUpdatedAt.toISOString() }
@@ -382,7 +381,7 @@ export class ExternalIntegrationMappingService {
       allowDuplicateExternalId: m.options?.allowDuplicateExternalId ?? false,
       companyId: this.companyId,
       metadata: m.options?.metadata ?? null,
-      lastSyncedAt: now,
+      lastSyncedAt: m.options?.lastSyncedAt ?? now,
       // Default to current timestamp if remoteUpdatedAt is not provided
       remoteUpdatedAt:
         m.options?.remoteUpdatedAt instanceof Date

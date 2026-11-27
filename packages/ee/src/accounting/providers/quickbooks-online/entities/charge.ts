@@ -2,7 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { createHash } from "node:crypto";
 import type { KyselyTx } from "@carbon/database/client";
 import {
   type CardChargeSource,
@@ -35,7 +34,8 @@ import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
 import {
   QBO_DIMENSION_TARGET_CLASS,
   QBO_DIMENSION_TARGET_DEPARTMENT,
-  type QboProvider
+  type QboProvider,
+  qboCreateRetry
 } from "../provider";
 import type { QboJournalDimensionArgs } from "./journal-entry";
 import {
@@ -312,13 +312,21 @@ export class QboChargeSyncer extends ChargeSyncerBase<
         resolveDimensionValueLabels(this.database, { values }),
       createExternalValue: async (slot, label) => {
         if (slot.target === QBO_DIMENSION_TARGET_CLASS) {
-          const created = await this.qboProvider.createClass({ Name: label });
+          const created = await this.qboProvider.createClass(
+            { Name: label },
+            this.createKey(label, "class"),
+            (deletedId) =>
+              this.createKey(`${label}:replacing:${deletedId}`, "class")
+          );
           return created.Id;
         }
         if (slot.target === QBO_DIMENSION_TARGET_DEPARTMENT) {
-          const created = await this.qboProvider.createDepartment({
-            Name: label
-          });
+          const created = await this.qboProvider.createDepartment(
+            { Name: label },
+            this.createKey(label, "department"),
+            (deletedId) =>
+              this.createKey(`${label}:replacing:${deletedId}`, "department")
+          );
           return created.Id;
         }
         throw new Error(
@@ -352,7 +360,8 @@ export class QboChargeSyncer extends ChargeSyncerBase<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     const seen = this.remoteMetaById.get(remoteId);
     const txMappingService = createMappingService(tx, this.companyId);
@@ -364,6 +373,7 @@ export class QboChargeSyncer extends ChargeSyncerBase<
       {
         remoteUpdatedAt:
           remoteUpdatedAt ?? parseQboDate(seen?.lastUpdatedTime) ?? undefined,
+        lastSyncedAt,
         ...(seen?.syncToken !== undefined
           ? { metadata: { syncToken: seen.syncToken } }
           : {})
@@ -552,10 +562,12 @@ export class QboChargeSyncer extends ChargeSyncerBase<
       // https://blogs.a.intuit.com/2018/09/10/quickbooks-online-api-best-practices/
       const created = await this.qboProvider.createPurchase(
         data,
-        createHash("sha256")
-          .update(`${this.companyId}:charge:${localId}`)
-          .digest("hex")
-          .slice(0, 40)
+        this.createKey(localId, "charge"),
+        // A replay is the charge as the earlier attempt sent it; an edit made
+        // since is sent over it, or the link would record it as synced.
+        qboCreateRetry(this.attemptCreateKey(localId, "charge"), {
+          refresh: true
+        })
       );
       if (!created?.Id)
         throw new Error(

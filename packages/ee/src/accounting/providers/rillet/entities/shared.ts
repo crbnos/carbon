@@ -34,6 +34,7 @@ import {
   type Accounting,
   BaseEntitySyncer,
   type BatchSyncResult,
+  getPushedVersion,
   type SyncResult
 } from "../../../core/types";
 import { withTriggersDisabled } from "../../../core/utils";
@@ -732,7 +733,13 @@ export abstract class RilletEntitySyncer<
 
       // 6. Update mapping
       await withTriggersDisabled(this.database, async (tx) => {
-        await this.linkEntities(tx, entityId, remoteId);
+        await this.linkEntities(
+          tx,
+          entityId,
+          remoteId,
+          undefined,
+          getPushedVersion(localEntity)
+        );
       });
 
       return {

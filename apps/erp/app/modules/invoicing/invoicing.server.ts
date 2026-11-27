@@ -83,6 +83,7 @@ import * as purchasingPostings from "../purchasing/purchasing.service";
 import { fromServerFn, invokePosting } from "../shared/shared.service";
 import {
   isMemoLocked,
+  isPurchaseInvoiceLocked,
   paymentValidator,
   purchaseInvoiceValidator,
   reimbursementLinesValidator,
@@ -2585,13 +2586,49 @@ export const updatePurchaseInvoice = defineServiceFn({
   }),
   permission: { "invoicing.purchaseInvoices": "Edit" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.updatePurchaseInvoice(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+    // A posted invoice keeps its supplier: the posting booked that
+    // supplier's payable, and an accounting provider finds its copy of the
+    // bill by number and supplier, so a change would make a retried push
+    // create a second bill under the new one.
+    let draftOnly = false;
+    if (input.supplierId !== undefined) {
+      const current = await ctx.asCaller.supabase
+        .from("purchaseInvoice")
+        .select("status, supplierId")
+        .eq("id", input.id)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle();
+      if (current.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load the purchase invoice",
+          current.error
+        );
+      }
+      const changesSupplier =
+        current.data !== null && current.data.supplierId !== input.supplierId;
+      if (changesSupplier && isPurchaseInvoiceLocked(current.data?.status)) {
+        return ctx.error(
+          "rule",
+          "Cannot change the supplier of a confirmed purchase invoice."
+        );
+      }
+      draftOnly = changesSupplier;
+    }
+
+    const updated = await service.updatePurchaseInvoice(
+      ctx.asCaller.supabase,
+      payload(ctx, input).forUpdate() as never,
+      { draftOnly }
     );
+    // Posted between the read and the write.
+    if (draftOnly && !updated.error && !updated.data) {
+      return ctx.error(
+        "rule",
+        "Cannot change the supplier of a confirmed purchase invoice."
+      );
+    }
+    return unwrap(ctx, updated);
   }
 });
 

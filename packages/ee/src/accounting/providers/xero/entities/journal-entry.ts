@@ -5,6 +5,7 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { getAccountMappings } from "../../../core/account-mapping";
+import type { RemoteCreateKey } from "../../../core/create-key";
 import {
   buildDimensionValueMappingEntityId,
   buildDimensionValueMappingLookup,
@@ -32,6 +33,7 @@ import {
   type Accounting,
   BaseEntitySyncer,
   type BatchSyncResult,
+  type RemoteUpsertOutcome,
   type ShouldSyncContext,
   type SyncResult
 } from "../../../core/types";
@@ -111,6 +113,51 @@ export type XeroJournalDimensionArgs = {
   optionIdsByValue: ReadonlyMap<string, string>;
 };
 
+/** Appended to a Narration, before the original date, when the lock date moved the push. */
+export const XERO_REDATED_NARRATION = " | original date ";
+
+/**
+ * Both Narrations an earlier push of the same journal may have used: with and
+ * without the redate suffix, since the lock date can move between attempts.
+ * `date` is the push date, which is the original date when no suffix is set.
+ */
+export function getXeroJournalNarrations(
+  narration: string,
+  date: string | undefined
+): string[] {
+  const [base = narration, original = date] = narration.split(
+    XERO_REDATED_NARRATION
+  );
+  return original
+    ? [base, `${base}${XERO_REDATED_NARRATION}${original}`]
+    : [base];
+}
+
+/**
+ * Create the journal in Xero once. Its Narration names it, so an attempt whose
+ * create reached Xero but whose link never did finds that journal here and
+ * returns it; Xero's six-minute `Idempotency-Key` covers only a quick retry.
+ * The lookup runs only when an earlier attempt may have created it
+ * (`mayExist`), so a first attempt is one POST.
+ */
+export async function createManualJournalOnce(
+  provider: XeroProvider,
+  data: Omit<Xero.ManualJournal, "UpdatedDateUTC">,
+  key: RemoteCreateKey,
+  mayExist: boolean
+): Promise<string> {
+  if (mayExist) {
+    const recovered = await provider.recoverManualJournal(
+      getXeroJournalNarrations(data.Narration, data.Date)
+    );
+    if (recovered) return recovered.ManualJournalID;
+  }
+
+  const { ManualJournalID: _unmapped, ...journal } = data;
+  const created = await provider.createManualJournal(journal, key);
+  return created.ManualJournalID;
+}
+
 export function mapJournalEntryToManualJournal(args: {
   journal: Accounting.JournalEntry;
   accountCodesById: ReadonlyMap<string, string>;
@@ -178,7 +225,7 @@ export function mapJournalEntryToManualJournal(args: {
     ? `Carbon reversal of ${journal.journalEntryId}`
     : `Carbon ${journal.journalEntryId} ${journal.id}`;
   if (args.redatedFromDate) {
-    narration += ` | original date ${args.redatedFromDate}`;
+    narration += `${XERO_REDATED_NARRATION}${args.redatedFromDate}`;
   }
 
   return {
@@ -691,27 +738,26 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
     data: Omit<Xero.ManualJournal, "UpdatedDateUTC">,
     localId: string
   ): Promise<string> {
-    const existingRemoteId = await this.getRemoteId(localId);
-    const created = await this.xeroProvider.createManualJournal(
-      existingRemoteId ? { ...data, ManualJournalID: existingRemoteId } : data
+    return createManualJournalOnce(
+      this.xeroProvider,
+      data,
+      this.createKey(localId),
+      this.mayExistRemotely(localId)
     );
-    return created.ManualJournalID;
   }
 
+  /**
+   * One journal per POST keeps each journal's idempotency its own; journal
+   * volumes per drain are small (claim limit 20). Unused while
+   * `pushBatchToAccounting` pushes journals one at a time.
+   */
   protected async upsertRemoteBatch(
     data: Array<{
       localId: string;
       payload: Omit<Xero.ManualJournal, "UpdatedDateUTC">;
     }>
-  ): Promise<Map<string, string>> {
-    const result = new Map<string, string>();
-    // One journal per POST keeps per-journal idempotency simple; journal
-    // volumes per drain are small (claim limit 20)
-    for (const { localId, payload } of data) {
-      const remoteId = await this.upsertRemote(payload, localId);
-      result.set(localId, remoteId);
-    }
-    return result;
+  ): Promise<Map<string, RemoteUpsertOutcome>> {
+    return this.upsertRemoteEach(data);
   }
 
   // =================================================================

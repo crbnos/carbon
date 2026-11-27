@@ -29,12 +29,19 @@ export const hasLocalDatabase: boolean = (() => {
   }
 })();
 
+/**
+ * How long a database case may run. The suite shares one Postgres on CI, where
+ * a call that takes milliseconds alone can wait seconds, past vitest's 5 s.
+ */
+export const DATABASE_TEST_TIMEOUT = 60_000;
+
 /** A vitest case for a regression that requires the local database. */
 export function databaseTest(
   name: string,
-  fn: () => void | Promise<void>
+  fn: () => void | Promise<void>,
+  timeout = DATABASE_TEST_TIMEOUT
 ): void {
-  it.skipIf(!hasLocalDatabase)(name, fn, 60_000);
+  it.skipIf(!hasLocalDatabase)(name, fn, timeout);
 }
 
 /** Fixture connections have trigger suppression on. An edit-lock test needs a

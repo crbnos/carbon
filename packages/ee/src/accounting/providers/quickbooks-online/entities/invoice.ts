@@ -31,7 +31,7 @@ import {
   type ShouldSyncContext
 } from "../../../core/types";
 import { parseQboDate, type Qbo } from "../models";
-import type { QboProvider } from "../provider";
+import { type QboProvider, qboCreateRetry } from "../provider";
 import {
   isQboUsCompany,
   loadQboInvoiceTaxCatalog,
@@ -246,7 +246,8 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     const seen = this.remoteMetaById.get(remoteId);
     const docNumberSource = this.docNumberSourceByLocalId.get(localId);
@@ -264,16 +265,10 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       {
         remoteUpdatedAt:
           remoteUpdatedAt ?? parseQboDate(seen?.lastUpdatedTime) ?? undefined,
+        lastSyncedAt,
         ...(Object.keys(metadata).length > 0 ? { metadata } : {})
       }
     );
-
-    // Also update updatedAt on salesInvoice (Xero-syncer parity)
-    await tx
-      .updateTable("salesInvoice")
-      .set({ updatedAt: datetime.timestamp() })
-      .where("id", "=", localId)
-      .execute();
   }
 
   // =================================================================
@@ -506,7 +501,11 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     const existingRemoteId = await this.getRemoteId(localId);
 
     if (!existingRemoteId) {
-      const created = await this.qboProvider.createInvoice(data);
+      const created = await this.qboProvider.createInvoice(
+        data,
+        this.createKey(localId),
+        qboCreateRetry(this.attemptCreateKey(localId), { refresh: true })
+      );
       this.rememberRemoteEntity(created);
       return created.Id;
     }

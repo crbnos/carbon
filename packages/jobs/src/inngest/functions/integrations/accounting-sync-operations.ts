@@ -41,6 +41,7 @@ import {
   completeOperation,
   enqueueSyncOperation,
   failOperation,
+  getAttemptedEntityIds,
   getJournalEntrySyncEntityId,
   getJournalPostingPolicyDecision,
   insertTerminalSyncOperation,
@@ -1036,6 +1037,7 @@ export async function drainSyncOperations(args: {
         await failOperation(args.client, {
           id: operation.id,
           companyId: operation.companyId,
+          attemptCount: operation.attemptCount,
           errorCode: "ATTEMPTS_EXHAUSTED",
           errorMessage: `Sync was attempted ${operation.attemptCount} times without reaching a terminal outcome; parked as Failed — retry manually once the underlying issue is fixed`
         });
@@ -1056,6 +1058,22 @@ export async function drainSyncOperations(args: {
       const { entityType, direction } = first;
 
       try {
+        // Only an entity an earlier attempt may have created pays the
+        // provider's recovery read before its create.
+        const attempted =
+          direction === "push-to-accounting"
+            ? await getAttemptedEntityIds(args.client, {
+                companyId: args.companyId,
+                integration: args.integration,
+                operations
+              })
+            : null;
+        if (attempted?.error) {
+          throw new Error(
+            `Failed to read earlier sync attempts: ${attempted.error}`
+          );
+        }
+
         const syncer = SyncFactory.getSyncer({
           database: args.database,
           companyId: args.companyId,
@@ -1063,7 +1081,24 @@ export async function drainSyncOperations(args: {
           config: args.provider.getSyncConfig(
             entityType as AccountingEntityType
           ),
-          entityType: entityType as AccountingEntityType
+          entityType: entityType as AccountingEntityType,
+          ...(attempted
+            ? {
+                attempted: {
+                  entityType: entityType as AccountingEntityType,
+                  ids: new Map(
+                    operations
+                      .filter((operation) =>
+                        attempted.data.has(operation.entityId)
+                      )
+                      .map((operation) => [
+                        operation.entityId,
+                        `${operation.id}:${operation.attemptCount}`
+                      ])
+                  )
+                }
+              }
+            : {})
         });
 
         const entityIds = operations.map((operation) => operation.entityId);
@@ -1083,35 +1118,43 @@ export async function drainSyncOperations(args: {
 
           const decision = getSyncOperationCloseDecision(operation, syncResult);
 
-          if (decision.outcome === "failed") {
-            summary.failed++;
-            // Structured journal pre-flight failures keep their errorCode,
-            // Warning/Failed flag and metadata; other errors flatten to a
-            // string exactly as before
-            await failOperation(args.client, {
-              id: operation.id,
-              companyId: operation.companyId,
-              ...decision.record
-            });
-            continue;
-          }
-
-          if (decision.outcome === "skipped") {
-            summary.skipped++;
-            await skipOperation(args.client, {
-              id: operation.id,
-              companyId: operation.companyId,
-              reason: decision.reason
-            });
-            continue;
-          }
-
-          summary.completed++;
-          await completeOperation(args.client, {
+          const attempt = {
             id: operation.id,
             companyId: operation.companyId,
-            ...(decision.externalId ? { externalId: decision.externalId } : {})
-          });
+            attemptCount: operation.attemptCount
+          };
+          // Structured journal pre-flight failures keep their errorCode,
+          // Warning/Failed flag and metadata; other errors flatten to a
+          // string exactly as before
+          const closed =
+            decision.outcome === "failed"
+              ? await failOperation(args.client, {
+                  ...attempt,
+                  ...decision.record
+                })
+              : decision.outcome === "skipped"
+                ? await skipOperation(args.client, {
+                    ...attempt,
+                    reason: decision.reason
+                  })
+                : await completeOperation(args.client, {
+                    ...attempt,
+                    ...(decision.externalId
+                      ? { externalId: decision.externalId }
+                      : {})
+                  });
+
+          // Counted only once the close applied: no row means a newer claim
+          // holds the operation and closes it itself.
+          if (closed.error) {
+            logger.error("Could not close a sync operation", {
+              operationId: operation.id,
+              outcome: decision.outcome,
+              error: closed.error
+            });
+          } else if (closed.data) {
+            summary[decision.outcome]++;
+          }
         }
       } catch (error) {
         if (error instanceof AccountingAuthError) {
@@ -1133,6 +1176,7 @@ export async function drainSyncOperations(args: {
           await failOperation(args.client, {
             id: operation.id,
             companyId: operation.companyId,
+            attemptCount: operation.attemptCount,
             errorMessage
           });
         }

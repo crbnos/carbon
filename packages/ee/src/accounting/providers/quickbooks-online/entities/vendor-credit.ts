@@ -21,7 +21,8 @@ import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
 import {
   buildQboRequestId,
   type QboProvider,
-  type QboVendorCreditApplicationPayload
+  type QboVendorCreditApplicationPayload,
+  qboCreateRetry
 } from "../provider";
 import {
   QBO_MEMO_INCREASER_SKIP_REASON,
@@ -367,7 +368,8 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     const seen = this.remoteMetaById.get(remoteId);
     const applied = this.appliedSettlementIds.get(localId) ?? [];
@@ -380,6 +382,7 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
       {
         remoteUpdatedAt:
           remoteUpdatedAt ?? parseQboDate(seen?.lastUpdatedTime) ?? undefined,
+        lastSyncedAt,
         metadata: {
           ...(seen?.syncToken !== undefined
             ? { syncToken: seen.syncToken }
@@ -554,7 +557,10 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
       // SECOND VendorCredit.
       const created = await this.qboProvider.createVendorCredit(
         data,
-        buildQboRequestId(this.companyId, "vendorCredit", localId)
+        buildQboRequestId(this.companyId, "vendorCredit", localId),
+        qboCreateRetry(this.attemptCreateKey(localId, "vendorCredit"), {
+          refresh: false
+        })
       );
       if (!created?.Id) {
         throw new Error(

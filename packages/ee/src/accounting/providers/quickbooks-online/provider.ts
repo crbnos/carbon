@@ -2,7 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { createHash } from "node:crypto";
 import { getLogger } from "@carbon/logger";
 import { z } from "zod";
 import type {
@@ -10,6 +9,7 @@ import type {
   ExternalIdentityKind,
   RemoteCandidate
 } from "../../core/counterpart-types";
+import { type RemoteCreateKey, remoteCreateKey } from "../../core/create-key";
 import { ProviderID } from "../../core/models";
 import { TAX_DIRECTIONS, type TaxRateOption } from "../../core/tax-mapping";
 import {
@@ -75,22 +75,38 @@ export const QBO_QUERY_MAX_RESULTS = 1000;
 export const QBO_REQUEST_ID_MAX_LENGTH = 50;
 
 /**
- * Deterministic `?requestid=` for a create: sha256 of
- * `companyId:operation:localId`, truncated inside QBO's 50-char cap. Keyed by
- * the CARBON id (never the payload) so a retry after a crash between the remote
- * create and the local mapping write replays the original response instead of
- * minting a second document — the same contract as Rillet's
- * `buildRilletIdempotencyKey`.
+ * The create key behind a deterministic `?requestid=`: keyed by the CARBON id
+ * (never the payload) so a retry after a crash between the remote create and
+ * the local mapping write replays the original response instead of minting a
+ * second document — the same contract as Rillet's `buildRilletIdempotencyKey`.
  */
 export function buildQboRequestId(
   companyId: string,
   operation: string,
   localId: string
-): string {
-  return createHash("sha256")
-    .update(`${companyId}:${operation}:${localId}`)
-    .digest("hex")
-    .slice(0, 40);
+): RemoteCreateKey {
+  return remoteCreateKey({ companyId, operation, localId });
+}
+
+/**
+ * How a create behaves on a retried attempt (an earlier attempt of the same
+ * record may have reached QuickBooks). `attemptKey` is this attempt's own
+ * key; `refresh` sends the current payload over what the create answered
+ * with, for a record a person can edit between attempts.
+ */
+export type QboCreateRetry = { attemptKey: RemoteCreateKey; refresh: boolean };
+
+/** The retry a syncer's create sends: none on a first attempt (`attemptKey` undefined). */
+export function qboCreateRetry(
+  attemptKey: RemoteCreateKey | undefined,
+  { refresh }: { refresh: boolean }
+): QboCreateRetry | undefined {
+  return attemptKey ? { attemptKey, refresh } : undefined;
+}
+
+/** The `requestid` a create key sends: its first 40 hex digits, inside QBO's 50-character cap. */
+export function toQboRequestId(key: RemoteCreateKey): string {
+  return key.slice(0, 40);
 }
 
 /**
@@ -244,6 +260,16 @@ export function getQboFaultCode(error: unknown): string | null {
   if (!(error instanceof AccountingApiError)) return null;
   const code = error.details.providerErrorCode;
   return code === undefined ? null : String(code);
+}
+
+/**
+ * True for a fault QuickBooks answers a write with when it refuses it (HTTP
+ * 400): the write made nothing. A timeout, 5xx or auth failure is not one.
+ */
+export function isQboValidationFault(error: unknown): boolean {
+  return (
+    error instanceof AccountingApiError && error.details.statusCode === 400
+  );
 }
 
 /** True for QBO's Duplicate Name Exists fault (Intuit code 6240). */
@@ -701,16 +727,64 @@ export class QboProvider extends BaseProvider {
     return response.data?.[envelopeKey] ?? null;
   }
 
-  private async writeEntity<T>(
+  /**
+   * POST a create under its key: Intuit replays the original response for a
+   * repeated `requestid`, so a retry of a lost create returns the document
+   * the first attempt made instead of making another.
+   *
+   * A retried attempt (`retry`) handles what that replay cannot:
+   * - the replay is the document as the earlier attempt sent it, so `refresh`
+   *   sends this attempt's payload over it as a sparse update;
+   * - a validation fault means nothing was created under the key (Intuit may
+   *   be replaying an earlier attempt's fault), so the create runs once more
+   *   under this attempt's own key. Any other failure is thrown: that create
+   *   may have landed.
+   */
+  private async createEntity<T>(
     resource: string,
     envelopeKey: string,
     operation: string,
     payload: unknown,
-    requestId?: string
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
+  ): Promise<T> {
+    const create = (createKey: RemoteCreateKey) =>
+      this.writeEntity<T>(
+        `${resource}?requestid=${encodeURIComponent(toQboRequestId(createKey))}`,
+        envelopeKey,
+        operation,
+        payload
+      );
+    if (!retry) return create(key);
+
+    let created: T;
+    try {
+      created = await create(key);
+    } catch (error) {
+      if (!isQboValidationFault(error)) throw error;
+      return create(retry.attemptKey);
+    }
+    if (!retry.refresh) return created;
+    const { Id, SyncToken } = created as { Id?: string; SyncToken?: string };
+    if (!Id || SyncToken === undefined) return created;
+    return this.writeEntity<T>(
+      resource,
+      envelopeKey,
+      operation.replace(/^create /, "update "),
+      { ...(payload as object), Id, SyncToken, sparse: true }
+    );
+  }
+
+  /** POST an update (sparse, SyncToken-guarded); creates go through createEntity. */
+  private async writeEntity<T>(
+    resource: string,
+    envelopeKey: string,
+    operation: string,
+    payload: unknown
   ): Promise<T> {
     const response = await this.request<Record<string, T>>(
       "POST",
-      `/${resource}${requestId ? `?requestid=${encodeURIComponent(requestId)}` : ""}`,
+      `/${resource}`,
       { body: JSON.stringify(payload) }
     );
 
@@ -739,13 +813,17 @@ export class QboProvider extends BaseProvider {
   }
 
   async createCustomer(
-    customer: QboCreatePayload<Qbo.Customer>
+    customer: QboCreatePayload<Qbo.Customer>,
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
   ): Promise<Qbo.Customer> {
-    return this.writeEntity(
+    return this.createEntity(
       "customer",
       "Customer",
       "create customer",
-      customer
+      customer,
+      key,
+      retry
     );
   }
 
@@ -766,14 +844,16 @@ export class QboProvider extends BaseProvider {
 
   async createVendor(
     vendor: QboCreatePayload<Qbo.Vendor>,
-    requestId?: string
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
   ): Promise<Qbo.Vendor> {
-    return this.writeEntity(
+    return this.createEntity(
       "vendor",
       "Vendor",
       "create vendor",
       vendor,
-      requestId
+      key,
+      retry
     );
   }
 
@@ -792,8 +872,12 @@ export class QboProvider extends BaseProvider {
     return this.readEntity<Qbo.Item>("item", "Item", id);
   }
 
-  async createItem(item: QboCreatePayload<Qbo.Item>): Promise<Qbo.Item> {
-    return this.writeEntity("item", "Item", "create item", item);
+  async createItem(
+    item: QboCreatePayload<Qbo.Item>,
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
+  ): Promise<Qbo.Item> {
+    return this.createEntity("item", "Item", "create item", item, key, retry);
   }
 
   async updateItem(item: QboUpdatePayload<Qbo.Item>): Promise<Qbo.Item> {
@@ -810,9 +894,18 @@ export class QboProvider extends BaseProvider {
   }
 
   async createInvoice(
-    invoice: QboCreatePayload<Qbo.Invoice>
+    invoice: QboCreatePayload<Qbo.Invoice>,
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
   ): Promise<Qbo.Invoice> {
-    return this.writeEntity("invoice", "Invoice", "create invoice", invoice);
+    return this.createEntity(
+      "invoice",
+      "Invoice",
+      "create invoice",
+      invoice,
+      key,
+      retry
+    );
   }
 
   async updateInvoice(
@@ -832,9 +925,10 @@ export class QboProvider extends BaseProvider {
 
   async createBill(
     bill: QboCreatePayload<Qbo.Bill>,
-    requestId?: string
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
   ): Promise<Qbo.Bill> {
-    return this.writeEntity("bill", "Bill", "create bill", bill, requestId);
+    return this.createEntity("bill", "Bill", "create bill", bill, key, retry);
   }
 
   async updateBill(bill: QboUpdatePayload<Qbo.Bill>): Promise<Qbo.Bill> {
@@ -855,13 +949,17 @@ export class QboProvider extends BaseProvider {
   }
 
   async createPurchaseOrder(
-    purchaseOrder: QboCreatePayload<Qbo.PurchaseOrder>
+    purchaseOrder: QboCreatePayload<Qbo.PurchaseOrder>,
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
   ): Promise<Qbo.PurchaseOrder> {
-    return this.writeEntity(
+    return this.createEntity(
       "purchaseorder",
       "PurchaseOrder",
       "create purchase order",
-      purchaseOrder
+      purchaseOrder,
+      key,
+      retry
     );
   }
 
@@ -893,14 +991,16 @@ export class QboProvider extends BaseProvider {
    */
   async createPurchase(
     purchase: QboCreatePayload<Qbo.Purchase>,
-    requestId?: string
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
   ): Promise<Qbo.Purchase> {
-    return this.writeEntity(
+    return this.createEntity(
       "purchase",
       "Purchase",
       "create purchase",
       purchase,
-      requestId
+      key,
+      retry
     );
   }
 
@@ -997,14 +1097,16 @@ export class QboProvider extends BaseProvider {
    */
   async createCreditMemo(
     creditMemo: QboCreatePayload<Qbo.CreditMemo>,
-    requestId?: string
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
   ): Promise<Qbo.CreditMemo> {
-    return this.writeEntity(
+    return this.createEntity(
       "creditmemo",
       "CreditMemo",
       "create credit memo",
       creditMemo,
-      requestId
+      key,
+      retry
     );
   }
 
@@ -1026,14 +1128,16 @@ export class QboProvider extends BaseProvider {
    */
   async createVendorCredit(
     vendorCredit: QboCreatePayload<Qbo.VendorCredit>,
-    requestId?: string
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
   ): Promise<Qbo.VendorCredit> {
-    return this.writeEntity(
+    return this.createEntity(
       "vendorcredit",
       "VendorCredit",
       "create vendor credit",
       vendorCredit,
-      requestId
+      key,
+      retry
     );
   }
 
@@ -1053,7 +1157,7 @@ export class QboProvider extends BaseProvider {
     name: string;
     incomeAccountRef: Qbo.Ref;
     description?: string;
-    requestId?: string;
+    key: RemoteCreateKey;
   }): Promise<Qbo.Item> {
     const payload: QboCreatePayload<Qbo.Item> = {
       Name: args.name,
@@ -1063,12 +1167,12 @@ export class QboProvider extends BaseProvider {
     };
 
     try {
-      return await this.writeEntity<Qbo.Item>(
+      return await this.createEntity<Qbo.Item>(
         "item",
         "Item",
         "create service item",
         payload,
-        args.requestId
+        args.key
       );
     } catch (error) {
       if (!isQboDuplicateNameError(error)) throw error;
@@ -1093,14 +1197,14 @@ export class QboProvider extends BaseProvider {
    */
   async applyCreditMemo(
     payload: QboCreditMemoApplicationPayload,
-    requestId?: string
+    key: RemoteCreateKey
   ): Promise<string> {
-    const created = await this.writeEntity<Qbo.Payment>(
+    const created = await this.createEntity<Qbo.Payment>(
       "payment",
       "Payment",
       "apply credit memo",
       payload,
-      requestId
+      key
     );
     return created.Id;
   }
@@ -1117,14 +1221,14 @@ export class QboProvider extends BaseProvider {
    */
   async applyVendorCredit(
     payload: QboVendorCreditApplicationPayload,
-    requestId?: string
+    key: RemoteCreateKey
   ): Promise<string> {
-    const created = await this.writeEntity<Qbo.BillPayment>(
+    const created = await this.createEntity<Qbo.BillPayment>(
       "billpayment",
       "BillPayment",
       "apply vendor credit",
       payload,
-      requestId
+      key
     );
     return created.Id;
   }
@@ -1150,12 +1254,18 @@ export class QboProvider extends BaseProvider {
    * which the read schema omits; writeEntity sends it as-is and QBO echoes back
    * the created Payment. Returns the created payment Id.
    */
-  async createPayment(payload: QboPaymentCreatePayload): Promise<string> {
-    const created = await this.writeEntity<Qbo.Payment>(
+  async createPayment(
+    payload: QboPaymentCreatePayload,
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
+  ): Promise<string> {
+    const created = await this.createEntity<Qbo.Payment>(
       "payment",
       "Payment",
       "create payment",
-      payload
+      payload,
+      key,
+      retry
     );
     return created.Id;
   }
@@ -1168,13 +1278,17 @@ export class QboProvider extends BaseProvider {
    * BillPayment. Returns the created bill-payment Id.
    */
   async createBillPayment(
-    payload: QboBillPaymentCreatePayload
+    payload: QboBillPaymentCreatePayload,
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
   ): Promise<string> {
-    const created = await this.writeEntity<Qbo.BillPayment>(
+    const created = await this.createEntity<Qbo.BillPayment>(
       "billpayment",
       "BillPayment",
       "create bill payment",
-      payload
+      payload,
+      key,
+      retry
     );
     return created.Id;
   }
@@ -1218,13 +1332,17 @@ export class QboProvider extends BaseProvider {
    * SyncToken echo path never applies.
    */
   async createJournalEntry(
-    journalEntry: QboCreatePayload<Qbo.JournalEntry>
+    journalEntry: QboCreatePayload<Qbo.JournalEntry>,
+    key: RemoteCreateKey,
+    retry?: QboCreateRetry
   ): Promise<Qbo.JournalEntry> {
-    return this.writeEntity(
+    return this.createEntity(
       "journalentry",
       "JournalEntry",
       "create journal entry",
-      journalEntry
+      journalEntry,
+      key,
+      retry
     );
   }
 
@@ -1286,20 +1404,71 @@ export class QboProvider extends BaseProvider {
     );
   }
 
-  /** Create a QBO Class by name (dimension autoCreate). Throws on failure. */
-  async createClass(payload: QboCreatePayload<Qbo.Class>): Promise<Qbo.Class> {
-    return this.writeEntity("class", "Class", "create class", payload);
+  /**
+   * Create a QBO Class by name (dimension autoCreate). Throws on failure.
+   * `replacing` keys a new create when the key's answer is a class since
+   * deleted in QuickBooks (`createListEntity`).
+   */
+  async createClass(
+    payload: QboCreatePayload<Qbo.Class>,
+    key: RemoteCreateKey,
+    replacing: (deletedId: string) => RemoteCreateKey
+  ): Promise<Qbo.Class> {
+    return this.createListEntity(
+      "class",
+      "Class",
+      "create class",
+      payload,
+      key,
+      replacing
+    );
   }
 
-  /** Create a QBO Department by name (dimension autoCreate). Throws on failure. */
+  /** Create a QBO Department by name (dimension autoCreate), as `createClass`. */
   async createDepartment(
-    payload: QboCreatePayload<Qbo.Department>
+    payload: QboCreatePayload<Qbo.Department>,
+    key: RemoteCreateKey,
+    replacing: (deletedId: string) => RemoteCreateKey
   ): Promise<Qbo.Department> {
-    return this.writeEntity(
+    return this.createListEntity(
       "department",
       "Department",
       "create department",
-      payload
+      payload,
+      key,
+      replacing
+    );
+  }
+
+  /**
+   * A list entry keyed by its name: Intuit answers a repeated key with the
+   * first create's stored response, even after that entry was deleted
+   * (made inactive) in QuickBooks, so the answer is read back. An inactive
+   * one is created again under a key that names it.
+   */
+  private async createListEntity<T extends { Id: string; Active?: boolean }>(
+    resource: string,
+    envelopeKey: string,
+    operation: string,
+    payload: unknown,
+    key: RemoteCreateKey,
+    replacing: (deletedId: string) => RemoteCreateKey
+  ): Promise<T> {
+    const created = await this.createEntity<T>(
+      resource,
+      envelopeKey,
+      operation,
+      payload,
+      key
+    );
+    const current = await this.readEntity<T>(resource, envelopeKey, created.Id);
+    if (current?.Active !== false) return created;
+    return this.createEntity<T>(
+      resource,
+      envelopeKey,
+      operation,
+      payload,
+      replacing(created.Id)
     );
   }
 

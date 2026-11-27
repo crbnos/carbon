@@ -20,6 +20,7 @@ import {
   type Accounting,
   BaseEntitySyncer,
   type BatchSyncResult,
+  type RemoteUpsertOutcome,
   type ShouldSyncContext,
   type SyncResult
 } from "../../../core/types";
@@ -88,7 +89,9 @@ const CARBON_TO_XERO_STATUS: Record<BillRow["status"], Xero.Invoice["Status"]> =
     Open: "AUTHORISED",
     Return: "DRAFT", // No direct equivalent, map to DRAFT
     "Debit Note Issued": "AUTHORISED",
-    Paid: "PAID",
+    // Xero refuses PAID on a write; it marks the bill paid itself once the
+    // payment push applies the payments.
+    Paid: "AUTHORISED",
     "Partially Paid": "AUTHORISED", // Xero tracks partial payment via AmountDue
     Overdue: "AUTHORISED", // Xero doesn't have overdue status
     Voided: "VOIDED"
@@ -173,12 +176,14 @@ export class BillSyncer extends BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     // Use the mapping service to link bill -> purchaseInvoice
     const txMappingService = createMappingService(tx, this.companyId);
     await txMappingService.link("bill", localId, this.provider.id, remoteId, {
-      remoteUpdatedAt
+      remoteUpdatedAt,
+      lastSyncedAt
     });
   }
 
@@ -892,79 +897,48 @@ export class BillSyncer extends BaseEntitySyncer<
     data: Omit<Xero.Invoice, "UpdatedDateUTC">,
     localId: string
   ): Promise<string> {
-    const existingRemoteId = await this.getRemoteId(localId);
-    const invoices = existingRemoteId
-      ? [{ ...data, InvoiceID: existingRemoteId }]
-      : [data];
-
-    const result = await this.xeroProvider.request<{
-      Invoices: Xero.Invoice[];
-    }>("POST", "/Invoices?unitdp=4", {
-      body: JSON.stringify({ Invoices: invoices })
+    return this.xeroProvider.upsertInvoiceDocument({
+      type: "ACCPAY",
+      data,
+      existingRemoteId: await this.getRemoteId(localId),
+      mayExist: this.mayExistRemotely(localId),
+      key: this.createKey(localId)
     });
-
-    if (result.error) {
-      throwXeroApiError(
-        existingRemoteId ? "update bill" : "create bill",
-        result
-      );
-    }
-
-    if (!result.data?.Invoices?.[0]?.InvoiceID) {
-      throw new Error(
-        "Xero API returned success but no InvoiceID was returned for bill"
-      );
-    }
-
-    return result.data.Invoices[0].InvoiceID;
   }
 
+  /**
+   * One request for the bills that need no lookup, and one each for an
+   * unmapped bill an earlier attempt may have created
+   * (`XeroProvider.upsertInvoiceDocuments`).
+   */
   protected async upsertRemoteBatch(
     data: Array<{
       localId: string;
       payload: Omit<Xero.Invoice, "UpdatedDateUTC">;
     }>
-  ): Promise<Map<string, string>> {
-    const result = new Map<string, string>();
-    if (data.length === 0) return result;
-
-    const invoices: Xero.Invoice[] = [];
-    const localIdOrder: string[] = [];
-
-    for (const { localId, payload } of data) {
-      const existingRemoteId = await this.getRemoteId(localId);
-      invoices.push(
-        existingRemoteId
-          ? ({ ...payload, InvoiceID: existingRemoteId } as Xero.Invoice)
-          : (payload as Xero.Invoice)
-      );
-      localIdOrder.push(localId);
-    }
-
-    const response = await this.xeroProvider.request<{
-      Invoices: Xero.Invoice[];
-    }>("POST", "/Invoices?unitdp=4", {
-      body: JSON.stringify({ Invoices: invoices })
+  ): Promise<Map<string, RemoteUpsertOutcome>> {
+    const mappings = await this.mappingService.getByEntities(
+      this.entityType,
+      data.map(({ localId }) => localId),
+      this.provider.id
+    );
+    const documents = data.map(({ localId, payload }) => ({
+      localId,
+      data: payload,
+      existingRemoteId: mappings.get(localId)?.externalId ?? null,
+      mayExist: this.mayExistRemotely(localId),
+      key: this.createKey(localId)
+    }));
+    return this.xeroProvider.upsertInvoiceDocuments({
+      type: "ACCPAY",
+      documents,
+      batchKey: this.createKey(
+        data
+          .map(({ localId }) => localId)
+          .sort()
+          .join(","),
+        "billBatch"
+      )
     });
-
-    if (response.error) {
-      throwXeroApiError("batch upsert bills", response);
-    }
-
-    if (!response.data?.Invoices) {
-      throw new Error(
-        "Xero API returned success but no Invoices array was returned for bills"
-      );
-    }
-
-    for (let i = 0; i < response.data.Invoices.length; i++) {
-      const returnedInvoice = response.data.Invoices[i];
-      const localId = localIdOrder[i];
-      if (returnedInvoice?.InvoiceID && localId) {
-        result.set(localId, returnedInvoice.InvoiceID);
-      }
-    }
-
-    return result;
   }
 }

@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-26T11:31:31.024Z",
+  "exportedAt": "2026-11-27T15:49:21.226Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -4023,8 +4023,8 @@
         "responsibleEmployee",
         "planningHorizonDays",
         "allowCommonSupplyForProjects",
-        "planningTimeFenceDays",
-        "deliveryDateControl"
+        "deliveryDateControl",
+        "planningTimeFenceDays"
       ]
     },
     {

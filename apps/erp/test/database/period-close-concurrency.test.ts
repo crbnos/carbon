@@ -7,12 +7,21 @@ import { sql } from "kysely";
 import { expect } from "vitest";
 import {
   closeAccountingPeriod,
+  lockAccountingPeriod,
   postJournalEntry,
   reopenAccountingPeriod,
   unlockAccountingPeriod
 } from "../../app/modules/accounting/accounting.service";
 import { postgrestTest } from "./fixtures/local-supabase";
 import { paymentFixture } from "./fixtures/payment";
+import {
+  deadlocked,
+  race,
+  raceRounds,
+  raceTimeout,
+  succeeded,
+  unexpectedRefusals
+} from "./fixtures/race";
 
 function signal() {
   let resolve!: () => void;
@@ -579,3 +588,131 @@ for (const failedCheck of [
     }
   );
 }
+
+// The rounds start from each lifecycle state the two periods can race from.
+const PERIOD_STARTS = [
+  { august: "Closed", september: "Locked" },
+  { august: "Locked", september: "Locked" },
+  { august: "Closed", september: "Closed" }
+] as const;
+const PERIOD_ROUNDS = raceRounds(12);
+/** Refusals of a lock, unlock, close or reopen called on a period in the wrong state. */
+const PERIOD_LIFECYCLE_REFUSALS =
+  /only open periods can be locked|only locked periods can be unlocked|already closed|must be locked before closing|earlier periods must be closed first|later periods must be reopened first|is not closed/i;
+
+postgrestTest(
+  "locks, unlocks, closes and reopens of two periods at once never leave a Closed period after an open one",
+  async (client) => {
+    const f = await paymentFixture();
+    try {
+      const september = (await prepareClose(f)).periodId;
+      const august = (
+        await f.db
+          .insertInto("accountingPeriod")
+          .values({
+            startDate: "2026-08-01",
+            endDate: "2026-08-31",
+            status: "Inactive",
+            closeStatus: "Closed",
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow()
+      ).id;
+      const args = (periodId: string) => ({
+        periodId,
+        companyId: f.companyId,
+        companyGroupId: f.groupId,
+        userId: "system"
+      });
+
+      await race({
+        rounds: PERIOD_ROUNDS,
+        // A close reads for tens of milliseconds before it locks: a wider
+        // spread lets it run ahead of a reopen or an unlock in some rounds.
+        maxDelayMs: 150,
+        setup: async (round) => {
+          const start = PERIOD_STARTS[(round - 1) % PERIOD_STARTS.length]!;
+          await f.db
+            .deleteFrom("accountingPeriodBalance")
+            .where("companyId", "=", f.companyId)
+            .execute();
+          for (const [periodId, closeStatus] of [
+            [august, start.august],
+            [september, start.september]
+          ] as const) {
+            await f.db
+              .updateTable("accountingPeriod")
+              .set({
+                closeStatus,
+                lockedAt: "2026-10-01T00:00:00Z",
+                lockedBy: "system",
+                closedAt:
+                  closeStatus === "Closed" ? "2026-10-02T00:00:00Z" : null,
+                closedBy: closeStatus === "Closed" ? "system" : null
+              })
+              .where("id", "=", periodId)
+              .where("companyId", "=", f.companyId)
+              .execute();
+          }
+        },
+        operations: {
+          lockAugust: () => lockAccountingPeriod(client, args(august)),
+          unlockAugust: () => unlockAccountingPeriod(client, args(august)),
+          closeAugust: (db) => closeAccountingPeriod(client, db, args(august)),
+          closeSeptember: (db) =>
+            closeAccountingPeriod(client, db, args(september)),
+          reopenAugust: (db) => reopenAccountingPeriod(db, args(august)),
+          reopenSeptember: (db) => reopenAccountingPeriod(db, args(september))
+        },
+        invariant: async (_, outcomes) => {
+          // Each operation may find the period in a state it does not apply
+          // to; any other refusal is a broken lifecycle call.
+          expect({
+            deadlocked: deadlocked(outcomes),
+            unexpected: unexpectedRefusals(outcomes, PERIOD_LIFECYCLE_REFUSALS),
+            somethingApplied: succeeded(outcomes).length > 0
+          }).toEqual({ deadlocked: [], unexpected: [], somethingApplied: true });
+          const periods = await f.db
+            .selectFrom("accountingPeriod")
+            .select(["id", "closeStatus"])
+            .where("companyId", "=", f.companyId)
+            .orderBy("startDate")
+            .execute();
+          const firstOpen = periods.findIndex(
+            (period) => period.closeStatus !== "Closed"
+          );
+          const closedAfterOpen =
+            firstOpen < 0
+              ? []
+              : periods
+                  .slice(firstOpen + 1)
+                  .filter((period) => period.closeStatus === "Closed");
+          expect({ periods, closedAfterOpen }).toMatchObject({
+            closedAfterOpen: []
+          });
+          const snapshots = await f.db
+            .selectFrom("accountingPeriodBalance")
+            .select("accountingPeriodId")
+            .distinct()
+            .where("companyId", "=", f.companyId)
+            .execute();
+          const closed = new Set(
+            periods
+              .filter((period) => period.closeStatus === "Closed")
+              .map((period) => period.id)
+          );
+          expect(
+            snapshots
+              .map((row) => row.accountingPeriodId)
+              .filter((periodId) => !closed.has(periodId))
+          ).toEqual([]);
+        }
+      });
+    } finally {
+      await f.cleanup();
+    }
+  },
+  raceTimeout(PERIOD_ROUNDS, 3_000)
+);

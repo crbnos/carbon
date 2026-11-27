@@ -8,7 +8,7 @@ import { JournalEntrySyncError } from "../../../core/posting";
 import type { Accounting } from "../../../core/types";
 import { withTriggersDisabled } from "../../../core/utils";
 import type { Qbo, QboCreatePayload } from "../models";
-import { isQboDuplicateNameError } from "../provider";
+import { isQboDuplicateNameError, qboCreateRetry } from "../provider";
 import {
   escapeQboQueryValue,
   loadQboAccountRefsById,
@@ -275,7 +275,12 @@ export class QboItemSyncer extends QboEntitySyncer<Accounting.Item, Qbo.Item> {
     let remote = await lookup();
     if (!remote) {
       try {
-        remote = compatible(await this.qboProvider.createItem(payload));
+        remote = compatible(
+          await this.qboProvider.createItem(
+            payload,
+            this.createKey(shippingAccountId, mappingEntityType)
+          )
+        );
       } catch (error) {
         if (!isQboDuplicateNameError(error)) throw error;
         remote = await lookup();
@@ -567,7 +572,11 @@ export class QboItemSyncer extends QboEntitySyncer<Accounting.Item, Qbo.Item> {
 
     try {
       if (!existingRemoteId) {
-        const created = await this.qboProvider.createItem(data);
+        const created = await this.qboProvider.createItem(
+          data,
+          this.createKey(localId),
+          qboCreateRetry(this.attemptCreateKey(localId), { refresh: true })
+        );
         this.rememberRemoteEntity(created);
         return created.Id;
       }

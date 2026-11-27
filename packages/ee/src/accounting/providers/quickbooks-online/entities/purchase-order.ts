@@ -25,7 +25,7 @@ import {
 } from "../../../core/types";
 import { contactsWithEmailFirst } from "../../../core/utils";
 import { parseQboDate, type Qbo } from "../models";
-import type { QboProvider } from "../provider";
+import { type QboProvider, qboCreateRetry } from "../provider";
 import {
   buildQboTxnTaxDetail,
   isQboUsCompany,
@@ -446,6 +446,9 @@ export class QboPurchaseOrderSyncer extends BaseEntitySyncer<
         "in",
         orderRows.map((o) => o.id)
       )
+      // The create key covers the payload, so the lines go out in one order.
+      .orderBy("purchaseOrderLine.sortOrder")
+      .orderBy("purchaseOrderLine.id")
       .execute();
 
     // Supplier external IDs (entityType "vendor" — what the vendor syncer
@@ -689,7 +692,11 @@ export class QboPurchaseOrderSyncer extends BaseEntitySyncer<
     const existingRemoteId = await this.getRemoteId(localId);
 
     if (!existingRemoteId) {
-      const created = await this.qboProvider.createPurchaseOrder(data);
+      const created = await this.qboProvider.createPurchaseOrder(
+        data,
+        this.createKey(localId),
+        qboCreateRetry(this.attemptCreateKey(localId), { refresh: true })
+      );
       return created.Id;
     }
 

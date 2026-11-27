@@ -7,6 +7,7 @@ import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import type { Accounting } from "../../../core/types";
 import { contactsWithEmailFirst } from "../../../core/utils";
 import type { Qbo } from "../models";
+import { qboCreateRetry } from "../provider";
 import {
   escapeQboQueryValue,
   mapContactToQboContact,
@@ -117,6 +118,10 @@ export class QboVendorSyncer extends QboEntitySyncer<
       .where("supplier.id", "in", ids)
       .where("supplier.companyId", "=", this.companyId)
       .orderBy(contactsWithEmailFirst)
+      // The create key covers the payload, so its first contact and its
+      // addresses come out in one order.
+      .orderBy("contact.id")
+      .orderBy("supplierLocation.id")
       .execute();
 
     return this.groupAndTransformRows(rows as SupplierRow[]);
@@ -375,7 +380,11 @@ export class QboVendorSyncer extends QboEntitySyncer<
 
     try {
       if (!existingRemoteId) {
-        const created = await this.qboProvider.createVendor(data);
+        const created = await this.qboProvider.createVendor(
+          data,
+          this.createKey(localId),
+          qboCreateRetry(this.attemptCreateKey(localId), { refresh: true })
+        );
         this.rememberRemoteEntity(created);
         return created.Id;
       }

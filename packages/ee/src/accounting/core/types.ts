@@ -5,6 +5,7 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
+import { fromDate, parseAbsolute } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
 import type {
@@ -17,6 +18,7 @@ import type {
   ExternalIdentityKind,
   RemoteCandidate
 } from "./counterpart-types";
+import { type RemoteCreateKey, remoteCreateKey } from "./create-key";
 import {
   createMappingService,
   type ExternalIntegrationMappingService
@@ -48,7 +50,12 @@ import type {
   SyncProviderID
 } from "./models";
 import { JournalEntrySyncError } from "./posting";
-import { AccountingApiError, withTriggersDisabled } from "./utils";
+import {
+  AccountingApiError,
+  AccountingAuthError,
+  RatelimitError,
+  withTriggersDisabled
+} from "./utils";
 
 const logger = getLogger("ee", "accounting");
 
@@ -422,7 +429,23 @@ export interface SyncContext {
   provider: SyncProvider;
   config: EntityConfig;
   entityType: AccountingEntityType;
+  /**
+   * The local ids of `entityType` an earlier push attempt may already have
+   * created remotely (`getAttemptedEntityIds`), each to this attempt
+   * (`<operationId>:<attemptCount>`). Only these pay a provider's recovery
+   * read before their create, and their creates can be told apart
+   * (`attemptCreateKey`). A syncer of another entity type (a dependency built
+   * from a spread of this context) ignores it, and so does every create when
+   * it is absent: those read first.
+   */
+  attempted?: {
+    entityType: AccountingEntityType;
+    ids: ReadonlyMap<string, string>;
+  };
 }
+
+/** A batch upsert's outcome for one document: its remote id, or why it failed. */
+export type RemoteUpsertOutcome = string | { error: unknown };
 
 export interface SyncResult {
   status: "success" | "skipped" | "error";
@@ -430,6 +453,33 @@ export interface SyncResult {
   localId?: string;
   remoteId?: string;
   error?: unknown;
+}
+
+/**
+ * The version a push sent: the entity's `updatedAt` as read before the push.
+ * A mapping linked with it, rather than with the link time, stays older than
+ * an edit made while the push was in flight, so the next reconcile pushes that
+ * edit. Returned as a UTC ISO instant. Undefined when the entity has no
+ * readable `updatedAt` (the link then stamps the current time).
+ */
+export function getPushedVersion(localEntity: unknown): string | undefined {
+  const updatedAt = (localEntity as { updatedAt?: unknown } | null | undefined)
+    ?.updatedAt;
+  try {
+    if (updatedAt instanceof Date) {
+      return fromDate(updatedAt, "UTC").toAbsoluteString();
+    }
+    if (typeof updatedAt === "string") {
+      // Postgres text output separates the date and the time with a space.
+      return parseAbsolute(
+        updatedAt.replace(" ", "T"),
+        "UTC"
+      ).toAbsoluteString();
+    }
+  } catch {
+    // An unparseable value has no version.
+  }
+  return undefined;
 }
 
 /**
@@ -537,6 +587,49 @@ export abstract class BaseEntitySyncer<
   }
 
   /**
+   * Whether an earlier attempt may have created `localId` remotely, so its
+   * create must first look for that document. A first attempt skips the read.
+   */
+  protected mayExistRemotely(localId: string): boolean {
+    const attempted = this.context.attempted;
+    return attempted?.entityType === this.entityType
+      ? attempted.ids.has(localId)
+      : true;
+  }
+
+  /**
+   * This attempt's own create key when an earlier attempt may have created
+   * `localId` remotely; undefined on a first attempt or when the attempt is
+   * unknown. A provider that replays a key's first response sends it when
+   * that replay cannot be used (QuickBooks: a replayed validation fault).
+   */
+  protected attemptCreateKey(
+    localId: string,
+    operation: string = this.entityType
+  ): RemoteCreateKey | undefined {
+    const attempt = this.attemptOf(localId);
+    return attempt === undefined
+      ? undefined
+      : this.createKey(`${localId}:attempt:${attempt}`, operation);
+  }
+
+  /** This attempt at `localId` (`<operationId>:<attemptCount>`) when it is a retry. */
+  protected attemptOf(localId: string): string | undefined {
+    const attempted = this.context.attempted;
+    return attempted?.entityType === this.entityType
+      ? attempted.ids.get(localId)
+      : undefined;
+  }
+
+  /** The key every attempt at creating `localId` remotely sends. */
+  protected createKey(
+    localId: string,
+    operation: string = this.entityType
+  ): RemoteCreateKey {
+    return remoteCreateKey({ companyId: this.companyId, operation, localId });
+  }
+
+  /**
    * Save the link between a Carbon ID and a Remote ID.
    * Default implementation uses the external integration mapping table.
    * Can be overridden by subclasses for custom behavior.
@@ -545,7 +638,8 @@ export abstract class BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     // Create a mapping service with the transaction
     const txMappingService = createMappingService(tx, this.companyId);
@@ -554,7 +648,7 @@ export abstract class BaseEntitySyncer<
       localId,
       this.provider.id,
       remoteId,
-      { remoteUpdatedAt }
+      { remoteUpdatedAt, lastSyncedAt }
     );
   }
 
@@ -635,11 +729,43 @@ export abstract class BaseEntitySyncer<
 
   /**
    * Upsert multiple remote entities in a single API call.
-   * Returns a Map of localId -> remoteId.
+   * Returns a Map of localId -> remoteId, or -> the error of a document that
+   * failed on its own.
    */
   protected abstract upsertRemoteBatch(
     data: Array<{ localId: string; payload: Omit<TRemote, TOmit> }>
-  ): Promise<Map<string, string>>;
+  ): Promise<Map<string, RemoteUpsertOutcome>>;
+
+  /**
+   * `upsertRemoteBatch` for a provider with no batch endpoint: one request per
+   * document. A document that fails reports its own error, and the ones
+   * already created are still returned, so they are linked. A rate limit or a
+   * dead grant stops the batch, and the documents not tried report it.
+   */
+  protected async upsertRemoteEach(
+    data: Array<{ localId: string; payload: Omit<TRemote, TOmit> }>
+  ): Promise<Map<string, RemoteUpsertOutcome>> {
+    const outcomes = new Map<string, RemoteUpsertOutcome>();
+    let stoppedBy: unknown;
+    for (const { localId, payload } of data) {
+      if (stoppedBy !== undefined) {
+        outcomes.set(localId, { error: stoppedBy });
+        continue;
+      }
+      try {
+        outcomes.set(localId, await this.upsertRemote(payload, localId));
+      } catch (error) {
+        outcomes.set(localId, { error });
+        if (
+          error instanceof RatelimitError ||
+          error instanceof AccountingAuthError
+        ) {
+          stoppedBy = error;
+        }
+      }
+    }
+    return outcomes;
+  }
 
   /**
    * Optional method to determine if an entity should be synced.
@@ -730,7 +856,13 @@ export abstract class BaseEntitySyncer<
 
       // 6. Update mapping
       const remoteId = await withTriggersDisabled(this.database, async (tx) => {
-        await this.linkEntities(tx, entityId, id);
+        await this.linkEntities(
+          tx,
+          entityId,
+          id,
+          undefined,
+          getPushedVersion(localEntity)
+        );
         return id;
       });
 
@@ -867,6 +999,7 @@ export abstract class BaseEntitySyncer<
 
   async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
     const results: SyncResult[] = [];
+    let stoppedBy: unknown;
 
     if (!this.config.enabled) {
       for (const id of entityIds) {
@@ -951,22 +1084,37 @@ export abstract class BaseEntitySyncer<
         entityId: string;
         integration: string;
         externalId: string;
+        options?: { lastSyncedAt: string };
       }> = [];
 
       for (const { localId } of batchPayloads) {
-        const remoteId = remoteIdMap.get(localId);
+        const outcome = remoteIdMap.get(localId);
+        if (outcome !== undefined && typeof outcome !== "string") {
+          // A rate limit or a dead grant stops the batch: the drain retries
+          // it after the documents already created are linked below.
+          if (
+            outcome.error instanceof RatelimitError ||
+            outcome.error instanceof AccountingAuthError
+          ) {
+            stoppedBy ??= outcome.error;
+          }
+          results.push({
+            status: "error",
+            action: "none",
+            localId,
+            error: toSyncResultError(outcome.error)
+          });
+          continue;
+        }
+        const remoteId = outcome;
         if (remoteId) {
+          const lastSyncedAt = getPushedVersion(localEntities.get(localId));
           mappingsToLink.push({
             entityType: this.entityType,
             entityId: localId,
             integration: this.provider.id,
-            externalId: remoteId
-          });
-          results.push({
-            status: "success",
-            action: "updated",
-            localId,
-            remoteId
+            externalId: remoteId,
+            ...(lastSyncedAt ? { options: { lastSyncedAt } } : {})
           });
         } else {
           results.push({
@@ -984,6 +1132,16 @@ export abstract class BaseEntitySyncer<
           await txMappingService.linkBatch(mappingsToLink);
         });
       }
+      // A success only once its mapping is saved: closed Completed without
+      // one, the next attempt would create the document again.
+      for (const { entityId, externalId } of mappingsToLink) {
+        results.push({
+          status: "success",
+          action: "updated",
+          localId: entityId,
+          remoteId: externalId
+        });
+      }
     } catch (err: any) {
       // If the whole batch fails, mark all as errors
       for (const id of entityIds) {
@@ -998,6 +1156,7 @@ export abstract class BaseEntitySyncer<
       }
     }
 
+    if (stoppedBy !== undefined) throw stoppedBy;
     return this.summarizeBatchResults(results);
   }
 

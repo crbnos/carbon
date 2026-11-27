@@ -8,13 +8,15 @@ import type { ProviderCredentials } from "../../../core/types";
 import { AccountingApiError } from "../../../core/utils";
 import { Qbo } from "../models";
 import {
+  buildQboRequestId,
   buildQboSyncConfig,
   extractQboErrorDetails,
   isQboDuplicateNameError,
   isQboStaleObjectError,
   QBO_FAULT_CODES,
   type QboEnvironment,
-  QboProvider
+  QboProvider,
+  toQboRequestId
 } from "../provider";
 
 const REALM_ID = "9130357849328710";
@@ -80,11 +82,12 @@ describe("QboProvider base URL", () => {
       jsonResponse({ Purchase: { Id: "purchase-1", SyncToken: "0" } })
     );
     const { provider } = makeProvider();
+    const key = buildQboRequestId("company-1", "charge", "charge-1");
     await provider.createPurchase(
       { PaymentType: "CreditCard", AccountRef: { value: "card" }, Line: [] },
-      "stable-charge-request"
+      key
     );
-    expect(requestUrl(0)).toContain("requestid=stable-charge-request");
+    expect(requestUrl(0)).toContain(`requestid=${toQboRequestId(key)}`);
   });
 
   it("deletes a purchase with its current SyncToken and validates the deletion response", async () => {
@@ -145,6 +148,113 @@ describe("QboProvider base URL", () => {
     expect(requestUrl(0)).toContain(
       `https://sandbox-quickbooks.api.intuit.com/v3/company/${REALM_ID}/query`
     );
+  });
+});
+
+describe("QboProvider retried creates", () => {
+  const stable = buildQboRequestId("company-1", "customer", "cust-1");
+  const attempt = buildQboRequestId(
+    "company-1",
+    "customer",
+    "cust-1:attempt:op-1:2"
+  );
+  const requestIds = () =>
+    fetchMock.mock.calls.map(([url]) =>
+      new URL(String(url)).searchParams.get("requestid")
+    );
+  const validationFault = () =>
+    jsonResponse(
+      {
+        Fault: {
+          Error: [{ Message: "Account period closed", code: "6210" }],
+          type: "ValidationFault"
+        }
+      },
+      400
+    );
+
+  // The create reached QuickBooks under the stable key before the customer
+  // was renamed: Intuit answers with that customer as it was sent, and the
+  // rename is written over it instead of creating a second customer.
+  it("writes this attempt's payload over the customer an earlier attempt created", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          Customer: { Id: "1", SyncToken: "0", DisplayName: "Before" }
+        })
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          Customer: { Id: "1", SyncToken: "1", DisplayName: "After" }
+        })
+      );
+    const { provider } = makeProvider();
+
+    const customer = await provider.createCustomer(
+      { DisplayName: "After" } as never,
+      stable,
+      { attemptKey: attempt, refresh: true }
+    );
+
+    expect(customer).toMatchObject({ Id: "1", DisplayName: "After" });
+    expect(requestIds()).toEqual([toQboRequestId(stable), null]);
+    expect(JSON.parse(String(requestInit(1)?.body))).toEqual({
+      DisplayName: "After",
+      Id: "1",
+      SyncToken: "0",
+      sparse: true
+    });
+  });
+
+  // A refused create made nothing, and Intuit may answer the stable key with
+  // that refusal again: this attempt sends its own key.
+  it("creates under this attempt's key when the stable key is answered with a validation fault", async () => {
+    fetchMock.mockResolvedValueOnce(validationFault()).mockResolvedValueOnce(
+      jsonResponse({
+        Customer: { Id: "2", SyncToken: "0", DisplayName: "After" }
+      })
+    );
+    const { provider } = makeProvider();
+
+    const customer = await provider.createCustomer(
+      { DisplayName: "After" } as never,
+      stable,
+      { attemptKey: attempt, refresh: true }
+    );
+
+    expect(customer.Id).toBe("2");
+    expect(requestIds()).toEqual([
+      toQboRequestId(stable),
+      toQboRequestId(attempt)
+    ]);
+  });
+
+  // A server failure may have created the customer: a second key would make
+  // a second one.
+  it("does not create under another key after a failure that may have landed", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ Fault: {} }, 500));
+    const { provider } = makeProvider();
+
+    await expect(
+      provider.createCustomer({ DisplayName: "After" } as never, stable, {
+        attemptKey: attempt,
+        refresh: true
+      })
+    ).rejects.toThrow();
+    expect(new Set(requestIds())).toEqual(new Set([toQboRequestId(stable)]));
+  });
+
+  it("sends one create and no update on a first attempt", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        Customer: { Id: "1", SyncToken: "0", DisplayName: "Before" }
+      })
+    );
+    const { provider } = makeProvider();
+
+    await provider.createCustomer({ DisplayName: "Before" } as never, stable);
+
+    expect(requestIds()).toEqual([toQboRequestId(stable)]);
   });
 });
 
@@ -439,10 +549,10 @@ describe("QboProvider entity reads/writes", () => {
     );
 
     const { provider } = makeProvider();
-    const created = await provider.createCustomer({
-      DisplayName: "Acme",
-      Active: true
-    });
+    const created = await provider.createCustomer(
+      { DisplayName: "Acme", Active: true },
+      buildQboRequestId("company-1", "customer", "customer-1")
+    );
 
     expect(created.Id).toBe("42");
     expect(requestUrl(0)).toContain(`/v3/company/${REALM_ID}/customer`);
@@ -498,7 +608,10 @@ describe("QboProvider entity reads/writes", () => {
 
     let thrown: unknown;
     try {
-      await provider.createCustomer({ DisplayName: "Acme" });
+      await provider.createCustomer(
+        { DisplayName: "Acme" },
+        buildQboRequestId("company-1", "customer", "customer-1")
+      );
     } catch (error) {
       thrown = error;
     }

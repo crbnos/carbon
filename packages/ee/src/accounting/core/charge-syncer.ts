@@ -10,6 +10,7 @@ import {
 import {
   BaseEntitySyncer,
   type BatchSyncResult,
+  getPushedVersion,
   type SyncResult,
   toSyncResultError
 } from "./types";
@@ -152,7 +153,13 @@ export abstract class ChargeSyncerBase<
         mapping?.externalId ?? null
       );
       await withTriggersDisabled(this.database, (tx) =>
-        this.linkEntities(tx, entityId, remoteId)
+        this.linkEntities(
+          tx,
+          entityId,
+          remoteId,
+          undefined,
+          getPushedVersion(localEntity)
+        )
       );
       return {
         status: "success",

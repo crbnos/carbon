@@ -108,10 +108,11 @@ function localClient(
  *  there is no local stack to build the service-role client from. */
 export function postgrestTest(
   name: string,
-  fn: (client: SupabaseClient<Database>) => void | Promise<void>
+  fn: (client: SupabaseClient<Database>) => void | Promise<void>,
+  timeout = 60_000
 ): void {
   const client = hasLocalDatabase ? localServiceRoleClient() : null;
-  it.skipIf(!client)(name, () => fn(client!), 60_000);
+  it.skipIf(!client)(name, () => fn(client!), timeout);
 }
 
 /**

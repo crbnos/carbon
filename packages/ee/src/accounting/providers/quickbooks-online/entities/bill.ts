@@ -18,7 +18,7 @@ import {
   type ShouldSyncContext
 } from "../../../core/types";
 import { parseQboDate, type Qbo } from "../models";
-import type { QboProvider } from "../provider";
+import { type QboProvider, qboCreateRetry } from "../provider";
 import { buildQboBillPayloadLines } from "./bill-lines";
 import {
   isQboUsCompany,
@@ -172,13 +172,15 @@ export class QboBillSyncer extends BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     const seen = this.remoteMetaById.get(remoteId);
     const txMappingService = createMappingService(tx, this.companyId);
     await txMappingService.link("bill", localId, this.provider.id, remoteId, {
       remoteUpdatedAt:
         remoteUpdatedAt ?? parseQboDate(seen?.lastUpdatedTime) ?? undefined,
+      lastSyncedAt,
       ...(seen?.syncToken !== undefined
         ? { metadata: { syncToken: seen.syncToken } }
         : {})
@@ -777,7 +779,11 @@ export class QboBillSyncer extends BaseEntitySyncer<
     const existingRemoteId = await this.getRemoteId(localId);
 
     if (!existingRemoteId) {
-      const created = await this.qboProvider.createBill(data);
+      const created = await this.qboProvider.createBill(
+        data,
+        this.createKey(localId),
+        qboCreateRetry(this.attemptCreateKey(localId), { refresh: true })
+      );
       this.rememberRemoteEntity(created);
       return created.Id;
     }

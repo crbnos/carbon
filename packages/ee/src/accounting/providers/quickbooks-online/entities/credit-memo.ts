@@ -23,6 +23,7 @@ import {
   buildQboRequestId,
   type QboCreditMemoApplicationPayload,
   type QboProvider,
+  qboCreateRetry,
   toQboExchangeRate
 } from "../provider";
 import {
@@ -534,7 +535,8 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     const seen = this.remoteMetaById.get(remoteId);
     const applied = this.appliedSettlementIds.get(localId) ?? [];
@@ -547,6 +549,7 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
       {
         remoteUpdatedAt:
           remoteUpdatedAt ?? parseQboDate(seen?.lastUpdatedTime) ?? undefined,
+        lastSyncedAt,
         metadata: {
           ...(seen?.syncToken !== undefined
             ? { syncToken: seen.syncToken }
@@ -700,7 +703,7 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
       createServiceItem: (input) =>
         this.qboProvider.createServiceItem({
           ...input,
-          requestId: buildQboRequestId(
+          key: buildQboRequestId(
             this.companyId,
             CREDIT_REASON_ITEM_ENTITY_TYPE,
             local.reasonAccount!
@@ -745,7 +748,10 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
       // deterministic requestid is what makes a retried create safe.
       const created = await this.qboProvider.createCreditMemo(
         data,
-        buildQboRequestId(this.companyId, "creditMemo", localId)
+        buildQboRequestId(this.companyId, "creditMemo", localId),
+        qboCreateRetry(this.attemptCreateKey(localId, "creditMemo"), {
+          refresh: false
+        })
       );
       if (!created?.Id) {
         throw new Error(

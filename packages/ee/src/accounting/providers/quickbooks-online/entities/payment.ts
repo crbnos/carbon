@@ -12,7 +12,7 @@ import { JournalEntrySyncError } from "../../../core/posting";
 import { EMPLOYEE_VENDOR_ENTITY_TYPE } from "../../../core/reimbursement-source";
 import type { ShouldSyncContext } from "../../../core/types";
 import { parseQboDate, type Qbo } from "../models";
-import type { QboProvider } from "../provider";
+import { type QboProvider, qboCreateRetry } from "../provider";
 import { loadQboAccountRefsById } from "./shared";
 
 /**
@@ -345,25 +345,39 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
     // QBO requires the counterparty ref (CustomerRef on a Payment, VendorRef on
     // a BillPayment); it is NOT inferable from the LinkedTxn alone.
     const counterpartyRef = await this.resolveCounterpartyRef(context);
+    const settlement = `${context.carbonPaymentId}:${context.targetDocumentId}`;
+    const key = this.createKey(settlement, "payment");
+    // A payment does not change once posted, so a replay is already current.
+    const attempt = this.attemptOf(context.carbonPaymentId);
+    const retry = qboCreateRetry(
+      attempt === undefined
+        ? undefined
+        : this.createKey(`${settlement}:attempt:${attempt}`, "payment"),
+      { refresh: false }
+    );
 
     if (context.family === "ap") {
       // VERIFY (QBO sandbox): a bank-cleared BillPayment uses PayType "Check"
       // with CheckPayment.BankAccountRef; confirm this is accepted for a plain
       // bank disbursement (vs "CreditCard"/other) and that BankAccountRef takes
       // the Account id value.
-      const remoteId = await this.qboProvider.createBillPayment({
-        VendorRef: counterpartyRef,
-        TotalAmt: context.amount,
-        TxnDate: context.paidDate,
-        PayType: "Check",
-        CheckPayment: { BankAccountRef: bankRef },
-        Line: [
-          {
-            Amount: context.amount,
-            LinkedTxn: [{ TxnId: documentRemoteId, TxnType: "Bill" }]
-          }
-        ]
-      });
+      const remoteId = await this.qboProvider.createBillPayment(
+        {
+          VendorRef: counterpartyRef,
+          TotalAmt: context.amount,
+          TxnDate: context.paidDate,
+          PayType: "Check",
+          CheckPayment: { BankAccountRef: bankRef },
+          Line: [
+            {
+              Amount: context.amount,
+              LinkedTxn: [{ TxnId: documentRemoteId, TxnType: "Bill" }]
+            }
+          ]
+        },
+        key,
+        retry
+      );
       return {
         remoteId,
         compositeEntityId: getQboBillPaymentSyncEntityId(
@@ -375,18 +389,22 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
 
     // VERIFY (QBO sandbox): a Payment deposits to DepositToAccountRef (the
     // Account id value); confirm the receipt lands in the mapped bank account.
-    const remoteId = await this.qboProvider.createPayment({
-      CustomerRef: counterpartyRef,
-      TotalAmt: context.amount,
-      TxnDate: context.paidDate,
-      DepositToAccountRef: bankRef,
-      Line: [
-        {
-          Amount: context.amount,
-          LinkedTxn: [{ TxnId: documentRemoteId, TxnType: "Invoice" }]
-        }
-      ]
-    });
+    const remoteId = await this.qboProvider.createPayment(
+      {
+        CustomerRef: counterpartyRef,
+        TotalAmt: context.amount,
+        TxnDate: context.paidDate,
+        DepositToAccountRef: bankRef,
+        Line: [
+          {
+            Amount: context.amount,
+            LinkedTxn: [{ TxnId: documentRemoteId, TxnType: "Invoice" }]
+          }
+        ]
+      },
+      key,
+      retry
+    );
     return {
       remoteId,
       compositeEntityId: getQboPaymentSyncEntityId(documentRemoteId, remoteId)

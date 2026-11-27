@@ -19,11 +19,15 @@ import {
   shipSalesOrder,
   USER
 } from "./fixtures/always-post";
-import { hasLocalDatabase } from "./fixtures/local-database";
+import {
+  DATABASE_TEST_TIMEOUT,
+  hasLocalDatabase
+} from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
-const describeLocal = describe.skipIf(!client);
+const describeLocal = (name: string, fn: () => void) =>
+  describe.skipIf(!client)(name, { timeout: DATABASE_TEST_TIMEOUT }, fn);
 
 let f: Fixture;
 let ids: ReturnType<typeof idsOf>;

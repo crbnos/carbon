@@ -5,6 +5,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Accounting } from "../../../../core/types";
 import type { Xero } from "../../models";
+import { XeroProvider } from "../../provider";
 import { SalesInvoiceSyncer } from "../invoice";
 
 /**
@@ -319,6 +320,19 @@ describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
     expect(payload.CurrencyRate).toBeCloseTo(0.8, 6);
   });
 
+  // Xero creates an invoice only as DRAFT, SUBMITTED or AUTHORISED; it marks
+  // one PAID itself once the payment push applies the payments.
+  it.each(["Paid", "Partially Paid"] as const)(
+    "sends a %s invoice as AUTHORISED",
+    async (status) => {
+      const payload = await makeInvoiceSyncer(db()).mapToRemote({
+        ...invoice(),
+        status
+      });
+      expect(payload.Status).toBe("AUTHORISED");
+    }
+  );
+
   it("omits CurrencyRate on a base-currency invoice rather than sending 1", async () => {
     const payload = await makeInvoiceSyncer(db()).mapToRemote(invoice());
     // Xero: "Setting a CurrencyRate of 1 is redundant and considered incorrect."
@@ -570,25 +584,23 @@ describe("Xero posted facts and monetary representation", () => {
     source.currencyCode = "EUR";
     expect((await reviewSyncer().mapToRemote(source)).CurrencyRate).toBe(1);
   });
-  it.each([false, true])(
-    "opts into supported unit precision at the actual invoice transport (batch=%s)",
-    async (batch) => {
-      const syncer = reviewSyncer();
-      const requests: string[] = [];
-      (syncer as any).provider.request = async (
-        _method: string,
-        url: string
-      ) => {
-        requests.push(url);
-        return { data: { Invoices: [{ InvoiceID: "remote" }] } };
-      };
-      const payload = await syncer.mapToRemote(invoice());
-      if (batch)
-        await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);
-      else await (syncer as any).upsertRemote(payload, "si_1");
-      expect(requests).toEqual(["/Invoices?unitdp=4"]);
-    }
-  );
+  // The batch request's precision is XeroProvider.upsertInvoiceDocuments' (provider.test.ts).
+  it("opts into supported unit precision at the actual invoice transport", async () => {
+    const syncer = reviewSyncer();
+    const requests: string[] = [];
+    (syncer as any).provider = Object.assign(
+      Object.create(XeroProvider.prototype),
+      {
+        request: async (method: string, url: string) => {
+          if (method === "POST") requests.push(url);
+          return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+        }
+      }
+    );
+    const payload = await syncer.mapToRemote(invoice());
+    await (syncer as any).upsertRemote(payload, "si_1");
+    expect(requests).toEqual(["/Invoices?unitdp=4"]);
+  });
 });
 
 it("preserves an exact extended net when the source unit price has four decimals", async () => {

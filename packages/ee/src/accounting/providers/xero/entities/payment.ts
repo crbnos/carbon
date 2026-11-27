@@ -305,14 +305,28 @@ export class XeroPaymentSyncer extends PaymentSyncerBase<Xero.Payment> {
       });
     }
 
-    const payload = {
-      Invoice: { InvoiceID: documentRemoteId },
-      Account: { Code: bankCode },
-      Amount: context.amount,
-      Date: context.paidDate
-    };
-
-    const remoteId = await this.xeroProvider.createPayment(payload);
+    // The Reference names the Carbon payment, so an attempt whose create
+    // reached Xero but whose link never did finds that payment here. A first
+    // attempt has nothing to find.
+    const reference = `Carbon payment ${context.carbonPaymentId}`;
+    const recovered = this.mayExistRemotely(context.carbonPaymentId)
+      ? await this.xeroProvider.recoverPayment(documentRemoteId, reference)
+      : null;
+    const remoteId =
+      recovered ??
+      (await this.xeroProvider.createPayment(
+        {
+          Invoice: { InvoiceID: documentRemoteId },
+          Account: { Code: bankCode },
+          Amount: context.amount,
+          Date: context.paidDate,
+          Reference: reference
+        },
+        this.createKey(
+          `${context.carbonPaymentId}:${context.targetDocumentId}`,
+          "payment"
+        )
+      ));
 
     const compositeEntityId =
       context.family === "ar"

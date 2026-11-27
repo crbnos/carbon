@@ -16,7 +16,8 @@ import { sendPostedSalesInvoice } from "../../app/modules/invoicing/invoicing.se
 import {
   payReimbursement,
   postPurchaseInvoice,
-  postSalesInvoice
+  postSalesInvoice,
+  updatePurchaseInvoice
 } from "../../app/modules/invoicing/invoicing.server";
 import {
   alwaysPostFixture,
@@ -407,3 +408,107 @@ localTest(
     }
   }
 );
+
+/** A second supplier for the fixture's company. */
+async function otherSupplier(f: Fixture) {
+  const id = `${f.prefix}-other-supplier`;
+  await seed(f, (trx) =>
+    trx
+      .insertInto("supplier")
+      .values({
+        id,
+        readableId: `${f.prefix}-S2`,
+        name: `${f.prefix} other supplier`,
+        companyId: f.companyId
+      } as never)
+      .execute()
+  );
+  return id;
+}
+
+async function purchaseInvoiceRow(f: Fixture, invoiceId: string) {
+  return f.db
+    .selectFrom("purchaseInvoice")
+    .select(["supplierId", "supplierReference"])
+    .where("id", "=", invoiceId)
+    .executeTakeFirstOrThrow();
+}
+
+// The posting booked the supplier's payable, and an accounting provider finds
+// its copy of the bill by number and supplier: a new supplier on a posted
+// bill makes a retried push create a second bill.
+localTest(
+  "a posted purchase invoice refuses a new supplier and keeps its own",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const other = await otherSupplier(f);
+      const invoiceId = await purchaseInvoice(
+        f,
+        "1",
+        f.account("supplies"),
+        "Open"
+      );
+
+      const result = await updatePurchaseInvoice(contextOf(f), {
+        id: invoiceId,
+        supplierId: other
+      });
+
+      expect(result.error?.category).toBe("rule");
+      expect(await purchaseInvoiceRow(f, invoiceId)).toEqual({
+        supplierId: f.supplierId,
+        supplierReference: null
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+localTest(
+  "a posted purchase invoice still takes its other fields with the same supplier",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const invoiceId = await purchaseInvoice(
+        f,
+        "1",
+        f.account("supplies"),
+        "Open"
+      );
+
+      const result = await updatePurchaseInvoice(contextOf(f), {
+        id: invoiceId,
+        supplierId: f.supplierId,
+        supplierReference: "REF-2"
+      });
+
+      expect(result.error).toBeNull();
+      expect(await purchaseInvoiceRow(f, invoiceId)).toEqual({
+        supplierId: f.supplierId,
+        supplierReference: "REF-2"
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+localTest("a draft purchase invoice changes supplier", async () => {
+  const f = await alwaysPostFixture();
+  try {
+    const other = await otherSupplier(f);
+    const invoiceId = await purchaseInvoice(f, "1", f.account("supplies"));
+
+    const result = await updatePurchaseInvoice(contextOf(f), {
+      id: invoiceId,
+      supplierId: other
+    });
+
+    expect(result.error).toBeNull();
+    expect((await purchaseInvoiceRow(f, invoiceId)).supplierId).toBe(other);
+  } finally {
+    await f.cleanup();
+  }
+});
