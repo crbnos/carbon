@@ -41,10 +41,8 @@ export type Label = (descriptor: MessageDescriptor) => string;
 
 const sourceText: Label = (descriptor) => descriptor.message ?? descriptor.id;
 
-const evidenceOf = (
-  key: OnboardingCountKey | undefined,
-  counts: SetupCounts
-) => (key ? { count: key, value: counts[key] ?? null } : undefined);
+const evidenceOf = (key: OnboardingCountKey | undefined, counts: SetupCounts) =>
+  key ? { count: key, value: counts[key] ?? null } : undefined;
 
 export function buildHubPlan({
   tier,

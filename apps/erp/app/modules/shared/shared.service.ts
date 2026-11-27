@@ -1740,13 +1740,20 @@ const implementationSignalsKey = (companyId: string) =>
  */
 export async function isInternalCaller(ctx: ServiceContext): Promise<boolean> {
   if (ctx.actor.type === "system") return false;
-  const user = await ctx.asSystem.supabase
+  const { data, error } = await ctx.asSystem.supabase
     .from("user")
     .select("email")
     .eq("id", ctx.auditUserId)
     .maybeSingle();
   // An unreadable email is never staff.
-  return isInternalEmail(user.data?.email ?? "");
+  if (error) {
+    logger.warning("Could not read the caller's email to tell Carbon staff", {
+      userId: ctx.auditUserId,
+      error
+    });
+    return false;
+  }
+  return isInternalEmail(data?.email ?? "");
 }
 
 /**

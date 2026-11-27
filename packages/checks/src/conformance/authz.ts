@@ -893,6 +893,8 @@ export const UNPAGED_ROUTES: Readonly<Record<string, string>> = {
     "Notes, saved views and imports, which every page uses for its own records.",
   "/x/settings/tags/": "The tag endpoint every list page posts to.",
   "/x/get-started/": "The Implementation Hub has no sidebar entry.",
+  "/x/implementation/":
+    "Implementation Hub 2.0: hubAccess decides who opens it (Carbon staff and the people with a page), not a page permission.",
   "/x/items/$itemId/properties":
     "Shared by the five item pages; the item's type picks the page.",
   "/x/items/cost/$itemId":

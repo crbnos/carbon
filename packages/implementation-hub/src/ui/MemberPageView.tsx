@@ -43,7 +43,6 @@ import type { ImplementationRowData } from "../types";
 import { MemberPageEditor, type PageEditor } from "./MemberPageEditor";
 import { CardStatus, EmptySection, PriorityProgress } from "./PageCardParts";
 import { PageQuestions } from "./PageQuestions";
-import { ProgressPill } from "./ProgressPill";
 import {
   EvidenceCount,
   isSourceShown,
@@ -52,6 +51,7 @@ import {
   SourceBadge,
   VerifiedBadge
 } from "./primitives";
+import { ProgressPill } from "./ProgressPill";
 import {
   useCanEdit,
   useCheckMap,

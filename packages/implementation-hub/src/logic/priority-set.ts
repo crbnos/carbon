@@ -209,7 +209,10 @@ function toolAnswer(raw: unknown): PriorityToolAnswer | null {
     )
   ];
   const takes = areas.every((key) =>
-    rowTakes(known.find((r) => r.key === key)!, plan)
+    rowTakes(
+      known.find((r) => r.key === key)!,
+      plan
+    )
   );
   const tool: PriorityToolAnswer = { id, name: text(name, MAX_TEXT) };
   if (areas.length) tool.rows = areas;

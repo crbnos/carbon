@@ -71,7 +71,9 @@ import {
   noteTables
 } from "./shared.models";
 import * as service from "./shared.service";
-import { invokeCreate } from "./shared.service";
+// The implementation-hub-2 flag is a helper read by loaders too, not an
+// operation of its own.
+import { implementationHub2Enabled, invokeCreate } from "./shared.service";
 import type { MethodRowsAdded } from "./types";
 
 const logger = getLogger("erp", "shared");
@@ -466,8 +468,9 @@ export const enrollImplementationHub = defineServiceFn({
  */
 export const enrollImplementationHubAsStaff = defineServiceFn({
   input: z.object({}),
-  // Who is staff is not a permission: the gate admits members, `run` decides.
-  permission: {},
+  // Who is staff is not a permission: any employee passes the gate, `run`
+  // decides.
+  permission: "employee",
 
   async run(ctx) {
     if (!(await service.isInternalCaller(ctx))) {
@@ -494,7 +497,7 @@ export const enrollImplementationHubAsStaff = defineServiceFn({
     // A company the implementation-hub-2 flag is on for starts on
     // Implementation Hub 2.0. Any other company starts on Implementation Hub
     // 1.0 and its admins are emailed, as self-serve enrolment does.
-    if (!(await service.implementationHub2Enabled(companyId))) {
+    if (!(await implementationHub2Enabled(companyId))) {
       await service.notifyImplementationHubAdmins(ctx);
       return { enrolled: true };
     }
@@ -526,7 +529,7 @@ export const enrollImplementationHubAsStaff = defineServiceFn({
  */
 export const setImplementationHubVersion = defineServiceFn({
   input: implementationHubVersionValidator,
-  permission: { update: "settings" },
+  permission: { "settings.company": "Edit" },
 
   async run(ctx, input) {
     if (!(await service.isInternalCaller(ctx))) {
@@ -537,7 +540,7 @@ export const setImplementationHubVersion = defineServiceFn({
     }
     if (
       input.hubVersion === "2.0" &&
-      !(await service.implementationHub2Enabled(ctx.company.id))
+      !(await implementationHub2Enabled(ctx.company.id))
     ) {
       return ctx.error(
         "forbidden",

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getAppUrl } from "@carbon/env";
 import { hasPriorityCard } from "@carbon/implementation-hub";
 import { getImplementationMember } from "@carbon/implementation-hub/server";
@@ -46,10 +46,7 @@ export const handle: Handle = {
 // is on their page). Anyone else goes to their own page; the /state action
 // refuses their answers too.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    {}
-  );
+  const { client, companyId, userId, email } = await authorize(request);
   if (isInternalEmail(email)) return null;
   const own = await getImplementationMember(client, {
     companyId,

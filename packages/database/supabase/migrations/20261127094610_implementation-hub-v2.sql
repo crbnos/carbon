@@ -7,42 +7,44 @@
 -- Who wrote a tick or a row. Ticks use customer, staff and mcp; rows can also
 -- come from the sales handover or an AI interview. Rows written before this
 -- migration keep NULL: their source is unknown.
-CREATE TYPE "implementationSource" AS ENUM (
-  'customer',
-  'staff',
-  'mcp',
-  'handover',
-  'interview'
-);
+DO $$ BEGIN
+  CREATE TYPE "implementationSource" AS ENUM (
+    'customer',
+    'staff',
+    'mcp',
+    'handover',
+    'interview'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- A tick records its source. Carbon staff stamp verifiedAt/verifiedBy when they
 -- verify a gate; the app clears both when the value changes again.
 ALTER TABLE "implementationCheckState"
-  ADD COLUMN "source" "implementationSource",
-  ADD COLUMN "verifiedAt" TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN "verifiedBy" TEXT REFERENCES "user"("id");
+  ADD COLUMN IF NOT EXISTS "source" "implementationSource",
+  ADD COLUMN IF NOT EXISTS "verifiedAt" TIMESTAMP WITH TIME ZONE,
+  ADD COLUMN IF NOT EXISTS "verifiedBy" TEXT REFERENCES "user"("id") ON DELETE SET NULL;
 
-CREATE INDEX "implementationCheckState_verifiedBy_idx"
+CREATE INDEX IF NOT EXISTS "implementationCheckState_verifiedBy_idx"
   ON "implementationCheckState" ("verifiedBy");
 
 -- A custom row (requirement, objective, open question, customization) records
 -- its source, and a reference to its evidence: a link, a document name, or the
 -- handover question it came from.
 ALTER TABLE "implementationRow"
-  ADD COLUMN "source" "implementationSource",
-  ADD COLUMN "sourceRef" TEXT;
+  ADD COLUMN IF NOT EXISTS "source" "implementationSource",
+  ADD COLUMN IF NOT EXISTS "sourceRef" TEXT;
 
 -- One assignee per hub item. The item key is the status key of the item:
 -- task:<key>, flag:setup.<key or row id>, or row:<row id>.
-CREATE TABLE "implementationAssignment" (
+CREATE TABLE IF NOT EXISTS "implementationAssignment" (
     "id" TEXT NOT NULL DEFAULT id(),
     "companyId" TEXT NOT NULL,
     "itemKey" TEXT NOT NULL,
-    "assigneeId" TEXT NOT NULL REFERENCES "user"("id"),
+    "assigneeId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
 
-    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+    "createdBy" TEXT NOT NULL REFERENCES "user"("id") ON DELETE RESTRICT,
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    "updatedBy" TEXT REFERENCES "user"("id"),
+    "updatedBy" TEXT REFERENCES "user"("id") ON DELETE RESTRICT,
     "updatedAt" TIMESTAMP WITH TIME ZONE,
 
     PRIMARY KEY ("id", "companyId"),
@@ -51,13 +53,13 @@ CREATE TABLE "implementationAssignment" (
       UNIQUE ("companyId", "itemKey")
 );
 
-CREATE INDEX "implementationAssignment_companyId_idx"
+CREATE INDEX IF NOT EXISTS "implementationAssignment_companyId_idx"
   ON "implementationAssignment" ("companyId");
-CREATE INDEX "implementationAssignment_assigneeId_idx"
+CREATE INDEX IF NOT EXISTS "implementationAssignment_assigneeId_idx"
   ON "implementationAssignment" ("assigneeId");
-CREATE INDEX "implementationAssignment_createdBy_idx"
+CREATE INDEX IF NOT EXISTS "implementationAssignment_createdBy_idx"
   ON "implementationAssignment" ("createdBy");
-CREATE INDEX "implementationAssignment_updatedBy_idx"
+CREATE INDEX IF NOT EXISTS "implementationAssignment_updatedBy_idx"
   ON "implementationAssignment" ("updatedBy");
 
 ALTER TABLE "implementationAssignment" ENABLE ROW LEVEL SECURITY;

@@ -5,7 +5,7 @@
 -- Rules and event triggers for the new table live in the authz manifest and
 -- the event attachments, not here (see authz-manifest.md).
 
-CREATE TABLE "implementationMember" (
+CREATE TABLE IF NOT EXISTS "implementationMember" (
     "id" TEXT NOT NULL DEFAULT id(),
     "companyId" TEXT NOT NULL,
     "userId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
@@ -13,9 +13,9 @@ CREATE TABLE "implementationMember" (
     -- (@carbon/onboarding) before every write.
     "page" JSONB NOT NULL,
 
-    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+    "createdBy" TEXT NOT NULL REFERENCES "user"("id") ON DELETE RESTRICT,
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    "updatedBy" TEXT REFERENCES "user"("id"),
+    "updatedBy" TEXT REFERENCES "user"("id") ON DELETE RESTRICT,
     "updatedAt" TIMESTAMP WITH TIME ZONE,
 
     PRIMARY KEY ("id", "companyId"),
@@ -24,13 +24,13 @@ CREATE TABLE "implementationMember" (
       UNIQUE ("companyId", "userId")
 );
 
-CREATE INDEX "implementationMember_companyId_idx"
+CREATE INDEX IF NOT EXISTS "implementationMember_companyId_idx"
   ON "implementationMember" ("companyId");
-CREATE INDEX "implementationMember_userId_idx"
+CREATE INDEX IF NOT EXISTS "implementationMember_userId_idx"
   ON "implementationMember" ("userId");
-CREATE INDEX "implementationMember_createdBy_idx"
+CREATE INDEX IF NOT EXISTS "implementationMember_createdBy_idx"
   ON "implementationMember" ("createdBy");
-CREATE INDEX "implementationMember_updatedBy_idx"
+CREATE INDEX IF NOT EXISTS "implementationMember_updatedBy_idx"
   ON "implementationMember" ("updatedBy");
 
 ALTER TABLE "implementationMember" ENABLE ROW LEVEL SECURITY;

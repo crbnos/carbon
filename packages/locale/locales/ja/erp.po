@@ -873,11 +873,12 @@ msgstr "{alreadyPlannedItemCount}個の部品はスキップ済 — 既に進行
 msgid "{amount} of {0} posted to {element}"
 msgstr "{0} の {amount} が {element} に転記されました"
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "{amount}（受注明細の未請求料金）"
+
 msgid "{answered} of {total} answered"
 msgstr "{total} 件中 {answered} 件に回答済み"
 
-msgid "{amount} of the order line's charges not billed"
-msgstr "{amount}（受注明細の未請求料金）"
 msgid "{answered} of {total} questions answered"
 msgstr "{total} 件中 {answered} 件の質問に回答済み"
 
@@ -1861,13 +1862,14 @@ msgstr "クローズ済のプロジェクトはそれ以上の請求を受け取
 msgid "A cloud subscription, a commercial licence, or source access."
 msgstr "クラウドサブスクリプション、商用ライセンス、またはソースコードへのアクセス。"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "カラーはアクセントを設定します。グラデーションと単色のテーマは、ナビゲーション、サイドバー、ページにも色を付けます。"
+
 msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
 msgstr "1つの会社は一度に1つのOnshapeパネルにしか接続できません。Onshape V2 Governmentをアンインストールしてから、Onshape V2を接続してください。"
 
 msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
 msgstr "1つの会社は一度に1つのOnshapeパネルにしか接続できません。Onshape V2をアンインストールしてから、Onshape V2 Governmentを接続してください。"
-msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
-msgstr "カラーはアクセントを設定します。グラデーションと単色のテーマは、ナビゲーション、サイドバー、ページにも色を付けます。"
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "1つの会社は一度に1つのOnshapeにしか接続できません。Onshape Governmentをアンインストールしてから、Onshapeを接続してください。"
@@ -4508,6 +4510,7 @@ msgstr "任意の品目タイプ"
 
 msgid "Any promised date saves without a warning."
 msgstr "約束日はすべて警告なしで保存されます。"
+
 msgid "Anything else you use it for"
 msgstr "それ以外の用途"
 
@@ -7513,6 +7516,7 @@ msgstr "モジュールにチェックを入れると、そのすべてのペー
 
 msgid "Check before posting"
 msgstr "転記前に確認"
+
 msgid "Check each gate's work and its evidence, then verify it. A tick changed after you verify clears the verification."
 msgstr "各ゲートの作業と根拠を確認してから検証してください。検証後にチェックを変更すると、検証は取り消されます。"
 
@@ -10048,11 +10052,12 @@ msgstr "現在の予測"
 msgid "Current quantity"
 msgstr "現在の数量"
 
+msgid "Current systems"
+msgstr "現行システム"
+
 #. placeholder {0}: formatter.format(total)
 msgid "Current total: {0}"
 msgstr "現在の合計: {0}"
-msgid "Current systems"
-msgstr "現行システム"
 
 msgid "Custom"
 msgstr "カスタム"
@@ -10360,14 +10365,14 @@ msgstr "得意先"
 msgid "Customers"
 msgstr "得意先"
 
-msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
-msgstr "{fromCode} に設定されている得意先、仕入先、仕入先部品、銀行口座。それ以外は {toCode} に移動します。"
-msgid "Customers choose options before they order (configure to order)."
 msgid "Customers choose options before they order (configure to order)"
 msgstr "顧客は注文前にオプションを選択します（受注時構成）"
 
 msgid "customers with contacts, locations, types, statuses, payment terms, currency and price overrides"
 msgstr "担当者、拠点、種別、ステータス、支払条件、通貨、価格の上書きを含む得意先"
+
+msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
+msgstr "{fromCode} に設定されている得意先、仕入先、仕入先部品、銀行口座。それ以外は {toCode} に移動します。"
 
 msgid "Customization"
 msgstr "カスタマイズ"
@@ -11942,9 +11947,6 @@ msgstr "コーティング、めっき、熱処理、機械加工などの外注
 msgid "Do you track tooling, such as fixtures, dies or moulds, as items?"
 msgstr "治具、ダイ、金型などの工具を品目として管理していますか？"
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "このユーザーの現在の権限をこの従業員タイプのデフォルト権限で上書きしますか？"
-
 msgid "Do you work to a quality standard, such as ISO 9001, AS9100, ISO 13485 or IATF 16949?"
 msgstr "ISO 9001、AS9100、ISO 13485、IATF 16949などの品質規格に準拠して業務を行っていますか？"
 
@@ -13421,6 +13423,7 @@ msgstr "認証器アプリから6桁のコードを入力して再開します�
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr "仕入先に請求された金額を入力してください。差額は端数調整勘定の明細として追加されます（上限 {0}）。他の明細の価格はそのままです。"
+
 msgid "Enter the estimate as a number of days"
 msgstr "見積もりを日数で入力してください"
 
@@ -14852,7 +14855,7 @@ msgstr "ピッキングされていない材料のまま完了しますか？"
 
 msgid "Finished"
 msgstr "完了"
-msgid "Finished components, such as fasteners, electronics or bought-in assemblies."
+
 msgid "Finished components, such as fasteners, electronics or bought-in assemblies"
 msgstr "締結部品、電子部品、購入組立品などの既製部品"
 
@@ -15000,10 +15003,11 @@ msgstr "固定資産"
 msgid "Fixed Assets"
 msgstr "固定資産"
 
-msgid "Fixed assets exist"
-msgstr "固定資産が存在する"
 msgid "Fixed assets and depreciation"
 msgstr "固定資産と減価償却"
+
+msgid "Fixed assets exist"
+msgstr "固定資産が存在する"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "バッチサイズが標準と異なる場合の固定原価配賦差異"
@@ -15118,14 +15122,6 @@ msgstr "{readableId} を強制削除"
 
 msgid "Force delete waiting for another Admin's approval"
 msgstr "強制削除は別の管理者の承認を待っています"
-msgid "For each function, name the tool you use today, spreadsheets and paper included. Add a row for anything else. How you use each tool comes at the end."
-msgstr ""
-
-msgid "For example: Carbon loads the item master."
-msgstr ""
-
-msgid "For example: quoting live before the trade show."
-msgstr ""
 
 msgid "Forecast"
 msgstr "予測"
@@ -16159,13 +16155,11 @@ msgstr "このブラウザにおけるCarbonの表示方法。"
 msgid "How coverage is worked out"
 msgstr "カバレッジの計算方法"
 
-msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
-msgstr "各明細の売上高を暦月ごとにどう計上するか。稼働開始日または開始日から、日割りまたは月ごとに均等に按分します。"
 msgid "How does a typical order start?"
 msgstr "通常の受注はどのように始まりますか？"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "各明細が売上高を得る方法：日ごとに分散するか、毎月均等に、運用開始日またはその開始日から。"
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr "各明細の売上高を暦月ごとにどう計上するか。稼働開始日または開始日から、日割りまたは月ごとに均等に按分します。"
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "各個のレンタル料がどのように期間に分割され、期間内のいつ請求されるかを説明します。"
@@ -16683,7 +16677,6 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "無効なカテゴリは新しい時間に対してピックできません"
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr "単位を選択する際、無効な単位は表示されません"
 msgstr ""
 
 msgid "inbound customer requests for quote, converted to quotes"
@@ -17816,11 +17809,11 @@ msgstr "{orderId}の製造指図"
 msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
 msgstr "{orderId}の製造指図: {jobCount}件, {jobsStatusLabel}"
 
-msgid "jobs released"
-msgstr "リリース済の製造指図"
-
 msgid "Jobs in Production"
 msgstr "生産中の製造指図"
+
+msgid "jobs released"
+msgstr "リリース済の製造指図"
 
 msgid "Jobs Required"
 msgstr "必要な製造指図"
@@ -17898,9 +17891,6 @@ msgstr "保持"
 msgid "Keep and connect"
 msgstr "保持して連携"
 
-msgid "Keep Current"
-msgstr "現在の設定を保持"
-
 msgid "Keep demo data"
 msgstr "デモデータを保持する"
 
@@ -17946,10 +17936,11 @@ msgstr "開いたままにする"
 msgid "Keep picking"
 msgstr "ピッキングを続ける"
 
-msgid "Keep your numbers through plan updates?"
-msgstr "計画の更新後も自分の数値を維持しますか？"
 msgid "Keep separate"
 msgstr "別々に保持"
+
+msgid "Keep your numbers through plan updates?"
+msgstr "計画の更新後も自分の数値を維持しますか？"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "注文、見積、設定を2段階認証で保護します"
@@ -17960,11 +17951,11 @@ msgstr "{total} 件中 {kept} 件を保持しました。{unresolved} 件は確�
 msgid "Kept {kept} of {total}."
 msgstr "{total} 件中 {kept} 件を保持しました。"
 
-msgid "Kept with the set"
-msgstr "セットとともに保持"
-
 msgid "Kept as entered and read in {toCode}:"
 msgstr "入力どおりに保持され、{toCode} で読み取られます:"
+
+msgid "Kept with the set"
+msgstr "セットとともに保持"
 
 msgid "Key"
 msgstr "キー"
@@ -20162,10 +20153,11 @@ msgstr "別の保管ユニットへ移動"
 msgid "Move to Group"
 msgstr "グループに移動"
 
-msgid "Move to tax codes"
-msgstr "税コードに移動"
 msgid "Move to section"
 msgstr "セクションへ移動"
+
+msgid "Move to tax codes"
+msgstr "税コードに移動"
 
 msgid "Move to Trash"
 msgstr "ゴミ箱に移動"
@@ -20288,6 +20280,9 @@ msgstr "マイ保存ビュー"
 msgid "My Tasks"
 msgstr "マイタスク"
 
+msgid "My Time"
+msgstr "私の時間"
+
 #. placeholder {0}: payload.count
 msgid "n = {0}"
 msgstr "n = {0}"
@@ -20298,8 +20293,6 @@ msgstr "n = {0}"
 #. placeholder {1}: row.excluded
 msgid "n = {0}, {1} excluded"
 msgstr "n = {0}、{1}件を除外"
-msgid "My Time"
-msgstr "私の時間"
 
 msgid "Name"
 msgstr "名前"
@@ -20409,14 +20402,14 @@ msgstr "負の調整"
 msgid "Negative stock setting updated"
 msgstr "負の在庫の設定を更新しました"
 
-msgid "Net Amount"
-msgstr "正味額"
-msgid "Neither."
 msgid "Neither"
 msgstr "どちらでもない"
 
 msgid "nested bins within a location with storage types, transfers between bins, default pick bins and lineside bins on work centers; storage rules are Business plan"
 msgstr "拠点内のネストされたビン（保管タイプ付き）、ビン間の転送、デフォルトのピッキングビン、作業区のラインサイドビン。保管ルールはBusinessプランです。"
+
+msgid "Net Amount"
+msgstr "正味額"
 
 msgid "Net book value"
 msgstr "未償却残高"
@@ -22192,14 +22185,15 @@ msgstr "いいえ、会計帳簿は別のシステムで管理します"
 msgid "No, we buy and resell"
 msgstr "いいえ、購入して再販売します"
 
-msgid "Nobody yet."
-msgstr "まだ誰もいません。"
 #. placeholder {0}: ability.name
 msgid "Nobody is qualified for {0}"
 msgstr "{0} 向けの適格者がいません"
 
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "適格者がいません。プロセスのスキルに誰かを追加してください。"
+
+msgid "Nobody yet."
+msgstr "まだ誰もいません。"
 
 msgid "Nom"
 msgstr "公称値"
@@ -22348,13 +22342,11 @@ msgstr "後で"
 msgid "Not on the page"
 msgstr "ページにありません"
 
-msgid "Not posted"
-msgstr "未転記"
-
-msgid "Not Qualified"
-msgstr "適格外"
 msgid "Not placed"
 msgstr "未発注"
+
+msgid "Not posted"
+msgstr "未転記"
 
 msgid "Not Qualified"
 msgstr "適格外"
@@ -22485,8 +22477,6 @@ msgstr "まだ何も削除されません。依頼は他の管理者の承認に
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "まだ削除されていません。リクエストは他の管理者の承認に回され、そのうちの1人が承認すると注文が削除されます。"
-msgid "Nothing in this section yet."
-msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "期限が来ていません。期間が到来すると請求書が自動作成されます。"
@@ -22617,6 +22607,7 @@ msgstr "採番"
 
 msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
 msgstr "保存後に発行される番号は、この方法で週を数えます。発行済みの番号は元の週番号を保持します。"
+
 msgid "Objective"
 msgstr "目標"
 
@@ -22881,6 +22872,12 @@ msgstr "1期間は開始日から1か月です（1日から月末まで）。"
 msgid "One period is a month from the start date."
 msgstr "1期間は開始日から1か月です。"
 
+msgid "One person's page as JSON. It replaces any page they already have."
+msgstr "1人分のページをJSONで入力します。既存のページがあれば置き換えられます。"
+
+msgid "One promise per line, in plain words."
+msgstr "1行に1つの約束。平易な言葉で。"
+
 msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 msgstr "税コード内の1つのレート（州レートや市レートなど）で、独自の税当局、控除可能パーセンテージ、有効期間を持つ。"
 
@@ -22889,22 +22886,9 @@ msgstr "1 行が暦月 1 か月、1 列が明細 1 件です。契約の開始�
 
 msgid "One row per characteristic"
 msgstr "特性ごとに1行"
-msgid "One person's page as JSON. It replaces any page they already have."
-msgstr "1人分のページをJSONで入力します。既存のページがあれば置き換えられます。"
-
-msgid "One promise per line, in plain words."
-msgstr "1行に1つの約束。平易な言葉で。"
 
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
 msgstr "1 行が請求書 1 件、1 列が明細 1 件です。日付や金額の変更、請求書の追加や削除ができます。終了日がない場合は、これまでに計画された請求書が表示され、請求期間ごとに新しい請求書が追加されます。"
-msgid "One row per characteristic"
-msgstr "特性ごとに1行"
-
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "1件の請求書に1行、1つの明細に1列。日付または金額を変更し、請求書を追加または削除できます。"
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "1ヶ月1行、1つの明細1列。各明細は、その請求書が請求する正確な金額を認識します。"
 
 msgid "One row per part"
 msgstr "部品ごとに1行"
@@ -22958,11 +22942,11 @@ msgstr "そこには{quantity}のみ"
 msgid "Only {quantity} with a serial number there"
 msgstr "そこにはシリアル番号付きの{quantity}のみ"
 
-msgid "Only against customer orders"
-msgstr "顧客受注に対してのみ"
-
 msgid "Only {remaining} left to invoice on the order"
 msgstr "受注の請求可能残高は{remaining}のみです"
+
+msgid "Only against customer orders"
+msgstr "顧客受注に対してのみ"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "下書きの手順書のみが編集可能です。有効またはアーカイブ済の手順書を変更するには、新しいバージョンを作成してください。"
@@ -23383,10 +23367,11 @@ msgstr "オペレーション数量"
 msgid "Operation supplier process"
 msgstr "工程仕入先工法"
 
-msgid "Operation time overview"
-msgstr "工程時間の概要"
 msgid "Operation time is recorded in the shop floor app without time cards."
 msgstr "工程時間は、タイムカードなしで製造現場アプリに記録されます。"
+
+msgid "Operation time overview"
+msgstr "工程時間の概要"
 
 msgid "Operation timer auto-start disabled"
 msgstr "工程タイマー自動開始が無効にされました"
@@ -24705,6 +24690,7 @@ msgstr "計画オーダーをMRPに戻す"
 
 msgid "Planned Orders"
 msgstr "計画オーダー"
+
 msgid "Planned project start"
 msgstr "プロジェクト開始予定"
 
@@ -24734,6 +24720,7 @@ msgstr "計画提案"
 
 msgid "Planning and Sales"
 msgstr "計画と販売"
+
 msgid "Planning and scheduling"
 msgstr "計画とスケジュール"
 
@@ -25604,10 +25591,11 @@ msgstr "プロパティ（この明細のすべてのシリアル番号に適用
 msgid "Property"
 msgstr "プロパティ"
 
-msgid "Proposed matches where exactly one provider rate has the tax code's percentage, for sales and for purchases."
-msgstr "販売と購入で、プロバイダーレートが税コードのパーセンテージと完全に一致する提案されたマッチ。"
 msgid "Proposed"
 msgstr "提案済み"
+
+msgid "Proposed matches where exactly one provider rate has the tax code's percentage, for sales and for purchases."
+msgstr "販売と購入で、プロバイダーレートが税コードのパーセンテージと完全に一致する提案されたマッチ。"
 
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Carbon勘定科目番号がプロバイダー勘定科目コードと正確に一致する提案されたマッチ。"
@@ -25843,12 +25831,6 @@ msgstr "購買返品"
 
 msgid "Purchase returns"
 msgstr "仕入返品"
-
-msgid "Purchase Tax Payable"
-msgstr "仕入税金支払い（デフォルト）"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "仕入税支払相当額（デフォルト）"
 
 msgid "Purchase to Order"
 msgstr "受注購買"
@@ -29062,9 +29044,6 @@ msgstr "スコープサマリー"
 msgid "Scope: Goal"
 msgstr "スコープ: 目標"
 
-msgid "Scopes"
-msgstr "スコープ"
-
 msgid "Scrap"
 msgstr "スクラップ"
 
@@ -29771,11 +29750,6 @@ msgstr "経由で送信"
 msgid "Send via email"
 msgstr "メールで送信"
 
-msgid "Sender Email"
-msgstr "送信者メールアドレス"
-
-msgid "Sender Name"
-msgstr "送信者名"
 msgid "Send your first purchase order"
 msgstr "最初の発注書を送信する"
 
@@ -32253,13 +32227,11 @@ msgstr "記述内容に切り替える"
 msgid "Switch users over and confirm access"
 msgstr "ユーザーを切り替えてアクセスを確認"
 
-msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
-msgstr "タイプを切り替えると、この人が全モジュールで継承するレベルが変わります。個人の上書き設定はそのまま残ります。"
 msgid "Switching needs permission to update settings in this company."
 msgstr "切り替えには、この会社の設定を更新する権限が必要です。"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "ここで従業員のタイプを変更しても、既存の権限は変わりません。その後のダイアログで、現在のセットを新しいタイプのデフォルトで上書きするかどうかを尋ねます。"
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr "タイプを切り替えると、この人が全モジュールで継承するレベルが変わります。個人の上書き設定はそのまま残ります。"
 
 msgid "Sync"
 msgstr "同期"
@@ -34106,6 +34078,7 @@ msgstr "在庫が物理的に置かれている棚とビン。"
 
 msgid "The shop cannot finish this by {promised}."
 msgstr "工場では{promised}までに完了できません。"
+
 msgid "the shop floor app: operations by work center at the user's location; start, pause and finish; record production, scrap and rework; issue materials; operation steps and inspections"
 msgstr "製造現場アプリ：ユーザーの拠点で作業区ごとの工程を表示し、開始、一時停止、完了を行います。生産、スクラップ、手直しを記録し、材料を出庫します。工程のステップと検査も扱います"
 
@@ -34833,6 +34806,7 @@ msgstr "この期間には転記された仕訳がなく、永久に削除でき
 
 msgid "This period is closed, so its checklist is read-only."
 msgstr "この会計期間はクローズ済みのため、チェックリストは読み取り専用です。"
+
 msgid "this person"
 msgstr "この人"
 
@@ -35134,11 +35108,11 @@ msgstr "Time & Materials明細とコストプラス明細は、毎請求期間�
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr "Time & Materials明細とコストプラス明細がここに表示されます。固定価格明細は請求イベント時に請求されます。"
 
-msgid "Time and attendance"
-msgstr "勤怠管理"
-
 msgid "Time Analysis"
 msgstr "時間分析"
+
+msgid "Time and attendance"
+msgstr "勤怠管理"
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "資産クラス別のレンタル資産の時間・金額利用率"
@@ -35290,7 +35264,7 @@ msgstr "出荷待ちおよび入荷待ち"
 
 msgid "To Start More"
 msgstr "追加で着手するための必要数"
-msgid "To stock or forecast, or both."
+
 msgid "To stock or forecast, or both"
 msgstr "在庫として管理、予測として入力、またはその両方"
 
@@ -35921,10 +35895,11 @@ msgstr "タイプ:"
 msgid "Types"
 msgstr "タイプ"
 
-msgid "Typical"
-msgstr "標準"
 msgid "types of work that routing operations reference, with batchable and requires-ability flags"
 msgstr "工順の工程が参照する作業の種類。バッチ処理の可否と必要な能力のフラグ付き"
+
+msgid "Typical"
+msgstr "標準"
 
 msgid "U.S. Person Attestation"
 msgstr "米国人証明"
@@ -36589,6 +36564,7 @@ msgstr "{earliest}を使用"
 
 msgid "Use {suggestedName}"
 msgstr "{suggestedName}を使用"
+
 msgid "Use a Carbon path starting with /x/, or an https link"
 msgstr "/x/ で始まる Carbon のパス、または https リンクを使用してください"
 
@@ -37617,8 +37593,6 @@ msgstr "誤って入力された内容と、訂正も取消もできない理由
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "誤って入力された内容と、代わりに受注を修正またはクローズできない理由"
-msgid "What triggered the search"
-msgstr ""
 
 msgid "What we're assuming"
 msgstr "私たちが想定していること"

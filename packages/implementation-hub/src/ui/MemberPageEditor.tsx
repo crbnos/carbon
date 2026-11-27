@@ -114,8 +114,8 @@ import {
 } from "../models";
 import type { CustomizationStatus, ImplementationRowData } from "../types";
 import { CardStatus, EmptySection } from "./PageCardParts";
-import { ProgressPill } from "./ProgressPill";
 import { EditableInput, EvidenceCount } from "./primitives";
+import { ProgressPill } from "./ProgressPill";
 import {
   useCheckMap,
   useCounts,

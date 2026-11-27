@@ -5,7 +5,7 @@
 // Server-only DB helpers for the Implementation Hub. Each takes the supabase
 // client as its first arg and returns the raw { data, error } (does not throw),
 // matching Carbon's service convention. The enrollment + structural writes are
-// authorized at the route (isInternal / requirePermissions); RLS is the backstop.
+// authorized at the route (isInternal / authorize); RLS is the backstop.
 import type { Database } from "@carbon/database";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -316,10 +316,10 @@ export async function getHubStatus(
 
   const hubFailed = Boolean(
     hub.error ||
-      hubStates.error ||
-      fieldValues.error ||
-      rows.error ||
-      assignments.error
+    hubStates.error ||
+    fieldValues.error ||
+    rows.error ||
+    assignments.error
   );
 
   const base = {

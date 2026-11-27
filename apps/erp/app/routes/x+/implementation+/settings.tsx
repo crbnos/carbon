@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   getImplementationHub,
   getImplementationMembers
@@ -51,17 +51,18 @@ export const handle: Handle = {
 // version staff chose for it, and whether Implementation Hub 2.0 is on for it
 // (the flag).
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {});
+  const { client, companyId, email } = await authorize(request);
   if (!isInternalEmail(email)) {
     throw redirect(path.to.implementation);
   }
 
   // Invites have no read policy, so the people are read the way the Employees
   // screen reads them, to count who would see an empty page after a switch.
-  const { client: peopleClient } = await requirePermissions(request, {
-    role: "employee",
-    bypassRls: true
-  });
+  const { client: peopleClient } = await authorize(
+    request,
+    {},
+    { bypassRls: true }
+  );
   const [hub, members, employees, flagOn] = await Promise.all([
     getImplementationHub(client, companyId),
     getImplementationMembers(client, companyId),
@@ -215,7 +216,7 @@ function VersionCard({
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canSwitch = permissions.can("update", "settings");
+  const canSwitch = permissions.has({ "settings.company": "Edit" });
   const confirm = useDisclosure();
   const fetcher = useAction<typeof versionAction>({
     onSuccess: confirm.onClose
