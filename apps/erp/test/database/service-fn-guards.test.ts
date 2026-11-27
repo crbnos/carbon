@@ -11,7 +11,8 @@ import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   connectLocalTestDatabase,
-  hasLocalDatabase
+  hasLocalDatabase,
+  removeTestRows
 } from "./fixtures/local-database";
 import * as inventory from "../../app/modules/inventory/inventory.server";
 import * as items from "../../app/modules/items/items.server";
@@ -247,7 +248,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!client) return;
-  await db.transaction().execute(async (trx) => {
+  await removeTestRows(db, async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
     await trx.deleteFrom("company").where("id", "=", ids.company).execute();
     await trx.deleteFrom("companyGroup").where("id", "=", ids.group).execute();

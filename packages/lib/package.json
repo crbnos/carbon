@@ -21,7 +21,7 @@
     "@carbon/notifications": "workspace:*",
     "@carbon/workflows-core": "workspace:*",
     "@supabase/supabase-js": "catalog:",
-    "@types/node": "20.19.39",
+    "@types/node": "catalog:",
     "@types/nodemailer": "6.4.23",
     "dotenv": "16.3.1",
     "rimraf": "catalog:",

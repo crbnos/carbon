@@ -19,7 +19,7 @@ import {
   shipSalesOrder,
   USER
 } from "./fixtures/always-post";
-import { hasLocalDatabase } from "./fixtures/local-database";
+import { hasLocalDatabase, removeTestRows } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
@@ -257,7 +257,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!client) return;
-  await seed(f, async (trx) => {
+  await removeTestRows(f.db, async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
     await trx
       .deleteFrom("company")
       .where("id", "=", ids.otherCompany)

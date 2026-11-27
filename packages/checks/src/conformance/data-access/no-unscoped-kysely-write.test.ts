@@ -1,0 +1,253 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { describe, expect, it } from "vitest";
+import { noUnscopedKyselyWrite } from "./no-unscoped-kysely-write";
+
+const UNSCOPED_SERVICE = "apps/erp/app/modules/sales/sales.service.ts";
+const unscopedScan = (ts: string, file = UNSCOPED_SERVICE) =>
+  noUnscopedKyselyWrite.scan(file, ts);
+
+describe("noUnscopedKyselyWrite", () => {
+  it("flags the reported shape: an update keyed by id alone", () => {
+    const ts = [
+      "for (const { id, sortOrder, updatedBy } of updates) {",
+      "  await trx",
+      '    .updateTable("quoteLine")',
+      "    .set({ sortOrder, updatedBy })",
+      '    .where("id", "=", id)',
+      "    .execute();",
+      "}"
+    ].join("\n");
+    const v = unscopedScan(ts);
+    expect(v).toHaveLength(1);
+    expect(v[0]?.line).toBe(3);
+    expect(v[0]?.snippet).toBe('.updateTable("quoteLine")');
+  });
+
+  it("flags a delete keyed by a parent id alone", () => {
+    const ts =
+      'await trx.deleteFrom("jobMaterialStep").where("jobOperationStepId", "in", ids).execute();';
+    expect(unscopedScan(ts)).toHaveLength(1);
+  });
+
+  it("allows a write scoped by companyId", () => {
+    const ts = [
+      "await trx",
+      '  .updateTable("quoteLine")',
+      "  .set({ sortOrder })",
+      '  .where("id", "=", id)',
+      '  .where("companyId", "=", companyId)',
+      "  .execute();"
+    ].join("\n");
+    expect(unscopedScan(ts)).toHaveLength(0);
+  });
+
+  it("accepts companyGroupId on a group-scoped table with no companyId", () => {
+    const ts = [
+      "await trx",
+      '  .updateTable("currency")',
+      "  .set({ decimalPlaces })",
+      '  .where("id", "=", id)',
+      '  .where("companyGroupId", "=", companyGroupId)',
+      "  .execute();"
+    ].join("\n");
+    expect(unscopedScan(ts)).toHaveLength(0);
+  });
+
+  it("does not accept companyGroupId on a company-scoped table", () => {
+    const ts = [
+      "await trx",
+      '  .updateTable("quoteLine")',
+      "  .set({ sortOrder })",
+      '  .where("id", "=", id)',
+      '  .where("companyGroupId", "=", companyGroupId)',
+      "  .execute();"
+    ].join("\n");
+    expect(unscopedScan(ts)).toHaveLength(1);
+  });
+
+  it("still flags a group-scoped table written by id alone", () => {
+    const ts =
+      'await trx.updateTable("currency").set({ decimalPlaces }).where("id", "=", id).execute();';
+    expect(unscopedScan(ts)).toHaveLength(1);
+  });
+
+  it("accepts an aliased table's qualified companyId", () => {
+    const ts =
+      'await trx.updateTable("job as j").set({ status }).where("j.id", "=", id).where("j.companyId", "=", companyId).executeTakeFirst();';
+    expect(unscopedScan(ts)).toHaveLength(0);
+  });
+
+  it("requires the predicate on a table named by a variable too", () => {
+    const ts = [
+      'const slideTable = "jobOperationStepSlide" as const;',
+      'await trx.deleteFrom(slideTable).where("stepId", "in", ids).execute();'
+    ].join("\n");
+    expect(unscopedScan(ts)).toHaveLength(1);
+  });
+
+  it("does not count companyId in the SET as scoping", () => {
+    const ts =
+      'await trx.updateTable("item").set({ companyId, name }).where("id", "=", id).execute();';
+    expect(unscopedScan(ts)).toHaveLength(1);
+  });
+
+  it("does not let a NEIGHBOURING statement's companyId scope this one", () => {
+    const ts = [
+      'await trx.updateTable("quoteLine").set({ sortOrder }).where("id", "=", id).execute();',
+      'await trx.updateTable("quote").set({ status }).where("id", "=", quoteId).where("companyId", "=", companyId).execute();'
+    ].join("\n");
+    const v = unscopedScan(ts);
+    expect(v).toHaveLength(1);
+    expect(v[0]?.line).toBe(1);
+  });
+
+  it("does not let a sibling array element's companyId scope this one", () => {
+    const ts = [
+      "await Promise.all([",
+      '  trx.deleteFrom("a").where("id", "=", id),',
+      '  trx.deleteFrom("b").where("id", "=", id).where("companyId", "=", companyId)',
+      "]);"
+    ].join("\n");
+    const v = unscopedScan(ts);
+    expect(v).toHaveLength(1);
+    expect(v[0]?.line).toBe(2);
+  });
+
+  it("ignores a companyId predicate that is only in a comment", () => {
+    const ts = [
+      "await trx",
+      '  .updateTable("quoteLine")',
+      '  // .where("companyId", "=", companyId)',
+      '  .where("id", "=", id)',
+      "  .execute();"
+    ].join("\n");
+    expect(unscopedScan(ts)).toHaveLength(1);
+  });
+
+  it("ignores a write that is only in a comment", () => {
+    const ts = '// trx.updateTable("quoteLine").where("id", "=", id)';
+    expect(unscopedScan(ts)).toHaveLength(0);
+  });
+
+  it("stops at a semicolon inside a SET callback only at depth 0", () => {
+    const ts = [
+      "await trx",
+      '  .updateTable("methodMaterial")',
+      "  .set((eb) => { const x = 1; return { x }; })",
+      '  .where("companyId", "=", companyId)',
+      "  .execute();"
+    ].join("\n");
+    expect(unscopedScan(ts)).toHaveLength(0);
+  });
+
+  it("accepts a link table scoped through its parent in a subquery", () => {
+    const ts = [
+      "await trx",
+      '  .deleteFrom("jobMaterialStep")',
+      '  .where("jobOperationStepId", "in", (eb) =>',
+      "    eb",
+      '      .selectFrom("jobOperationStep")',
+      '      .select("id")',
+      '      .where("id", "in", ids)',
+      '      .where("companyId", "=", companyId)',
+      "  )",
+      "  .execute();"
+    ].join("\n");
+    expect(unscopedScan(ts)).toHaveLength(0);
+  });
+
+  it("accepts an id predicate on company and companySettings, whose id is the tenant", () => {
+    for (const table of ["company", "companySettings"]) {
+      const ts = `await trx.updateTable("${table}").set(fields).where("id", "=", companyId).execute();`;
+      expect(unscopedScan(ts)).toHaveLength(0);
+    }
+    expect(
+      unscopedScan(
+        'await updateRows(db, "companySettings", { digitalReceipts }, { id: companyId });'
+      )
+    ).toHaveLength(0);
+  });
+
+  it("flags a company or companySettings write with no where", () => {
+    for (const table of ["company", "companySettings"]) {
+      expect(
+        unscopedScan(`await trx.updateTable("${table}").set(fields).execute();`)
+      ).toHaveLength(1);
+      expect(
+        unscopedScan(`await trx.deleteFrom("${table}").execute();`)
+      ).toHaveLength(1);
+    }
+    expect(
+      unscopedScan(
+        'await updateRows(db, "companySettings", { digitalReceipts }, {});'
+      )
+    ).toHaveLength(1);
+  });
+
+  it("covers routes, MES and jobs", () => {
+    const ts = 'await db.deleteFrom("kanban").where("id", "=", id).execute();';
+    for (const file of [
+      "apps/erp/app/routes/x+/kanban+/delete.$id.tsx",
+      "apps/mes/app/services/operations.service.ts",
+      "packages/jobs/src/inngest/functions/tasks/foo.ts"
+    ]) {
+      expect(unscopedScan(ts, file)).toHaveLength(1);
+    }
+  });
+
+  it("ignores edge functions and packages/ee", () => {
+    const ts = 'await db.deleteFrom("user").where("id", "=", id).execute();';
+    for (const file of [
+      "packages/database/supabase/functions/embedding/index.ts",
+      "packages/ee/src/sso/provisioning.server.ts"
+    ]) {
+      expect(unscopedScan(ts, file)).toHaveLength(0);
+    }
+  });
+  it("holds updateRows and deleteRows to the same rule", () => {
+    const fn = "apps/erp/app/modules/inventory/inventory.service.ts";
+    expect(
+      unscopedScan(
+        'await updateRows(db, "fixedAsset", { status }, { id: assetId });',
+        fn
+      )
+    ).toHaveLength(1);
+    expect(
+      unscopedScan(
+        'await deleteRows(trx, "fixedAssetDisposal", { fixedAssetId });',
+        fn
+      )
+    ).toHaveLength(1);
+    expect(
+      unscopedScan(
+        'await updateRows(db, "fixedAsset", { status }, { id: assetId, companyId });',
+        fn
+      )
+    ).toHaveLength(0);
+    expect(
+      unscopedScan('await updateRows(db, "item", { companyId }, { id });', fn)
+    ).toHaveLength(1);
+  });
+  it("exempts userPermission, which has no company column", () => {
+    expect(
+      unscopedScan(
+        'await trx.updateTable("userPermission").set(fields).where("id", "=", id).execute();'
+      )
+    ).toHaveLength(0);
+  });
+
+  it("exempts userPermission in deleteRows too", () => {
+    expect(
+      unscopedScan('await deleteRows(trx, "userPermission", { id });')
+    ).toHaveLength(0);
+  });
+
+  it("ignores a call named updateRows that takes no table and filter", () => {
+    expect(
+      unscopedScan("updateRows(next);\nupdateRows(db, next);")
+    ).toHaveLength(0);
+  });
+});

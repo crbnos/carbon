@@ -153,6 +153,7 @@ databaseTest(
       });
     } finally {
       try {
+        // Always: `period` has no company, so its rows are every test's.
         await f.db
           .deleteFrom("demandProjection")
           .where("companyId", "=", f.companyId)

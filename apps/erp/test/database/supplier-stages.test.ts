@@ -8,6 +8,7 @@
 import { sql } from "kysely";
 import { expect, vi } from "vitest";
 import { fixture, type PurchasingFixture, test } from "./fixtures/purchasing";
+import { removeTestRows } from "./fixtures/local-database";
 
 // Approval rules are a commercial feature, off in the community edition that
 // an unset CARBON_EDITION reads as. Set before @carbon/env is imported.
@@ -80,9 +81,11 @@ test("only an employee of the company reads its stages", async () => {
     expect(await asUser(f, portalUser, stages)).toEqual([]);
     expect(await asUser(f, employee, stages)).toEqual([]);
   } finally {
-    await sql`
-      DELETE FROM "user" WHERE id IN (${portalUser}, ${employee}, ${ownEmployee})
-    `.execute(f.db);
+    await removeTestRows(f.db, (trx) =>
+      sql`
+        DELETE FROM "user" WHERE id IN (${portalUser}, ${employee}, ${ownEmployee})
+      `.execute(trx)
+    );
     await f.cleanup();
   }
 });

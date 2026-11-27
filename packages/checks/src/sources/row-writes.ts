@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { blankComments } from "./comments";
 import { IDENT_PART, IDENT_START } from "./text";
 /**
  * The row writes and row locks a TypeScript file makes, read from its text,
@@ -28,9 +29,9 @@ import { IDENT_PART, IDENT_START } from "./text";
  * split into its methods.
  */
 
-export type Field = { name: string; value: string; index: number };
+type Field = { name: string; value: string; index: number };
 
-export type RowWrite = {
+type RowWrite = {
   /** Offset of the call that names the table. */
   index: number;
   table: string;
@@ -43,7 +44,7 @@ export type RowWrite = {
 
 export type Region = { start: number; end: number; name: string };
 
-export type RowLock = {
+type RowLock = {
   index: number;
   table: string;
   /** The columns the locked select reads, or "*" for `selectAll()` / `SELECT *`. */
@@ -67,12 +68,12 @@ function skipString(text: string, i: number): number {
 
 /** Index of the bracket matching the one at `open`, skipping strings. */
 export function matchBracket(text: string, open: number): number {
-  const opener = text[open] as string;
+  const opener = text.charAt(open);
   const close = { "(": ")", "[": "]", "{": "}" }[opener];
   if (!close) return open;
   let depth = 0;
   for (let i = open; i < text.length; i++) {
-    const c = text[i] as string;
+    const c = text.charAt(i);
     if (c === '"' || c === "'" || c === "`") {
       i = skipString(text, i) - 1;
       continue;
@@ -88,11 +89,11 @@ export function matchBracket(text: string, open: number): number {
 
 /** Index of the first character at or after `i` that is not whitespace. */
 export function skipSpace(text: string, i: number): number {
-  while (i < text.length && /\s/.test(text[i] as string)) i++;
+  while (i < text.length && /\s/.test(text.charAt(i))) i++;
   return i;
 }
 
-export type Call = { name: string; open: number; close: number };
+type Call = { name: string; open: number; close: number };
 
 /**
  * The `.member(…)` calls chained after `from` (an index just past a call's
@@ -118,7 +119,7 @@ export function chainCalls(text: string, from: number): Call[] {
     i = skipSpace(text, i + 1);
     if (!IDENT_START.test(text[i] ?? "")) return calls;
     let end = i;
-    while (end < text.length && IDENT_PART.test(text[end] as string)) end++;
+    while (end < text.length && IDENT_PART.test(text.charAt(end))) end++;
     const name = text.slice(i, end);
     let after = skipSpace(text, end);
     if (text[after] === "<") {
@@ -146,7 +147,7 @@ export function callArguments(
   let depth = 0;
   let start = open + 1;
   for (let i = open + 1; i < close; i++) {
-    const c = text[i] as string;
+    const c = text.charAt(i);
     if (c === '"' || c === "'" || c === "`") {
       i = skipString(text, i) - 1;
       continue;
@@ -168,7 +169,7 @@ export function callArguments(
  * The top-level entries of the object literal whose `{` is at `open`: `key:
  * value`, `"key": value` and shorthand `key`. Spreads and methods are skipped.
  */
-export function objectEntries(text: string, open: number): Field[] {
+function objectEntries(text: string, open: number): Field[] {
   const close = matchBracket(text, open);
   const fields: Field[] = [];
   let i = open + 1;
@@ -179,7 +180,7 @@ export function objectEntries(text: string, open: number): Field[] {
     let end = i;
     let depth = 0;
     for (; end < close; end++) {
-      const c = text[end] as string;
+      const c = text.charAt(end);
       if (c === '"' || c === "'" || c === "`") {
         end = skipString(text, end) - 1;
         continue;
@@ -191,7 +192,7 @@ export function objectEntries(text: string, open: number): Field[] {
     const entry = text.slice(i, end);
     const m = /^(?:["'`](\w+)["'`]|([A-Za-z_$][\w$]*))\s*(:)?/.exec(entry);
     if (m && !entry.startsWith("...")) {
-      const name = (m[1] ?? m[2]) as string;
+      const name = m[1] ?? m[2] ?? "";
       if (m[3]) {
         fields.push({
           name,
@@ -268,7 +269,7 @@ type Span = { text: string; start: number };
  * an optional type annotation (which may hold `{ a: T; }`, `<…>` and `=>`), or
  * null when the name has no initializer: `for (const x of …)`, `let x;`.
  */
-export function initializerStart(text: string, from: number): number | null {
+function initializerStart(text: string, from: number): number | null {
   let i = skipSpace(text, from);
   if (text[i] === "=" && text[i + 1] !== "=" && text[i + 1] !== ">") {
     return i + 1;
@@ -276,7 +277,7 @@ export function initializerStart(text: string, from: number): number | null {
   if (text[i] !== ":") return null;
   let depth = 0;
   for (i++; i < text.length; i++) {
-    const c = text[i] as string;
+    const c = text.charAt(i);
     if (c === '"' || c === "'" || c === "`") {
       i = skipString(text, i) - 1;
       continue;
@@ -326,7 +327,7 @@ export function nearestInitializer(
 function statementEnd(text: string, from: number, limit: number): number {
   let depth = 0;
   for (let i = from; i < limit; i++) {
-    const c = text[i] as string;
+    const c = text.charAt(i);
     if (c === '"' || c === "'" || c === "`") {
       i = skipString(text, i) - 1;
       continue;
@@ -344,14 +345,14 @@ function statementEnd(text: string, from: number, limit: number): number {
 function objectLiterals(text: string, span: Span): Field[] {
   const fields: Field[] = [];
   for (let i = span.start; i < span.start + span.text.length; i++) {
-    const c = text[i] as string;
+    const c = text.charAt(i);
     if (c === '"' || c === "'" || c === "`") {
       i = skipString(text, i) - 1;
       continue;
     }
     if (c !== "{") continue;
     let j = i - 1;
-    while (j > 0 && /\s/.test(text[j] as string)) j--;
+    while (j > 0 && /\s/.test(text.charAt(j))) j--;
     const before = text.slice(Math.max(0, j - 5), j + 1);
     if (/[([,:=?|&]$/.test(before) || /\breturn$/.test(before)) {
       fields.push(...objectEntries(text, i));
@@ -374,7 +375,7 @@ function tracedRows(
   const fields: Field[] = [];
   const names = new Set(
     [...argument.text.matchAll(/(?<![.\w$])([A-Za-z_$][\w$]*)\b/g)].map(
-      (m) => m[1] as string
+      (m) => m[1] ?? ""
     )
   );
   for (const name of names) {
@@ -405,7 +406,7 @@ function tracedRows(
     for (const m of body.matchAll(member)) {
       const at = from + (m.index ?? 0) + m[0].length;
       fields.push({
-        name: m[1] as string,
+        name: m[1] ?? "",
         value: text.slice(at, statementEnd(text, at, region.end)).trim(),
         index: from + (m.index ?? 0)
       });
@@ -436,7 +437,7 @@ function rowFields(
 }
 
 /** Every row write in the (comment-blanked) text; see the file header. */
-export function rowWrites(text: string, regions: Region[]): RowWrite[] {
+function rowWrites(text: string, regions: Region[]): RowWrite[] {
   const writes: RowWrite[] = [];
 
   for (const m of text.matchAll(/\.updateTable\s*\(/g)) {
@@ -448,7 +449,7 @@ export function rowWrites(text: string, regions: Region[]): RowWrite[] {
     const setArg = set ? callArguments(text, set.open)[0] : undefined;
     writes.push({
       index: m.index ?? 0,
-      table: table[1] as string,
+      table: table[1] ?? "",
       alias: table[2] ?? null,
       fields: rowFields(text, regionFor(regions, m.index ?? 0), setArg, false),
       guards: [...calls, ...laterCalls(text, regions, m.index ?? 0)]
@@ -469,7 +470,7 @@ export function rowWrites(text: string, regions: Region[]): RowWrite[] {
     const arg = callArguments(text, update.open)[0];
     writes.push({
       index: m.index ?? 0,
-      table: table[1] as string,
+      table: table[1] ?? "",
       alias: null,
       fields: rowFields(text, regionFor(regions, m.index ?? 0), arg, false),
       guards: [
@@ -551,10 +552,7 @@ export function regionOf(regions: Region[], index: number): Region | undefined {
  * column each `.where*(…)` tests: a lock taken `.where("status", "=", "Open")`
  * has read the status as surely as one that selects it.
  */
-export function selectedColumns(
-  text: string,
-  calls: Call[]
-): Set<string> | "*" {
+function selectedColumns(text: string, calls: Call[]): Set<string> | "*" {
   if (calls.some((c) => c.name === "selectAll")) return "*";
   const columns = new Set<string>();
   for (const call of calls) {
@@ -563,7 +561,7 @@ export function selectedColumns(
       for (const m of args.matchAll(
         /["'`](?:[\w$]+\.)?([\w$]+)(?:\s+as\s+[\w$]+)?["'`]/g
       )) {
-        columns.add(m[1] as string);
+        columns.add(m[1] ?? "");
       }
     } else if (call.name.startsWith("where")) {
       const first = callArguments(text, call.open)[0]?.text ?? "";
@@ -591,7 +589,7 @@ function sqlSelectList(list: string, rest: string): Set<string> | "*" {
   for (const m of where.matchAll(
     /"?([\w$]+)"?\s*(?:=|<>|!=|\bIN\b|\bIS\b)/gi
   )) {
-    columns.add(m[1] as string);
+    columns.add(m[1] ?? "");
   }
   return columns;
 }
@@ -623,7 +621,7 @@ function statementBinding(text: string, index: number): string | null {
  * reads and the local it is assigned to, so a check can tell a lock that
  * re-reads the row from one that only waits for it.
  */
-export function rowLocks(text: string): RowLock[] {
+function rowLocks(text: string): RowLock[] {
   const locks: RowLock[] = [];
   const covered = new Set<number>();
   const selects = [...text.matchAll(/\.selectFrom\s*\(/g)].map((m) => {
@@ -645,7 +643,7 @@ export function rowLocks(text: string): RowLock[] {
     covered.add(lock.open);
     locks.push({
       index: select.index,
-      table: select.table[1] as string,
+      table: select.table[1] ?? "",
       columns: selectedColumns(text, select.calls.slice(0, at)),
       binding: statementBinding(text, select.index)
     });
@@ -657,7 +655,7 @@ export function rowLocks(text: string): RowLock[] {
     if (before?.table) {
       locks.push({
         index: m.index ?? 0,
-        table: before.table[1] as string,
+        table: before.table[1] ?? "",
         columns: selectedColumns(text, before.calls),
         binding: null
       });
@@ -813,4 +811,24 @@ export function namesColumn(
   return new RegExp(
     `["'\`](?:(?:${qualifiers})\\.)?${name}["'\`]|\\b${name}\\.(?:eq|neq|in|is|not)\\.|[{,]\\s*${name}\\s*[:,}]`
   ).test(text);
+}
+
+/** What the two concurrency checks read in a file; no writes when it makes no UPDATE. */
+export function readRowWrites(contents: string): {
+  text: string;
+  regions: Region[];
+  locks: RowLock[];
+  writes: RowWrite[];
+} {
+  if (!/\.updateTable|\.update\s*\(|updateRows/.test(contents)) {
+    return { text: contents, regions: [], locks: [], writes: [] };
+  }
+  const text = blankComments(contents);
+  const regions = topLevelRegions(text);
+  return {
+    text,
+    regions,
+    locks: rowLocks(text),
+    writes: rowWrites(text, regions)
+  };
 }

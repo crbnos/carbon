@@ -11,7 +11,8 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   connectLocalTestDatabase,
-  databaseTest
+  databaseTest,
+  removeTestRows
 } from "./fixtures/local-database";
 import { createClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
@@ -102,7 +103,7 @@ async function withScratch(
       })
     });
   } finally {
-    await db.transaction().execute(async (trx) => {
+    await removeTestRows(db, async (trx) => {
       await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
       await trx.deleteFrom("permission").where("companyId", "=", companyId).execute();
       await trx.deleteFrom("apiKey").where("companyId", "=", companyId).execute();

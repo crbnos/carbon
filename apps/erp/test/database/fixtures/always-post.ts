@@ -13,7 +13,7 @@ import { datetime } from "@carbon/utils";
 import { endOfMonth } from "@internationalized/date";
 import { type Insertable, sql, type Transaction } from "kysely";
 import { expect } from "vitest";
-import { connectLocalTestDatabase } from "./local-database";
+import { connectLocalTestDatabase, removeTestRows } from "./local-database";
 import { postInventoryAdjustment, postReceipt, postShipment } from "../../../app/modules/inventory/inventory.service";
 import { postMemo, postPayment, postPurchaseInvoice, postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
 import { FILLER_ACCOUNT_DEFAULTS } from "./post-reimbursement";
@@ -272,7 +272,7 @@ export async function alwaysPostFixture() {
     supplierId,
     account,
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         // The posted-invoice deletion guards refuse a cascade delete of a
         // posted invoice. Walk the test's invoices back to Draft first.

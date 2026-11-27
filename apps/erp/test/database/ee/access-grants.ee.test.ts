@@ -15,7 +15,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   connectLocalTestDatabase,
   databaseTest,
-  hasLocalDatabase
+  hasLocalDatabase,
+  removeTestRows
 } from "../fixtures/local-database";
 
 vi.mock("@carbon/ee/plan.server", () => ({
@@ -192,7 +193,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!hasLocalDatabase) return;
-  await db.transaction().execute(async (trx) => {
+  await removeTestRows(db, async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
     for (const companyId of [ids.ours, ids.theirs]) {
       await trx.deleteFrom("company").where("id", "=", companyId).execute();

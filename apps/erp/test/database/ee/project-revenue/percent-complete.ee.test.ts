@@ -19,7 +19,7 @@ import {
 import { postProjectIssue } from "../../../../app/modules/projects/projects.service";
 import { invokePosting } from "../../../../app/modules/shared/shared.service";
 import { handlesOf } from "../../fixtures/handles";
-import { databaseTest } from "../../fixtures/local-database";
+import { databaseTest, removeTestRows } from "../../fixtures/local-database";
 import { projectBillingTestFixture } from "../../fixtures/project-billing";
 
 const plan = vi.hoisted(() => ({ hasProjectRevenue: true }));
@@ -47,10 +47,12 @@ async function fixture() {
 }
 
 async function cleanup(f: Fixture) {
-  await f.db
-    .deleteFrom("revenueRecognitionRun")
-    .where("companyId", "=", f.companyId)
-    .execute();
+  await removeTestRows(f.db, (trx) =>
+    trx
+      .deleteFrom("revenueRecognitionRun")
+      .where("companyId", "=", f.companyId)
+      .execute()
+  );
   await f.cleanup();
 }
 

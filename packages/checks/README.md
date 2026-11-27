@@ -7,8 +7,9 @@ Executable checks for the loop system's "core".
 Forbids deprecated code patterns in migrations and application code. Existing violations are
 grandfathered in `src/conformance/baseline.json`; only **new** violations fail CI.
 
-- Add a check: write a `defineCheck` in its subject's file under
-  `src/conformance/` and add it to that file's `checks` list (see `AGENTS.md`).
+- Add a check: write a `defineCheck` in a file of its own,
+  `src/conformance/<subject>/<check-id>.ts`, and list it in `src/checks.ts`
+  (see `AGENTS.md`).
 - Re-baseline (after intentionally accepting current state): `pnpm --filter @carbon/checks baseline`
 - Run the gate: `pnpm --filter @carbon/checks test`
 

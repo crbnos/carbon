@@ -22,7 +22,8 @@ import { type Insertable, type Kysely, sql, type Transaction } from "kysely";
 import { afterEach, describe, expect } from "vitest";
 import {
   connectLocalTestDatabase,
-  databaseTest
+  databaseTest,
+  removeTestRows
 } from "./fixtures/local-database";
 import { applyAccountImport } from "../../app/modules/accounting/accounting.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
@@ -320,7 +321,7 @@ async function fixture({ cutover = false } = {}) {
   }
 
   async function cleanup() {
-    await db.transaction().execute(async (trx) => {
+    await removeTestRows(db, async (trx) => {
       await sql`SET LOCAL session_replication_role = replica`.execute(trx);
       await trx
         .deleteFrom("journalLine")

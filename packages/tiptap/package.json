@@ -36,7 +36,7 @@
     "@tiptap/extension-mention": "2.27.2",
     "@types/dompurify": "2.4.0",
     "@types/forge-viewer": "7.99.3",
-    "@types/node": "22.19.7",
+    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@types/react-window": "1.8.8",

@@ -111,7 +111,7 @@ const isCheck = (value: unknown): value is Check =>
  */
 const exported = (
   await Promise.all(
-    readdirSync(CONFORMANCE)
+    readdirSync(CONFORMANCE, { recursive: true, encoding: "utf8" })
       .filter((file) => file.endsWith(".ts") && !file.endsWith(".test.ts"))
       .map(async (file) => {
         const module: Record<string, unknown> = await import(

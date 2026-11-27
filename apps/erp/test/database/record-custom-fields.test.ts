@@ -12,7 +12,10 @@ import { sql } from "kysely";
 import { expect } from "vitest";
 import { setRecordCustomFields } from "../../app/modules/settings/settings.server";
 import { DataType } from "../../app/modules/shared/types";
-import { connectLocalTestDatabase } from "./fixtures/local-database";
+import {
+  connectLocalTestDatabase,
+  removeTestRows
+} from "./fixtures/local-database";
 import { localApiKeyClient, postgrestTest } from "./fixtures/local-supabase";
 
 const USER = "system";
@@ -114,7 +117,7 @@ async function companyFixture() {
       return row.customFields;
     },
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx.deleteFrom("company").where("id", "=", companyId).execute();
         await trx

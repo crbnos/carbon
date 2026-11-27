@@ -8,7 +8,13 @@ import {
   getPostgresClient,
   type KyselyDatabase
 } from "@carbon/database/client";
-import { type Kysely, PostgresDriver, type RawBuilder, sql } from "kysely";
+import {
+  type Kysely,
+  PostgresDriver,
+  type RawBuilder,
+  sql,
+  type Transaction
+} from "kysely";
 import { Pool } from "pg";
 import { it } from "vitest";
 
@@ -28,6 +34,22 @@ export const hasLocalDatabase: boolean = (() => {
     return false;
   }
 })();
+
+/** In CI (`CI` is set by the runner) the database exists for one job and is
+ *  thrown away with it, so removing a test's rows buys nothing. A company
+ *  delete cascades through hundreds of foreign keys and is most of a test's
+ *  database time. */
+const isDisposableDatabase = Boolean(process.env.CI);
+
+/** Removes a test's rows in one transaction, or does nothing on a disposable
+ *  database. It never closes `db`: the caller still destroys it. */
+export async function removeTestRows(
+  db: Kysely<KyselyDatabase>,
+  remove: (trx: Transaction<KyselyDatabase>) => Promise<unknown>
+): Promise<void> {
+  if (isDisposableDatabase) return;
+  await db.transaction().execute(remove);
+}
 
 /** A vitest case for a regression that requires the local database. */
 export function databaseTest(

@@ -20,7 +20,8 @@ import {
 } from "vitest";
 import {
   connectLocalTestDatabase,
-  hasLocalDatabase
+  hasLocalDatabase,
+  removeTestRows
 } from "./database/fixtures/local-database";
 import { localServiceRoleClient } from "./database/fixtures/local-supabase";
 
@@ -142,7 +143,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!client) return;
-  await db.transaction().execute(async (trx) => {
+  await removeTestRows(db, async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
     await trx.deleteFrom("company").where("id", "=", ids.company).execute();
     await trx.deleteFrom("companyGroup").where("id", "=", ids.group).execute();

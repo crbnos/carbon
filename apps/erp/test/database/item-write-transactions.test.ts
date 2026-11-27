@@ -17,7 +17,8 @@ import * as items from "../../app/modules/items/items.server";
 import * as itemsService from "../../app/modules/items/items.service";
 import {
   connectLocalTestDatabase,
-  hasLocalDatabase
+  hasLocalDatabase,
+  removeTestRows
 } from "./fixtures/local-database";
 import {
   localServiceRoleClient,
@@ -250,7 +251,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!client) return;
-  await db.transaction().execute(async (trx) => {
+  await removeTestRows(db, async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
     for (const [companyId, groupId] of [
       [ids.company, ids.group],

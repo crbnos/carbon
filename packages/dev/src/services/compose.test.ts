@@ -17,6 +17,7 @@ import { REDIS_DB_MAX } from "../topology.js";
 import {
   buildDownArgs,
   buildImagesArgs,
+  buildSharedUpArgs,
   buildUpArgs,
   cpuLimitOverrides,
   isTransientPullError,
@@ -139,6 +140,32 @@ describe("buildImagesArgs", () => {
       "--images",
       "redis",
       "edge-runtime"
+    ]);
+  });
+});
+
+describe("buildSharedUpArgs", () => {
+  const compose = ["compose", "-f", "shared.yml", "-p", "crbn-shared"];
+
+  it("starts every service when none is named", () => {
+    expect(buildSharedUpArgs(compose)).toEqual([
+      ...compose,
+      "up",
+      "-d",
+      "--wait",
+      "--remove-orphans"
+    ]);
+  });
+
+  it("names the services after the subcommand's flags", () => {
+    expect(buildSharedUpArgs(compose, ["postgres", "storage"])).toEqual([
+      ...compose,
+      "up",
+      "-d",
+      "--wait",
+      "--remove-orphans",
+      "postgres",
+      "storage"
     ]);
   });
 });

@@ -25,18 +25,25 @@ const migrations = (files: Record<string, string>) => {
   return dir;
 };
 
+// Reads every migration in the repo; on CI all packages' tests share 4 CPUs.
+const scansRepo = { timeout: 30_000 };
+
 describe("unshipped: production gets every rule and helper through a migration", () => {
-  test("the repository ships everything the manifest and helpers say", async () => {
-    expect(
-      await unshipped(manifest, await loadHelpers(), undefined, attachments),
-      "Production would not get these. Run: pnpm --filter @carbon/database authz migration <name>"
-    ).toEqual({
-      tables: [],
-      helpers: [],
-      attachments: [],
-      problems: []
-    });
-  });
+  test(
+    "the repository ships everything the manifest and helpers say",
+    scansRepo,
+    async () => {
+      expect(
+        await unshipped(manifest, await loadHelpers(), undefined, attachments),
+        "Production would not get these. Run: pnpm --filter @carbon/database authz migration <name>"
+      ).toEqual({
+        tables: [],
+        helpers: [],
+        attachments: [],
+        problems: []
+      });
+    }
+  );
 
   test("an edited rule, a new table and an edited helper are unshipped", async () => {
     const helpers = await loadHelpers();
@@ -60,53 +67,61 @@ describe("unshipped: production gets every rule and helper through a migration",
     expect(result.helpers).toContain("get_companies_with_employee_role");
   });
 
-  test("an edited function outside public is unshipped under its schema", async () => {
-    const helpers = (await loadHelpers()).map((h) =>
-      h.schema === "util" && h.name === "wake_event_queue"
-        ? { ...h, sql: h.sql.replace("SECURITY DEFINER", "SECURITY INVOKER") }
-        : h
-    );
-    expect((await unshipped(manifest, helpers)).helpers).toEqual([
-      "util.wake_event_queue"
-    ]);
-  });
+  test(
+    "an edited function outside public is unshipped under its schema",
+    scansRepo,
+    async () => {
+      const helpers = (await loadHelpers()).map((h) =>
+        h.schema === "util" && h.name === "wake_event_queue"
+          ? { ...h, sql: h.sql.replace("SECURITY DEFINER", "SECURITY INVOKER") }
+          : h
+      );
+      expect((await unshipped(manifest, helpers)).helpers).toEqual([
+        "util.wake_event_queue"
+      ]);
+    }
+  );
 
-  test("a generated migration ships its tables and helpers", async () => {
-    const helpers = (await loadHelpers()).map((h) =>
-      h.name === "get_companies_with_employee_role"
-        ? { ...h, sql: h.sql.replace("STABLE", "VOLATILE") }
-        : h
-    );
-    const edited = {
-      ...manifest,
-      note: policies({ select: authenticated }),
-      tableView: serviceOnly()
-    } as Manifest;
-    const sql = await renderMigration(
-      edited,
-      helpers.filter((h) => h.name === "get_companies_with_employee_role"),
-      ["note", "tableView"]
-    );
-    // Every real generated migration (20260927172338 ships tableView as a company rule
-    // first), then the edit: the later file must win.
-    const generated = Object.fromEntries(
-      readdirSync(MIGRATIONS_DIR)
-        .filter((f) => f.endsWith(".sql"))
-        .map(
-          (f) =>
-            [f, readFileSync(path.join(MIGRATIONS_DIR, f), "utf8")] as const
-        )
-        .filter(([, sql]) => sql.startsWith(GENERATED_HEADER))
-    );
-    const dir = migrations({ ...generated, "20270101000001_ship.sql": sql });
-    const result = await unshipped(edited, helpers, dir, attachments);
-    expect(result).toEqual({
-      tables: [],
-      helpers: [],
-      attachments: [],
-      problems: []
-    });
-  });
+  test(
+    "a generated migration ships its tables and helpers",
+    scansRepo,
+    async () => {
+      const helpers = (await loadHelpers()).map((h) =>
+        h.name === "get_companies_with_employee_role"
+          ? { ...h, sql: h.sql.replace("STABLE", "VOLATILE") }
+          : h
+      );
+      const edited = {
+        ...manifest,
+        note: policies({ select: authenticated }),
+        tableView: serviceOnly()
+      } as Manifest;
+      const sql = await renderMigration(
+        edited,
+        helpers.filter((h) => h.name === "get_companies_with_employee_role"),
+        ["note", "tableView"]
+      );
+      // Every real generated migration (20260927172338 ships tableView as a company rule
+      // first), then the edit: the later file must win.
+      const generated = Object.fromEntries(
+        readdirSync(MIGRATIONS_DIR)
+          .filter((f) => f.endsWith(".sql"))
+          .map(
+            (f) =>
+              [f, readFileSync(path.join(MIGRATIONS_DIR, f), "utf8")] as const
+          )
+          .filter(([, sql]) => sql.startsWith(GENERATED_HEADER))
+      );
+      const dir = migrations({ ...generated, "20270101000001_ship.sql": sql });
+      const result = await unshipped(edited, helpers, dir, attachments);
+      expect(result).toEqual({
+        tables: [],
+        helpers: [],
+        attachments: [],
+        problems: []
+      });
+    }
+  );
 
   test("the header cannot carry anything `authz migration` does not write", async () => {
     const note = await renderMigration(manifest, [], ["note"]);
@@ -144,15 +159,19 @@ describe("unshipped: production gets every rule and helper through a migration",
     ]);
   });
 
-  test("an edited, a new and a removed attachment are unshipped", async () => {
-    const { customer: _, ...rest } = attachments;
-    const result = await unshipped(manifest, await loadHelpers(), undefined, {
-      ...rest,
-      item: { events: true },
-      note: { events: true }
-    });
-    expect(result.attachments).toEqual(["customer", "item", "note"]);
-  });
+  test(
+    "an edited, a new and a removed attachment are unshipped",
+    scansRepo,
+    async () => {
+      const { customer: _, ...rest } = attachments;
+      const result = await unshipped(manifest, await loadHelpers(), undefined, {
+        ...rest,
+        item: { events: true },
+        note: { events: true }
+      });
+      expect(result.attachments).toEqual(["customer", "item", "note"]);
+    }
+  );
 
   test("a retired helper is accepted only in the migration that last shipped it", async () => {
     const securityFixes = "20260927172338_authz-security-fixes.sql";

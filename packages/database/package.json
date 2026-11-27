@@ -3,7 +3,7 @@
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@supabase/postgrest-js": "catalog:",
-    "@types/node": "20.19.39",
+    "@types/node": "catalog:",
     "@types/pg": "8.15.6",
     "cookie": "catalog:",
     "dompurify": "catalog:",

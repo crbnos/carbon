@@ -8,7 +8,7 @@ import { postReceipt as postReceiptBody } from "../../app/modules/inventory/inve
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import { USER } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
-import { databaseTest } from "./fixtures/local-database";
+import { databaseTest, removeTestRows } from "./fixtures/local-database";
 import { projectPostingFixture } from "./fixtures/project-posting";
 
 databaseTest(
@@ -94,7 +94,7 @@ databaseTest(
         ["Project Issue", -4]
       ]);
     } finally {
-      await f.db.transaction().execute(async (trx) => {
+      await removeTestRows(f.db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx
           .deleteFrom("itemInspectionDocumentAssignment")

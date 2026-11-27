@@ -23,7 +23,8 @@ import { type Insertable, sql } from "kysely";
 import { describe, expect, it, vi } from "vitest";
 import {
   connectLocalTestDatabase,
-  databaseTest
+  databaseTest,
+  removeTestRows
 } from "../fixtures/local-database";
 import { postPayment, postPurchaseInvoice, postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
 import { postReceipt, postShipment } from "../../../app/modules/inventory/inventory.service";
@@ -241,7 +242,7 @@ async function cutoverReadsFixture() {
     supplierId,
     account,
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await sql`SET LOCAL session_replication_role = replica`.execute(trx);
         await trx

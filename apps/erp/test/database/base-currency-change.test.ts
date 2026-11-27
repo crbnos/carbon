@@ -12,7 +12,8 @@ import {
 } from "../../app/modules/settings/settings.service";
 import {
   connectLocalTestDatabase,
-  databaseTest
+  databaseTest,
+  removeTestRows
 } from "./fixtures/local-database";
 
 type Db = Awaited<ReturnType<typeof connectLocalTestDatabase>>;
@@ -199,28 +200,29 @@ async function trialCompany(db: Db) {
     };
   };
 
-  const cleanup = async () => {
-    for (const table of [
-      "customerItemRentalRate",
-      "itemRentalRate",
-      "itemUnitSalePrice",
-      "supplierPart",
-      "supplierBankAccount",
-      "exchangeRateOverride",
-      "customer",
-      "supplier",
-      "item"
-    ] as const) {
-      await db.deleteFrom(table).where("companyId", "=", companyId).execute();
-    }
-    await db.deleteFrom("company").where("id", "=", elimination.id).execute();
-    await db.deleteFrom("company").where("id", "=", companyId).execute();
-    await db
-      .deleteFrom("currency")
-      .where("companyGroupId", "=", group.id)
-      .execute();
-    await db.deleteFrom("companyGroup").where("id", "=", group.id).execute();
-  };
+  const cleanup = () =>
+    removeTestRows(db, async (trx) => {
+      for (const table of [
+        "customerItemRentalRate",
+        "itemRentalRate",
+        "itemUnitSalePrice",
+        "supplierPart",
+        "supplierBankAccount",
+        "exchangeRateOverride",
+        "customer",
+        "supplier",
+        "item"
+      ] as const) {
+        await trx.deleteFrom(table).where("companyId", "=", companyId).execute();
+      }
+      await trx.deleteFrom("company").where("id", "=", elimination.id).execute();
+      await trx.deleteFrom("company").where("id", "=", companyId).execute();
+      await trx
+        .deleteFrom("currency")
+        .where("companyGroupId", "=", group.id)
+        .execute();
+      await trx.deleteFrom("companyGroup").where("id", "=", group.id).execute();
+    });
 
   return {
     companyId,

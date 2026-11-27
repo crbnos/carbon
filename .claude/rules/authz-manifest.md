@@ -5,7 +5,8 @@ paths:
   - "packages/database/supabase/migrations/**"
   - "packages/database/supabase/tests/authz-*.test.sql"
   - "packages/database/supabase/tests/item-child-write-policies.test.sql"
-  - "packages/checks/src/conformance/authz.ts"
+  - "packages/checks/src/conformance/authz/**"
+  - "packages/checks/src/sources/managed-functions.ts"
   - "packages/dev/src/services/migrations.ts"
 ---
 
@@ -141,7 +142,7 @@ fails when a policy checks a key that is not a page id, a read names a module wi
 a page lists a reader in its own module, or a `where` spells a boolean as a string. A managed
 function file or a hand-written migration names page keys too: `no-module-permission-key`
 (`@carbon/checks`) fails a `<module>_<action>` token there (every migration not in the frozen
-list `packages/checks/src/conformance/module-key-migrations.json`, the migrations that existed
+list `packages/checks/src/conformance/authz/module-key-migrations.json`, the migrations that existed
 at the cutoff `20261110050010` — so a late-landing migration dated earlier is checked too);
 portal keys (`get_customer_ids_with_customer_permission('parts_view')`, in the manifest
 `portal.customer(column, "parts_view")`) are exempt. The portal helpers ignore their key today:

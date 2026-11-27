@@ -12,7 +12,7 @@
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@types/negotiator": "0.6.5",
-    "@types/node": "20.19.39",
+    "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

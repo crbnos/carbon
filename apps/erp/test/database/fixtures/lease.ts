@@ -11,7 +11,7 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { generateLeasePayments } from "@carbon/utils";
 import type { Insertable } from "kysely";
 import { sql } from "kysely";
-import { connectLocalTestDatabase } from "./local-database";
+import { connectLocalTestDatabase, removeTestRows } from "./local-database";
 import type { PostingHandles } from "@carbon/api/postings.server";
 
 const USER = "system";
@@ -305,7 +305,7 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
     assetClassId,
     accounts,
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         // Run lines hold their schedule rows ON DELETE RESTRICT.
         await trx

@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { sql } from "kysely";
-import { connectLocalTestDatabase } from "./fixtures/local-database";
+import {
+  connectLocalTestDatabase,
+  removeTestRows
+} from "./fixtures/local-database";
 
 /**
  * A scratch company with one Transfer kanban: From storage unit A, To storage
@@ -146,7 +149,7 @@ export async function kanbanFixture() {
     /** One itemLedger row of `delta` at the From storage unit (A). */
     adjustFromBin: (delta: number) => postLedger(fromId, delta),
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx.deleteFrom("company").where("id", "=", companyId).execute();
         await trx

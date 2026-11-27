@@ -30,7 +30,11 @@ import {
 } from "./fixtures/always-post";
 import * as inventory from "../../app/modules/inventory/inventory.server";
 import { handlesOf } from "./fixtures/handles";
-import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
+import {
+  databaseTest,
+  hasLocalDatabase,
+  removeTestRows
+} from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
@@ -145,7 +149,8 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
   afterAll(async () => {
     if (!f) return;
     // The plan's part link is RESTRICT; clear it before the company cascade.
-    await seed(f, async (trx) => {
+    await removeTestRows(f.db, async (trx) => {
+      await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
       await trx
         .deleteFrom("inspection")
         .where("companyId", "=", f.companyId)

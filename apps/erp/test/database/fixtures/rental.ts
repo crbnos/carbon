@@ -12,7 +12,7 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { parseDate } from "@internationalized/date";
 import { sql } from "kysely";
-import { connectLocalTestDatabase } from "./local-database";
+import { connectLocalTestDatabase, removeTestRows } from "./local-database";
 import type { PostingHandles } from "@carbon/api/postings.server";
 
 const USER = "system";
@@ -338,7 +338,7 @@ export async function rentalFixture(options?: {
     trackedEntityIds,
     itemId,
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx.deleteFrom("company").where("id", "=", companyId).execute();
         await trx

@@ -18,7 +18,7 @@ const PLUGIN = "carbon";
 
 type Span = { offset: number; length: number; line: number; column: number };
 
-export type OxlintDiagnostic = {
+type OxlintDiagnostic = {
   /** `plugin(rule)`, e.g. `carbon(route-action-shape)`. Missing when oxlint itself failed. */
   code?: string;
   message: string;

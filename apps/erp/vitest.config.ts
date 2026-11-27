@@ -5,8 +5,9 @@
 import { linguiWithoutIdQuery } from "@carbon/dev/vite";
 import { lingui } from "@lingui/vite-plugin";
 import { globSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import type { Plugin } from "vite";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 function moduleMacrosOnly(plugins: Plugin[]): Plugin[] {
   return plugins.map((plugin) => {
@@ -50,6 +51,32 @@ const DATABASE_TEST_TIMEOUT = 60_000;
 const usesDatabase = (file: string) => file.startsWith("test/database/");
 const withoutDatabase = (files: string[]) =>
   files.filter((file) => !usesDatabase(file));
+
+// `--changed` (CI's Database tests on a pull request) runs only the test
+// files that import a changed file. A database test's result also depends on
+// files it never imports; a change to one of these runs every test file.
+// Vitest matches these globs against absolute paths.
+const repo = resolve(import.meta.dirname, "../..");
+const filesEveryTestDependsOn = [
+  // The schema the tests run against: migrations, RLS, RPCs, seed data and
+  // the generated types.
+  "packages/database/**",
+  // crbn, which builds and starts that database, and this config's Vite plugin.
+  "packages/dev/**",
+  // The tsconfig bases the packages extend (`**/tsconfig*.json` below).
+  "packages/config/**",
+  // Which versions of the dependencies install, and how.
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+  ".npmrc",
+  "patches/**",
+  // The Node that runs the tests, in CI.
+  ".nvmrc",
+  // How the Lingui plugin compiles the messages of the modules under test.
+  "lingui.config.js",
+  // How CI builds the database and runs the tests.
+  ".github/workflows/database-tests.yml"
+];
 
 export default defineConfig({
   // Compile Lingui macros in .ts modules as the app does, so a service that
@@ -96,6 +123,13 @@ export default defineConfig({
           testTimeout: DATABASE_TEST_TIMEOUT
         }
       }
+    ],
+    forceRerunTriggers: [
+      // Every package.json, and this config.
+      ...configDefaults.forceRerunTriggers,
+      // Where `~/` and each package's imports resolve, and how they compile.
+      "**/tsconfig*.json",
+      ...filesEveryTestDependsOn.map((path) => `${repo}/${path}`)
     ],
     passWithNoTests: true,
     // @carbon/env throws at import time when these are unset; tests that

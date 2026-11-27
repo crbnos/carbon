@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { type Bans, findBanned } from "./sources/matches";
+
 /** A source file handed to a check: any text file, SQL or TypeScript. */
 export type SourceFile = { file: string; contents: string };
 
@@ -74,40 +76,79 @@ export function eachFile(files: SourceFile[], scan: Scan): Violation[] {
   return files.flatMap(({ file, contents }) => scan(file, contents));
 }
 
-type FileRule = About & { files: Loader<SourceFile[]>; scan: Scan };
+/** PURE: the violations in several loaded inputs. */
+type Find<T> = (inputs: T) => Violation[];
 
-type InputsRule<T> = About & {
-  reads: { [K in keyof T]: Loader<T[K]> };
-  find(inputs: T): Violation[];
-};
+type Loaders<T> = { [K in keyof T]: Loader<T[K]> };
+
+/** A file rule that is data: what it bans in each file (`Bans`). */
+type BansRule = About & { files: Loader<SourceFile[]> } & Bans;
+
+/** A file rule with logic: `rule()` builds its `Scan`, and what that needs. */
+type FileRule = About & { files: Loader<SourceFile[]>; rule(): Scan };
+
+/** A rule over several inputs: `rule()` builds its `find`, and what that needs. */
+type InputsRule<T> = About & { reads: Loaders<T>; rule(): Find<T> };
 
 /**
- * A check, from the inputs it reads and its rule over them. A rule over one
- * file at a time names its `files` and a `scan`; a rule over several inputs
- * names them in `reads` and gets them loaded in `find`. Neither sees the repo,
- * so a check reads only what it declares, and a test calls `scan` or `find`
- * with its own values.
+ * A check, from the inputs it reads and its rule over them. A rule that only
+ * bans patterns in some files names its `files` and gives the bans as data
+ * (`banned`, `within`, `snippet`, `except`, `mayContain`). A rule with logic
+ * gives `rule()`, which declares what the rule needs and returns it: a `Scan`
+ * of one file for `files`, a `find` over the loaded inputs for `reads`.
+ * `rule()` runs the first time the check does, so importing a check builds
+ * nothing. No rule sees the repo, so a check reads only what it declares, and
+ * a test calls `scan` or `find` with its own values.
  */
+export function defineCheck(rule: BansRule): Check & { scan: Scan };
 export function defineCheck(rule: FileRule): Check & { scan: Scan };
 export function defineCheck<T extends Record<string, unknown>>(
   rule: InputsRule<T>
 ): Check & { find(inputs: T): Violation[] };
 export function defineCheck(
-  rule: FileRule | InputsRule<Record<string, unknown>>
+  rule: BansRule | FileRule | InputsRule<Record<string, unknown>>
 ): Check & {
   scan?: Scan;
   find?(inputs: Record<string, unknown>): Violation[];
 } {
-  if ("files" in rule) {
-    const { files, scan, ...about } = rule;
-    return {
-      ...about,
-      scan,
-      reads: [files],
-      run: (repo) => eachFile(repo.read(files), scan)
-    };
+  if ("reads" in rule) {
+    const { reads, rule: build, ...about } = rule;
+    return inputsCheck(about, reads, build);
   }
-  const { reads, find, ...about } = rule;
+  if ("banned" in rule) {
+    const { id, description, provenance, files, ...bans } = rule;
+    return fileCheck(
+      { id, description, provenance },
+      files,
+      () => (file, contents) => findBanned(file, contents, bans)
+    );
+  }
+  const { files, rule: build, ...about } = rule;
+  return fileCheck(about, files, build);
+}
+
+function fileCheck(
+  about: About,
+  files: Loader<SourceFile[]>,
+  build: () => Scan
+): Check & { scan: Scan } {
+  const built = once(build);
+  const scan: Scan = (file, contents) => built()(file, contents);
+  return {
+    ...about,
+    scan,
+    reads: [files],
+    run: (repo) => eachFile(repo.read(files), scan)
+  };
+}
+
+function inputsCheck(
+  about: About,
+  reads: Loaders<Record<string, unknown>>,
+  build: () => Find<Record<string, unknown>>
+): Check & { find: Find<Record<string, unknown>> } {
+  const built = once(build);
+  const find: Find<Record<string, unknown>> = (inputs) => built()(inputs);
   return {
     ...about,
     find,
@@ -118,5 +159,14 @@ export function defineCheck(
           Object.entries(reads).map(([name, load]) => [name, repo.read(load)])
         )
       )
+  };
+}
+
+/** What `build` returns, built on the first call and kept. */
+function once<T>(build: () => T): () => T {
+  let built: { value: T } | undefined;
+  return () => {
+    built ??= { value: build() };
+    return built.value;
   };
 }

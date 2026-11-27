@@ -6,7 +6,8 @@ import { sql } from "kysely";
 import { expect } from "vitest";
 import {
   connectLocalTestDatabase,
-  databaseTest
+  databaseTest,
+  removeTestRows
 } from "./fixtures/local-database";
 import { updatePurchasedPrices } from "../../app/modules/purchasing/purchasing.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
@@ -77,7 +78,7 @@ async function fixture() {
         .where("supplierId", "=", ids.supplier)
         .executeTakeFirst(),
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx.deleteFrom("company").where("id", "=", companyId).execute();
         await trx

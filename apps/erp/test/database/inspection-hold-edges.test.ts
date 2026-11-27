@@ -43,7 +43,8 @@ import { handlesOf } from "./fixtures/handles";
 import {
   connectLocalTestDatabase,
   databaseTest,
-  hasLocalDatabase
+  hasLocalDatabase,
+  removeTestRows
 } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
@@ -189,7 +190,8 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
 
   afterAll(async () => {
     if (!f) return;
-    await seed(f, async (trx) => {
+    await removeTestRows(f.db, async (trx) => {
+      await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
       await trx
         .deleteFrom("inspection")
         .where("companyId", "=", f.companyId)

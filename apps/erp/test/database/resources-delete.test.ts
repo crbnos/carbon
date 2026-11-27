@@ -14,7 +14,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as resources from "../../app/modules/resources/resources.server";
 import {
   connectLocalTestDatabase,
-  hasLocalDatabase
+  hasLocalDatabase,
+  removeTestRows
 } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
@@ -95,7 +96,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!client) return;
-  await db.transaction().execute(async (trx) => {
+  await removeTestRows(db, async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
     await trx.deleteFrom("company").where("id", "=", companyId).execute();
     await trx.deleteFrom("companyGroup").where("id", "=", groupId).execute();

@@ -5,13 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { SourceFile } from "../check";
-import {
-  classifyPath,
-  isLicenseCandidate,
-  LICENSE_ROOTS
-} from "../license-headers";
-import { readSourceWithoutKeeping } from "./read-source";
+import { isLicenseCandidate, LICENSE_ROOTS } from "../license-headers";
 
 /**
  * Every git-tracked file that may need a license header: in a LICENSE_ROOT (or
@@ -33,21 +27,4 @@ export function listLicenseCandidates(root: string): string[] {
     .filter((path) => path.length > 0 && isLicenseCandidate(path))
     .filter((path) => existsSync(join(root, path)))
     .sort();
-}
-
-/**
- * The candidates as SourceFiles, minus the ones excluded by PATH alone — those
- * are never read (the generated DB types alone are several MB). Content-based
- * exclusions are decided by the check itself.
- */
-export function loadLicenseFiles(
-  root: string,
-  paths: string[] = listLicenseCandidates(root)
-): SourceFile[] {
-  return paths
-    .filter((path) => !("excluded" in classifyPath(path)))
-    .map((path) => ({
-      file: path,
-      contents: readSourceWithoutKeeping(join(root, path))
-    }));
 }

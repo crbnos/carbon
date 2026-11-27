@@ -14,10 +14,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { eachFile } from "../check";
-import { spdxLicenseHeader } from "../conformance/licensing";
 import { LICENSE_HEADERS } from "../license-headers";
-import { listLicenseCandidates, loadLicenseFiles } from "./license-files";
+import { listLicenseCandidates } from "./license-files";
 
 const PACKAGE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const SCRIPT = join(PACKAGE_DIR, "src/scripts/license-headers.ts");
@@ -74,12 +72,6 @@ describe("listLicenseCandidates", () => {
       "sst.config.ts"
     ]);
   });
-
-  it("does not read path-excluded files", () => {
-    expect(loadLicenseFiles(root).map((f) => f.file)).not.toContain(
-      "apps/erp/sst-env.d.ts"
-    );
-  });
 });
 
 describe("license-headers script", () => {
@@ -98,9 +90,6 @@ describe("license-headers script", () => {
       /missing +commercial +packages\/ee\/src\/plan\.ts/
     );
     expect(readFileSync(join(root, "scripts/run.mjs"), "utf8")).toBe(before);
-    expect(
-      eachFile(loadLicenseFiles(root), spdxLicenseHeader.scan)
-    ).toHaveLength(6);
 
     expect(run().status).toBe(0);
     expect(readFileSync(join(root, "scripts/run.mjs"), "utf8")).toBe(
@@ -116,10 +105,6 @@ describe("license-headers script", () => {
       "export {};\n"
     );
 
-    // The check and the fixer agree: nothing left.
-    expect(eachFile(loadLicenseFiles(root), spdxLicenseHeader.scan)).toEqual(
-      []
-    );
     expect(run("--check").status).toBe(0);
     const again = run();
     expect(again.stdout).toMatch(/^0 fixed\.$/m);

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { sql } from "kysely";
-import { connectLocalTestDatabase } from "./local-database";
+import { connectLocalTestDatabase, removeTestRows } from "./local-database";
 
 export async function chargeFixture(options: { chargeId?: string } = {}) {
   const db = await connectLocalTestDatabase();
@@ -190,7 +190,7 @@ export async function chargeFixture(options: { chargeId?: string } = {}) {
     lineId,
     connect: connectLocalTestDatabase,
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await sql`SET LOCAL session_replication_role = replica`.execute(trx);
         await trx

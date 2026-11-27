@@ -1,0 +1,139 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+import type { Node } from "libpg-query";
+import { defineCheck, type Violation } from "../../check";
+import { migrations } from "../../sources/inputs";
+import { readIfPresent } from "../../sources/read-source";
+import { nameParts, nodesIn, relationName, sqlNodes } from "../../sources/sql";
+import { lineOf } from "../../sources/text";
+
+/**
+ * `providerRole` is declared twice by necessity: on the integration's
+ * `config.tsx` (`packages/ee/src/<id>/`), which the app reads, and on the
+ * `integration` row, which the `companyIntegration_single_active_role` trigger
+ * reads. The trigger returns early on NULL, so a descriptor whose role no
+ * migration set fails as "no enforcement", not as an error.
+ *
+ * Replays every `UPDATE "integration" SET "providerRole" = …` in migration
+ * order and compares the result with the descriptors, both ways.
+ */
+export const providerRoleBackfilled = defineCheck({
+  id: "provider-role-backfilled",
+  description:
+    "An integration's providerRole in its config matches the role the migrations set on its row.",
+  // Migrations first: the runner groups a check by its first input, so this
+  // check runs on the worker that has already parsed their SQL.
+  reads: {
+    migrations,
+    configs: (root) => {
+      const dir = "packages/ee/src";
+      return readdirSync(join(root, dir), { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .flatMap(({ name }) =>
+          readIfPresent(root, [
+            `${dir}/${name}/config.tsx`,
+            `${dir}/${name}/config.ts`
+          ])
+        );
+    }
+  },
+  rule() {
+    function stringOf(node: Node | undefined): string | undefined {
+      return node && "A_Const" in node ? node.A_Const.sval?.sval : undefined;
+    }
+
+    /**
+     * `UPDATE "integration" SET "providerRole" = 'x' | NULL WHERE id = 'a'` or
+     * `… WHERE id IN ('a', 'b')`: the role, and the integrations it is set on.
+     */
+    function providerRoleUpdate(
+      node: Node
+    ): { role: string | null; ids: string[] } | undefined {
+      if (!("UpdateStmt" in node)) return undefined;
+      const { relation, targetList, whereClause } = node.UpdateStmt;
+      if (relationName(relation ?? {}) !== "integration") return undefined;
+      const target = (targetList ?? []).flatMap((item) =>
+        "ResTarget" in item && item.ResTarget.name === "providerRole"
+          ? [item.ResTarget.val]
+          : []
+      )[0];
+      if (!target || !("A_Const" in target)) return undefined;
+      // The test on `id`, wherever it sits in the WHERE: it may be one of
+      // several joined by AND.
+      const ids: string[] = [];
+      for (const { node: test } of nodesIn(whereClause)) {
+        if (!("A_Expr" in test)) continue;
+        const { kind, name, lexpr, rexpr } = test.A_Expr;
+        if (kind !== "AEXPR_OP" && kind !== "AEXPR_IN") continue;
+        // `=` for both: the parser writes `IN` as `=` and `NOT IN` as `<>`.
+        if (nameParts(name)[0] !== "=") continue;
+        const column =
+          lexpr && "ColumnRef" in lexpr
+            ? nameParts(lexpr.ColumnRef.fields).at(-1)
+            : undefined;
+        if (column !== "id") continue;
+        const values =
+          rexpr && "List" in rexpr ? (rexpr.List.items ?? []) : [rexpr];
+        ids.push(...values.flatMap((value) => stringOf(value) ?? []));
+      }
+      return {
+        role: target.A_Const.isnull ? null : (stringOf(target) ?? null),
+        ids
+      };
+    }
+
+    return ({ configs, migrations }) => {
+      const declared = new Map<
+        string,
+        { role: string; file: string; line: number }
+      >();
+      for (const { file, contents } of configs) {
+        const role = /providerRole:\s*"(\w+)"/.exec(contents);
+        const id = /\n\s*id:\s*"([^"]+)"/.exec(contents);
+        if (!role?.[1] || !id?.[1]) continue;
+        declared.set(id[1], {
+          role: role[1],
+          file,
+          line: lineOf(contents, role.index)
+        });
+      }
+
+      const stored = new Map<string, { role: string | null; file: string }>();
+      for (const { file, contents } of migrations) {
+        for (const { node } of sqlNodes(contents)) {
+          const update = providerRoleUpdate(node);
+          if (!update) continue;
+          for (const id of update.ids) {
+            stored.set(id, { role: update.role, file });
+          }
+        }
+      }
+
+      const out: Violation[] = [];
+      for (const [id, { role, file, line }] of declared) {
+        const row = stored.get(id)?.role ?? null;
+        if (row === role) continue;
+        out.push({
+          file,
+          line,
+          snippet: `${id}: ${role} declared, ${row ?? "NULL"} stored`,
+          message: `No migration sets integration "${id}" to providerRole '${role}', so the one-active-per-role trigger does not guard it; add UPDATE "integration" SET "providerRole" = '${role}' WHERE id = '${id}'`
+        });
+      }
+      for (const [id, { role, file }] of stored) {
+        if (role === null || declared.has(id)) continue;
+        out.push({
+          file,
+          line: 0,
+          snippet: `${id}: ${role} stored, none declared`,
+          message: `Integration "${id}" has providerRole '${role}' in the database but its config declares none`
+        });
+      }
+      return out;
+    };
+  }
+});

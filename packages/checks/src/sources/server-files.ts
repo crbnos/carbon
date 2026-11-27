@@ -8,11 +8,7 @@ import type { SourceFile } from "../check";
 import { readSource } from "./read-source";
 import { isTest } from "./typescript";
 
-/**
- * Server-side TypeScript that must derive calendar days through the `datetime`
- * API (explicit company/location timezone), never the process clock. Client
- * components are exempt — the browser's timezone IS the right one there.
- */
+/** Where server-side TypeScript lives, beside the ERP modules and routes. */
 const SERVER_ROOTS = [
   "apps/mes/app/services",
   "packages/jobs/src",
@@ -20,7 +16,6 @@ const SERVER_ROOTS = [
   "packages/database/src"
 ];
 
-/** ERP module server files are matched by suffix inside apps/erp/app/modules. */
 const ERP_MODULES_ROOT = "apps/erp/app/modules";
 const ERP_SERVER_SUFFIXES = [".service.ts", ".server.ts"];
 

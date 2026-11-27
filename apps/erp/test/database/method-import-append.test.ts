@@ -14,7 +14,8 @@ import { importMethods } from "../../app/modules/shared/shared.service";
 import type { MethodRowsAdded } from "../../app/modules/shared/types";
 import {
   connectLocalTestDatabase,
-  databaseTest
+  databaseTest,
+  removeTestRows
 } from "./fixtures/local-database";
 
 const USER = "system";
@@ -320,7 +321,7 @@ async function fixture() {
         .execute();
     },
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx.deleteFrom("company").where("id", "=", companyId).execute();
         await trx

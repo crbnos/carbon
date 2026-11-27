@@ -179,16 +179,42 @@ Interaction belongs in a browser playbook.
   PostgREST's schema reload behind it stalls their PostgREST calls.
 - Test files run in parallel against one database. Assert on your own
   company's rows; a count over a whole table changes under you.
+- A teardown removes the test's rows through `removeTestRows`
+  (`fixtures/local-database.ts`), never a bare delete. CI's database is
+  thrown away with the job, so there (`CI` is set) it does nothing and the
+  rows stay. Never rely on any cleanup, another test's or your own earlier
+  one: make every id from a random prefix, so a second run cannot collide. Rows
+  with no company (`period`) are every test's: delete those yourself, always.
+  State a later test in the same file needs restored (a shared fixture's
+  setting) is not cleanup: restore it directly.
 - A posting run from handles (`invokePosting(handlesOf(…))`) builds its
   service-role client from `@carbon/env`, which the unit-test config stubs.
   If the posting reads through PostgREST (the purchase order funds gate),
   mock `@carbon/env` with `localServiceRoleEnv()` (`fixtures/local-supabase.ts`).
 - Run: `SUPABASE_DB_URL=… pnpm --filter erp exec vitest run test/database/<file>`.
 - CI: the Database tests workflow (`.github/workflows/database-tests.yml`)
-  runs the whole suite on every pull request that changes `apps/erp` or a
-  package. It migrates an empty database (`crbn migrate`), starts PostgREST
-  (`crbn up --no-apps --no-migrate`), and fails when a test fails or when the
-  database or PostgREST is missing, so the suite cannot skip unseen.
+  runs on every pull request that changes `apps/erp` or a package, half the
+  files on each of two runners (`vitest --shard`). A pull request runs only
+  the test files its change affects (`vitest --changed`, against the base it
+  merges into): those that import a changed file. It runs the whole suite when
+  it changes a file every test depends on without importing it: anything under
+  `packages/database`, `packages/dev` or `packages/config`, any `package.json`
+  or `tsconfig*.json`, the lockfile, `pnpm-workspace.yaml`, `.npmrc`,
+  `patches/`, `.nvmrc`, `lingui.config.js`, the vitest config or the workflow
+  (`forceRerunTriggers` in `apps/erp/vitest.config.ts`). A manual run and the
+  nightly run on main run the whole suite. The log says which, and why. With
+  none affected, the job passes and says so without building a database.
+  Otherwise each runner migrates an empty database (`crbn migrate --no-regen`;
+  with `CI` set crbn boots only the shared Postgres, Storage and Redis, plus
+  GoTrue and Realtime, and leaves the API running), and fails when a test fails
+  or when the database or PostgREST is missing, so the suite cannot skip
+  unseen. A test that mocks `@carbon/env` with the local `REDIS_URL`
+  (`ee/access-grants.ee.test.ts`) reaches the stack's real Redis, so CI boots it.
+- So a database test reaches the code it tests through imports: never read a
+  source file, and never import by a computed path (``import(`./${name}`)``);
+  `--changed` follows neither, and the test would not run when that code
+  changes. A file a test depends on without importing it (SQL, a config the
+  stack reads) belongs in `forceRerunTriggers`.
 
 ## Bug fixes
 

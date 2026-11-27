@@ -15,7 +15,7 @@ import {
 } from "../../../app/modules/projects/projects.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
-import { databaseTest } from "../fixtures/local-database";
+import { databaseTest, removeTestRows } from "../fixtures/local-database";
 import {
   PROJECT_TEST_USER,
   projectPostingFixture
@@ -77,7 +77,7 @@ async function timesheetFixture(mode: "Standard" | "DCAA") {
     revisions,
     entry,
     async cleanup() {
-      await f.db.transaction().execute(async (trx) => {
+      await removeTestRows(f.db, async (trx) => {
         await sql`SET LOCAL session_replication_role = replica`.execute(trx);
         await trx.deleteFrom("user").where("id", "=", managerId).execute();
       });
@@ -255,12 +255,14 @@ databaseTest("A project On Hold takes no new hours", async () => {
     expect(fewer.error).toBeNull();
     expect(Number((await f.entry(saved.data!.entryId!)).hours)).toEqual(3);
   } finally {
-    await f.db
-      .updateTable("project")
-      .set({ status: "Released", stopWorkDate: null })
-      .where("id", "=", f.projectId)
-      .where("companyId", "=", f.companyId)
-      .execute();
+    await removeTestRows(f.db, (trx) =>
+      trx
+        .updateTable("project")
+        .set({ status: "Released", stopWorkDate: null })
+        .where("id", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute()
+    );
     await f.cleanup();
   }
 });

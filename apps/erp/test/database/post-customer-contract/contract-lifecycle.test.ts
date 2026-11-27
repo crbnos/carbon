@@ -42,7 +42,8 @@ import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import {
   connectLocalTestDatabase,
-  databaseTest
+  databaseTest,
+  removeTestRows
 } from "../fixtures/local-database";
 import { operationContext, postgrestTest } from "../fixtures/local-supabase";
 
@@ -281,7 +282,7 @@ async function contractFixture() {
       return { contractId: id, lineId: `${id}-line` };
     },
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx.deleteFrom("company").where("id", "=", companyId).execute();
         await trx

@@ -48,11 +48,31 @@ const MIGRATION_SERVICES: Record<StackMode, string[]> = {
 // What swagger reads: PostgREST through the gateway.
 const API_SERVICES = ["postgrest", "api-gw"];
 
+// In CI, migrate needs only these of crbn-shared: Postgres, Storage, which
+// holds the worktree's tenant and builds the storage schema the migrations
+// write into, and Redis, which the database tests' permission-cache cases
+// reach through the REDIS_URL in .env.local. The pooler, mail, imgproxy and
+// the edge runtime serve the apps.
+const CI_SHARED_SERVICES = ["postgres", "storage", "redis"];
+
+/** What a standalone migrate boots: crbn-shared's services in shared mode
+ *  (empty: all of them), the worktree's before migrating, and the API's after. */
+export function standaloneServices(mode: StackMode, ci: boolean) {
+  return {
+    shared: ci ? CI_SHARED_SERVICES : [],
+    migration: MIGRATION_SERVICES[mode],
+    api: API_SERVICES
+  };
+}
+
 // Migrate the worktree's database. Against the running stack when its
 // database answers; otherwise boot only the services whose schemas the
-// migrations write into, migrate, and stop them again.
-export async function migrate(opts: { regen?: boolean } = {}) {
+// migrations write into, migrate, and stop them again. `ci` boots fewer of
+// them and leaves them running with PostgREST and the gateway, once the API
+// answers.
+export async function migrate(opts: { regen?: boolean; ci?: boolean } = {}) {
   const regen = opts.regen ?? true;
+  const ci = opts.ci ?? false;
   intro("Carbon · dev migrate");
 
   let stack = await currentStack();
@@ -66,12 +86,12 @@ export async function migrate(opts: { regen?: boolean } = {}) {
       (await tryConnect("127.0.0.1", stack.ports.PORT_API, 500));
     // The shared Postgres is up for every worktree: this one's stack is up
     // when its gateway answers. Never boot or stop it then.
-    if (stack.mode === "isolated" || apiUp) {
+    if (apiUp || (stack.mode === "isolated" && !ci)) {
       if (apiUp) await waitForServiceSchemas(db);
       return migrateRunning(stack, regen, apiUp);
     }
     // Stack down, but GoTrue and Realtime built their schemas before.
-    if (await serviceSchemasReady(db).catch(() => false)) {
+    if (!ci && (await serviceSchemasReady(db).catch(() => false))) {
       return migrateRunning(stack, regen, false);
     }
   }
@@ -79,7 +99,7 @@ export async function migrate(opts: { regen?: boolean } = {}) {
   // Compose reads .env.local: without one, no `crbn up` ran here yet.
   if (!existsSync(join(stack.root, ".env.local")))
     stack = await provision(stack);
-  return migrateStandalone(stack, regen);
+  return migrateStandalone(stack, regen, ci);
 }
 
 async function migrateRunning(stack: Stack, regen: boolean, swagger: boolean) {
@@ -115,15 +135,21 @@ async function provision(stack: Stack): Promise<Stack> {
   return currentStack();
 }
 
-async function migrateStandalone(stack: Stack, regen: boolean) {
+async function migrateStandalone(stack: Stack, regen: boolean, ci: boolean) {
   const db = stack.db!;
   // Null after `crbn down --purge`: it releases the slot and keeps .env.local.
   const { ports } = stack;
+  if (ci && !ports) {
+    throw new Error(
+      "in CI, migrate needs this worktree's slot, which `crbn down --purge` released: run `crbn up` first"
+    );
+  }
+  const services = standaloneServices(stack.mode, ci);
   log.info(`booting migration services (${stack.project})`);
   await ensureDockerRunning();
   if (stack.mode === "shared") {
     const jwt = readDevJwt();
-    const warning = await bootSharedServices(jwt);
+    const warning = await bootSharedServices(jwt, services.shared);
     if (warning) log.warn(warning);
     await provisionWorktreeData(db.database, jwt);
   } else {
@@ -139,8 +165,19 @@ async function migrateStandalone(stack: Stack, regen: boolean) {
     void stopStack(stack).finally(() => process.exit(130));
   });
 
+  // Swagger and CI both start the API, so the second call finds it up.
+  let apiStarted = false;
+  const startApi = ports
+    ? async () => {
+        if (apiStarted) return;
+        await bootStack(stack, { services: services.api });
+        await waitForApi(ports.PORT_API, readDevJwt().serviceKey);
+        apiStarted = true;
+      }
+    : undefined;
+  let serving = false;
   try {
-    await bootStack(stack, { services: MIGRATION_SERVICES[stack.mode] });
+    await bootStack(stack, { services: services.migration });
     await waitForPostgres(db);
     await waitForServiceSchemas(db);
     await tasks(
@@ -150,22 +187,27 @@ async function migrateStandalone(stack: Stack, regen: boolean) {
           migrate: true,
           regen,
           swagger: ports !== null,
-          startApi: ports
-            ? async () => {
-                await bootStack(stack, { services: API_SERVICES });
-                await waitForApi(ports.PORT_API, readDevJwt().serviceKey);
-              }
-            : undefined
+          startApi
         }
       )
     );
     if (regen && !ports) {
       log.warn("swagger skipped — this worktree has no slot (run `crbn up`)");
     }
+    if (ci && startApi) {
+      await startApi();
+      serving = true;
+    }
   } finally {
     detach();
-    log.info("stopping migration services");
-    await stopStack(stack);
+    if (!serving) {
+      log.info("stopping migration services");
+      await stopStack(stack);
+    }
   }
-  outro("done");
+  outro(
+    serving && ports
+      ? `the API answers on :${ports.PORT_API} (run \`crbn down\` to stop)`
+      : "done"
+  );
 }
