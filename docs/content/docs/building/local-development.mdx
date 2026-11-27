@@ -27,6 +27,8 @@ Carbon is a **pnpm and Turborepo** monorepo containing the ERP and MES applicati
   ```
 
   This generates `.env.local` with worktree-specific ports, local Supabase keys, `REDIS_URL`, Inngest development settings, and `DEV_BYPASS_EMAIL`.
+
+  If Docker is not running, `crbn up` offers to start Docker Desktop, OrbStack or Colima first. `CARBON_DOCKER_AUTOSTART=0` turns this off.
   </Step>
   <Step>
   ### Reach the apps

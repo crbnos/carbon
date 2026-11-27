@@ -61,6 +61,19 @@ are dropped silently. Shell-level only; it is not read from `.env.local`.
 | `crbn copy <file...>` | Copy file(s) from main checkout into current worktree. |
 | `crbn env sync` | Sync files listed in `package.json#crbn.copy` from main checkout. |
 
+## Docker
+
+When Docker is not running, `crbn up` (and `migrate`, `reset`, `prune`) offers to start the runtime the docker CLI points at, then carries on once it answers:
+
+| Runtime | Started with |
+|---|---|
+| Docker Desktop (macOS) | `open -g -a Docker` |
+| Docker Desktop (Linux) | `systemctl --user start docker-desktop` |
+| OrbStack | `orbctl start` |
+| Colima | `colima start` (`--profile <name>` for another profile) |
+
+In a terminal it asks first; in scripts and with `CARBON_DEV_YES=1` it starts without asking. `CARBON_DOCKER_AUTOSTART=0` turns this off. A system `dockerd` (needs sudo) or a remote `DOCKER_HOST` is never started. Docker keeps running after `crbn down`: other worktrees share it.
+
 ## Portless vs Localhost
 
 By default, `crbn up` uses [portless](https://github.com/nicholasgasior/portless) for `.dev` TLS URLs (e.g. `https://erp.dev.dev`). Pass `--no-portless` (or set `CARBON_PORTLESS=0`) for localhost mode with fixed ports:
