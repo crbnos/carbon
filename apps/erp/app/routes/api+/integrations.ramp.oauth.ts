@@ -3,11 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getAppUrl } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { Ramp } from "@carbon/ee";
-import { rampOnInstall } from "@carbon/ee/ramp/hooks.server";
 import {
   buildRampClient,
   exchangeRampOAuthCode,
@@ -15,6 +14,7 @@ import {
   patchRampOAuthCredentials,
   resolveConnectedProviderName
 } from "@carbon/ee/ramp.server";
+import { rampOnInstall } from "@carbon/ee/ramp/hooks.server";
 import { getLogger } from "@carbon/logger";
 import { isUniqueViolation, redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -95,8 +95,8 @@ async function readAccountingConnectionProvider(
  * mapping happens afterwards in the integration's Details drawer.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {
-    update: "settings"
+  const { userId, companyId } = await authorize(request, {
+    "settings.integrations": "Edit"
   });
 
   const url = new URL(request.url);

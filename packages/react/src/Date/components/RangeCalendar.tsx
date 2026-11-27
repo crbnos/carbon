@@ -38,10 +38,10 @@ export function RangeCalendar({
     createCalendar
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (!props.value?.start) return;
     state.setFocusedDate(props.value.start as CalendarDate);
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [props.value]);
 
   const ref = useRef<HTMLDivElement>(null);

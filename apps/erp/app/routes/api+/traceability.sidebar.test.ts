@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { expect, it, vi } from "vitest";
 import { loader } from "./traceability.sidebar";
 
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize: vi.fn() }));
 
 type Row = Record<string, unknown>;
 
@@ -26,22 +26,47 @@ function serviceRole(tables: Record<string, Row[]>) {
       };
       return query;
     },
-    rpc: async () => ({ data: [{ id: "step-record-1" }], error: null })
+    rpc: () => {
+      let rows: Row[] = [
+        { id: "step-record-1", operationId: "op", index: 0 },
+        { id: "step-record-2", operationId: "op", index: 1 },
+        { id: "other-op-step", operationId: "other-op", index: 0 }
+      ];
+      const query = {
+        select: () => query,
+        eq: (column: string, value: unknown) => {
+          rows = rows.filter((row) => row[column] === value);
+          return query;
+        },
+        order: () => query,
+        range: async () => ({ data: rows, error: null })
+      };
+      return query;
+    }
   };
 }
 
 const tables = {
   trackedActivity: [
-    { id: "act-own", companyId: "company-1", attributes: { Job: "job-own" } },
+    {
+      id: "act-own",
+      companyId: "company-1",
+      attributes: { Job: "job-own", "Job Operation": "op" }
+    },
+    {
+      id: "act-named",
+      companyId: "company-1",
+      attributes: { Job: "job-own", "Job Operation": "op", Unit: 1 }
+    },
     {
       id: "act-foreign-job",
       companyId: "company-1",
-      attributes: { Job: "job-foreign" }
+      attributes: { Job: "job-foreign", "Job Operation": "op" }
     },
     {
       id: "act-foreign",
       companyId: "company-2",
-      attributes: { Job: "job-foreign" }
+      attributes: { Job: "job-foreign", "Job Operation": "op" }
     }
   ],
   job: [
@@ -51,10 +76,10 @@ const tables = {
 };
 
 async function stepRecordIds(activityId: string) {
-  vi.mocked(requirePermissions).mockResolvedValue({
+  vi.mocked(authorize).mockResolvedValue({
     client: serviceRole(tables),
     companyId: "company-1"
-  } as unknown as Awaited<ReturnType<typeof requirePermissions>>);
+  } as unknown as Awaited<ReturnType<typeof authorize>>);
   const response = await loader({
     request: new Request(
       `http://localhost/api/traceability/sidebar?activityId=${activityId}`
@@ -66,8 +91,15 @@ async function stepRecordIds(activityId: string) {
   return body.stepRecords.map((record) => record.id);
 }
 
-it("returns the step records of the caller's own job", async () => {
-  expect(await stepRecordIds("act-own")).toEqual(["step-record-1"]);
+it("returns both unit indices for a whole-operation activity of the caller's job", async () => {
+  expect(await stepRecordIds("act-own")).toEqual([
+    "step-record-1",
+    "step-record-2"
+  ]);
+});
+
+it("returns only the named unit for its individual operation activity", async () => {
+  expect(await stepRecordIds("act-named")).toEqual(["step-record-2"]);
 });
 
 it.each([

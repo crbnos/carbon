@@ -2,10 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
-import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
+import { logOwnershipTransfer } from "@carbon/auth/auth-events.server";
+import { hashApiKey } from "@carbon/auth/auth.server";
+import { isCompanyOwner } from "@carbon/auth/company.server";
+import { anyOf, ownershipTransferRefusal } from "@carbon/database/access";
 import {
   blockSchema,
   COMPANY_MERGE_FIELDS,
@@ -22,7 +25,8 @@ import {
   themeSchema,
   unknownVariables,
   validateDocumentEdit,
-  validateTemplateText
+  validateTemplateText,
+  withoutDocumentValues
 } from "@carbon/documents/template";
 import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { integrations as availableIntegrations } from "@carbon/ee";
@@ -38,7 +42,7 @@ import {
   upsertTaxCodeMappings,
   validateDimensionSlots
 } from "@carbon/ee/accounting";
-import { deleteApiKey, upsertApiKey } from "@carbon/ee/api-keys.server";
+import { deleteApiKey, saveApiKey } from "@carbon/ee/api-keys.server";
 import {
   disableAuditLog,
   enableAuditLog,
@@ -58,6 +62,8 @@ import {
   upsertWorkCenterDevice
 } from "@carbon/ee/oee.server";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape";
+import { subjectGates } from "@carbon/ee/permission-grants";
+import { grantWriteRefusal } from "@carbon/ee/permissions.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
@@ -96,6 +102,7 @@ import {
   datetime,
   formatDateTimeInZone,
   isUniqueViolation,
+  NOT_APPLIED_CODE,
   requireAffected,
   unchecked
 } from "@carbon/utils";
@@ -109,22 +116,26 @@ import {
   getCompanyTimeZone,
   invalidateCompanyTimeZone,
   invokePosting,
-  isActiveCompanyEmployee
+  isActiveCompanyEmployee,
+  refuseKeyWithout,
+  refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
-import { fromServerFn } from "../shared/shared.service";
+import { fromServerFn, getCustomFieldsSchemas } from "../shared/shared.service";
+import { grantsSchema } from "../users/users.models";
 import {
   accountMappingEntrySchema,
   apiKeyValidator,
   calculatedShelfLifeInputScopes,
   companyDetailsValidator,
   companyValidator,
+  customFieldInputValidator,
   dimensionSlotEntrySchema,
   dimensionValueMappingEntrySchema,
   expiredEntityPolicies,
   incompletePickingListPolicies,
-  invoiceAutomations,
+  inheritableInvoiceAutomations,
   kanbanLabelSizes,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
@@ -138,6 +149,7 @@ import {
 } from "./settings.models";
 import * as service from "./settings.service";
 import {
+  customFieldNames,
   DOCUMENT_EDIT_RECORDS,
   DOCUMENT_TERMS_FIELD,
   documentEditPermissions
@@ -192,7 +204,7 @@ export const updateAccountingSettings = defineServiceFn({
     leaseShortTermExpedient: z.boolean().optional(),
     leaseReminderDays: z.number().int().min(0).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.accounting": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -214,7 +226,9 @@ export const updateAccountingSettings = defineServiceFn({
       deferredTaxExpenseAccountId
     });
     if (Object.keys(accounts).length > 0) {
-      const { error } = await ctx.asCaller.supabase
+      // Accounting → Default Accounts owns the row: written as the system,
+      // after this page's permission, for this company only.
+      const { error } = await ctx.asSystem.supabase
         .from("accountDefault")
         .update({ ...accounts, updatedBy: ctx.auditUserId })
         .eq("companyId", ctx.company.id);
@@ -237,12 +251,18 @@ export const updateAccountingSettings = defineServiceFn({
  * A company that enabled accounting before the enable wrote journals has
  * documents posted on or after its cutover with no journal. This runs the
  * `journal-legacy-documents` posting, which journals each of them, and
- * returns how many documents it journaled. Not published: it needs two
- * modules' permissions, which the API gate cannot state yet.
+ * returns how many documents it journaled. A document that has a journal is
+ * left alone, so a second run journals nothing. Refused before the
+ * accounting cutover.
+ *
+ * @mcp
  */
 export const writeMissingJournals = defineServiceFn({
   input: z.object({}),
-  permission: { update: ["settings", "accounting"] },
+  permission: {
+    "settings.accounting": "Edit",
+    "accounting.journalEntries": "Edit"
+  },
   async run(ctx) {
     const result = await invokePosting(
       ctx,
@@ -301,7 +321,7 @@ export const updateInventorySettings = defineServiceFn({
     receiptQuantitiesStartAtZero: z.boolean().optional(),
     receiptBatchNumbersFromPurchaseOrder: z.boolean().optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.inventory": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -330,14 +350,14 @@ export const updateInventorySettings = defineServiceFn({
  */
 export const updateInvoicingSettings = defineServiceFn({
   input: z.object({
-    invoiceAutomation: z.enum(invoiceAutomations).optional(),
+    invoiceAutomation: z.enum(inheritableInvoiceAutomations).optional(),
     accountsReceivableEmail: z.string().email().nullable().optional(),
     invoiceNotificationGroup: notificationGroup.optional(),
     accountsReceivableAddress: z.boolean().optional(),
     accountsReceivableBillingAddress: billingAddressInput.optional(),
     defaultCustomerCc: z.array(z.string().email()).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.invoicing": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -358,7 +378,8 @@ export const updateInvoicingSettings = defineServiceFn({
     if (saved) return saved;
 
     if (accountsReceivableBillingAddress) {
-      const { error } = await ctx.asCaller.supabase
+      // Settings → Company owns the address; this page's permission is the gate.
+      const { error } = await ctx.asSystem.supabase
         .from("companyAccountsReceivableBillingAddress")
         .upsert({
           id: ctx.company.id,
@@ -401,7 +422,7 @@ export const updateItemsSettings = defineServiceFn({
     preventNegativeBackflush: z.boolean().optional(),
     plmReleaseControl: z.enum(plmReleaseControl).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.items": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -452,7 +473,7 @@ export const updateProductionSettings = defineServiceFn({
       })
       .optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.production": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -551,7 +572,7 @@ export const updatePurchasingSettings = defineServiceFn({
     defaultSupplierCc: z.array(z.string().email()).optional(),
     supplierPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.purchasing": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -565,7 +586,8 @@ export const updatePurchasingSettings = defineServiceFn({
     if (saved) return saved;
 
     if (accountsPayableBillingAddress) {
-      const { error } = await ctx.asCaller.supabase
+      // Settings → Company owns the address; this page's permission is the gate.
+      const { error } = await ctx.asSystem.supabase
         .from("companyAccountsPayableBillingAddress")
         .update({
           ...service.sentFields(accountsPayableBillingAddress),
@@ -589,7 +611,8 @@ export const updatePurchasingSettings = defineServiceFn({
  *
  * @remarks
  * Writes the fields sent and leaves the rest: whether an inspection needs a
- * second person to sign it off, the sampling standard inspection plans use,
+ * second person to sign it off, whether a serial unit with an open issue is on
+ * hold on the shop floor, the sampling standard inspection plans use,
  * the open-issue target on the quality dashboard, and who is notified when a
  * gauge goes out of calibration. Then one location's goods-in storage units:
  * the inspection storage unit received parts wait in, and the rejected
@@ -603,6 +626,7 @@ export const updatePurchasingSettings = defineServiceFn({
 export const updateQualitySettings = defineServiceFn({
   input: z.object({
     enforceInspectionFourEyes: z.boolean().optional(),
+    holdUnitsWithOpenIssues: z.boolean().optional(),
     samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).optional(),
     qualityIssueTarget: z.number().int().min(0).optional(),
     gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional(),
@@ -614,7 +638,7 @@ export const updateQualitySettings = defineServiceFn({
       })
       .optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.quality": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -622,8 +646,8 @@ export const updateQualitySettings = defineServiceFn({
 
     if (location) {
       // The write below runs as the system, so it checks what the location's
-      // row-level security (resources update) would have.
-      if (!ctx.can({ update: "resources" })) {
+      // row-level security (locations edit) would have.
+      if (!ctx.can({ "resources.locations": "Edit" })) {
         return ctx.error(
           "forbidden",
           "You do not have permission to change this location"
@@ -708,16 +732,17 @@ export const updateResourcesSettings = defineServiceFn({
     operationsDispatchNotificationGroup: notificationGroup.optional(),
     otherDispatchNotificationGroup: notificationGroup.optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.resources": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
     const { suggestionNotificationGroup, ...settings } = input;
 
     // The suggestion group lives on the company row, not its settings.
+    // Settings → Company owns that row: written as the system, this company's only.
     if (suggestionNotificationGroup) {
       const { error } = await requireAffected(
-        ctx.asCaller.supabase
+        ctx.asSystem.supabase
           .from("company")
           .update({ suggestionNotificationGroup })
           .eq("id", ctx.company.id)
@@ -782,7 +807,7 @@ export const updateSalesSettings = defineServiceFn({
       .optional(),
     customerPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.sales": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -812,7 +837,7 @@ export const updatePeopleSettings = defineServiceFn({
     timeCardEnabled: z.boolean().optional(),
     consoleEnabled: z.boolean().optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.people": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -828,29 +853,18 @@ export const updatePeopleSettings = defineServiceFn({
       return { ...input, pin: null, pinError: null };
     }
 
-    let update: Awaited<ReturnType<typeof updateConsoleSetting>>;
-    try {
-      update = await updateConsoleSetting(
-        ctx.asCaller.supabase,
-        ctx.asSystem.pg,
-        ctx.company.id,
+    const update = await updateConsoleSetting(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        companyId: ctx.company.id,
         consoleEnabled,
-        ctx.actor.type === "user" ? ctx.actor.userId : undefined
-      );
-    } catch (err) {
-      if (!(err instanceof EntitlementError)) throw err;
-      return ctx.error(
-        "entitlement",
-        "Console mode requires the Business plan"
-      );
-    }
-    if (update.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update console mode",
-        update.error
-      );
-    }
+        actorId: ctx.auditUserId,
+        pinUserId: service.consolePinUserId(ctx.actor)
+      }
+    );
+    const notSet = await grantWriteRefusal(ctx, update.error);
+    if (notSet) return notSet;
     return { ...input, pin: update.pin, pinError: update.pinError };
   }
 });
@@ -880,7 +894,7 @@ export const updateTimeSettings = defineServiceFn({
     certificationTextNonExempt: z.string().trim().nullable().optional(),
     standardWeeklyHours: z.number().gt(0).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.time": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -928,7 +942,7 @@ export const updateServiceSettings = defineServiceFn({
     serviceLaborCostRate: z.number().min(0).nullable().optional(),
     serviceLaborBillRate: z.number().min(0).nullable().optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.service": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -960,7 +974,7 @@ export const updateSequenceSettings = defineServiceFn({
   input: z.object({
     sequenceWeekNumbering: z.enum(weekNumberings).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.sequences": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -988,7 +1002,7 @@ export const updateProjectSettings = defineServiceFn({
     timesheetApprovalRequired: z.boolean().optional(),
     requireProjectElement: z.boolean().optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.projects": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -1016,7 +1030,7 @@ export const updateProjectSettings = defineServiceFn({
  */
 export const updateSecuritySettings = defineServiceFn({
   input: z.object({ requireMfa: z.boolean() }),
-  permission: { update: "settings" },
+  permission: { "settings.security": "Edit" },
   async run(ctx, { requireMfa }) {
     // Read first: the switch re-submits on every flip, and a toggle that
     // lands on the value it already had must not re-announce.
@@ -1028,8 +1042,9 @@ export const updateSecuritySettings = defineServiceFn({
 
     let update: Awaited<ReturnType<typeof updateRequireMfaSetting>>;
     try {
+      // Settings → Company owns companySettings; this page's permission is the gate.
       update = await updateRequireMfaSetting(
-        ctx.asCaller.supabase,
+        ctx.asSystem.supabase,
         ctx.company.id,
         requireMfa
       );
@@ -1069,8 +1084,9 @@ const employeeOrNone = z.string().min(1).nullable();
  * ladder: the company default responsible employee, one location's
  * responsible employee, and one item group's at a location (null clears a
  * rung, so it inherits from the one above). Each employee must be an active
- * employee of the company. A location is a resources record: without the
- * resources update permission it is refused. Then whether purchase orders
+ * employee of the company. The location's owner is written for the company's
+ * own location only, so a settings admin without the locations permission
+ * can still set it. Then whether purchase orders
  * the planning pages raise skip approval, the reschedule tolerance in days,
  * the default planning horizon in days (null for no time fence), the forecast
  * consumption window in weekly periods back and forward, the time of day
@@ -1127,7 +1143,7 @@ export const updatePlanningSettings = defineServiceFn({
       .nullable()
       .optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.planning": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -1169,8 +1185,10 @@ export const updatePlanningSettings = defineServiceFn({
     if (saved) return saved;
 
     if (location) {
+      // Resources → Locations owns the row: the planning owner is written as
+      // the system, for this company's location only.
       const result = await service.setLocationResponsibleEmployee(
-        ctx.asCaller.supabase,
+        ctx.asSystem.supabase,
         {
           companyId: ctx.company.id,
           locationId: location.locationId,
@@ -1185,13 +1203,9 @@ export const updatePlanningSettings = defineServiceFn({
           result.error
         );
       }
-      // No row back: the location is not this company's, or the caller lacks
-      // resources_update and row-level security matched nothing.
+      // No row back: the location is not this company's.
       if ((result.data?.length ?? 0) === 0) {
-        return ctx.error(
-          "forbidden",
-          "You do not have permission to change this location"
-        );
+        return ctx.error("notFound", "Location not found");
       }
     }
 
@@ -1235,7 +1249,7 @@ export const updatePlanningSettings = defineServiceFn({
  */
 export const getBaseCurrencyChange = defineServiceFn({
   input: z.object({ companyId: z.string().optional() }),
-  permission: { view: "settings" },
+  permission: { "settings.company": "View" },
   async run(ctx, { companyId }) {
     const id = companyId ?? ctx.company.id;
     if (id !== ctx.company.id) {
@@ -1276,7 +1290,7 @@ export const getBaseCurrencyChange = defineServiceFn({
  */
 export const updateCompanyDetails = defineServiceFn({
   input: companyDetailsValidator,
-  permission: { update: "settings" },
+  permission: { "settings.company": "Edit" },
   async run(ctx, { keepRecordCurrencies, ...company }) {
     const existing = await ctx.asCaller.supabase
       .from("company")
@@ -1338,7 +1352,7 @@ export const updateCompanyDetails = defineServiceFn({
  */
 export const createCompany = defineServiceFn({
   input: companyValidator,
-  permission: { update: ["settings", "users"] },
+  permission: { "settings.companies": "Edit", "users.accounts": "Edit" },
   async run(ctx, company) {
     const client = ctx.asSystem.supabase;
     const inserted = await service.insertCompany(client, company);
@@ -1387,7 +1401,7 @@ export const createCompany = defineServiceFn({
  */
 export const createSubsidiary = defineServiceFn({
   input: subsidiaryValidator,
-  permission: { create: "settings" },
+  permission: { "settings.companies": "Create" },
   async run(ctx, subsidiary) {
     const refused = await service.refuseUnlessCanManageCompanies(ctx);
     if (refused) return refused;
@@ -1452,7 +1466,7 @@ export const updateSubsidiaryDetails = defineServiceFn({
     id: z.string(),
     keepRecordCurrencies: companyDetailsValidator.shape.keepRecordCurrencies
   }),
-  permission: { update: "settings" },
+  permission: { "settings.companies": "Edit" },
   async run(ctx, { id, keepRecordCurrencies, ...subsidiary }) {
     const refused = await service.refuseUnlessCanManageCompanies(ctx);
     if (refused) return refused;
@@ -1500,11 +1514,15 @@ export const updateSubsidiaryDetails = defineServiceFn({
       }
     } else {
       // As in `updateCompanyDetails`, the base stays out of a plain save.
+      // Settings → Company owns `company`: written as the system, in the
+      // caller's group only (checked above and in the write).
       const { baseCurrencyCode: _baseCurrencyCode, ...details } = subsidiary;
-      const result = await service.updateSubsidiary(ctx.asCaller.supabase, id, {
-        ...details,
-        updatedBy: ctx.auditUserId
-      });
+      const result = await service.updateSubsidiary(
+        ctx.asSystem.supabase,
+        id,
+        ctx.company.groupId,
+        { ...details, updatedBy: ctx.auditUserId }
+      );
       if (result.error) {
         return ctx.error(
           "internal",
@@ -1533,7 +1551,7 @@ export const updateSubsidiaryDetails = defineServiceFn({
  */
 export const savePrinterRoute = defineServiceFn({
   input: printerRouteValidator,
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, route) {
     const created = !route.id;
     const result = await upsertPrinterRoute(ctx.asCaller.supabase, {
@@ -1605,7 +1623,7 @@ export const savePrinterRoute = defineServiceFn({
  */
 export const testPrinterRoute = defineServiceFn({
   input: z.object({ routeId: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { routeId }) {
     const { data: route } = await ctx.asCaller.supabase
       .from("printerRoute")
@@ -1689,7 +1707,7 @@ export const testPrinterRoute = defineServiceFn({
  */
 export const saveLabelTemplate = defineServiceFn({
   input: labelTemplateValidator,
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { id, ...template }) {
     const result = await upsertLabelTemplate(ctx.asCaller.supabase, {
       ...template,
@@ -1719,7 +1737,7 @@ export const saveLabelTemplate = defineServiceFn({
  */
 export const removeLabelTemplate = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { id }) {
     const result = await deleteLabelTemplate(
       ctx.asCaller.supabase,
@@ -1750,7 +1768,7 @@ export const removeLabelTemplate = defineServiceFn({
  */
 export const removePrinterRoute = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { id }) {
     const client = ctx.asCaller.supabase;
     const result = await deletePrinterRoute(client, id, ctx.company.id);
@@ -1820,7 +1838,8 @@ export const removePrinterRoute = defineServiceFn({
         assignments[locationId] = next;
       }
       if (dirty) {
-        await updatePrintingSettings(client, ctx.company.id, {
+        // Settings → Company owns companySettings; this page's permission is the gate.
+        await updatePrintingSettings(ctx.asSystem.supabase, ctx.company.id, {
           ...current,
           assignments
         });
@@ -1846,7 +1865,7 @@ export const removePrinterRoute = defineServiceFn({
  */
 export const assignPrinter = defineServiceFn({
   input: updateAssignmentValidator,
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, assignment) {
     const client = ctx.asCaller.supabase;
     const { data: existing } = await getPrintingSettings(
@@ -1867,8 +1886,9 @@ export const assignPrinter = defineServiceFn({
       assignment.contextId
     );
 
+    // Settings → Company owns companySettings; this page's permission is the gate.
     const result = await updatePrintingSettings(
-      client,
+      ctx.asSystem.supabase,
       ctx.company.id,
       updated
     );
@@ -1898,7 +1918,7 @@ export const assignPrinter = defineServiceFn({
  */
 export const reprintPrintJob = defineServiceFn({
   input: reprintValidator,
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { printJobId, printerUrl }) {
     const client = ctx.asCaller.supabase;
     const [original, originalMeta] = await Promise.all([
@@ -1992,7 +2012,7 @@ export const reprintPrintJob = defineServiceFn({
  */
 export const deletePrintJob = defineServiceFn({
   input: z.object({ printJobId: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { printJobId }) {
     const { error } = await requireAffected(
       ctx.asCaller.supabase
@@ -2010,7 +2030,7 @@ export const deletePrintJob = defineServiceFn({
 /** What a print job printed: its ZPL or PDF content, and the dpi it was drawn for. */
 export const viewPrintJobContent = defineServiceFn({
   input: z.object({ printJobId: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { printJobId }) {
     const content = await getPrintJobContent(
       ctx.asCaller.supabase,
@@ -2055,21 +2075,34 @@ export const getDocumentEditor = defineServiceFn({
       return ctx.error("notFound", "The document could not be found");
     }
     const termsField = DOCUMENT_TERMS_FIELD[documentType];
-    const [template, edit, terms, partNumberLines] = await Promise.all([
-      getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
-      getDocumentEdit(client, {
-        companyId: ctx.company.id,
-        documentType,
-        documentId
-      }),
-      termsField ? service.getTerms(client, ctx.company.id) : null,
-      service.getDocumentPartNumberLines(
-        client,
-        ctx.company.id,
-        documentType,
-        documentId
-      )
-    ]);
+    const [template, edit, terms, partNumberLines, customFieldSchemas] =
+      await Promise.all([
+        getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
+        getDocumentEdit(client, {
+          companyId: ctx.company.id,
+          documentType,
+          documentId
+        }),
+        termsField ? service.getTerms(client, ctx.company.id) : null,
+        service.getDocumentPartNumberLines(
+          client,
+          ctx.company.id,
+          documentType,
+          documentId
+        ),
+        // A custom field block's panel names the field it prints.
+        getCustomFieldsSchemas(client, {
+          companyId: ctx.company.id,
+          table: documentType
+        })
+      ]);
+    if (customFieldSchemas.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the custom fields",
+        customFieldSchemas.error
+      );
+    }
     if (partNumberLines.error) {
       return ctx.error(
         "internal",
@@ -2095,7 +2128,8 @@ export const getDocumentEditor = defineServiceFn({
       template,
       edit,
       termsSeed,
-      sections: Object.values(sections)
+      sections: Object.values(sections),
+      customFields: customFieldNames(customFieldSchemas.data, documentType)
     };
   }
 });
@@ -2206,10 +2240,11 @@ export const saveDocumentTemplate = defineServiceFn({
     footerSectionId: z.string().optional(),
     headerConfig: sectionConfigSchema.optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.documentTemplates": "Edit" },
   async run(ctx, template) {
     // Changed values belong to one document, never to a company template.
     template.settings.valueEdits = undefined;
+    template.blocks = withoutDocumentValues(template.blocks as DocumentBlock[]);
     const { headerConfig, headerSectionId } = template;
 
     const problems = validateTemplateText({
@@ -2286,7 +2321,7 @@ export const saveDocumentSection = defineServiceFn({
     content: z.record(z.string(), z.unknown()),
     config: sectionConfigSchema.optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.documentTemplates": "Edit" },
   async run(ctx, { id, name, placement, content, config }) {
     // The registration line prints on every document type, so it may use only
     // the company variables every type offers.
@@ -2327,7 +2362,7 @@ export const saveDocumentSection = defineServiceFn({
  */
 export const removeDocumentSection = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.documentTemplates": "Edit" },
   async run(ctx, { id }) {
     const result = await service.deleteDocumentSection(
       ctx.asCaller.supabase,
@@ -2346,8 +2381,8 @@ const apiKeyFields = {
   expiresAt: apiKeyValidator.shape.expiresAt,
   /** Requests per minute. Saved on a single-tenant deployment only; Carbon Cloud sets it. */
   rateLimit: z.number().int().min(1).max(1_000_000).optional(),
-  /** Per module, the actions the key may run: `{ "sales": ["view"] }`. */
-  scopes: z.record(z.string(), z.array(z.string()))
+  /** What the key may do: one level per module or page. */
+  grants: grantsSchema
 };
 /**
  * Create an API key.
@@ -2359,64 +2394,53 @@ const apiKeyFields = {
  */
 export const createApiKey = defineServiceFn({
   input: z.object(apiKeyFields),
-  permission: { update: "users" },
-  async run(ctx, { name, scopes, expiresAt, rateLimit }) {
+  // Edit, not Create: the key's grants are written without RLS.
+  permission: subjectGates("Edit").key,
+  async run(ctx, { name, grants, expiresAt, rateLimit }) {
     const rawKey = `crbn_${nanoid()}`;
-    let created: Awaited<ReturnType<typeof upsertApiKey>>;
-    try {
-      created = await upsertApiKey(ctx.asSystem.supabase, {
-        name,
-        scopes,
-        expiresAt: expiresAt || undefined,
-        rateLimit,
-        rawKey,
-        keyHash: hashApiKey(rawKey),
-        keyPreview: rawKey.slice(-5),
+    const refused = await grantWriteRefusal(
+      ctx,
+      saveApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
         companyId: ctx.company.id,
-        createdBy: ctx.auditUserId
-      });
-    } catch (err) {
-      return service.apiKeysEntitlement(ctx, err);
-    }
-    const key = created.data && "key" in created.data ? created.data.key : null;
-    if (created.error || !key) {
-      return ctx.error("internal", "Failed to create API key", created.error);
-    }
-    return { key };
+        actor: ctx.actor,
+        actorId: ctx.auditUserId,
+        key: {
+          name,
+          expiresAt,
+          rateLimit,
+          keyHash: hashApiKey(rawKey),
+          keyPreview: rawKey.slice(-5)
+        },
+        grants
+      })
+    );
+    return refused ?? { key: rawKey };
   }
 });
 
 /**
- * Update an API key's name, scopes, expiry and, on a single-tenant deployment,
- * requests per minute.
+ * Update an API key's name, grants, expiry and, on a single-tenant
+ * deployment, requests per minute.
  *
  * @remarks
  * The key itself never changes. Its cached authentication is dropped, so a
- * narrower scope, an earlier expiry or a new limit applies at once.
+ * narrower grant, an earlier expiry or a new limit applies at once.
  */
 export const updateApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1), ...apiKeyFields }),
-  permission: { update: "users" },
-  async run(ctx, { id, name, scopes, expiresAt, rateLimit }) {
-    let updated: Awaited<ReturnType<typeof upsertApiKey>>;
-    try {
-      updated = await upsertApiKey(ctx.asSystem.supabase, {
-        id,
+  permission: subjectGates("Edit").key,
+  async run(ctx, { id, name, grants, expiresAt, rateLimit }) {
+    const refused = await grantWriteRefusal(
+      ctx,
+      saveApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
         companyId: ctx.company.id,
-        name,
-        scopes,
-        expiresAt: expiresAt || undefined,
-        rateLimit
-      });
-    } catch (err) {
-      return service.apiKeysEntitlement(ctx, err);
-    }
-    if (updated.error) {
-      return ctx.error("internal", "Failed to update API key", updated.error);
-    }
-    // A scope or expiry edit must not keep authenticating from the 30s cache.
-    await service.invalidateApiKeyCache(id, ctx.company.id);
-    return { id };
+        actor: ctx.actor,
+        actorId: ctx.auditUserId,
+        key: { id, name, expiresAt, rateLimit },
+        grants
+      })
+    );
+    return refused ?? { id };
   }
 });
 
@@ -2424,26 +2448,22 @@ export const updateApiKey = defineServiceFn({
  * Delete an API key.
  *
  * @remarks
- * The key stops authenticating: its cached authentication is dropped before
- * the delete (the key's hash cannot be read once the row is gone) and again
- * after it, in case a request re-cached the live row in between.
+ * The key stops authenticating at once: its cached authentication is dropped
+ * (`deleteApiKey`). Edit on API Keys is enough: the delete runs as the system
+ * once the gate passes, and a key that was not deleted is refused.
  */
 export const revokeApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { update: "users" },
+  permission: subjectGates("Edit").key,
   async run(ctx, { id }) {
-    const keyHash = await service.invalidateApiKeyCache(id, ctx.company.id);
-    let deleted: Awaited<ReturnType<typeof deleteApiKey>>;
-    try {
-      deleted = await deleteApiKey(ctx.asSystem.supabase, id, ctx.company.id);
-    } catch (err) {
-      return service.apiKeysEntitlement(ctx, err);
-    }
-    if (deleted.error) {
-      return ctx.error("internal", "Failed to delete API key", deleted.error);
-    }
-    if (keyHash) await bustApiKeyCache(keyHash);
-    return { id };
+    const refused = await grantWriteRefusal(
+      ctx,
+      deleteApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        id
+      })
+    );
+    return refused ?? { id };
   }
 });
 
@@ -2460,7 +2480,7 @@ export const revokeApiKey = defineServiceFn({
  */
 export const deactivateCompanyIntegration = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { id }) {
     if (
       !isIntegrationWhitelisted(id) &&
@@ -2503,7 +2523,7 @@ export const deactivateCompanyIntegration = defineServiceFn({
  */
 export const renameIntegrationConnection = defineServiceFn({
   input: z.object({ id: z.string().min(1), name: z.string().trim().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { id, name }) {
     // The table is read-only to API roles, so every write goes through the
     // service role, scoped by the caller's company.
@@ -2547,7 +2567,7 @@ export const renameIntegrationConnection = defineServiceFn({
  */
 export const disconnectIntegrationConnection = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { id }) {
     const connection = await readConnection(
       ctx.asSystem.supabase,
@@ -2592,7 +2612,7 @@ export const disconnectIntegrationConnection = defineServiceFn({
  */
 export const enableCompanyAuditLog = defineServiceFn({
   input: z.object({}),
-  permission: { update: "settings" },
+  permission: { "settings.auditLogs": "Edit" },
   async run(ctx) {
     try {
       await enableAuditLog(ctx.asCaller.supabase, ctx.company.id);
@@ -2620,7 +2640,7 @@ export const enableCompanyAuditLog = defineServiceFn({
  */
 export const disableCompanyAuditLog = defineServiceFn({
   input: z.object({}),
-  permission: { update: "settings" },
+  permission: { "settings.auditLogs": "Edit" },
   async run(ctx) {
     if (CONTROLLED_ENVIRONMENT) {
       return ctx.error(
@@ -2640,7 +2660,7 @@ export const disableCompanyAuditLog = defineServiceFn({
 /** A signed URL that downloads one of the company's audit log archives. */
 export const getAuditArchiveDownloadUrl = defineServiceFn({
   input: z.object({ archiveId: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.auditLogs": "Edit" },
   async run(ctx, { archiveId }) {
     try {
       const url = await getArchiveDownloadUrl(
@@ -2658,8 +2678,16 @@ export const getAuditArchiveDownloadUrl = defineServiceFn({
 /** A Stripe billing portal session for the company, for its subscription. */
 export const getBillingPortalUrl = defineServiceFn({
   input: z.object({}),
-  permission: { update: "settings" },
+  permission: { "settings.billing": "Edit" },
   async run(ctx) {
+    // An API key or a job is never the owner.
+    const callerId = ctx.actor.type === "user" ? ctx.actor.userId : null;
+    if (!(await isCompanyOwner(ctx.company.id, callerId))) {
+      return ctx.error(
+        "forbidden",
+        "Only the company owner can manage the subscription"
+      );
+    }
     try {
       const plans = await ctx.asCaller.supabase
         .from("plan")
@@ -2681,22 +2709,60 @@ export const getBillingPortalUrl = defineServiceFn({
  * Transfer ownership of the company group to another user.
  *
  * @remarks
- * The owner holds billing and the group's administrative settings.
+ * The owner holds billing and the group's administrative settings. Only the
+ * current owner may transfer, to an active employee of a company in the group
+ * (`ownershipTransferRefusal`). `companyGroup` has no update policy, so the
+ * write runs as the system, for this company's group only.
  */
 export const transferCompanyOwnership = defineServiceFn({
   input: z.object({ newOwnerId: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.billing": "Edit" },
   async run(ctx, { newOwnerId }) {
-    const { error } = await requireAffected(
-      ctx.asCaller.supabase
-        .from("companyGroup")
-        .update({ ownerId: newOwnerId })
-        .eq("id", ctx.company.groupId)
-        .select("id")
-    );
-    if (error) {
-      return ctx.error("internal", "Failed to transfer ownership", error);
+    const callerId = ctx.actor.type === "user" ? ctx.actor.userId : null;
+    const transfer = await service.readOwnershipTransfer(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      newOwnerId
+    });
+    if (!transfer) {
+      return ctx.error("notFound", "The company has no group");
     }
+    const refusal = ownershipTransferRefusal({
+      ownerId: transfer.ownerId,
+      callerId,
+      newOwnerId,
+      newOwnerIsGroupEmployee: transfer.newOwnerIsGroupEmployee
+    });
+    if (refusal === "notOwner" || !callerId) {
+      return ctx.error(
+        "forbidden",
+        "Only the company owner can transfer ownership"
+      );
+    }
+    if (refusal === "sameOwner") {
+      return ctx.error("validation", "Choose another employee as the owner");
+    }
+    if (refusal === "notEmployee") {
+      return ctx.error(
+        "validation",
+        "The new owner must be an active employee of the company"
+      );
+    }
+
+    const transferred = await service.setCompanyGroupOwner(ctx.asSystem.pg, {
+      groupId: transfer.groupId,
+      fromOwnerId: callerId,
+      toOwnerId: newOwnerId,
+      userId: ctx.auditUserId
+    });
+    if (!transferred) {
+      return ctx.error("conflict", "The company's owner changed meanwhile");
+    }
+    logOwnershipTransfer({
+      actor: callerId,
+      companyId: ctx.company.id,
+      companyGroupId: transfer.groupId,
+      toOwnerId: newOwnerId
+    });
     return { ownerId: newOwnerId };
   }
 });
@@ -2714,7 +2780,7 @@ export const setRecordTags = defineServiceFn({
     ids: z.array(z.string()),
     tags: z.array(z.string())
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, { table, ids, tags }) {
     const { error } = await ctx.asCaller.supabase
       // @ts-expect-error: the table is the caller's, for any taggable record
@@ -2736,32 +2802,132 @@ export const setRecordTags = defineServiceFn({
  * Set the custom field values of some records of one table.
  *
  * @remarks
- * Replaces the `customFields` of each record. Row-level security decides
- * which records the caller may change.
+ * Sets the fields sent on each record, as a record's properties panel saves
+ * one field: a field not sent keeps its stored value, so two saves of
+ * different fields of one record both stand, and a null removes a field of
+ * a type that takes null.
+ * Only the company's records change, and row-level security decides which of
+ * them the caller may change. A table that takes no custom fields is refused.
+ * So is a key that is not one of the table's custom fields, and a value its
+ * field's input never sends, unless the records already hold that value,
+ * which the call then leaves as it is. The values each data type takes:
+ * Yes/No "on" or ""; Date a YYYY-MM-DD date or null; List one of the field's
+ * options or null; Numeric a number, a numeric string or null; Text any
+ * string; Link a web address or ""; User, Customer and Supplier an id. A File
+ * field takes none. A call that changes no record is refused. An API key needs
+ * Edit on the page that owns the table (Parts for part, Materials for
+ * material; any item page for a table every item type shares, such as
+ * makeMethod).
+ *
+ * @param table - A table with custom fields, such as part, customer, salesOrder or job. See settings_getCustomFieldsTables.
+ * @param ids - The records to change, at most 100.
+ * @param customFields - The fields to set, keyed by custom field id. See settings_getCustomFields.
+ *
+ * @returns The ids of the records changed.
+ *
+ * @mcp
  */
 export const setRecordCustomFields = defineServiceFn({
   input: z.object({
     table: z.string().min(1),
-    ids: z.array(z.string()),
+    ids: z.array(z.string()).min(1).max(100),
     customFields: z.record(z.string(), z.unknown())
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, { table, ids, customFields }) {
-    const { error } = await ctx.asCaller.supabase
-      // @ts-expect-error: the table is the caller's, for any record with custom fields
-      .from(table)
-      .update(
-        unchecked({
-          customFields,
-          updatedBy: ctx.auditUserId,
-          updatedAt: datetime.timestamp()
-        })
-      )
-      .in(unchecked("id"), ids);
+    const scope = await service.getCustomFieldTableEditScope(
+      ctx.asSystem.supabase,
+      table
+    );
+    if (scope.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the custom field table",
+        scope.error
+      );
+    }
+    if (!scope.data) {
+      return ctx.error("validation", `${table} has no custom fields`);
+    }
+    // Row-level security asks Edit on the page that owns the table.
+    if (ctx.actor.type === "apiKey" && scope.data.pages.length === 0) {
+      return ctx.error(
+        "forbidden",
+        `No page owns ${table}: an API key cannot change its records`
+      );
+    }
+    const keyRefused = refuseKeyWithout(ctx, {
+      anyOf: anyOf(scope.data.pages, "Edit")
+    });
+    if (keyRefused) return keyRefused;
+
+    const { scopeColumn } = scope.data;
+    const scopeId =
+      scopeColumn === "companyId" ? ctx.company.id : ctx.company.groupId;
+
+    const fields = await service.getTableCustomFieldTypes(
+      ctx.asCaller.supabase,
+      table,
+      ctx.company.id
+    );
+    if (fields.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the custom fields",
+        fields.error
+      );
+    }
+    const stored = await service.getRecordsCustomFields(ctx.asCaller.supabase, {
+      table,
+      ids,
+      scopeColumn,
+      scopeId
+    });
+    if (stored.error) {
+      return ctx.error("internal", "Failed to read the records", stored.error);
+    }
+    const { write, notFields, badValues } = service.classifyCustomFieldKeys(
+      customFields,
+      fields.data ?? [],
+      (stored.data ?? []).map((record) => record.customFields)
+    );
+
+    const refusals: string[] = [];
+    if (notFields.length > 0) {
+      refusals.push(`Not a custom field of ${table}: ${notFields.join(", ")}`);
+    }
+    if (badValues.length > 0) {
+      refusals.push(`Not a value these fields take: ${badValues.join(", ")}`);
+    }
+    if (refusals.length > 0) {
+      return ctx.error("validation", refusals.join(". "));
+    }
+
+    // A value taken only because every record already holds it is left out
+    // of the write, neither set nor cleared: written back, it would undo a
+    // save another person made to that field since this caller read it.
+    const { data, error } = await service.updateRecordCustomFields(
+      ctx.asCaller.supabase,
+      {
+        table,
+        ids,
+        scopeColumn,
+        scopeId,
+        customFields: write,
+        updatedBy: ctx.auditUserId
+      }
+    );
     if (error) {
       return ctx.error("internal", "Failed to update custom fields", error);
     }
-    return { ids };
+    const changed = data ?? [];
+    if (changed.length === 0) {
+      return ctx.error(
+        "notFound",
+        "No record was changed: none exists in this company that you can change"
+      );
+    }
+    return { ids: changed.map((row) => row.id) };
   }
 });
 
@@ -2783,7 +2949,7 @@ export const transitionSyncOperations = defineServiceFn({
       .max(500, { message: "Select at most 500 operations at once" }),
     to: z.enum(["Pending", "Skipped"])
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { ids, to }) {
     const result = await service.transitionSyncOperations(
       ctx.asCaller.supabase,
@@ -2832,7 +2998,7 @@ export const suggestAccountMappings = defineServiceFn({
       })
     )
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { accounts, providerAccounts }) {
     const result = await suggestAccountMatchesWithAI({
       accounts,
@@ -2857,7 +3023,7 @@ export const saveAccountMappings = defineServiceFn({
       .array(accountMappingEntrySchema)
       .min(1, { message: "No account mappings to save" })
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { integrationId, mappings }) {
     const result = await upsertAccountMappings(ctx.asSystem.pg, {
       companyId: ctx.company.id,
@@ -2892,7 +3058,7 @@ export const updateDimensionSync = defineServiceFn({
     slots: z.array(dimensionSlotEntrySchema),
     onUnmappedDimensionValue: z.enum(["warn", "drop"])
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { integrationId, slots, onUnmappedDimensionValue }) {
     const providerTargets = await service.getProviderDimensionTargets(
       ctx.asCaller.supabase,
@@ -2966,7 +3132,7 @@ export const saveDimensionValueMappings = defineServiceFn({
       .array(dimensionValueMappingEntrySchema)
       .min(1, { message: "No dimension value mappings to save" })
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { integrationId, mappings }) {
     const failures: string[] = [];
     // ponytail: one upsert per value, as the match drawer confirms a page of
@@ -3014,7 +3180,7 @@ export const saveTaxCodeMappings = defineServiceFn({
       .array(taxCodeMappingEntrySchema)
       .min(1, { message: "No tax code mappings to save" })
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { integrationId, mappings }) {
     if (!service.TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) {
       return ctx.error("rule", "This integration does not map tax codes");
@@ -3102,7 +3268,7 @@ export const setIntegrationSyncEnabled = defineServiceFn({
     integrationId: z.string().min(1),
     syncEnabled: z.boolean()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { integrationId, syncEnabled }) {
     const existing = await service.integrationSettings(ctx, integrationId);
     if (!existing?.active) {
@@ -3204,7 +3370,7 @@ export const updatePostingSync = defineServiceFn({
     periodLockPolicy: z.enum(["park", "redate"]),
     lockDate: z.string().optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, input) {
     const granularityBySourceType = new Map(
       input.sourceTypeConfigs.map((config) => {
@@ -3296,7 +3462,7 @@ export const saveOeeDeviceMapping = defineServiceFn({
     deviceName: z.string().min(1),
     workCenterId: z.string().optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(
     ctx,
     { integrationId, externalDeviceId, deviceName, workCenterId }
@@ -3371,7 +3537,7 @@ export const saveOeeDeviceMapping = defineServiceFn({
  */
 export const getAccountsPayableBillingAddress = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.purchasing": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3390,7 +3556,7 @@ export const getAccountsPayableBillingAddress = defineServiceFn({
  */
 export const getAccountsReceivableBillingAddress = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.invoicing": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3417,7 +3583,7 @@ export const getApiKeys = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { update: "users" },
+  permission: { "settings.apiKeys": "Edit" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3437,7 +3603,7 @@ export const getApiKeys = defineServiceFn({
  */
 export const getCompanies = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.companies": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3453,7 +3619,7 @@ export const getCompanies = defineServiceFn({
  */
 export const getEmployeeCompanies = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.companies": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3469,7 +3635,7 @@ export const getEmployeeCompanies = defineServiceFn({
  */
 export const getIndustries = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.company": "View" },
   async run(ctx) {
     return unwrap(ctx, await service.getIndustries(ctx.asCaller.supabase));
   }
@@ -3482,7 +3648,7 @@ export const getIndustries = defineServiceFn({
  */
 export const getCompany = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3498,7 +3664,7 @@ export const getCompany = defineServiceFn({
  */
 export const getCompanySettings = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3514,7 +3680,7 @@ export const getCompanySettings = defineServiceFn({
  */
 export const getConfig = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.webhooks": "View" },
   async run(ctx) {
     return unwrap(ctx, await service.getConfig(ctx.asCaller.supabase));
   }
@@ -3527,7 +3693,7 @@ export const getConfig = defineServiceFn({
  */
 export const getCurrentSequence = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.sequences": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3547,7 +3713,7 @@ export const getCurrentSequence = defineServiceFn({
  */
 export const getCustomField = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.customFields": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3563,7 +3729,7 @@ export const getCustomField = defineServiceFn({
  */
 export const getCustomFields = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.customFields": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3573,6 +3739,145 @@ export const getCustomFields = defineServiceFn({
         ctx.company.id
       )
     );
+  }
+});
+
+/**
+ * Create a custom field definition.
+ *
+ * @remarks
+ * Adds a field to every record of one table, last in its order. A list field
+ * needs at least one option. A name the table already has is refused.
+ *
+ * @param name - The field's label.
+ * @param table - The table it belongs to, such as customer, supplier, part, purchaseOrder or salesOrder. See settings_getCustomFieldsTables.
+ * @param dataTypeId - 1 Yes/No, 2 Date, 3 List, 4 Numeric, 5 Text, 6 User, 7 Customer, 8 Supplier, 9 File, 10 Link.
+ * @param listOptions - The choices of a List field.
+ * @param tags - Tags that limit the records it shows on.
+ * @param required - Whether a record needs a value. Default false.
+ *
+ * @mcp
+ */
+export const createCustomField = defineServiceFn({
+  input: customFieldInputValidator,
+  permission: { "settings.customFields": "Create" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertCustomField(ctx.asCaller.supabase, {
+        ...input,
+        required: input.required ?? false,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Change a custom field definition.
+ *
+ * @remarks
+ * Its table and data type cannot change, as in the field form. A field left
+ * out keeps its value. A List field keeps at least one option. Needs Edit on
+ * Custom Fields: the row's security policy asks it of an update.
+ *
+ * @param id - The custom field. See settings_getCustomField.
+ * @param name - The field's label.
+ * @param listOptions - The choices of a List field.
+ * @param tags - Tags that limit the records it shows on.
+ * @param required - Whether a record needs a value.
+ *
+ * @mcp
+ */
+export const updateCustomField = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
+    name: z.string().trim().min(1, { message: "Name is required" }).optional(),
+    listOptions: z.string().min(1).array().optional(),
+    tags: z.array(z.string()).optional(),
+    required: z.boolean().optional()
+  }),
+  // The field form's route requires Create; the row's RLS update needs Edit.
+  permission: { "settings.customFields": "Edit" },
+  async run(ctx, { id, ...changes }) {
+    const stored = await ctx.asCaller.supabase
+      .from("customField")
+      .select("name, table, dataTypeId, listOptions, tags, required")
+      .eq("id", id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (stored.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the custom field",
+        stored.error
+      );
+    }
+    if (!stored.data) {
+      return ctx.error("notFound", "The custom field could not be found");
+    }
+    const field = customFieldInputValidator.safeParse({
+      name: changes.name ?? stored.data.name,
+      table: stored.data.table,
+      dataTypeId: stored.data.dataTypeId,
+      listOptions: changes.listOptions ?? stored.data.listOptions ?? undefined,
+      tags: changes.tags ?? stored.data.tags ?? undefined,
+      required: changes.required ?? stored.data.required
+    });
+    if (!field.success) {
+      return ctx.error("validation", z.prettifyError(field.error));
+    }
+    // The merged definition is only validated: the write takes the fields
+    // sent, so a field left out keeps what is stored when it runs, not the
+    // value read above.
+    const updated = await service.upsertCustomField(ctx.asCaller.supabase, {
+      ...changes,
+      id,
+      companyId: ctx.company.id,
+      updatedBy: ctx.auditUserId
+    });
+    if (updated.error?.code === NOT_APPLIED_CODE) {
+      return ctx.error("notFound", "The custom field could not be found");
+    }
+    if (updated.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update custom field",
+        updated.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Delete a custom field definition.
+ *
+ * @param id - The custom field. See settings_getCustomField.
+ *
+ * @mcp destructive
+ */
+export const deleteCustomField = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { "settings.customFields": "Full" },
+  async run(ctx, { id }) {
+    const deleted = await service.deleteCustomField(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (deleted.error?.code === NOT_APPLIED_CODE) {
+      return ctx.error("notFound", "The custom field could not be found");
+    }
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete custom field",
+        deleted.error
+      );
+    }
+    return { id };
   }
 });
 
@@ -3591,7 +3896,7 @@ export const getCustomFieldsTables = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "settings" },
+  permission: { "settings.customFields": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3611,7 +3916,7 @@ export const getCustomFieldsTables = defineServiceFn({
  */
 export const getIntegration = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.integrations": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3631,7 +3936,7 @@ export const getIntegration = defineServiceFn({
  */
 export const getKanbanOutputSetting = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3650,7 +3955,7 @@ export const getKanbanOutputSetting = defineServiceFn({
  */
 export const getNextSequence = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: { update: "settings" },
+  permission: { "settings.sequences": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3670,7 +3975,7 @@ export const getNextSequence = defineServiceFn({
  */
 export const getPlans = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(ctx, await service.getPlans(ctx.asCaller.supabase));
   }
@@ -3683,7 +3988,7 @@ export const getPlans = defineServiceFn({
  */
 export const getSequence = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.sequences": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3711,7 +4016,7 @@ export const getSequences = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "settings" },
+  permission: { "settings.sequences": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3731,7 +4036,7 @@ export const getSequences = defineServiceFn({
  */
 export const getSequencesList = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.sequences": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3759,7 +4064,7 @@ export const getItemSerialSequences = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "settings" },
+  permission: { "settings.serialNumbers": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3779,7 +4084,7 @@ export const getItemSerialSequences = defineServiceFn({
  */
 export const getItemSerialSequence = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.serialNumbers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3796,12 +4101,19 @@ export const getItemSerialSequence = defineServiceFn({
  * Create a item serial sequence
  *
  * @remarks
- * Upsert item serial sequence
+ * Gives an item its serial number sequence, as Settings → Serial Numbers →
+ * New does; numbers are drawn only for serial- or batch-tracked items. A
+ * unit's serial number is the prefix, the counter padded to `size` digits,
+ * and the suffix.
+ *
+ * @param next - The last number issued (the form's Current), not the next one: the next unit gets next + step. Send 0 for a new sequence to start at step (1 with a step of 1).
+ * @param step - How much the counter goes up per unit.
+ * @param size - The counter's digits, zero-padded.
  *
  * @mcp
  */
 export const createItemSerialSequence = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     itemId: z.string().min(1),
     prefix: z.string().optional(),
     suffix: z.string().optional(),
@@ -3820,20 +4132,21 @@ export const createItemSerialSequence = defineServiceFn({
       .optional()
       .describe(
         "Print the serial label when the job's last operation completes."
-      ),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
+      )
   }),
-  permission: { create: "settings" },
+  permission: { "settings.serialNumbers": "Create" },
   async run(ctx, input) {
+    // The item reference is not company-scoped in the database, and the
+    // insert policy checks only the sequence's own company.
+    const refused = await refuseUnlessOwned(ctx, "item", { id: input.itemId });
+    if (refused) return refused;
     return unwrap(
       ctx,
-      await service.upsertItemSerialSequence(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
+      await service.upsertItemSerialSequence(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
     );
   }
 });
@@ -3842,47 +4155,56 @@ export const createItemSerialSequence = defineServiceFn({
  * Update a item serial sequence
  *
  * @remarks
- * Upsert item serial sequence
+ * Changes an item's serial number sequence, as its edit form in Settings →
+ * Serial Numbers does. Serial numbers already issued keep their values. A
+ * sequence stays on its item: an `itemId` other than its own is refused.
+ *
+ * @param next - The last number issued (the form's Current), not the next one: the next unit gets next + step.
+ * @param step - How much the counter goes up per unit.
+ * @param size - The counter's digits, zero-padded.
  *
  * @mcp
  */
 export const updateItemSerialSequence = defineServiceFn({
-  input: z
-    .looseObject({
-      itemId: z.string().min(1),
-      prefix: z.string().optional(),
-      suffix: z.string().optional(),
-      next: z.number().min(0),
-      step: z.number().min(1),
-      size: z.number().min(1).max(20),
-      serialNumberTiming: z
-        .enum(serialNumberTimings)
-        .nullable()
-        .optional()
-        .describe(
-          "When this item's units draw their serial numbers. Null follows the company setting. Omitted, a new sequence follows the company setting and an update keeps the current value."
-        ),
-      printLabelOnCompletion: z
-        .boolean()
-        .optional()
-        .describe(
-          "Print the serial label when the job's last operation completes."
-        ),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "settings" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertItemSerialSequence(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+  input: z.object({
+    id: z.string().min(1).describe("The serial sequence to change."),
+    itemId: z.string().min(1),
+    prefix: z.string().optional(),
+    suffix: z.string().optional(),
+    next: z.number().min(0),
+    step: z.number().min(1),
+    size: z.number().min(1).max(20),
+    serialNumberTiming: z
+      .enum(serialNumberTimings)
+      .nullable()
+      .optional()
+      .describe(
+        "When this item's units draw their serial numbers. Null follows the company setting. Omitted, a new sequence follows the company setting and an update keeps the current value."
+      ),
+    printLabelOnCompletion: z
+      .boolean()
+      .optional()
+      .describe(
+        "Print the serial label when the job's last operation completes."
       )
+  }),
+  permission: { "settings.serialNumbers": "Edit" },
+  async run(ctx, input) {
+    const updated = await service.upsertItemSerialSequence(
+      ctx.asCaller.supabase,
+      { ...input, companyId: ctx.company.id, updatedBy: ctx.auditUserId }
     );
+    // The update matches only the sequence's own item: the edit form shows
+    // the item read-only.
+    if (updated.error?.code === NOT_APPLIED_CODE) {
+      return ctx.error(
+        "notFound",
+        "No serial sequence with this id is on this item: a sequence stays on its item."
+      );
+    }
+    const rows = unwrap(ctx, updated);
+    if (rows instanceof CarbonError) return rows;
+    return { id: input.id };
   }
 });
 
@@ -3893,7 +4215,7 @@ export const updateItemSerialSequence = defineServiceFn({
  */
 export const deleteItemSerialSequence = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "settings" },
+  permission: { "settings.serialNumbers": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3913,7 +4235,7 @@ export const deleteItemSerialSequence = defineServiceFn({
  */
 export const getSubsidiaries = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.companies": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3929,7 +4251,7 @@ export const getSubsidiaries = defineServiceFn({
  */
 export const getSubsidiary = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.companies": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3945,7 +4267,7 @@ export const getSubsidiary = defineServiceFn({
  */
 export const getTerms = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.documentTemplates": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3961,21 +4283,9 @@ export const getTerms = defineServiceFn({
  */
 export const getDocumentTemplate = defineServiceFn({
   input: z.looseObject({
-    documentType: z.enum([
-      "purchaseOrder",
-      "salesOrder",
-      "stockTransfer",
-      "salesInvoice",
-      "quote",
-      "purchaseReturnOrder",
-      "salesReturnOrder",
-      "issue",
-      "packingSlip",
-      "jobTraveler",
-      "trackingLabel"
-    ])
+    documentType: documentTemplateTypeSchema
   }),
-  permission: { view: "settings" },
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4009,7 +4319,7 @@ export const getDocumentTemplateConfig = defineServiceFn({
       "trackingLabel"
     ])
   }),
-  permission: { view: "settings" },
+  permission: { "settings.documentTemplates": "View" },
   async run(ctx, input) {
     return await service.getDocumentTemplateConfig(
       ctx.asCaller.supabase,
@@ -4026,7 +4336,7 @@ export const getDocumentTemplateConfig = defineServiceFn({
  */
 export const getDocumentSections = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.documentTemplates": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -4042,7 +4352,7 @@ export const getDocumentSections = defineServiceFn({
  */
 export const resolveSections = defineServiceFn({
   input: z.looseObject({ ids: z.array(z.string()) }),
-  permission: { update: "settings" },
+  permission: { "settings.documentTemplates": "Edit" },
   async run(ctx, input) {
     return await service.resolveSections(
       ctx.asCaller.supabase,
@@ -4059,7 +4369,7 @@ export const resolveSections = defineServiceFn({
  */
 export const getWebhook = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.webhooks": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4083,7 +4393,7 @@ export const getWebhooks = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "settings" },
+  permission: { "settings.webhooks": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -4103,7 +4413,7 @@ export const getWebhooks = defineServiceFn({
  */
 export const getWebhookTables = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(ctx, await service.getWebhookTables(ctx.asCaller.supabase));
   }
@@ -4126,7 +4436,7 @@ export const updateSequence = defineServiceFn({
       size: z.number().min(1).max(20).optional()
     })
   }),
-  permission: { update: "settings" },
+  permission: { "settings.sequences": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4150,7 +4460,7 @@ export const updateSequence = defineServiceFn({
  */
 export const detachOnshapeItem = defineServiceFn({
   input: z.object({ itemId: z.string().min(1) }),
-  permission: { update: "parts" },
+  permission: { "parts.parts": "Edit" },
   async run(ctx, { itemId }) {
     const removed = await ctx.asSystem.supabase
       .from("externalIntegrationMapping")
@@ -4183,7 +4493,7 @@ export const detachOnshapeItem = defineServiceFn({
  */
 export const saveOnshapePropertyMap = defineServiceFn({
   input: service.onshapePropertyMapInput,
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   run: (ctx, input) => service.saveOnshapePropertyMap(ctx, input)
 });
 
@@ -4197,7 +4507,7 @@ export const saveOnshapePropertyMap = defineServiceFn({
  */
 export const pushOnshapePart = defineServiceFn({
   input: service.onshapePartPushInput,
-  permission: { create: "parts", update: "parts" },
+  permission: { "parts.parts": "Edit" },
   run: (ctx, input) => service.pushOnshapePart(ctx, input)
 });
 
@@ -4211,7 +4521,7 @@ export const pushOnshapePart = defineServiceFn({
  */
 export const pushOnshapeAssembly = defineServiceFn({
   input: service.onshapeAssemblyPushInput,
-  permission: { create: "parts", update: "parts", delete: "parts" },
+  permission: { "parts.parts": "Full" },
   run: (ctx, input) => service.pushOnshapeAssembly(ctx, input)
 });
 
@@ -4224,6 +4534,6 @@ export const pushOnshapeAssembly = defineServiceFn({
  */
 export const pushOnshapeRelease = defineServiceFn({
   input: service.onshapeReleasePushInput,
-  permission: { create: "parts", update: "parts", delete: "parts" },
+  permission: { "parts.parts": "Full" },
   run: (ctx, input) => service.pushOnshapeRelease(ctx, input)
 });

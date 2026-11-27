@@ -29,7 +29,7 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
-import { localServiceRoleClient } from "./fixtures/local-supabase";
+import { postgrestTest } from "./fixtures/local-supabase";
 import { methodImportFixture } from "./fixtures/method-import";
 import {
   deadlocked,
@@ -232,13 +232,12 @@ async function billOfMaterial(f: Fixture, makeMethodId: string) {
   }));
 }
 
-// The sync and a new version read the make method through PostgREST.
-const system = localServiceRoleClient();
+// The sync and a new version read the make method through PostgREST
+// (`postgrestTest` hands each case the service-role client).
 
-databaseTest(
+postgrestTest(
   "an Onshape sync into a Draft does not change it once it is Active",
-  async () => {
-    if (!system) return;
+  async (system) => {
     const f = await alwaysPostFixture();
     const holder = await connectLocalTestDatabase();
     const syncing = await connectLocalTestDatabase();
@@ -471,10 +470,9 @@ databaseTest(
 
 // The New Version dialog offers to set the source Active when it is the
 // item's only version; one activated since then must stay the only Active.
-databaseTest(
+postgrestTest(
   "a new version leaves its Draft source Draft when another version is Active",
-  async () => {
-    if (!system) return;
+  async (system) => {
     const f = await alwaysPostFixture();
     try {
       const source = await f.db

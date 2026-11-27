@@ -7,11 +7,11 @@ import { STRIPE_CONNECT_WEBHOOK_SECRET, STRIPE_SECRET_KEY } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Stripe } from "stripe";
-import { STRIPE_CONNECT_ACCOUNT_CONFIG } from "./connect.constants";
 import {
   type ConnectInvoiceLineInput,
   expectedConnectInvoiceTotal
 } from "./connect-invoice";
+import { STRIPE_CONNECT_ACCOUNT_CONFIG } from "./connect.constants";
 import { stripe } from "./stripe.server";
 
 export type { ConnectInvoiceLineInput } from "./connect-invoice";

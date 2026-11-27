@@ -188,7 +188,7 @@ export function PostingSyncSettings({
 }: PostingSyncSettingsProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "settings");
+  const canUpdate = permissions.has({ "settings.integrations": "Edit" });
   const fetcher = useAction({
     onSuccess: () => toast.success(t`Updated posting sync settings`)
   });

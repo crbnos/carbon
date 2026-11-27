@@ -105,8 +105,8 @@ const TaxCodeForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "accounting.taxCodes": "Edit" })
+    : !permissions.has({ "accounting.taxCodes": "Create" });
 
   // The authority typed into a row's Authority picker, being created.
   const createAuthority = useDrawerItem<{ rowKey: string; name: string }>();

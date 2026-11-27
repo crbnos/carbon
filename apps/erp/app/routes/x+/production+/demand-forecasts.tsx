@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -22,6 +22,7 @@ import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverl
 import {
   getLocationTimeZone,
   getOrCreatePeriods,
+  PLANNING_WEEKS,
   resolveLocationId
 } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -38,14 +39,12 @@ export const handle: Handle = {
   to: path.to.demandProjections
 };
 
-export const WEEKS_TO_PROJECT = 12 * 4;
-
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "production",
-    role: "employee",
-    bypassRls: true
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    { "production.demandForecasts": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -64,7 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const periods = await getOrCreatePeriods(
     getDatabaseClient(),
     datetime.today(await getLocationTimeZone(client, locationId, companyId)),
-    WEEKS_TO_PROJECT
+    PLANNING_WEEKS
   );
 
   const projections = await getProductionProjections(

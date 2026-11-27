@@ -4,9 +4,8 @@
 
 import type { AccountProfileData } from "@carbon/account";
 import { accountProfileValidator } from "@carbon/account";
-import { carbon } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -14,14 +13,13 @@ import { isOwnSignaturePath, SIGNATURES_BUCKET } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { getAccount } from "~/modules/users/users.service";
 
 const logger = getLogger("erp", "account-profile");
 
 // Data and writes for the Profile pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
-  const user = await getAccount(client, userId);
+  const { client, userId, api } = await authorize(request);
+  const user = await api.users.getAccount({ id: userId });
 
   if (user.error) {
     logger.error("Failed to get user", { userId, error: user.error });
@@ -64,7 +62,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const form = input.data;
 
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   if (form.intent === "photo") {
     return api.users.updateOwnAvatar({ path: form.path });
   }

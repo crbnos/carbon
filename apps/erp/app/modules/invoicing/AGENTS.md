@@ -51,7 +51,7 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   - Refused before the cutover date (`LINE_ACCOUNT_CHANGE_BEFORE_CUTOVER_ERROR`), for a Draft, Pending or Voided invoice, when an `intercompanyEliminationLine` reads the group, and for a new account another leg of the group already holds an amount on, such as the line's shipping account (`lineAccountChangeTargetRefusal`, naming the account): the group would hold both there and no later read could find the line's share. The UI is `ui/InvoiceLineAccount/ChangeInvoiceLineAccount.tsx` in both line forms' header `CardAction`; the routes are `$invoiceId.$lineId.account.tsx`.
   - The dialog shows the account the amount is on now: `getSalesInvoiceLinePostedAccount` / `getPurchaseInvoiceLinePostedAccount` (`view: ["invoicing", "accounting"]`, not `@mcp`) call `getInvoiceLinePostedAccount`, which runs the change's own match and refusals (`readInvoiceLinePosition`). Read when the dialog opens, from `api+/{sales,purchase}-invoice.$invoiceId.$lineId.account.ts`. Never `salesInvoiceLine.accountId`: sales posting does not read it, and convert copies the order line's account into it.
   - A synced invoice keeps its original account in the accounting provider.
-- **Adjusting a purchase invoice for rounding** — `adjustPurchaseInvoiceRounding` (`update: "invoicing"`, `@mcp`; the header menu's "Adjust for Rounding") brings the total to the amount the supplier charged with one G/L line described `Rounding` (`ROUNDING_LINE_DESCRIPTION`) on `accountDefault.roundingAccount`, capped at 100 minor units (`purchaseInvoiceRoundingAmount`). Other lines, inventory lines included, keep their prices. The same total again changes nothing; the other lines' own total removes the line.
+- **Adjusting a purchase invoice for rounding** — `adjustPurchaseInvoiceRounding` (Edit on Purchase Invoices, `@mcp`; the header menu's "Adjust for Rounding") brings the total to the amount the supplier charged with one G/L line described `Rounding` (`ROUNDING_LINE_DESCRIPTION`) on `accountDefault.roundingAccount`, capped at 100 minor units (`purchaseInvoiceRoundingAmount`). Other lines, inventory lines included, keep their prices. The same total again changes nothing; the other lines' own total removes the line.
   - On a posted invoice (any status but Draft, Pending or Voided) it also needs `update: accounting` (`ctx.can`) and posts the change in base currency as one journal (`postPurchaseInvoiceRoundingJournal`): `sourceType` `Purchase Invoice`, description `Rounding Purchase Invoice <id>`, dated on the invoice's posting date in its period, which must be Open (`lineAccountChangePeriodRefusal`). Two lines (`buildRoundingJournalLines`): a debit to the rounding account signed by its class, and a credit described `Accounts Payable` on the invoice's own payable account and role, both with `documentType` `Invoice` and the invoice's keys and dimensions, so balances, payments and the role readers count it and a void reverses it. Refused before the cutover (`ROUNDING_BEFORE_CUTOVER_ERROR`) and for a lower total than is already settled.
   - Why it exists: a Ramp card charge a cent off the bill. Ramp keeps the bill Carbon pushed (create-once), so the accountant also edits the bill in Ramp; the synced card payment then settles the adjusted invoice. A synced payment over the open balance is refused with a message pointing here (`upsertLocalPaymentDraft`, `@carbon/ee`). A bill already synced to an accounting provider keeps its original total there.
 - **Invoice status** — `salesInvoiceStatusType` / `purchaseInvoiceStatusType`;
@@ -332,8 +332,8 @@ guarded by `requireUnlockedBulk`, not validators.
 ## Operations (`invoicing.server.ts`)
 
 Every route action that composes writes calls one `defineServiceFn` operation through
-`carbon(request)` (`api.invoicing.postSalesInvoice(input)`); the API and MCP publish the ones
-tagged `@mcp` (all below except the two `*Field` updates and the two `*LinePostedAccount` reads) as `invoicing_<name>`:
+`authorize(request)` (`api.invoicing.postSalesInvoice(input)`); the API and MCP publish the ones
+tagged `@mcp` (all below except the two `*LinePostedAccount` reads) as `invoicing_<name>`:
 
 - Sales invoices: `updateSalesInvoiceField`, `postSalesInvoice`, `voidSalesInvoice`,
   `sendSalesInvoice`, `deleteDraftSalesInvoice`; `createSalesInvoiceLine` /
@@ -377,8 +377,26 @@ How they behave:
 - A failure after the main write (seeding a payment's applications, applying or posting a
   reimbursement payout, the lines of an adjusting entry) keeps the write and returns
   `warning`.
-- The `*Field` operations require `update: sales` for both invoice kinds, as the
-  properties panels' routes always did.
+- The `*Field` operations require Edit on Sales Invoices or Purchase Invoices: the
+  properties panels enable their fields on it, and the tables' RLS asks for it.
+  An id they write (customer, supplier, contact, location, payment term) must name a row
+  of the company, checked with the service role before any write
+  (`INVOICE_FIELD_REFERENCES` and `partyCurrency`, `invoicing.service.ts`): most of
+  these foreign keys name the id alone. A new sales invoice customer is checked before
+  its ship-to is cleared.
+- The issue date cannot be cleared, as in the panels. The due date a new issue date or
+  payment term recomputes reads the term with the service role: `paymentTerm` is read
+  by accounting, sales and purchasing pages, not invoicing's, and a term the caller
+  cannot see would fall back to Net 30. With no issue date the due date is kept.
+- Both operations run `updateInvoiceField` (`invoicing.service.ts`); only the sales
+  `customerId` branch stays in its operation. A new sales invoice customer and the
+  ship-to it clears are one Kysely transaction (`changeSalesInvoiceCustomer`), and only
+  an invoice whose customer changes loses its ship-to.
+- Every other field a posted invoice no longer takes (all but the issue, due and paid
+  dates; the invoice customer and invoice supplier included) is written by
+  `writeDraftInvoices`. Both writers lock the invoices `FOR UPDATE` and check they are
+  still Draft (`lockDraftInvoices`), so a post that claims an invoice first keeps the
+  invoice it posts. There is no Draft check before that lock.
 
 ## Related Modules
 

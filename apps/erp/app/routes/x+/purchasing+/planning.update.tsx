@@ -2,11 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+import {
+  plannedOrderIdValidator,
+  updatePlannedOrderValidator
+} from "~/modules/production/production.models";
 import {
   applyPlanningActions,
   orderPlannedPurchases,
@@ -35,6 +39,12 @@ const body = z.discriminatedUnion("action", [
     action: z.literal("assign"),
     planningActionIds,
     assignee: z.string().nullish()
+  }),
+  plannedOrderIdValidator.extend({
+    action: z.enum(["firmPlannedOrder", "unfirmPlannedOrder"])
+  }),
+  updatePlannedOrderValidator.extend({
+    action: z.literal("updatePlannedOrder")
   })
 ]);
 
@@ -48,7 +58,8 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
   const request = input.data;
-  const purchasing = (await carbon(args.request)).purchasing;
+  const { api } = await authorize(args.request);
+  const purchasing = api.purchasing;
 
   switch (request.action) {
     case "order":
@@ -82,6 +93,32 @@ export async function action(args: ActionFunctionArgs) {
         await purchasing.assignPurchasingPlanningActions({
           planningActionIds: request.planningActionIds,
           assignee: request.assignee ?? undefined
+        })
+      );
+    // Planned orders are production's operations; a Buy one needs Edit on
+    // Purchasing → Material Planning (`plannedOrderChangePages`), which the
+    // operation checks.
+    case "firmPlannedOrder":
+      return respond(
+        await api.production.firmPlannedOrder({
+          id: request.id,
+          locationId: request.locationId
+        })
+      );
+    case "unfirmPlannedOrder":
+      return respond(
+        await api.production.unfirmPlannedOrder({
+          id: request.id,
+          locationId: request.locationId
+        })
+      );
+    case "updatePlannedOrder":
+      return respond(
+        await api.production.updatePlannedOrder({
+          id: request.id,
+          locationId: request.locationId,
+          quantity: request.quantity,
+          dueDate: request.dueDate
         })
       );
     default:

@@ -32,9 +32,9 @@ import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
+import { PurchasingRFQStatus } from ".";
 import { purchasingRfqStatusType } from "../../purchasing.models";
 import type { PurchasingRFQ } from "../../types";
-import { PurchasingRFQStatus } from ".";
 
 type PurchasingRFQsTableProps = {
   data: PurchasingRFQ[];
@@ -264,7 +264,7 @@ const PurchasingRFQsTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "purchasing")}
+            disabled={!permissions.has({ "purchasing.rfqs": "Full" })}
             onClick={() => {
               setSelectedPurchasingRFQ(row);
               deletePurchasingRFQModal.onOpen();
@@ -296,7 +296,7 @@ const PurchasingRFQsTable = memo(
             updatedBy: false
           }}
           primaryAction={
-            permissions.can("create", "purchasing") && (
+            permissions.has({ "purchasing.rfqs": "Create" }) && (
               <New label={t`RFQ`} to={path.to.newPurchasingRFQ} />
             )
           }

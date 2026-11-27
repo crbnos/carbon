@@ -2,16 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { getSupplierQuotesForComparison } from "~/modules/purchasing/purchasing.service";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    view: "purchasing"
-  });
+  const { companyId } = await authorize(request, { "purchasing.rfqs": "View" });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("rfqId not found");

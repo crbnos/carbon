@@ -94,6 +94,8 @@ export const path = {
     apAgingExcel: `${x}/reports/ap-aging.xlsx`,
     api: {
       abilities: `${api}/resources/abilities`,
+      accessHolders: (page: string, level: string) =>
+        `${api}/users/access-holders?${new URLSearchParams({ level, page })}`,
       accountNotifications: `${api}/account/notifications`,
       accountProfile: `${api}/account/profile`,
       accountSecurity: `${api}/account/security`,
@@ -126,7 +128,6 @@ export const path = {
             ? new URLSearchParams({ batchId: target.batchId })
             : new URLSearchParams(target.jobIds.map((id) => ["jobId", id]))
         }`,
-
       billOfMaterials: (methodId: string, withOperations: boolean = false) =>
         generatePath(
           `${api}/items/methods/${methodId}/bom?withOperations=${withOperations}`
@@ -169,7 +170,6 @@ export const path = {
           projectId ? { periodId, projectId } : { periodId }
         )}`,
       employeeTypes: `${api}/users/employee-types`,
-      emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,
       gauges: `${api}/quality/gauges`,
       generateCsvColumns: (table: string) =>
@@ -333,6 +333,21 @@ export const path = {
         generatePath(`${api}/production/outside-operations/${jobId}`),
       outstandingTrainings: `${api}/resources/trainings`,
       paymentTerms: `${api}/accounting/payment-terms`,
+
+      plannedOrders: (args: {
+        itemId: string;
+        locationId: string;
+        orderType: "Make" | "Buy";
+      }) => `${api}/production/planned-orders?${new URLSearchParams(args)}`,
+      planningOpenJobs: (args: { itemId: string; locationId: string }) =>
+        `${api}/production/planning-open-jobs?${new URLSearchParams(args)}`,
+      planningOpenPurchaseLines: (args: {
+        itemId: string;
+        locationId: string;
+      }) =>
+        `${api}/purchasing/planning-open-lines?${new URLSearchParams(args)}`,
+      planningSupplierParts: (itemId: string) =>
+        `${api}/purchasing/planning-supplier-parts?${new URLSearchParams({ itemId })}`,
       procedures: `${api}/production/procedures`,
       processes: `${api}/resources/processes`,
       productionKpi: (key: string) =>
@@ -375,6 +390,8 @@ export const path = {
       quoteLines: (quoteId: string) =>
         generatePath(`${api}/sales/quotes/${quoteId}/lines`),
       quotes: `${api}/sales/quotes`,
+      rentalAgreementInvoicePreview: (id: string, periods: number) =>
+        `${generatePath(`${api}/rental-agreement/${id}/invoice-preview`)}?${new URLSearchParams({ periods: String(periods) })}`,
       requestQuoteRows: (itemId: string) =>
         generatePath(`${api}/purchasing/request-quote/${itemId}`),
       resourcesKpi: (key: string) =>
@@ -1783,8 +1800,6 @@ export const path = {
     maintenanceDispatchEvents: (id: string) =>
       generatePath(`${x}/maintenance/${id}/events`),
     maintenanceDispatches: `${x}/resources/maintenance`,
-    maintenanceDispatchItems: (id: string) =>
-      generatePath(`${x}/maintenance/${id}/items`),
     maintenanceDispatchStatus: (id: string) =>
       generatePath(`${x}/maintenance/${id}/status`),
     maintenanceDispatchUpdate: `${x}/maintenance/update`,
@@ -1992,8 +2007,6 @@ export const path = {
     newMaintenanceDispatch: `${x}/maintenance/new`,
     newMaintenanceDispatchEvent: (dispatchId: string) =>
       generatePath(`${x}/maintenance/${dispatchId}/event/new`),
-    newMaintenanceDispatchItem: (dispatchId: string) =>
-      generatePath(`${x}/maintenance/${dispatchId}/item/new`),
     newMaintenanceSchedule: `${x}/resources/scheduled-maintenance/new`,
     newMakeMethodVersion: `${x}/items/methods/version/new`,
     newMaterial: `${x}/material/new`,

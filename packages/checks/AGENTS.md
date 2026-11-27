@@ -1,80 +1,189 @@
 # @carbon/checks
 
-Conformance checking, clobber detection, invariant queries, and module structure validation for the Carbon monorepo.
+Conformance checks, clobber detection, invariant queries and license headers
+for the Carbon monorepo.
+
+A conformance check is one rule about the code ("a view states
+`security_invoker`", "a route writes through a service function"). The gate
+fails on any violation the committed baseline does not list.
 
 ## Always
 
-- **Run checks against real migrations and module directories** — `collectFindings(root)` scans both SQL migrations and app module structure
-- **Use `newViolations()` for CI** — filters findings against the baseline so only new violations fail the build
-- **The conformance gate runs in four places, all the same command** (`pnpm --filter @carbon/checks exec vitest run src/run.test.ts`): CI (`.github/workflows/check.yml`), the harness (`packages/harness/src/gates.ts`, via `pnpm --filter @carbon/checks test`, which runs every test file including `run.test.ts`), the pre-commit hook (`scripts/git-hooks/pre-commit`, on any staged `.ts`/`.tsx`/`.sql` under `apps/` or `packages/`; `CARBON_SKIP_CONFORMANCE_CHECK=1` skips) and `/check-and-commit` Gate 2b. A new violation is fixed in the code; the baseline grandfathers pre-existing sites only
-- **Add new conformance rules to the array that matches the rule's SOURCE** — `CONFORMANCE_CHECKS` (SQL migrations), `SERVER_CHECKS` (server-only TS), `TS_CHECKS` (all app + shared-package TS, client and server), `EDGE_FUNCTION_CHECKS` (one source per edge function, all of its `.ts` files joined — `sources/edge-functions.ts`), or `STRUCTURE_CHECKS` (module layout). Follow the `ConformanceCheck` / `StructureCheck` interface
-- **Write invariants as `.sql` files** — each returns rows that VIOLATE the rule (empty = healthy); loaded from directory by `loadInvariants(dir)`
+- **Fix the code, not the baseline.** A new violation is fixed where it is. The
+  baseline (`src/conformance/baseline.json`) grandfathers only the sites that
+  existed before a check did.
+- **Read a check in its subject's file.** `src/conformance/` has one file per
+  subject (`migrations.ts`, `authz.ts`, `data-access.ts`, `ui.ts`, …). Each
+  check's rule, its exemptions and the incident that prompted it are in the
+  comments above it. This guide does not repeat them.
+- **Add a check as one `defineCheck` and one line.** Write it
+  (`src/check.ts`: `id`, `description`, `provenance`, the inputs it reads and
+  its rule) in its subject's file and add it to the `checks` list at the end of
+  that file. `src/checks.ts` joins those lists into `CHECKS`. Nothing else
+  registers it. A check declares every input it reads, and its rule gets them
+  loaded and never sees the repo. There are two shapes; copy the closest:
+  - It reads one file at a time: `defineCheck({ …, files: loader, scan })`.
+    Tests call `check.scan(file, contents)` with a fixture string. Example:
+    `noNumericPrecision` in `migrations.ts`.
+  - It reads several inputs: `defineCheck({ …, reads: { name: loader, … },
+    find })`, and `find({ name, … })` gets each one loaded. Tests call
+    `check.find({ … })` with their own values, or the pure `find*` function the
+    check calls. Example: `providerRoleBackfilled` in `drift.ts`. A per-file
+    scan that needs data from the repo (the generated columns, the managed
+    functions) is this shape too: keep a factory that takes the data, so tests
+    pass their own, and let `find` run its `scan` over the files. Example:
+    `noAuthzDdlInMigrationsCheck` in `authz.ts`. A per-file scan over several
+    inputs is an exported function the tests call:
+    `scanJournalStatusFilter` in `accounting.ts`.
+- **Keep a check self-contained.** The gate runs the checks on worker threads,
+  each taking the next check when it finishes one, so two checks may run in
+  different threads in any order. A check shares nothing with another check but
+  its loaders: no module state one check writes and another reads. The gate
+  groups checks by the first loader each declares, so a check that also reads
+  the migrations declares them first and shares the worker that parsed them.
+- **Name every input as a loader.** A loader is a function `(root) => T`. The
+  repo runs each loader once and shares the result, so declare the same
+  function every time:
+  - An input several checks share is a named loader in `src/sources/inputs.ts`
+    (`migrations`, `typescript`, `routeTypescript`, …) or a loader in
+    `src/sources/`.
+  - A loader that exists for one check lives in that check's file, beside the
+    constants it reads. A file in `src/sources/` does not import a check.
+- **A rule about what SQL does reads parsed SQL, not a regex.**
+  `src/sources/sql.ts` gives the statements Postgres's own parser returns
+  (`libpg-query`, the version `@carbon/database` uses). Its header explains the
+  API: `sqlFragments`, `sqlNodes`, `ancestorsOf`, `typeNamesIn`, `tokensFrom`.
+  Three things to know:
+  - A file is several pieces of SQL: the file, each function body and DO block,
+    and the SQL an `EXECUTE` of a plain string runs. `fragment.inside` says
+    which.
+  - Text that is not SQL has no statements. Write a test fixture as a whole
+    statement (`CREATE TABLE t (…)`, not a bare column), or the test passes
+    without testing anything.
+  - The PL/pgSQL parser has no catalog and refuses about 1% of bodies Postgres
+    accepts (a `%ROWTYPE` variable, an undeclared variable in a fixture). Their
+    statements are then read one by one, without conditions or loop queries.
+- **A rule about TypeScript syntax is an oxlint plugin rule, not a regex.**
+  Add a rule to the `carbon` plugin in `oxlint-plugins/carbon.mjs` (ESLint's
+  `create(context)` API; the rule name is the check id) and a `Check` that
+  reads its findings (`routeActionShape` in `routes.ts` is the example). Then:
+  - Enable it for its folders with an `overrides` entry in the root
+    `oxlint.config.ts` (`"carbon/<check-id>": "warn"`).
+  - Keep it at `warn`, so the editor shows it and `oxlint` still passes. The
+    gate reads the same diagnostics by rule id (`src/sources/oxlint.ts`).
+  - Report the callee, not the whole call: the baseline key is the matched
+    source with comments and whitespace removed.
+  - Test it in `src/sources/oxlint.test.ts` (`scanWith`).
+- **A rule that needs the syntax tree and cannot be a plugin reads oxc's.**
+  `src/sources/syntax.ts` gives `parseTypescript` and `walk` (`oxc-parser`:
+  ESTree with the TypeScript and JSX nodes, offsets into the text). A check
+  that compares files, or needs data from the repo, cannot be a plugin rule.
+  Test whether the file can matter with a cheap text test before you parse it.
+- **A new check proves itself on the bug it exists for.** Its
+  `provenance.incidents` names the commit of the past fix. Its test file names
+  each sha in a case that replays the code from before the fix
+  (`git show <sha>^:<file>`) and expects a finding, beside a case where the fix
+  passes. `src/provenance.test.ts` enforces this for every `Check` a
+  `conformance/` module exports, and fails one that is not in `CHECKS`. The
+  checks of one module share its test file. Checks older than this rule are
+  listed in `UNPROVEN_CHECKS` there; the list only shrinks.
+- **Test a check by value.** A fixture string in, the literal violations out.
+  Add the case that must not match as well, and make sure it could fail: break
+  the guard it protects and watch the test go red.
+- **Write an invariant as a `.sql` file** in `src/invariants/`. It returns the
+  rows that violate the rule (none means healthy). Its header says what it
+  guards.
 
 ## Ask First
 
-- Regenerating the baseline (`pnpm --filter @carbon/checks baseline`) — this grandfathers all current violations
-- Adding new `OBJECT_PATTERNS` to clobber detection (extends what qualifies as a DB object redefinition)
-- Modifying existing conformance checks (may affect CI gates)
+- Regenerating the baseline (`pnpm --filter @carbon/checks baseline`): it
+  grandfathers every current violation.
+- Adding to `OBJECT_PATTERNS` in clobber detection: it widens what counts as a
+  redefined database object.
+- Changing what an existing check reports: it changes the CI gate.
 
 ## Never
 
-- Ignore clobber warnings — they indicate a view or function is redefined on both your branch and main since the merge-base; rebase first
-- Suppress violations by removing checks — add to the baseline if grandfathering is appropriate
+- Ignore a clobber warning. It means a view or function is redefined on your
+  branch and on main since the merge base. Rebase first.
+- Remove a check to silence a violation. Add the site to the baseline if it
+  should be grandfathered.
+- Run `oxlint --fix-suggestions` or `--fix-dangerously` here. Those fixes
+  can change what the code does; `oxlint --fix` applies only safe ones.
 
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/checks test          # vitest — unit tests
-pnpm --filter @carbon/checks clobbers      # check for migration clobber risks
-pnpm --filter @carbon/checks invariants    # run SQL invariants against DB
-pnpm --filter @carbon/checks baseline      # regenerate baseline (careful!)
+pnpm --filter @carbon/checks test             # every test, the gate included
+pnpm --filter @carbon/checks exec vitest run src/run.test.ts   # the gate alone
+pnpm exec turbo run typecheck --filter=@carbon/checks
+pnpm --filter @carbon/checks clobbers         # migration clobber risks
+pnpm --filter @carbon/checks invariants       # SQL invariants (needs a database)
+pnpm --filter @carbon/checks workflow-events  # workflow event ids (needs a database)
+pnpm --filter @carbon/checks license-headers  # write missing license headers
+pnpm --filter @carbon/checks guarded-code [base] [--root <repo>]
+pnpm --filter @carbon/checks baseline         # regenerate the baseline (ask first)
 ```
 
-## Key Patterns
+The gate runs in four places with the same command
+(`vitest run src/run.test.ts`): CI (`.github/workflows/check.yml`), the harness
+(`packages/harness/src/gates.ts`), the pre-commit hook
+(`scripts/git-hooks/pre-commit`, on a staged `.ts`, `.tsx` or `.sql` under
+`apps/` or `packages/`; `CARBON_SKIP_CONFORMANCE_CHECK=1` skips it) and
+`/check-and-commit`.
 
-- **Conformance checks**: `noNumericPrecision`, `noLegacyRls`, `noDerivedPercentColumn`, `noRequiredColumnWithoutDefault`, `noViewWithoutInvoker` — scan SQL migrations for anti-patterns (`noDerivedPercentColumn` flags a `*Percent`/`*Rate` column `GENERATED ALWAYS AS` an expression that divides — a percentage is an entered fact, never a lossy echo of a rounded amount; `noViewWithoutInvoker` fails a `CREATE [OR REPLACE] VIEW` that does not state `security_invoker` — `CREATE OR REPLACE` replaces a view's options, so omitting the clause turns it into an owner-rights view that bypasses RLS for every PostgREST caller, and `openJobMaterialLines` leaked every company's rows that way. `security_invoker = false` passes, so an owner-rights view is a visible decision; materialized views are not matched. It reads one file's text, so an `EXECUTE format(...)` view or a later `ALTER VIEW … RESET` escapes it — the invariant below is the backstop); `noLocalTimezone` (in `SERVER_CHECKS`) scans server TS (`sources/server-files.ts`) for `getLocalTimeZone()`, UTC day-slicing, local date-parts of now (`new Date().getDay()` etc.), and `setHours(0,0,0,0)` midnights. Scanned files: MES services, `packages/jobs`, edge functions, `packages/database/src`, ERP module `.service.ts`/`.server.ts`, **plus both apps' route trees** — route modules are server AND client in one file, so `maskClientCode` blanks the browser half (default export, `clientLoader`/`clientAction`, PascalCase/`use*` declarations) while keeping loaders, actions, and the module-level helpers they call. A region ends only on a line of closers alone (`}`, `};`, `});`, `)`): a `}: {` or `}) {` line closes a multi-line props signature, and ending there made the rest of a component read as server code
-- **Authz ownership** (`CONFORMANCE_CHECKS` via `collectFindings`): `noAuthzDdlInMigrations(functions)` fails a migration newer than `20260927000000` that runs `CREATE`/`ALTER POLICY` on a public table (storage bucket policies stay allowed), or defines, alters or drops a managed function — policies live in `packages/database/src/authz/manifest.ts`, RLS helpers in `packages/database/src/authz/helpers/<name>.sql`, event-system functions in `packages/database/src/event-system/functions/<name>.sql` (`util.<name>.sql` outside `public`; checked from `20261002114954`, the migration that took them over), and `authz sync` applies all of them after migrations. The function list is read from those directories (`loadManagedFunctions`, one cutoff per directory in `MANAGED_FUNCTION_SETS`), so it cannot drift from the files. `DROP POLICY` is allowed (dropping a column a policy uses). Files starting with the `authz migration` header are exempt; `@carbon/database`'s `migration.test.ts` verifies their contents. Older migrations are history, so there are no baseline entries
-- **Forwarded headers** (own source, `REQUEST_HANDLING_ROOTS`: every app + auth, ee, jobs, lib, utils, edge functions): `noRawForwardedHeaders` fails a raw read of `X-Forwarded-For/-Host/-Proto` or `X-Real-IP` outside `packages/utils/src/headers.ts` — use `getClientIp` / `getRequestProtocol` / `getRequestHost` / `getRequestOrigin`. Hand-rolled reads keyed login rate limits and ITAR audit records on the forgeable first `X-Forwarded-For` entry. No baseline entries
-- **Error log messages** (same source as forwarded headers, `REQUEST_HANDLING_ROOTS`): `noInterpolatedErrorLog` fails `logger.error(`…${value}`)` / `.fatal` — the message is exported as a span attribute and is what errors group by, so values are named (`"Failed to upload {fileName}", { fileName }`). One baseline entry: the `packages/auth/src/utils/result.ts` pass-through, whose message is its caller's
-- **Numeric-precision checks** (in `TS_CHECKS`, over `sources/typescript.ts`): `noRawRounding` flags `Math.round/ceil/floor` and `.toFixed` on value-bearing numbers (use `round`/`scrapAllowance`/`applyRate`/`deriveRate` from `@carbon/utils`); `noInlineFractionDigits` flags `minimum`/`maximumFractionDigits` at a call site (pick a named kind from `@carbon/utils` `format.ts`, and `INPUT_FORMAT.*` for anything editable); `noUnroundedTrackedQuantity` flags inline unrounded arithmetic inside a `.updateTable("trackedEntity")` statement's `quantity:` set, and a raw `===`/`!==`/`<` compare against a `*[Ee]ntity*.quantity` read (use `round`/`settleQuantity` at the write, `isFullDraw` at a split gate — see `.claude/rules/traceability-model.md`). It is scoped to what one file can prove: a `quantity:` set from an already-rounded variable is unflaggable either way, and a compare of two locals is presumed rounded where they were defined. It has **no baseline entries** — the whole tree was fixed in the pass that added it, so any finding is new. `sources/typescript.ts` walks `apps/erp/app/{components,hooks,modules,routes}`, `apps/mes/app`, `packages/database/supabase/functions`, `packages/database/src`, `packages/{ee,jobs}/src`, `packages/documents/src/{pdf,utils}` and the shared packages `packages/{utils,files,form,react,printing}/src` — tests (`*.test.ts(x)`, `*.spec.ts(x)`) and `*-test-fixture.ts` live-database fixtures excluded; a fixture is test support code, so it is held to the tests' rules, not shipped code's. The shared packages matter: `@carbon/utils` is where the standard's own helpers live, and `form`/`react` own the number inputs whose `formatOptions` are part of the storage round-trip. See `.claude/rules/numeric-precision.md`
-- **Migration and error-code rules**: `noForeignKeyWithoutOnDelete` (`CONFORMANCE_CHECKS`) fails a `REFERENCES` with no `ON DELETE` clause, only in migrations newer than the cutoff (`CUTOFF` in the file), so older history is untouched and needs no baseline. `noInlineUniqueViolation` (`TS_CHECKS`) fails a literal `"23505"` outside `packages/utils/src/errors.ts` and `error-reason.ts`; use `isUniqueViolation` from `@carbon/utils`. Its 23 existing sites are baselined and should be migrated to the helper
-- **Realtime** (in `TS_CHECKS`): `noPostgresChanges` fails a `postgres_changes` subscription — the `supabase_realtime` publication is empty, so it would never fire. Use a broadcast topic through `@carbon/query` (`.claude/rules/realtime-system.md`).
-- **Missing audit columns** (built in `collectFindings`, not `TS_CHECKS`): `noMissingAuditColumn(columns)` fails a write that names `createdBy`/`updatedBy` on a relation that has no such column — PostgREST rejects the whole statement (`PGRST204 Could not find the 'createdBy' column of '<table>'`) and TypeScript does not flag it, because supabase-js widens the insert/upsert argument enough for the excess property to survive. That is how the `customerPartToItem` upsert in `sales-rfq.$rfqId.map-lines.ts` shipped with an unchecked result, so every RFQ-line → customer-part mapping silently failed. Roughly a third of Carbon's tables have no audit columns (favourites, link tables, the lean material lookups, `companySettings`) while golden rule 3 says to include them, so it is an easy assumption to carry into the wrong table. It takes the column map as an ARGUMENT — `loadDbTableColumns(root)` (`sources/db-columns.ts`) reads the generated `packages/database/src/types.ts` `Row:` blocks, so the I/O stays in `sources/` and `scan` stays pure, the same shape as `noAuthzDdlInMigrations(loadManagedFunctions(root))`. Scope is the LITERAL argument of the write (`.from`/`insertInto`/`updateTable` + `.insert`/`.upsert`/`.update`/`.values`/`.set`); a payload object spread into the row is invisible here. No baseline entries — the one hit was fixed when it was added
-- **Discarded query errors** (in `TS_CHECKS`): `noDiscardedQueryError` (`no-discarded-query-error`) fails a supabase-js result read without its `error`. supabase-js never throws, so a failed read comes back as `data: null`, and code that skips `error` reads it as "none": the consolidated ledger drill-down read every company when its company-group read failed (`cfdc4f9299`), a price-list export ended early instead of failing (`b399972472`), an approval check read a failed query as "nothing pending" (`c0b85077ee`), and the RFQ-line `customerPartToItem` upsert failed on every call because its result was never bound (`22c9b98508`). It fails four shapes on an awaited chain with a `.from(…)`, `.rpc(…)` or `.functions.invoke(…)` call (so `.storage.from(…)` too), whose head is not PascalCase (`Array.from`) and which has no Kysely `.execute…()`: an object destructure that binds `data`/`count` and not `error` (a `...rest` counts as binding it); `(await …).data`/`.count`; `const r = await …` whose enclosing block reads `r.data`/`r.count`, never `r.error`, and never hands `r` itself on (returned, passed, spread); and an awaited `.from(…).insert/update/upsert/delete(…)` used as a bare statement. Fix by binding `error` and returning or throwing on it; a best-effort write still binds its result and logs it. A bound `error` that is never read is left to Biome, whose `noUnusedVariables` already fails it; what a read does with the error is beyond a text check. Not followed: a query builder kept in a variable (`const q = client.from(…); await q`, the second half of `b399972472`), `Promise.all` results, and a service function's `{ data }` result (`await getX(client)`). There is no allow comment: a deliberate exception is baselined. It runs on browser code too, because about a quarter of the hits are there and the sampled ones are real (a notes autosave that drops a failed update, a picker that shows an empty list on a failed read). Two hits with the same snippet in one file share one baseline key. 538 baseline entries
-- **Function redefinitions** (built in `collectFindings`, cross-file over the migrations): `findDroppedFunctionChanges` (`function-redefinition-keeps-changes`) fails a migration from `20261016000000` on whose `CREATE OR REPLACE FUNCTION` leaves out two or more lines the previous definition added over its own predecessor. A function is its schema, name and input argument types (OUT arguments, argument names, defaults and type modifiers left out; `int`/`int4`/`integer` and the other aliases read as one), so an overload and a `util.*` function each have their own history. A redefinition must start from the newest definition: `20261014171619_receive-consumed-serial-units` forked `complete_job_to_inventory` from an older migration and silently undid always-post job costing and the production-event lock (restored in `20261015161847_job-receipt-takes-issued-serial-units`). A deliberate removal is explained in the migration header and baselined. No baseline entries
-- **Stamped identity fields** (built in `collectFindings`, cross-file): `findStampColumnMismatches` (`stamp-matches-columns`, sources from `loadModuleServerFiles`) follows each `payload(ctx, value)…for*()` chain in a module's `<m>.server.ts` into the `service.<fn>(…)` it is passed to, and reads that function's writes in `<m>.service.ts` whose row is the parameter itself (`insert([p])`, `...p`, `sanitize(p)`, or one local initialized from it). It fails a field `payload` adds that the table has no column for (PGRST204: `createAccount` stamped `companyId` onto the group-scoped `account`), and `createdBy` added to a payload that only reaches `.update(` (it rewrites the row's author: `upsertItemCost`). It follows `payload`'s own rules: a list gets only `createdBy`, `forUpdate` drops `createdBy`, a nested object is never added to. No baseline entries
-- **Tenant-scoped Kysely writes** (in `TS_CHECKS`): `noUnscopedKyselyWrite` fails any `.updateTable(`/`.deleteFrom(` under `apps/erp/app/{modules,routes}`, `apps/mes/app` or `packages/jobs/src` whose statement (up to `.execute…(`/`.compile(`/`;`/`,` at depth 0, comments blanked) has no `.where("companyId", …)` / `.where("alias.companyId", …)`. Kysely is the superuser connection, and the public API hands a service's `db` param that same client, so the statement's own predicate is the only tenant boundary — ten drag-sort services (`updateQuoteLineOrder` and friends) were a reported cross-tenant write because they keyed on `id` alone. `company` is exempt (its `id` is the tenant); a `companyId` in `.set()` does not count; a link table with no `companyId` column passes by scoping through its parent in a subquery. `packages/ee` is out of scope (see the file header), and so are writes made through the `@carbon/database/rows` helpers (`updateRows` / `deleteRows`): the check only reads Kysely's own builders. One baseline entry: the `companyGroup` delete in `packages/jobs/.../scheduled/purge-company.ts` (a group has no `companyId` column; its `id` is the tenant-group key). Every other hit was fixed when it was added
-- **MES serial unit writes** (in `TS_CHECKS`): `mesUnitWriteResolvesUnit` (`mes-unit-write-resolves-unit`) fails a top-level function under `apps/mes/app/routes/x+/` or `apps/mes/app/services/` that writes a serial unit and does not itself call `resolveWorkUnit` (comments and strings blanked; nested callbacks count as their top-level function, found by Biome's column-0 layout). A write is a `jobOperationSerialComplete` / `jobOperationScrap` / `trackedEntitiesToOperation` / `unconsumeTrackedEntities` / `scrapTrackedEntity` posting type, an `issue` posting whose `type` is not a literal, `trigger-rework` / `trigger-correction`, a call to one of `UNIT_WRITE_CALLS` (the definition itself is exempt; its callers are checked), or a direct insert/upsert into `jobOperationStepRecord`, `trackedActivity(Output)`, `productionEvent` or `productionQuantity`. `UNIT_WRITE_ALLOW_LIST` exempts single functions (`file#function`), each with its reason. It also fails `isSerialEntityIncompleteForOperation` / `getNextIncompleteSerialEntity` outside `services/work-unit.server.ts` (imports and the definition skipped), unless `UNIT_PICK_ALLOW_LIST` names the function with its reason: only the resolver picks a unit on the server. The test pins every writer and picker function in the repo, so a new one fails until it is reviewed. It proves the resolver is called in the function, not that its refusal is honoured. No baseline entries
-- **Unguarded submit buttons** (in `TS_CHECKS`, `.tsx` only): `noUnguardedSubmit` fails a `<Button>`/`<button>`/`<IconButton>` carrying `type="submit"` whose own opening tag names no in-flight signal (`isLoading`, `isSubmitting`, `isPending`, `isSaving`, `useIsSubmitting`, or a `*fetcher|navigation|transition*.state` read). A live submit button posts again on every click and each POST runs to completion server-side — `fetcher.submit` aborts the previous BROWSER request, but no route action reads `request.signal` — which is how one quote finalize emailed the customer the same PDF three times. It parses the real opening tag (brace- and quote-aware), so a guard written after `type="submit"` still counts and a `>` inside `{a > b}` does not end the tag early. **The presence of `isDisabled` is deliberately not enough**: the incident's button was `isDisabled={loading}` where `loading` was the modal's data-fetch flag, so a check that accepted any `isDisabled` would have passed the exact line it exists to catch; word boundaries matter too (`loading` must not satisfy `isLoading`). Buttons inside a `<ValidatedForm>` are skipped — `ValidatedForm.handleSubmit` drops a re-entrant submit, so a second click cannot produce a second POST however the button is written. `packages/form/src/components/Submit.tsx` is excluded; it IS the guard. The check cannot do dataflow, so a guard held in a differently-named local (`disabled={busy}`) is baselined rather than rewritten. 32 baseline entries, all reviewed: logout/company-switch/theme/console-toggle (idempotent), delete and rule-unassign (a second delete is a no-op), the two chat composers (guarded by a `flushSync` clear plus an empty-message return), and `ConfiguratorForm` (its submit is an `onSubmit` callback — the in-flight state lives at the caller)
-- **Dialogs that cannot animate closed** (in `TS_CHECKS`, `.tsx` only): `noUnmountingDialog` (`no-unmounting-dialog`) fails a dialog rendered under a condition (`cond && <D />`, `cond || <D />`, `cond ? <D /> : …`, `cond ? null : <D />`, or the else branch after JSX) when the condition removes it in the render it closes in: its tag passes no real `open`/`isOpen` (a bare `open` or `open={true}` does not count); the condition is its own open state under any name (`x.isOpen && <D isOpen={x.isOpen} />`, `sel && <D isOpen={!!sel} />`); or its own close handler clears the record the condition guards on (`setSelected(null|undefined|false)` in the tag, or in a handler passed by name and declared in the same file). A dialog is `Modal`, `ModalCard`, `Drawer`, `ModalDrawer`, any `Confirm*`/`Delete*`, any `*Modal`/`*Drawer`/`*Dialog`, or a `*Form` with `type="modal"`. It also fails any `useCloseRoute(` call outside `packages/react/src/hooks/`. Radix plays a closing animation only while the dialog stays mounted and `open` turns false. It also fails `if (!isOpen) return null` (or `!open`) in a file that renders `Modal`, `Drawer`, `ModalDrawer` or `ModalCard`. Use the `open` prop, with per-open state in a body inside the content (`.claude/rules/conventions-ui.md`, Modals and Drawers), and `useRouteDialog()` for a route dialog. It reads text only: a dialog named otherwise, a `*Form` whose modal mode is not a literal `type="modal"`, or a route closed with `navigate(...)` is not seen. 13 baseline entries, each reviewed: trigger components that hold their own open state (Linear/Jira issue dialogs, `ActionTaskAddModal`, `WorkflowLockModal`), full pages that call `useCloseRoute`, a polling modal (`JobProgressModal`) and a dead modal (`MaintenanceDispatchProperties`)
-- **Record outlets** (`no-bare-outlet`): `noBareOutlet` (over `sources/typescript.ts`) fails a plain `<Outlet>` without a `key` in a route under `/x`; use `RecordOutlet` (`@carbon/react`). `findNestedOutlets` (built in `collectFindings`, cross-file, same check id) fails a file that renders its own outlet and a component that renders one, directly or through other components: both outlets render the child route, so a route dialog opened twice with duplicate input ids, each hiding the other with `aria-hidden` (New API Key, New Webhook, a supplier's New Process). It follows `~/` and relative imports, by file or by the file's name through a barrel above it, so a same-named component elsewhere is not confused with it; from the component's own file only its default export or the export named after the file counts; a barrel that renames its export is not followed. It reads the whole file, not branches: a component with an outlet behind an early return is flagged too, because the rule is one outlet per route. One baseline entry: the supplier processes route, whose `SupplierProcesses` card keeps its outlet until its own fix. Every other component that renders an outlet is the only outlet of its route
-- **Module files** (in `TS_CHECKS`): `serviceFnFile` (`service-fn-file`) fails anything in an ERP `<module>.server.ts` (or `.ee.server.ts`) other than imports, types, plain constants and exported `defineServiceFn` consts — a helper function, a class or an exported value is a building block and goes in `<module>.service.ts`. `noServerCodeInClient` (`no-server-code-in-client`) fails a value import of a `.service`, `.server` or `.pdf` file from browser code: `components/`, `hooks/`, `stores/`, a module's `ui/`, `*.models.ts`, `*.utils.ts` and `types.ts`. Those files are server-only; a function the UI calls lives in `<module>.utils.ts`. Type-only imports pass. It also scans ERP routes: a route may import a service file for its loader and action, but fails when a name it imports from one is used in its browser half (what `maskClientCode` blanks, comments removed; a local of the same name is skipped). `LOCK_PERIOD_TASK_NAME` used in a close-period component put the accounting service, and its `@carbon/auth/auth.server` import, into the client build, which then failed. No baseline entries for either. See `.claude/rules/module-files.md`.
-- **Side-effect imports** (built in `collectFindings`, cross-file, `sources/side-effect-packages.ts`): `findUndeclaredSideEffectImports` (`side-effect-import-declared`) fails a bare import (`import "./x"`, `import "~/x"`) of a file in its own package when that package's `package.json` sets `"sideEffects": false` or does not list the file. The production bundler drops such an import: the ERP's `import "./modules/carbon.server"` was dropped, so every `carbon()` call threw in production, and `zod.client` (`z.config({ jitless: true })`) never ran in any app. The dev server does not tree-shake, so nothing else shows it. A bare import of another package is left to that package's own `sideEffects`; `.css` is ignored. No baseline entries
-- **Route writes** (in `SERVER_CHECKS`, ERP routes masked by `maskClientCode`): `routeActionShape` (`route-action-shape`) fails a write made in an ERP route — a `.from("…")` insert/upsert/update/delete, a Kysely `insertInto`/`updateTable`/`deleteFrom`, or an `invokePosting(`/`invokePostingOrThrow(`/`invokeCreate(` call (a posting body run outside its service function). The write belongs in a `defineServiceFn` the route calls, so the API and MCP run the same logic (`.ai/plans/2026-10-15-service-function-migration.md`). It matches those literal patterns only: `.rpc(` is not matched (it reads as often as it writes), and a route that calls a write building block from a `.service.ts` (or two write functions) is not detected. 11 baseline entries, all auth routes (`_oauth+/authorize`, `register`, `token`, `_public+/unlock`, `api+/account.security`, `api+/passkey.*.verify`)
-- **Edge-function auth** (`EDGE_FUNCTION_CHECKS`): `edgeFunctionAuthorizesCaller` fails any function under `packages/database/supabase/functions/` that never calls `requireCaller` / `requireServiceRole` — the gates each self-contained function defines for itself; a declaration alone does not count — because `verify_jwt` accepts the published anon key
-- **License headers** (own source, `sources/license-files.ts`: git-tracked `.ts/.tsx/.js/.jsx/.mjs/.cjs/.rs` under `apps`, `packages`, `crates`, `docs`, `ci`, `scripts` and the repo root): `spdxLicenseHeader` fails a file whose first lines are not its SPDX header — `AGPL-3.0-only`, or `LicenseRef-Carbon-Commercial` under `packages/ee/` and for any `.ee.` file name. The header text, the classification, the exclusions (each with its reason: generated files a generator would clobber — `generate:types`, `generate:swagger`, the workflow catalog, `sst-env.d.ts`, the notification preview fixtures — and third-party copies) and the insertion rules live in ONE module, `src/license-headers.ts`, shared with the fixer `pnpm --filter @carbon/checks license-headers` (`--check`, `--dry-run`, `--verbose`, optional paths; root alias `pnpm license:headers`), so the check fails exactly the files the fixer would change. The header goes after a shebang and above everything else (`"use client"`, `// @ts-nocheck`, `/// <reference>`, `biome-ignore-all`, `deno-lint-ignore-file`, Rust `//!`/`#![…]` all stay valid after a comment), then one blank line; the other license's header is swapped, CRLF is kept. A file with a third-party notice (foreign SPDX id, `@license`, copyright) is flagged and never rewritten — add it to `PATH_EXCLUSIONS`. When the header wording changes, move the old lines to `RETIRED_HEADER_LINES`. No baseline entries
-- **Document sequences** (built in `collectFindings`, cross-file): `findUnsyncedDocumentSequences` (`document-sequence-synced`, sources loaded by `sources/document-sequences.ts`) fails a counter in `packages/database/src/seed-data.ts` `sequences` whose table is not both attached to `sync_advance_document_sequence` in `attachments.ts` and named in that interceptor's `CASE`, unless `EXEMPT_COUNTERS` lists it with the reason no caller ever supplies its number. It also fails a table that is attached but missing from the `CASE`, or the reverse. Without the interceptor, a number typed by hand or sent through MCP/the API leaves the counter behind and later inserts fail on the unique constraint. `COUNTER_TABLES` maps counters named differently from their table (`journalEntry` → `journal`, `creditMemo`/`debitMemo` → `memo`). No baseline entries
-- **Structure checks**: `moduleShape` (`module-shape`) — each ERP module has `types.ts`, `ui/`, one `<name>.service.ts` and one `<name>.models.ts` (or their `.ee.` variants), at most one `<name>.server.ts` (or `.ee.server.ts`) and no other `.server` file, and no barrel (`index.ts` / `index.server.ts`). Three baseline entries (an extra `backups.service.ts` in settings; `imports.models.ts` and no `ui/` in shared)
-- **Clobber detection**: `findClobbers(branch, main)` — identifies DB objects redefined on both sides
-- **Baseline**: `src/baseline.ts` — grandfathered violations keyed by `checkId + file + snippet` (no line number, so edits above a baselined hit don't un-baseline it)
-- **Invariants**: SQL queries loaded from directory, injected `Query` for testability
-- **`view-without-security-invoker.sql`**: every `public` view runs as its caller (`security_invoker` true in `pg_class.reloptions`), whatever put it there — the live-catalog backstop for `noViewWithoutInvoker`. `modules` and `eventSystemTrigger` are excluded by name (no tenant data). Like every invariant it needs a live connection and does not run in CI
-- **`tracked-entity-zero-available.sql`**: a lot whose quantity is gone must be `Consumed`, never a live status. `Scrapped`/`Rejected` are excluded — both are quality markers kept as historical record and already excluded from on-hand. Enforcement of the drain rule is per-writer, so this is the net that catches husks from ANY source: rows predating the rule, and any writer that revives a drained lot (unconsume, shipment void, disposition Use As Is / Rework). Run it before deciding whether to promote the rule to a DB CHECK
-- **Workflows**: two DB-backed drift checks, answering different questions.
-  `src/invariants/workflow-trigger-event-drift.sql` (via `pnpm --filter @carbon/checks invariants`)
-  compares each active workflow's `workflowTriggerEvent` rows against its active version's trigger
-  nodes — a dispatch row that is missing, orphaned, or pinned to a superseded version.
-  `src/scripts/check-workflow-events.ts` (`pnpm --filter @carbon/checks workflow-events`) asks
-  whether an event id a live workflow subscribes to still exists in the generated catalog — the
-  shape a catalog rename leaves behind. Neither replaces the other.
-  **Neither runs in CI, and neither can as CI stands**: both open a live Postgres connection
-  (`DATABASE_URL` / `SUPABASE_DB_URL`), and no job in `.github/workflows/` has database
-  credentials — `check.yml` runs only the static `check:workflow-catalog`, and `supabase.yml`
-  applies migrations through the Supabase CLI. Run them by hand against staging or production
-  after a catalog change, or give the deploy workflow a connection string first.
+## Where things are
+
+| Path | Holds |
+|---|---|
+| `src/check.ts` | The types (`Check`, `Loader`, `Repo`, `Violation`, `Provenance`) and `defineCheck`, `eachFile` |
+| `src/checks.ts` | `CHECKS`: the subject files' `checks` lists, joined |
+| `src/run.ts`, `src/run.worker.ts` | `collectFindings` (runs `CHECKS` on up to 4 worker threads, each with its own `repo`), `runChecks` (one `repo`, in process) and `newViolations` (minus the baseline) |
+| `src/repo.ts` | `openRepo`: reads each input once |
+| `src/conformance/` | One file per subject, with its tests in `<subject>.test.ts` |
+| `src/sources/` | Loaders several checks share; `sql.ts` (parsed SQL), `syntax.ts` (parsed TypeScript) and `oxlint.ts` (plugin findings) |
+| `oxlint-plugins/carbon.mjs` | The oxlint plugin rules |
+| `src/baseline.ts`, `src/conformance/baseline.json` | The grandfathered violations |
+| `src/provenance.ts` | The rule that a check replays its past fix |
+| `src/invariants/` | SQL invariants, run against a live database |
+| `src/clobber.ts`, `src/guarded-code.ts`, `src/license-headers.ts` | The other tools, below |
+
+## The other tools
+
+- **Baseline.** A violation is keyed by check id, file and snippet, with no
+  line number, so an edit above a grandfathered site does not un-grandfather
+  it. A second occurrence of the same snippet in the same file is therefore not
+  reported.
+- **Clobber detection.** `findClobbers(branch, main)` finds a database object
+  redefined on both sides since the merge base.
+- **Guarded code** is a warning, not a gate. `guarded-code.json` maps
+  race-protected code to the database tests that prove its fix: a top-level
+  function of a file (or `Class.method`), or a `markers` string on the line
+  that opens a guarded block inside a very large function. The script reads the
+  diff from the merge base and prints one GitHub warning per touched function.
+  It always exits 0. CI runs it in the Lint job. Add an entry when a fix closes
+  a race and a database test with two connections proves it. The pure part is
+  `src/guarded-code.ts`; `.claude/rules/concurrency.md` has the rules.
+- **Invariants** need a live connection and do not run in CI.
+  `loadInvariants(dir)` loads them, and the runner takes an injected `Query` so
+  it can be tested.
+- **Workflow drift** has two database-backed checks that answer different
+  questions. `src/invariants/workflow-trigger-event-drift.sql` compares each
+  active workflow's `workflowTriggerEvent` rows with its active version's
+  trigger nodes. `src/scripts/check-workflow-events.ts` asks whether an event id
+  a live workflow subscribes to still exists in the generated catalog, which is
+  what a catalog rename leaves behind. Neither runs in CI: both open a Postgres
+  connection (`DATABASE_URL` / `SUPABASE_DB_URL`) and no CI job has database
+  credentials. Run them by hand against staging or production after a catalog
+  change.
 
 ## Cross-References
 
-- `packages/harness/src/gates.ts` — `FLOOR_GATES` includes `@carbon/checks test` and `clobbers` as CI gates
-- `packages/database/supabase/migrations/` — SQL files scanned by conformance checks
-- `apps/erp/app/modules/` — module directories validated by `moduleShape`
+- `.claude/skills/find-repeated-mistakes/SKILL.md`: how to find a mistake fixed
+  three or more times and turn it into a check proven on the real past fix.
+- `.claude/rules/concurrency.md`: the rules `status-write-guarded` and
+  `counter-write-relative` enforce, and when to add a `guarded-code.json` entry.
+- `.claude/rules/testing.md`: the house style for tests. This package is the
+  one place a test may read source text.
+- `packages/harness/src/gates.ts`: `FLOOR_GATES` includes
+  `@carbon/checks test` and `clobbers`.

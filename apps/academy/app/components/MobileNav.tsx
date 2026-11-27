@@ -72,7 +72,6 @@ export function MobileNav({
   useEffect(() => setMounted(true), []);
 
   // A route change means the drawer's job is done.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: close on every navigation
   useEffect(() => {
     setOpen(false);
   }, [pathname]);

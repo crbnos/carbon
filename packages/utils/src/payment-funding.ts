@@ -230,13 +230,13 @@ function prioritizedTransport(
       }
       if (end < 0) break;
       let amount = Math.min(spare[root]!, open[end]!);
-      for (let target = end; ; ) {
+      for (let target = end; ;) {
         const origin = reachedTargetFrom[target]!;
         if (origin === root) break;
         target = reachedOriginFrom[origin]!;
         amount = Math.min(amount, flow[origin]![target]!);
       }
-      for (let target = end; ; ) {
+      for (let target = end; ;) {
         const origin = reachedTargetFrom[target]!;
         flow[origin]![target]! += amount;
         if (origin === root) break;
@@ -548,8 +548,8 @@ export function isEffectiveSettlement(row: SettlementEffectiveness): boolean {
     ? row.paymentStatus === "Posted"
     : Boolean(
         row.memoId &&
-          row.memoStatus === "Posted" &&
-          (!row.appliedViaPaymentId || row.viaStatus === "Posted")
+        row.memoStatus === "Posted" &&
+        (!row.appliedViaPaymentId || row.viaStatus === "Posted")
       );
 }
 
@@ -559,9 +559,9 @@ export function isPendingSettlement(row: SettlementEffectiveness): boolean {
     ? row.paymentStatus === "Draft"
     : Boolean(
         row.memoId &&
-          row.memoStatus === "Posted" &&
-          row.appliedViaPaymentId &&
-          row.viaStatus === "Draft"
+        row.memoStatus === "Posted" &&
+        row.appliedViaPaymentId &&
+        row.viaStatus === "Draft"
       );
 }
 

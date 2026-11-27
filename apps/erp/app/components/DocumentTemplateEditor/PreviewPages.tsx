@@ -79,7 +79,6 @@ export default function PreviewPages({
     marked.current = run;
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `mark` only touches a ref.
   useEffect(() => {
     if (!keepMark) mark(null);
   }, [keepMark]);
@@ -91,8 +90,7 @@ export default function PreviewPages({
   }, [file]);
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: a shortcut to what the block list and the text picker reach by keyboard
-    // biome-ignore lint/a11y/useKeyWithClickEvents: a shortcut to what the block list and the text picker reach by keyboard
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a shortcut to what the block list and the text picker reach by keyboard
     <div
       ref={containerRef}
       onClick={(e) => {

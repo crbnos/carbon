@@ -368,19 +368,25 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       local.customerId
     );
     const salesItemRemoteId = salesRevenueAccountId
-      ? await (await this.getShippingItemSyncer()).ensureSalesItem({
+      ? await (
+          await this.getShippingItemSyncer()
+        ).ensureSalesItem({
           revenueAccountId: salesRevenueAccountId
         })
       : null;
     // A second synthetic item when the Service Revenue account differs; the
     // same item when the posting fell back to the Sales account.
     const serviceItemRemoteId = serviceRevenueAccountId
-      ? await (await this.getShippingItemSyncer()).ensureSalesItem({
+      ? await (
+          await this.getShippingItemSyncer()
+        ).ensureSalesItem({
           revenueAccountId: serviceRevenueAccountId
         })
       : null;
     const shippingItemRemoteId = shippingAccountId
-      ? await (await this.getShippingItemSyncer()).ensureShippingItem({
+      ? await (
+          await this.getShippingItemSyncer()
+        ).ensureShippingItem({
           shippingAccountId
         })
       : null;

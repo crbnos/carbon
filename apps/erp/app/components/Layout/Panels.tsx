@@ -48,13 +48,13 @@ const defaultPanelContext: PanelContextType = {
   isExplorerCollapsed: false,
   isPropertiesCollapsed: false,
   shouldSlideProperties: false,
-  // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
+  // oxlint-disable-next-line no-empty-function -- suppressed due to migration
   toggleExplorer: () => {},
-  // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
+  // oxlint-disable-next-line no-empty-function -- suppressed due to migration
   toggleProperties: () => {},
-  // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
+  // oxlint-disable-next-line no-empty-function -- suppressed due to migration
   setIsExplorerCollapsed: () => {},
-  // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
+  // oxlint-disable-next-line no-empty-function -- suppressed due to migration
   setIsPropertiesCollapsed: () => {}
 };
 
@@ -155,7 +155,6 @@ function CompactRecordTabs({
   const [panel, setPanel] = useState<RecordPanel>("content");
 
   // A tapped line (or any navigation) shows its content.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: switch back on navigation only
   useEffect(() => {
     setPanel("content");
   }, [location.pathname]);

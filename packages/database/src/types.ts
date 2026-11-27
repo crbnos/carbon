@@ -5822,6 +5822,13 @@ export type Database = {
             foreignKeyName: "capacityReservation_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "capacityReservation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -6193,6 +6200,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "changeOrder_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "changeOrder_updatedBy_fkey"
@@ -8474,6 +8488,7 @@ export type Database = {
           forecastConsumptionBackwardPeriods: number
           forecastConsumptionForwardPeriods: number
           gaugeCalibrationExpiredNotificationGroup: string[]
+          holdUnitsWithOpenIssues: boolean
           id: string
           includeMaterialsOnTraveler: boolean
           includeOperationsOnTraveler: boolean
@@ -8485,6 +8500,7 @@ export type Database = {
           invoiceNotificationGroup: string[]
           kanbanLabelSize: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput: Database["public"]["Enums"]["kanbanOutput"]
+          lastMrpRunStartedAt: string | null
           leaseDefaultDiscountRate: number
           leaseIncrementalBorrowingRate: number
           leaseMajorPartThresholdPercent: number
@@ -8578,6 +8594,7 @@ export type Database = {
           forecastConsumptionBackwardPeriods?: number
           forecastConsumptionForwardPeriods?: number
           gaugeCalibrationExpiredNotificationGroup?: string[]
+          holdUnitsWithOpenIssues?: boolean
           id: string
           includeMaterialsOnTraveler?: boolean
           includeOperationsOnTraveler?: boolean
@@ -8589,6 +8606,7 @@ export type Database = {
           invoiceNotificationGroup?: string[]
           kanbanLabelSize?: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
+          lastMrpRunStartedAt?: string | null
           leaseDefaultDiscountRate?: number
           leaseIncrementalBorrowingRate?: number
           leaseMajorPartThresholdPercent?: number
@@ -8682,6 +8700,7 @@ export type Database = {
           forecastConsumptionBackwardPeriods?: number
           forecastConsumptionForwardPeriods?: number
           gaugeCalibrationExpiredNotificationGroup?: string[]
+          holdUnitsWithOpenIssues?: boolean
           id?: string
           includeMaterialsOnTraveler?: boolean
           includeOperationsOnTraveler?: boolean
@@ -8693,6 +8712,7 @@ export type Database = {
           invoiceNotificationGroup?: string[]
           kanbanLabelSize?: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
+          lastMrpRunStartedAt?: string | null
           leaseDefaultDiscountRate?: number
           leaseIncrementalBorrowingRate?: number
           leaseMajorPartThresholdPercent?: number
@@ -10642,6 +10662,13 @@ export type Database = {
             foreignKeyName: "costLedger_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "costLedger_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           }
@@ -11397,6 +11424,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "shipment"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerAsset_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "customerAsset_trackedEntityId_fkey"
@@ -16478,6 +16512,13 @@ export type Database = {
             foreignKeyName: "demandForecastSource_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "demandForecastSource_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -20774,6 +20815,13 @@ export type Database = {
             foreignKeyName: "fixedAsset_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "fixedAsset_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -20984,6 +21032,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixedAssetCipCost_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "fixedAssetCipCost_jobId_fkey"
@@ -21759,6 +21814,13 @@ export type Database = {
             foreignKeyName: "fixedAssetTransfer_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "fixedAssetTransfer_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -21824,6 +21886,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "fixedAssetTransfer_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "fixedAssetTransfer_trackedEntityId_fkey"
@@ -22593,6 +22662,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fulfillment_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "fulfillment_jobId_fkey"
@@ -24874,6 +24950,7 @@ export type Database = {
         Row: {
           acceptanceNumber: number
           acceptedQuantity: number | null
+          acceptedUnitIds: string[] | null
           aql: number | null
           assignee: string | null
           codeLetter: string | null
@@ -24909,6 +24986,7 @@ export type Database = {
         Insert: {
           acceptanceNumber: number
           acceptedQuantity?: number | null
+          acceptedUnitIds?: string[] | null
           aql?: number | null
           assignee?: string | null
           codeLetter?: string | null
@@ -24946,6 +25024,7 @@ export type Database = {
         Update: {
           acceptanceNumber?: number
           acceptedQuantity?: number | null
+          acceptedUnitIds?: string[] | null
           aql?: number | null
           assignee?: string | null
           codeLetter?: string | null
@@ -26529,6 +26608,13 @@ export type Database = {
             foreignKeyName: "inboundInspectionSample_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -26857,6 +26943,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "inspection"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "inspectionTrackedEntity_trackedEntityId_fkey"
@@ -29341,6 +29434,13 @@ export type Database = {
             foreignKeyName: "itemLedger_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "itemLedger_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -29431,6 +29531,7 @@ export type Database = {
           minimumReserveQuantity: number
           orderMultiple: number
           planningHorizonDays: number | null
+          planningTimeFenceDays: number | null
           reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint: number
           reorderQuantity: number
@@ -29460,6 +29561,7 @@ export type Database = {
           minimumReserveQuantity?: number
           orderMultiple?: number
           planningHorizonDays?: number | null
+          planningTimeFenceDays?: number | null
           reorderingPolicy?: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint?: number
           reorderQuantity?: number
@@ -29489,6 +29591,7 @@ export type Database = {
           minimumReserveQuantity?: number
           orderMultiple?: number
           planningHorizonDays?: number | null
+          planningTimeFenceDays?: number | null
           reorderingPolicy?: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint?: number
           reorderQuantity?: number
@@ -31888,6 +31991,13 @@ export type Database = {
             foreignKeyName: "jobCorrection_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobCorrection_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -32146,6 +32256,13 @@ export type Database = {
             foreignKeyName: "jobFavorites_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobFavorites_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -32365,6 +32482,13 @@ export type Database = {
             foreignKeyName: "jobMakeMethod_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -32395,6 +32519,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "openJobMaterialLines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "jobMakeMethod_trackedEntityId_fkey"
@@ -32649,6 +32780,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "jobMaterial_jobId_fkey"
@@ -32932,6 +33070,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "scrapReason"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialScrap_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "jobMaterialScrap_trackedEntityId_fkey"
@@ -33279,6 +33424,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "jobOperation_jobId_fkey"
@@ -33702,6 +33854,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationDependency_jobId_fk"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "jobOperationDependency_jobId_fk"
@@ -34930,6 +35089,13 @@ export type Database = {
             foreignKeyName: "jobOperationTrackedEntity_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "jobOperationTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -35721,6 +35887,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "kanban_jobId_fkey"
@@ -37439,6 +37612,7 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           name: string
+          planningTimeFenceDays: number
           postalCode: string
           rejectedStorageUnitId: string | null
           requiresStaffing: boolean
@@ -37464,6 +37638,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           name: string
+          planningTimeFenceDays?: number
           postalCode: string
           rejectedStorageUnitId?: string | null
           requiresStaffing?: boolean
@@ -37489,6 +37664,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           name?: string
+          planningTimeFenceDays?: number
           postalCode?: string
           rejectedStorageUnitId?: string | null
           requiresStaffing?: boolean
@@ -37576,6 +37752,60 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          }
+        ]
+      }
+      locationScheduleRun: {
+        Row: {
+          companyId: string
+          lastRunStartedAt: string
+          locationId: string
+        }
+        Insert: {
+          companyId: string
+          lastRunStartedAt: string
+          locationId: string
+        }
+        Update: {
+          companyId?: string
+          lastRunStartedAt?: string
+          locationId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locationScheduleRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locationScheduleRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locationScheduleRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "locationScheduleRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "locationScheduleRun_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
           }
         ]
       }
@@ -37893,6 +38123,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenanceDispatch_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "maintenanceDispatch_procedureId_fkey"
@@ -38654,6 +38891,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "maintenanceDispatchItem"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenanceDispatchItemTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "maintenanceDispatchItemTrackedEntity_trackedEntityId_fkey"
@@ -43554,6 +43798,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceActionTask_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceActionTask_supplierId_fkey"
             columns: ["supplierId", "companyId"]
             isOneToOne: false
@@ -43783,6 +44034,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceApprovalTask_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceApprovalTask_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -43950,6 +44208,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceCustomer_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceCustomer_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -44098,6 +44363,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceInboundInspection_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformanceInboundInspection_updatedBy_fkey"
@@ -44294,6 +44566,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceItem_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceItem_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -44446,11 +44725,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nciTrackedEntity_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nciTrackedEntity_nonConformanceItemId_fkey"
             columns: ["nonConformanceItemId"]
             isOneToOne: false
             referencedRelation: "nonConformanceItem"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nciTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "nciTrackedEntity_trackedEntityId_fkey"
@@ -44608,6 +44901,13 @@ export type Database = {
             foreignKeyName: "nonConformanceJobOperation_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "nonConformanceJobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -44659,6 +44959,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceJobOperation_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformanceJobOperation_updatedBy_fkey"
@@ -44811,6 +45118,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformancePurchaseOrderLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformancePurchaseOrderLine_purchaseOrderId_fkey"
@@ -45031,6 +45345,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformancePurchaseReturnOrderLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformancePurchaseReturnOrderLine_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -45181,6 +45502,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformanceReceiptLine_receiptId_fkey"
@@ -45545,6 +45873,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceReviewer_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceReviewer_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -45695,6 +46030,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceSalesOrderLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformanceSalesOrderLine_salesOrderId_fkey"
@@ -45891,6 +46233,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceSalesReturnOrderLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceSalesReturnOrderLine_salesReturnOrderLineId_fkey"
             columns: ["salesReturnOrderLineId", "companyId"]
             isOneToOne: false
@@ -46048,6 +46397,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceShipmentLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformanceShipmentLine_shipmentId_fkey"
@@ -46227,6 +46583,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceSupplier_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceSupplier_supplierId_fkey"
             columns: ["supplierId", "companyId"]
             isOneToOne: false
@@ -46392,6 +46755,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "nonConformanceTrackedEntity_trackedEntityId_fkey"
@@ -49940,6 +50317,202 @@ export type Database = {
           }
         ]
       }
+      permission: {
+        Row: {
+          apiKeyId: string | null
+          companyId: string
+          convertedFrom: string[] | null
+          createdAt: string
+          createdBy: string
+          employeeTypeId: string | null
+          id: string
+          level: Database["public"]["Enums"]["permissionLevel"]
+          module: Database["public"]["Enums"]["module"]
+          page: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+          userId: string | null
+        }
+        Insert: {
+          apiKeyId?: string | null
+          companyId: string
+          convertedFrom?: string[] | null
+          createdAt?: string
+          createdBy: string
+          employeeTypeId?: string | null
+          id?: string
+          level: Database["public"]["Enums"]["permissionLevel"]
+          module: Database["public"]["Enums"]["module"]
+          page?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId?: string | null
+        }
+        Update: {
+          apiKeyId?: string | null
+          companyId?: string
+          convertedFrom?: string[] | null
+          createdAt?: string
+          createdBy?: string
+          employeeTypeId?: string | null
+          id?: string
+          level?: Database["public"]["Enums"]["permissionLevel"]
+          module?: Database["public"]["Enums"]["module"]
+          page?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_apiKeyId_fkey"
+            columns: ["apiKeyId"]
+            isOneToOne: false
+            referencedRelation: "apiKey"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "permission_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "permission_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "permission_employeeTypeId_fkey"
+            columns: ["employeeTypeId"]
+            isOneToOne: false
+            referencedRelation: "employeeType"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "permission_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       pickingList: {
         Row: {
           assignee: string | null
@@ -50316,6 +50889,13 @@ export type Database = {
             foreignKeyName: "pickingListLine_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "pickingListLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -50476,6 +51056,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pickingListLine"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickingListLineTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "pickingListLineTrackedEntity_trackedEntityId_fkey"
@@ -50719,6 +51306,368 @@ export type Database = {
         }
         Relationships: []
       }
+      plannedOrder: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          dueDate: string
+          firmedAt: string | null
+          firmedBy: string | null
+          id: string
+          itemId: string
+          jobId: string | null
+          locationId: string
+          lowLevelCode: number
+          orderType: Database["public"]["Enums"]["plannedOrderType"]
+          periodId: string
+          planningSegmentId: string
+          purchaseOrderLineId: string | null
+          quantity: number
+          quantityTrace: Json | null
+          releaseDate: string
+          scrapQuantity: number
+          splitIndex: number
+          status: Database["public"]["Enums"]["plannedOrderStatus"]
+          supplierId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          dueDate: string
+          firmedAt?: string | null
+          firmedBy?: string | null
+          id?: string
+          itemId: string
+          jobId?: string | null
+          locationId: string
+          lowLevelCode?: number
+          orderType: Database["public"]["Enums"]["plannedOrderType"]
+          periodId: string
+          planningSegmentId?: string
+          purchaseOrderLineId?: string | null
+          quantity: number
+          quantityTrace?: Json | null
+          releaseDate: string
+          scrapQuantity?: number
+          splitIndex?: number
+          status?: Database["public"]["Enums"]["plannedOrderStatus"]
+          supplierId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          dueDate?: string
+          firmedAt?: string | null
+          firmedBy?: string | null
+          id?: string
+          itemId?: string
+          jobId?: string | null
+          locationId?: string
+          lowLevelCode?: number
+          orderType?: Database["public"]["Enums"]["plannedOrderType"]
+          periodId?: string
+          planningSegmentId?: string
+          purchaseOrderLineId?: string | null
+          quantity?: number
+          quantityTrace?: Json | null
+          releaseDate?: string
+          scrapQuantity?: number
+          splitIndex?: number
+          status?: Database["public"]["Enums"]["plannedOrderStatus"]
+          supplierId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plannedOrder_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "plannedOrder_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "plannedOrder_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "plannedOrder_firmedBy_fkey"
+            columns: ["firmedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_firmedBy_fkey"
+            columns: ["firmedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_firmedBy_fkey"
+            columns: ["firmedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_firmedBy_fkey"
+            columns: ["firmedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_firmedBy_fkey"
+            columns: ["firmedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "plannedOrder_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "plannedOrder_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "openProductionOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_periodId_fkey"
+            columns: ["periodId"]
+            isOneToOne: false
+            referencedRelation: "period"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "openPurchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "plannedOrder_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "plannedOrder_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plannedOrder_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       planningAction: {
         Row: {
           assignee: string | null
@@ -50735,6 +51684,7 @@ export type Database = {
           latestOrderDate: string | null
           locationId: string
           periodId: string
+          plannedOrderId: string | null
           planningSegmentId: string
           policyName: string | null
           projectBorrowId: string | null
@@ -50767,6 +51717,7 @@ export type Database = {
           latestOrderDate?: string | null
           locationId: string
           periodId: string
+          plannedOrderId?: string | null
           planningSegmentId?: string
           policyName?: string | null
           projectBorrowId?: string | null
@@ -50799,6 +51750,7 @@ export type Database = {
           latestOrderDate?: string | null
           locationId?: string
           periodId?: string
+          plannedOrderId?: string | null
           planningSegmentId?: string
           policyName?: string | null
           projectBorrowId?: string | null
@@ -50968,6 +51920,13 @@ export type Database = {
             foreignKeyName: "planningAction_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "planningAction_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -50991,6 +51950,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "period"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_plannedOrderId_fkey"
+            columns: ["plannedOrderId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "plannedOrder"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "planningAction_purchaseOrderLineId_fkey"
@@ -54965,6 +55931,13 @@ export type Database = {
             foreignKeyName: "projectElement_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "projectElement_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -55957,6 +56930,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "projectElementMaterial_jobId_fkey"
@@ -57656,6 +58636,13 @@ export type Database = {
             foreignKeyName: "projectStockTransferLine_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -59302,6 +60289,13 @@ export type Database = {
             foreignKeyName: "purchaseOrder_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "purchaseOrder_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -60221,6 +61215,13 @@ export type Database = {
             foreignKeyName: "purchaseOrderLine_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -60697,6 +61698,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "purchaseOrderLineVersion_jobId_fkey"
@@ -62376,6 +63384,13 @@ export type Database = {
             foreignKeyName: "purchaseReturnOrderLineTrackedEntity_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "purchaseReturnOrderLineTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -63769,6 +64784,7 @@ export type Database = {
           quoteId: string
           revisionId: number
           salesPersonId: string | null
+          sendViaEmail: boolean
           status: Database["public"]["Enums"]["quoteStatus"]
           tags: string[] | null
           updatedAt: string | null
@@ -63806,6 +64822,7 @@ export type Database = {
           quoteId: string
           revisionId?: number
           salesPersonId?: string | null
+          sendViaEmail?: boolean
           status?: Database["public"]["Enums"]["quoteStatus"]
           tags?: string[] | null
           updatedAt?: string | null
@@ -63843,6 +64860,7 @@ export type Database = {
           quoteId?: string
           revisionId?: number
           salesPersonId?: string | null
+          sendViaEmail?: boolean
           status?: Database["public"]["Enums"]["quoteStatus"]
           tags?: string[] | null
           updatedAt?: string | null
@@ -68766,6 +69784,13 @@ export type Database = {
             foreignKeyName: "rentalAgreementLine_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "rentalAgreementLine_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -70323,6 +71348,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rework_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "rework_jobId_fkey"
@@ -74123,6 +75155,13 @@ export type Database = {
             foreignKeyName: "salesReturnOrderLineTrackedEntity_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "salesReturnOrderLineTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -75625,6 +76664,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesReturnOrderLine"
             referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "serviceJob_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "serviceJob_trackedEntityId_fkey"
@@ -78515,6 +79561,13 @@ export type Database = {
             foreignKeyName: "stockTransferLine_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "stockTransferLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -78573,6 +79626,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stockTransferLine_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "stockTransferLine_trackedEntityId_fkey"
@@ -84501,6 +85561,13 @@ export type Database = {
             foreignKeyName: "timesheetEntry_job_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "timesheetEntry_job_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -85139,6 +86206,13 @@ export type Database = {
             foreignKeyName: "trackedActivityInput_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -85277,6 +86351,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "trackedActivity"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "trackedActivityOutput_trackedEntityId_fkey"
@@ -90168,6 +91249,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "maintenanceDispatch_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "maintenanceDispatch_suspectedFailureModeId_fkey"
             columns: ["suspectedFailureModeId"]
             isOneToOne: false
@@ -90844,6 +91932,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "changeOrder_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "changeOrder_updatedBy_fkey"
@@ -92509,6 +93604,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixedAsset_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "fixedAsset_trackedEntityId_fkey"
@@ -94370,6 +95472,13 @@ export type Database = {
             foreignKeyName: "itemLedger_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "itemLedger_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -94843,6 +95952,13 @@ export type Database = {
             foreignKeyName: "jobMaterial_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -94998,6 +96114,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "jobOperation_jobId_fkey"
@@ -95341,6 +96464,13 @@ export type Database = {
             foreignKeyName: "jobOperation_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -95664,6 +96794,13 @@ export type Database = {
             foreignKeyName: "jobOperation_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -95792,6 +96929,43 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
             referencedColumns: ["id"]
+          }
+        ]
+      }
+      jobReceivedSerial: {
+        Row: {
+          companyId: string | null
+          jobId: string | null
+          trackedEntityId: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
           }
         ]
       }
@@ -96846,6 +98020,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "kanban_jobId_fkey"
@@ -97925,6 +99106,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "jobMaterial_jobId_fkey"
@@ -100156,6 +101344,13 @@ export type Database = {
             foreignKeyName: "purchaseOrderLine_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -100733,6 +101928,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrder_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "purchaseOrder_jobId_fkey"
@@ -101690,6 +102892,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformanceActionTask_updatedBy_fkey"
@@ -105166,6 +106375,14 @@ export type Database = {
           paymentCustomerName: string | null
           paymentPostalCode: string | null
           paymentStateProvince: string | null
+          shipToAddressLine1: string | null
+          shipToAddressLine2: string | null
+          shipToCity: string | null
+          shipToCountryCode: string | null
+          shipToCountryName: string | null
+          shipToCustomerName: string | null
+          shipToPostalCode: string | null
+          shipToStateProvince: string | null
         }
         Relationships: [
           {
@@ -105178,6 +106395,13 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["paymentCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipToCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -106854,6 +108078,13 @@ export type Database = {
             foreignKeyName: "stockTransferLine_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "stockTransferLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -106898,6 +108129,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stockTransferLine_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "stockTransferLine_trackedEntityId_fkey"
@@ -108525,6 +109763,21 @@ export type Database = {
           }
         ]
       }
+      unitQualityHold: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          description: string | null
+          disposition: Database["public"]["Enums"]["disposition"] | null
+          issueId: string | null
+          issueNumber: string | null
+          issueType: string | null
+          name: string | null
+          status: Database["public"]["Enums"]["nonConformanceStatus"] | null
+          trackedEntityId: string | null
+        }
+        Relationships: []
+      }
       userDefaults: {
         Row: {
           companyId: string | null
@@ -109056,7 +110309,19 @@ export type Database = {
         Args: { p_api_key_id: string; p_limit: number; p_window: string }
         Returns: Json
       }
+      check_employee_type_change: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_employee_type_system_type: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       check_goods_in_storage_unit: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_group_system_flags: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
@@ -109072,6 +110337,10 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      check_membership_system_group: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       check_nonconformance_inspection_link: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
@@ -109084,11 +110353,40 @@ export type Database = {
         Args: { operation_id: string }
         Returns: boolean
       }
+      check_row_identity_change: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       check_tracked_entity_inspection_hold: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      check_user_to_company_admin: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_workflow_owner_change: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_workflow_version_lock: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       company_today: { Args: { p_company_id: string }; Returns: string }
+      complete_job_from_receipt_preview: {
+        Args: {
+          p_company_id: string
+          p_expected_preview: string
+          p_expected_unit_ids?: string[]
+          p_job_id: string
+          p_location_id?: string
+          p_quantity_complete: number
+          p_storage_unit_id?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       complete_job_remaining_quantities: {
         Args: {
           p_job_id: string
@@ -109105,6 +110403,18 @@ export type Database = {
           p_quantity_complete: number
           p_storage_unit_id?: string
           p_user_id?: string
+        }
+        Returns: undefined
+      }
+      complete_job_to_inventory_previewed: {
+        Args: {
+          p_company_id: string
+          p_expected_unit_ids: string[]
+          p_job_id: string
+          p_location_id?: string
+          p_quantity_complete: number
+          p_storage_unit_id?: string
+          p_user_id: string
         }
         Returns: undefined
       }
@@ -109193,6 +110503,17 @@ export type Database = {
       findLowestCommonParent: {
         Args: { p_company_a: string; p_company_b: string }
         Returns: string
+      }
+      finish_mes_job_operation: {
+        Args: {
+          p_company_id: string
+          p_job_operation_id: string
+          p_user_id: string
+        }
+        Returns: {
+          id: string
+          jobId: string
+        }[]
       }
       generateEliminationEntries: {
         Args: {
@@ -109558,12 +110879,20 @@ export type Database = {
         }[]
       }
       get_claims: { Args: { company: string; uid: string }; Returns: Json }
+      get_companies_with_any_employee_permission: {
+        Args: { permissions: string[] }
+        Returns: string[]
+      }
       get_companies_with_any_role: { Args: never; Returns: string[] }
       get_companies_with_employee_permission: {
         Args: { permission: string }
         Returns: string[]
       }
       get_companies_with_employee_role: { Args: never; Returns: string[] }
+      get_companies_with_module_view: {
+        Args: { modules: string[]; permissions: string[] }
+        Returns: string[]
+      }
       get_company_groups_for_employee: { Args: never; Returns: string[] }
       get_company_groups_for_root_permission: {
         Args: { permission: string }
@@ -110044,9 +111373,20 @@ export type Database = {
           unitOfMeasureCode: string
         }[]
       }
+      get_item_type: {
+        Args: { company_id: string; item_id: string }
+        Returns: Database["public"]["Enums"]["itemType"]
+      }
       get_item_used_in: {
         Args: { company_id: string; item_id: string }
         Returns: Json
+      }
+      get_items_used_in: {
+        Args: { company_id: string; item_ids: string[] }
+        Returns: {
+          itemId: string
+          usedIn: Json
+        }[]
       }
       get_job_issue_bins: {
         Args: { p_company_id: string; p_item_ids: string[]; p_job_id: string }
@@ -110477,7 +111817,6 @@ export type Database = {
         }[]
       }
       get_my_claim: { Args: { claim: string }; Returns: Json }
-      get_my_permission: { Args: { claim: string }; Returns: Json }
       get_next_numeric_sequence: {
         Args: {
           company_id: string
@@ -111657,7 +112996,6 @@ export type Database = {
           quantity: number
         }[]
       }
-      has_any_company_permission: { Args: { claim: string }; Returns: boolean }
       has_valid_api_key_for_company: {
         Args: { company: string }
         Returns: boolean
@@ -112592,6 +113930,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_record_custom_fields: {
+        Args: {
+          p_clear: string[]
+          p_ids: string[]
+          p_scope_column: string
+          p_scope_id: string
+          p_set: Json
+          p_table: string
+          p_updated_by: string
+        }
+        Returns: {
+          id: string
+        }[]
+      }
       set_shelf_life_for_operation: {
         Args: {
           p_event: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
@@ -113441,6 +114793,7 @@ export type Database = {
         | "Capitalization"
       inventoryCountStatus: "Draft" | "Pending" | "Posted"
       invoiceAutomation:
+        | "Manual"
         | "Draft Only"
         | "Post"
         | "Post and Email"
@@ -113751,6 +115104,7 @@ export type Database = {
       performanceBasedPaymentEventType: "Severable" | "Cumulative"
       periodCloseStatus: "Open" | "Locked" | "Closed"
       periodType: "Week" | "Day" | "Month"
+      permissionLevel: "None" | "View" | "Create" | "Edit" | "Full"
       pickingListLineStatus: "Pending" | "Picked" | "Short" | "Cancelled"
       pickingListStatus:
         | "Draft"
@@ -113759,6 +115113,8 @@ export type Database = {
         | "Cancelled"
         | "Partial"
       pickMethodSortMethod: "Default" | "FEFO" | "FIFO" | "LIFO"
+      plannedOrderStatus: "Planned" | "Firm" | "Converted"
+      plannedOrderType: "Make" | "Buy" | "Transfer"
       planningActionStatus: "Open" | "Dismissed" | "Actioned"
       planningActionType:
         | "Order"

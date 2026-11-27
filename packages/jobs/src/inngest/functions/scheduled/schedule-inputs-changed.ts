@@ -8,6 +8,7 @@ import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { runLocationSchedule } from "@carbon/planning";
 import { NonRetriableError } from "inngest";
+import { sql } from "kysely";
 import { z } from "zod";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -36,6 +37,8 @@ type NewlyLateJob = {
 
 type LocationRegenResult = {
   locationId: string;
+  /** A newer run already saved the location: nothing written, nothing late. */
+  skipped: boolean;
   jobsScheduled: number;
   conflictsDetected: number;
   newlyLate: NewlyLateJob[];
@@ -291,34 +294,31 @@ export const markScheduleStaleFunction = inngest.createFunction(
         return { stamped: 0, scope: "none" };
       }
 
-      const stamp = {
-        scheduleOutdatedReason: reason,
-        scheduleOutdatedAt: new Date().toISOString()
-      };
-
-      // Chunk the .in() filter (thousands of affected jobs would exceed
-      // PostgREST's URL limits in a single filter)
+      // Chunk the id list (thousands of affected jobs in one statement would
+      // be one huge parameter list)
       const jobIdChunks: (string[] | null)[] =
         affectedJobIds !== null
           ? chunkArray(affectedJobIds, IN_FILTER_CHUNK_SIZE)
           : [null];
 
+      // Stamped on the database clock: a schedule run compares the mark with
+      // its own start, read from the same clock (`runStartedAt`).
+      const db = getJobDatabaseClient();
       let stamped = 0;
       for (const jobIdChunk of jobIdChunks) {
-        let update = serviceRole
-          .from("job")
-          .update(stamp)
-          .eq("companyId", companyId)
-          .in("status", [...activeJobStatuses]);
-        if (jobIdChunk !== null) {
-          update = update.in("id", jobIdChunk);
-        }
-        const result = await update.select("id");
-
-        if (result.error) {
-          throw new Error(`Failed to stamp jobs: ${result.error.message}`);
-        }
-        stamped += result.data?.length ?? 0;
+        const result = await db
+          .updateTable("job")
+          .set({
+            scheduleOutdatedReason: reason,
+            scheduleOutdatedAt: sql<string>`now()`
+          })
+          .where("companyId", "=", companyId)
+          .where("status", "in", [...activeJobStatuses])
+          .$if(jobIdChunk !== null, (query) =>
+            query.where("id", "in", jobIdChunk ?? [])
+          )
+          .executeTakeFirst();
+        stamped += Number(result.numUpdatedRows);
       }
 
       return {
@@ -354,9 +354,10 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
       period: "30s",
       timeout: "10m"
     },
-    // env scope + the shared "schedule:" key serializes this per company so a
-    // wave and a user-triggered regen never run concurrently for one company
-    // and double-book capacity
+    // env scope + the "schedule:" key serializes waves per company. A
+    // user-triggered regen runs in-process in the ERP and does not share this
+    // key: the location write's advisory lock (persistLocationWrites)
+    // serializes the two writers for one location.
     concurrency: {
       limit: 1,
       scope: "env",
@@ -455,7 +456,11 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
       (sum, r) => sum + (r.conflictsDetected ?? 0),
       0
     );
-    const newlyLate = results.flatMap((r) => r.newlyLate ?? []);
+    // A skipped run wrote nothing, so it has no newly-late jobs to report
+    // (it returns none); the run that saved reported its own.
+    const newlyLate = results.flatMap((r) =>
+      r.skipped ? [] : (r.newlyLate ?? [])
+    );
 
     // One digest per assignee for the jobs this wave flipped to projected-late.
     // Unassigned jobs are skipped in v1 (they still get badges/flags). This is
@@ -484,6 +489,7 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
 
     return {
       locations: locationIds.length,
+      locationsSkipped: results.filter((r) => r.skipped).length,
       jobsScheduled,
       conflictsDetected,
       newlyLate: newlyLate.length

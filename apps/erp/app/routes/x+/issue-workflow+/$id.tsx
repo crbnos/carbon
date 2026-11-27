@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { ScrollArea } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -15,14 +16,10 @@ import type {
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import { data, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { issueWorkflowValidator } from "~/modules/quality/quality.models";
-import {
-  getIssueWorkflow,
-  getRequiredActionsList,
-  upsertIssueWorkflow
-} from "~/modules/quality/quality.service";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
+import { toTiptapDoc } from "~/modules/shared/shared.models";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -33,26 +30,25 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Issue Workflows`, to: path.to.issueWorkflows },
     (data) => data?.workflow?.name
-  ),
-  module: "quality"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.workflow?.name, "Issue Workflow");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality",
-    role: "employee",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "quality.issueWorkflows": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [workflow, requiredActions] = await Promise.all([
-    getIssueWorkflow(client, id),
-    getRequiredActionsList(client, companyId)
+    api.quality.getIssueWorkflow({ nonConformanceWorkflowId: id }),
+    api.quality.getRequiredActionsList({})
   ]);
 
   if (workflow.error) {
@@ -81,43 +77,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "quality"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(issueWorkflowValidator).request(args, {
+    params: ["id"]
   });
-  const formData = await request.formData();
-  const validation = await validator(issueWorkflowValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...d } = validation.data;
-  if (!id) throw new Error("Could not find id");
-
-  const updateIssueWorkflow = await upsertIssueWorkflow(client, {
-    id,
-    ...d,
-    companyId,
-    updatedBy: userId
+  if ("invalid" in input) return input.invalid;
+  const { id: _, content, ...workflow } = input.data;
+  const { api } = await authorize(args.request);
+  const result = await api.quality.updateIssueWorkflow({
+    ...workflow,
+    id: input.params.id,
+    // An untouched editor posts `{}`: an empty template.
+    content: toTiptapDoc(content)
   });
-
-  if (updateIssueWorkflow.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(updateIssueWorkflow.error, "Failed to update issue workflow", {
-          id
-        })
-      )
-    );
-  }
-
-  return data(
-    {},
-    await flash(request, success("Non-conformance workflow updated"))
+  return respond(args.request, result).redirect(
+    path.to.issueWorkflow(input.params.id),
+    { message: "Non-conformance workflow updated" }
   );
 }
 

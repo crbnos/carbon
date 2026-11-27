@@ -75,13 +75,13 @@ function QuoteBoMExplorerContent({
     getMethodFetcher.formData?.get("quoteLineId") ===
       methods?.[0].data.quoteLineId;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: only react to isAllExpanded changes
   useEffect(() => {
     if (isAllExpanded) {
       expandAllBelowDepth(0);
     } else {
       collapseAllBelowDepth(1);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- only react to isAllExpanded changes
   }, [isAllExpanded]);
 
   const params = useParams();
@@ -95,7 +95,6 @@ function QuoteBoMExplorerContent({
     params.lineId === explorerLineId &&
     location.pathname === path.to.quoteLine(params.quoteId, params.lineId);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (!selectedMaterialId) {
       if (isDetailsRouteForThisLine) {
@@ -126,6 +125,7 @@ function QuoteBoMExplorerContent({
     } else {
       deselectAllNodes();
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [selectedMaterialId, params.methodId, location.pathname]);
 
   return (

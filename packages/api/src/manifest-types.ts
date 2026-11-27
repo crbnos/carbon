@@ -13,13 +13,25 @@ export type Classification = "READ" | "WRITE" | "DESTRUCTIVE";
 export type PermissionAction = "view" | "create" | "update" | "delete";
 
 /**
- * The permission an API-key caller must hold to invoke the operation.
- * `module` is `null` for operations that gate only on a valid key of the company
- * (e.g. `account`, `shared`) rather than a specific permission module.
+ * The permission an API-key caller must hold to invoke the operation: the
+ * module of the pages its gate names, and every action the gate's levels hold
+ * (Edit lists view, create and update; the gate checks the highest).
+ * `module` is `null` for operations that gate only on a valid key of the
+ * company, or on pages of several modules (named in `oneOf` or `allOf`).
  */
 export interface ToolPermission {
   module: string | null;
+  /** The page a gate of one page names (`inventory.receipts`); the key it checks is `<page>_<action>`. */
+  page?: string;
   actions: PermissionAction[];
+  /**
+   * A gate that passes on any one of several pages (an `anyOf` or row rule):
+   * the pages, in registry order, and their one level. `by` names the column
+   * of the row that picks the page (`item.type`); empty, any page passes.
+   */
+  oneOf?: { pages: string[]; level: string; by: string[] };
+  /** A gate that needs every one of pages of several modules, each at its level, in registry order. */
+  allOf?: { page: string; level: string }[];
 }
 
 /** One operation in the manifest — the successor of a `tool-metadata.json` entry. */

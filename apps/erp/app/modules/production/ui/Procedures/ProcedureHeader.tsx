@@ -43,9 +43,9 @@ const ProcedureHeader = () => {
   const newVersionDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     newVersionDisclosure.onClose();
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [id]);
 
   const versionBadge = (
@@ -56,7 +56,8 @@ const ProcedureHeader = () => {
     <DropdownMenuItem
       shortcut={MENU_ITEM_SHORTCUTS.delete}
       disabled={
-        !permissions.can("delete", "production") || !permissions.is("employee")
+        !permissions.has({ "production.procedures": "Full" }) ||
+        !permissions.is("employee")
       }
       destructive
       onClick={deleteDisclosure.onOpen}
@@ -105,7 +106,7 @@ const ProcedureHeader = () => {
                           <ProcedureStatus status={v.status} />
                         )}
                         onNewVersion={
-                          permissions.can("create", "production")
+                          permissions.has({ "production.procedures": "Create" })
                             ? newVersionDisclosure.onOpen
                             : undefined
                         }

@@ -22,10 +22,7 @@ export type {
 } from "../table-jobs/handlers.ts";
 export { setTableJobHandlers } from "../table-jobs/handlers.ts";
 export type { TableJobLock } from "../table-jobs/lock.ts";
-export {
-  releaseTableJobLock,
-  takeTableJobLock
-} from "../table-jobs/lock.ts";
+export { releaseTableJobLock, takeTableJobLock } from "../table-jobs/lock.ts";
 export { TABLE_JOB_PAGE_SIZE } from "../table-jobs/paging.ts";
 export {
   tableExportStorageKey,
@@ -41,7 +38,7 @@ export { setWorkflowDispatch } from "../workflows/actions/dispatcher.ts";
 export type { ManualRunResult } from "../workflows/engine/index.ts";
 export {
   executeManualWorkflowRun,
-  noAccess
+  ownerRefusal
 } from "../workflows/engine/index.ts";
 export { inngest } from "./client.ts";
 

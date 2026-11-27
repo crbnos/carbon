@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { contractRateCeilingValidator } from "@carbon/ee/indirect-rates";
@@ -17,10 +17,6 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { contractLaborRateValidator } from "~/modules/sales/sales.models";
-import {
-  deleteContractLaborRate,
-  upsertContractLaborRate
-} from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "contract-line-labor-rates");
@@ -35,8 +31,8 @@ function failure(message: string) {
  *  an Active contract. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { api, client, companyId, userId } = await authorize(request, {
+    "sales.serviceContracts": "Edit"
   });
 
   const { lineId } = params;
@@ -128,7 +124,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (intent === "delete") {
     const id = formData.get("id");
     if (typeof id !== "string" || !id) return failure("No rate was given");
-    const deleted = await deleteContractLaborRate(client, id, companyId);
+    const deleted = await api.sales.deleteContractLaborRate({ id });
     if (deleted.error) {
       logger.error("Failed to delete a contract labor rate", {
         companyId,
@@ -145,16 +141,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return invalid(validation.error);
 
-  const { id, ...rate } = validation.data;
   // The line is the URL's, never the form's copy.
-  const values = { ...rate, customerContractLineId: lineId, companyId };
-  const saved = id
-    ? await upsertContractLaborRate(client, {
-        ...values,
-        id,
-        updatedBy: userId
-      })
-    : await upsertContractLaborRate(client, { ...values, createdBy: userId });
+  const saved = await api.sales.upsertContractLaborRate({
+    ...validation.data,
+    customerContractLineId: lineId
+  });
   if (saved.error) {
     logger.error("Failed to save a contract labor rate", {
       companyId,

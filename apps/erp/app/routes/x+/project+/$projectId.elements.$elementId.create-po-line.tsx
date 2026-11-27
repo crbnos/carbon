@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -32,8 +31,9 @@ export type CreatePurchaseOrderLineResult = { error: { message: string } };
  * currency a typed price is in.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: ["projects", "purchasing"]
+  const { client, companyId } = await authorize(request, {
+    "projects.projects": "View",
+    "purchasing.purchaseOrders": "View"
   });
 
   const { projectId, elementId } = params;
@@ -251,7 +251,7 @@ export async function action({
     if (line.error) {
       return { error: { message: "Fill in the line's required fields" } };
     }
-    const api = await carbon(request);
+    const { api } = await authorize(request);
     const result = await api.projects.createProjectPurchaseOrderLine({
       ...line.data,
       projectId,
@@ -279,7 +279,7 @@ export async function action({
     return { error: { message: "Choose a supplier and enter a quantity" } };
   }
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.projects.createPurchaseOrderLineFromMaterial({
     ...validation.data,
     projectId,

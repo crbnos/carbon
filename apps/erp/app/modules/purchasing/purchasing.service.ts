@@ -13,8 +13,6 @@ import {
   CarbonError,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
-import { hasPermission } from "@carbon/auth";
-import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import {
   fetchAllByIds,
@@ -22,6 +20,7 @@ import {
   fetchAllRecords,
   getCompanyTimeZone
 } from "@carbon/database";
+import { type ExpandedClaims, holdsGate } from "@carbon/database/access";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import {
   type Kysely,
@@ -64,6 +63,7 @@ import {
 import {
   getApprovalRuleByAmount,
   getApproverUserIdsForRule,
+  getCompanyAdminIds,
   getDocumentApproval,
   isApprovalRequired,
   rejectRequest
@@ -7363,7 +7363,10 @@ export async function createReplacementPurchaseOrder(
     companyId: string;
     companyGroupId: string;
     userId: string;
-  }
+  },
+  // Purchasing → Returns owns the return order: pass the system client once
+  // the caller's purchase order permission has passed, so the link is written.
+  system: SupabaseClient<Database> = client
 ): Promise<{
   data: { id: string } | null;
   error: PostgrestError | null;
@@ -7581,7 +7584,7 @@ export async function createReplacementPurchaseOrder(
   }
 
   const link = await requireAffected(
-    client
+    system
       .from("purchaseReturnOrder")
       .update({
         replacementPurchaseOrderId: purchaseOrderId,
@@ -8590,20 +8593,17 @@ export async function generateLeaseInvoicesNow(
  *  as `draftRentalAgreementSetupPath`. */
 export async function draftLeaseSetupPath(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
+  args: { companyId: string; permissions: ExpandedClaims; id: string }
 ): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [lease, claims] = await Promise.all([
-    client
-      .from("lease")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
-  if (lease.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "purchasing", "update", companyId)) {
+  const { companyId, permissions, id } = args;
+  const lease = await client
+    .from("lease")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (lease.error || lease.data?.status !== "Draft") return null;
+  if (!holdsGate(permissions, { "purchasing.leases": "Edit" }, companyId)) {
     return null;
   }
   return path.to.leaseSetup(id, "assets");
@@ -9133,7 +9133,7 @@ export async function postLease(
 /**
  * Write (or clear) a Draft lease asset's classification override, audit
  * logged. An accounting decision, so it runs as the system on the caller's
- * `update: accounting`: an accountant need not hold the purchasing write the
+ * Edit on Accounting Leases: an accountant need not hold the purchasing write the
  * lease's own policies ask for.
  */
 export async function writeClassificationOverride(
@@ -9268,26 +9268,6 @@ export async function cancelPendingApprovals(
     .where("status", "=", "Pending")
     .returning("id")
     .execute();
-}
-
-/** The active Admins of the company (`isCompanyAdmin`, @carbon/ee), as user ids. */
-export async function getCompanyAdminIds(
-  db: Kysely<KyselyDatabase>,
-  companyId: string
-): Promise<string[]> {
-  const rows = await db
-    .selectFrom("employee")
-    .innerJoin("employeeType", (join) =>
-      join
-        .onRef("employeeType.id", "=", "employee.employeeTypeId")
-        .onRef("employeeType.companyId", "=", "employee.companyId")
-    )
-    .select("employee.id")
-    .where("employee.companyId", "=", companyId)
-    .where("employee.active", "=", true)
-    .where("employeeType.systemType", "=", "Admin")
-    .execute();
-  return rows.map((row) => row.id);
 }
 
 /**
@@ -10207,7 +10187,7 @@ export async function notifyForceDelete(
   try {
     const userIds =
       event === "Requested"
-        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+        ? (await getCompanyAdminIds(ctx.asSystem.supabase, companyId)).filter(
             (id) => id !== requestedBy
           )
         : requestedBy === ctx.auditUserId
@@ -10577,7 +10557,7 @@ export const finalizeSupplierQuoteInput = z.object({
 });
 
 export const finalizeSupplierQuotePermission = {
-  create: "purchasing"
+  "purchasing.supplierQuotes": "Create"
 } satisfies PermissionRule<z.output<typeof finalizeSupplierQuoteInput>>;
 
 /**
@@ -10825,10 +10805,6 @@ export type FinalizedSupplierQuote = {
   externalLinkId: string;
 };
 
-export const finalizePurchasingRfqPermission = {
-  create: "purchasing"
-} satisfies PermissionRule<z.output<typeof finalizePurchasingRfqInput>>;
-
 /**
  * Sends a purchasing RFQ out: one Draft supplier quote per RFQ supplier, each
  * with its share link and a line per RFQ line that names an item, then the RFQ
@@ -11039,7 +11015,7 @@ const calculateLeadTimeInDays = (
 };
 
 export const updatePurchasedPricesPermission = {
-  update: "purchasing"
+  "purchasing.purchaseOrders": "Edit"
 } satisfies PermissionRule<z.output<typeof updatePurchasedPricesInput>>;
 
 export async function updatePurchasedPrices(
@@ -13031,20 +13007,18 @@ export async function modify(
         userId,
         postingDate: startDate,
         description: `Lease Modification ${lease.leaseId}`,
-        assets: remeasured.map(
-          (asset): AssetLines => ({
-            leaseLineId: asset.line.id,
-            locationId: asset.line.locationId ?? lease.locationId,
-            lines:
-              asset.result.adjustment === 0 && asset.result.gain === 0
-                ? []
-                : remeasurementLines({
-                    adjustment: asset.result.adjustment,
-                    gain: asset.result.gain,
-                    accounts: accounting.accounts
-                  })
-          })
-        ),
+        assets: remeasured.map((asset): AssetLines => ({
+          leaseLineId: asset.line.id,
+          locationId: asset.line.locationId ?? lease.locationId,
+          lines:
+            asset.result.adjustment === 0 && asset.result.gain === 0
+              ? []
+              : remeasurementLines({
+                  adjustment: asset.result.adjustment,
+                  gain: asset.result.gain,
+                  accounts: accounting.accounts
+                })
+        })),
         lease
       });
 
@@ -13055,31 +13029,29 @@ export async function modify(
       });
       await writeSchedules(trx, {
         leaseId: lease.id,
-        schedules: remeasured.map(
-          (asset): AssetSchedule => ({
-            // The months after the change are still the commencement's.
-            leaseLineId: asset.line.id,
-            commencementDate: lease.commencementDate,
-            fromMonth,
+        schedules: remeasured.map((asset): AssetSchedule => ({
+          // The months after the change are still the commencement's.
+          leaseLineId: asset.line.id,
+          commencementDate: lease.commencementDate,
+          fromMonth,
+          classification: asset.after,
+          lines: buildLesseeSchedule({
+            openingLiability: asset.result.liability,
+            openingRouAsset: asset.result.rouAsset,
+            payments: asset.points,
+            months: span.months,
+            annualRate: payload.discountRate,
+            timing: lease.paymentTiming,
             classification: asset.after,
-            lines: buildLesseeSchedule({
-              openingLiability: asset.result.liability,
-              openingRouAsset: asset.result.rouAsset,
-              payments: asset.points,
-              months: span.months,
-              annualRate: payload.discountRate,
-              timing: lease.paymentTiming,
-              classification: asset.after,
-              amortizationMonths: amortizationMonths(
-                asset.line,
-                span.months,
-                fromMonth
-              ),
-              periodDates: span.periodDates,
-              lastMonthShare: span.lastMonthShare
-            })
+            amortizationMonths: amortizationMonths(
+              asset.line,
+              span.months,
+              fromMonth
+            ),
+            periodDates: span.periodDates,
+            lastMonthShare: span.lastMonthShare
           })
-        ),
+        })),
         accounts: accounting.accounts,
         companyId,
         userId
@@ -14063,7 +14035,7 @@ export const postLeaseInput = payloadValidator;
 export type PostLeaseInput = LeasePayload;
 
 export const postLeaseActionPermission = {
-  update: "purchasing"
+  "purchasing.leases": "Edit"
 } satisfies PermissionRule<z.output<typeof postLeaseInput>>;
 
 export async function postLeaseAction(
@@ -14510,8 +14482,8 @@ export const createLeaseInvoicesInput = z.object({
 });
 
 export const createLeaseInvoicesPermission = {
-  update: "purchasing",
-  create: "invoicing"
+  "purchasing.leases": "Edit",
+  "invoicing.purchaseInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createLeaseInvoicesInput>>;
 
 /** Drafts the lease invoices due on or before `asOf` (see

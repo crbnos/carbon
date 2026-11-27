@@ -43,7 +43,7 @@ export function useOperation({
   // timer stays live regardless of which member started it.
   batchId?: string;
 }) {
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   const { carbon, accessToken } = useCarbon();
   const user = useUser();
 

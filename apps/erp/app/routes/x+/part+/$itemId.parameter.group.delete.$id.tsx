@@ -2,30 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteConfigurationParameterGroup } from "~/modules/items/items.service";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client } = await requirePermissions(request, {
-    delete: "parts"
-  });
-
-  const { id } = params;
-  if (!id) throw notFound("id not found");
-
-  const remove = await deleteConfigurationParameterGroup(client, id);
-
-  if (remove.error) {
-    return {
-      success: false,
-      error: "Failed to delete configuration parameter group"
-    };
-  }
-
-  return {
-    success: true
-  };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  return api.items.deleteConfigurationParameterGroup({ id: input.params.id });
 }

@@ -81,7 +81,6 @@ const ServiceJobProperties = () => {
   });
   const estimateStatusLabels = useEstimateStatusLabels();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onCoverageChange = useCallback(
     (coverage: string) => {
       const formData = new FormData();
@@ -91,10 +90,10 @@ const ServiceJobProperties = () => {
         action: path.to.serviceJobCoverage(jobId)
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [jobId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
     (field: string, value: string | null) => {
       const formData = new FormData();
@@ -106,11 +105,12 @@ const ServiceJobProperties = () => {
         action: path.to.serviceJobUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [jobId]
   );
 
   const isLocked = isServiceJobLocked(job?.status);
-  const isDisabled = isLocked || !permissions.can("update", "service");
+  const isDisabled = isLocked || !permissions.has({ "service.jobs": "Edit" });
   // The customer saw the estimate at this rate.
   const isBillRateLocked =
     job?.estimateStatus === "Sent" || job?.estimateStatus === "Accepted";

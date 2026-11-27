@@ -52,8 +52,8 @@ import { path } from "~/utils/path";
 import { ALL_MATCHING_RELEASE_LIMIT } from "~/utils/table-jobs";
 import { isBatchDissolvable, isBatchReleasable } from "../../production.models";
 import type { JobOperationBatch } from "../../types";
-import { BatchReleaseModal } from "./BatchReleaseModal";
 import { BATCH_LIST_EXPORT_VALUES } from "./batch-list-export";
+import { BatchReleaseModal } from "./BatchReleaseModal";
 import { useBatchRelease } from "./useBatchRelease";
 
 type BatchesTableProps = {
@@ -120,7 +120,7 @@ const BatchesTable = memo(({ data, count, infinite }: BatchesTableProps) => {
   );
   const permissions = usePermissions();
   const navigate = useNavigate();
-  const canUpdate = permissions.can("update", "production");
+  const canUpdate = permissions.has({ "production.batches": "Edit" });
 
   // Release (Planned → Active) / Unrelease (Active → Planned) post to the
   // batching action; a refusal lands in the toast.
@@ -518,7 +518,7 @@ const BatchesTable = memo(({ data, count, infinite }: BatchesTableProps) => {
         count={count}
         infinite={infinite}
         primaryAction={
-          permissions.can("create", "production") && (
+          permissions.has({ "production.batches": "Create" }) && (
             <New label={t`Batch`} to={path.to.newOperationBatch} />
           )
         }

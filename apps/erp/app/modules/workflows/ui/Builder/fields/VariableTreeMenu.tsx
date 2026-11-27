@@ -95,7 +95,6 @@ export function VariableTreeMenu({
   const activeTree = searching ? searchRows : tree;
   const rows = searching ? searchRows : rowsAt(tree, nav.path);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset the highlight, not the level
   useEffect(() => setNav((n) => ({ ...n, index: 0 })), [needle]);
 
   const virtualizer = useVirtualizer({
@@ -285,7 +284,7 @@ export function VariableTreeMenu({
                                 preventDefault on mousedown stops the icon click from
                                 blurring the search field. stopPropagation keeps it from
                                 triggering the row button's own select handler. */}
-                            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: tooltip trigger that only stops mousedown/click from reaching the row button; not a control itself */}
+                            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- tooltip trigger that only stops mousedown/click from reaching the row button; not a control itself */}
                             <span
                               tabIndex={-1}
                               className="inline-flex shrink-0 cursor-default text-muted-foreground"

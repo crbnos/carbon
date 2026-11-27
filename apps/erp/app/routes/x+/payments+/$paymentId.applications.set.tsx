@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -27,8 +27,8 @@ const setApplicationsValidator = z.object({
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "invoicing"
+  const { api, companyId, userId } = await authorize(request, {
+    "invoicing.payments": "Edit"
   });
 
   const { paymentId } = params;
@@ -110,7 +110,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Save and Post: a failed post keeps the saved applications, and its
   // reason stays on the payment.
   if (formData.get("intent") === "post") {
-    const api = await carbon(request);
     const posted = await api.invoicing.postPayment({ paymentId });
     return respond(request, posted).redirect(path.to.payment(paymentId), {
       message: "Applications saved and payment posted",

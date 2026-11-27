@@ -108,11 +108,6 @@ const UNASSIGN_PATH = {
   workCenter: path.to.storageRuleUnassignWorkCenter
 };
 
-const PERM_MODULE: Record<TargetType, "parts" | "resources"> = {
-  item: "parts",
-  workCenter: "resources"
-};
-
 export default function RuleAssignmentsList({
   targetType,
   targetId,
@@ -124,9 +119,9 @@ export default function RuleAssignmentsList({
   const permissions = usePermissions();
   const fetcher = useFetcher();
   const { isGated } = usePlanGate({ feature: "STORAGE_RULES" });
-  const module = PERM_MODULE[targetType];
-  const canCreate = permissions.can("create", module);
-  const canDelete = permissions.can("delete", module);
+  // An assignment row sits under Storage Rules, for an item or a work center.
+  const canCreate = permissions.has({ "inventory.storageRules": "Create" });
+  const canDelete = permissions.has({ "inventory.storageRules": "Full" });
   const targetCopy = TARGET_COPY[targetType];
   const description = `Enforce constraints on ${targetCopy.surfaceBlurb} for this ${targetCopy.noun}.`;
 

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { pageClaims } from "./page-claims";
 import { describe, expect, it, vi } from "vitest";
 
 // The module's imports reach the glossary, whose `msg` macro only runs compiled.
@@ -15,7 +16,7 @@ import { createRentalAgreementCharge } from "../app/modules/sales/sales.server";
 import {
   insertContractLines,
   recalculateSalesDocumentTaxes,
-  upsertContractLine
+  updateContractLine
 } from "../app/modules/sales/sales.service";
 import { serviceInvoiceLineTaxes } from "../app/modules/service/service.service";
 import { filteringSupabase } from "./filtering-supabase-fake";
@@ -84,14 +85,17 @@ function fakeDb(first: (table: string) => unknown) {
   const builder = (table: string, kind: "select" | "update") => {
     let values: unknown;
     const chain: Record<string, any> = {};
-    for (const method of ["select", "where", "forUpdate"]) {
+    for (const method of ["select", "where", "forUpdate", "returning"]) {
       chain[method] = () => chain;
     }
     chain.set = (next: unknown) => {
       values = next;
       return chain;
     };
-    chain.executeTakeFirst = async () => first(table);
+    chain.executeTakeFirst = async () => {
+      if (kind === "update") updates.push({ table, values });
+      return first(table);
+    };
     chain.executeTakeFirstOrThrow = async () => first(table);
     chain.execute = async () => {
       if (kind === "update") updates.push({ table, values });
@@ -264,7 +268,7 @@ describe("insertContractLines", () => {
   });
 });
 
-describe("upsertContractLine", () => {
+describe("updateContractLine", () => {
   const contractTables = () => ({
     ...taxTables(),
     customerContract: [
@@ -317,32 +321,40 @@ describe("upsertContractLine", () => {
     startDate: "2026-10-01",
     billingMethod: "Fixed" as const,
     revenueMethod: "Daily" as const,
-    updatedBy: "user-1"
+    updatedBy: "user-1",
+    expectedUpdatedAt: null
   };
   // The line is read by its id to learn its company (RLS scopes it).
   const unscoped = ["customerContractLine"];
+  // The write runs under the contract's lock, a Draft.
+  const lineDb = () =>
+    fakeDb((table) =>
+      table === "customerContract" ? { status: "Draft" } : { id: "ccl-1" }
+    );
+  const lineWrite = (updates: { table: string; values: any }[]) =>
+    updates.find((u) => u.table === "customerContractLine")?.values;
 
   it("holds a percent sent with no code to the stored code's rate", async () => {
-    const { client, writes } = filteringSupabase(contractTables(), {
+    const { client } = filteringSupabase(contractTables(), {
       unscoped
     });
+    const { db, updates } = lineDb();
 
-    const result = await upsertContractLine(client, {
+    const result = await updateContractLine(client, db, {
       ...update,
       id: "ccl-1",
       taxPercent: 5
     } as never);
 
     expect(result.error).toBeNull();
-    expect(
-      writes.find((w) => w.table === "customerContractLine")?.value
-    ).toMatchObject({ taxPercent: 0.2 });
+    expect(lineWrite(updates)).toMatchObject({ taxPercent: 0.2 });
   });
 
   it("lets an edit that leaves the tax alone through on a code with no rate in force", async () => {
-    const { client, writes } = filteringSupabase(withExpired(), { unscoped });
+    const { client } = filteringSupabase(withExpired(), { unscoped });
+    const { db, updates } = lineDb();
 
-    const result = await upsertContractLine(client, {
+    const result = await updateContractLine(client, db, {
       ...update,
       id: "ccl-expired",
       description: "Renamed",
@@ -351,15 +363,17 @@ describe("upsertContractLine", () => {
     } as never);
 
     expect(result.error).toBeNull();
-    expect(
-      writes.find((w) => w.table === "customerContractLine")?.value
-    ).toMatchObject({ description: "Renamed", taxPercent: 0.2 });
+    expect(lineWrite(updates)).toMatchObject({
+      description: "Renamed",
+      taxPercent: 0.2
+    });
   });
 
   it("refuses a changed percent on a code with no rate in force", async () => {
     const { client, writes } = filteringSupabase(withExpired(), { unscoped });
+    const { db, updates } = lineDb();
 
-    const result = await upsertContractLine(client, {
+    const result = await updateContractLine(client, db, {
       ...update,
       id: "ccl-expired",
       taxPercent: 10
@@ -367,6 +381,7 @@ describe("upsertContractLine", () => {
 
     expect(result.error?.message).toContain("no rate in force on 2026-10-01");
     expect(writes).toHaveLength(0);
+    expect(updates).toHaveLength(0);
   });
 });
 
@@ -381,7 +396,12 @@ describe("createRentalAgreementCharge", () => {
   };
   const contextFor = (client: unknown) =>
     createServiceContext({
-      actor: { type: "user", userId: "user-1", permissions: grant },
+      actor: {
+        type: "user",
+        userId: "user-1",
+        role: "employee",
+        permissions: pageClaims(grant)
+      },
       company: { id: "company-1", groupId: "group-1" },
       caller: client as never,
       system: (() => client) as never,

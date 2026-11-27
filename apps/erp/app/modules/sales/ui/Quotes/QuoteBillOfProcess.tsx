@@ -48,7 +48,7 @@ import type { DragControls } from "motion/react";
 import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   LuActivity,
   LuChevronRight,
@@ -113,6 +113,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { useProcessWorkCenter } from "~/hooks/useProcessWorkCenter";
 import {
   OperationRowDetails,
   OperationRowTitle
@@ -310,7 +311,7 @@ const QuoteBillOfProcess = ({
   const quoteData = useRouteData<{ quote: Quotation }>(path.to.quote(quoteId));
 
   const isDisabled = quoteData?.quote?.status !== "Draft";
-  const isReadOnly = isDisabled || !permissions.can("update", "sales");
+  const isReadOnly = isDisabled || !permissions.has({ "sales.quotes": "Edit" });
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
@@ -460,7 +461,7 @@ const QuoteBillOfProcess = ({
     .map((item) => item.id);
 
   const onReorder = (items: ItemWithData[]) => {
-    if (!permissions.can("update", "sales") || isDisabled) return;
+    if (!permissions.has({ "sales.quotes": "Edit" }) || isDisabled) return;
     const newItems = items.map((item, index) => ({
       ...item,
       data: {
@@ -580,7 +581,7 @@ const QuoteBillOfProcess = ({
         content: (
           <div className="flex flex-col">
             <div>
-              {permissions.can("update", "parts") ? (
+              {permissions.has({ "sales.quotes": "Edit" }) ? (
                 <Editor
                   label={t`Work Instructions`}
                   initialValue={
@@ -588,7 +589,7 @@ const QuoteBillOfProcess = ({
                   }
                   onUpload={onUploadImage}
                   onChange={(content) => {
-                    if (!permissions.can("update", "sales")) return;
+                    if (!permissions.has({ "sales.quotes": "Edit" })) return;
                     setWorkInstructions((prev) => ({
                       ...prev,
                       [item.id]: content
@@ -793,7 +794,7 @@ const QuoteBillOfProcess = ({
               ref={addOperationButtonRef}
               variant="secondary"
               isDisabled={
-                !permissions.can("update", "sales") ||
+                !permissions.has({ "sales.quotes": "Edit" }) ||
                 selectedItemId !== null ||
                 isDisabled
               }
@@ -1691,6 +1692,8 @@ function OperationForm({
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
+  const formId = useId();
+  const keepForProcess = useProcessWorkCenter(formId);
 
   const machineDisclosure = useDisclosure();
   const assemblyDisclosure = useDisclosure();
@@ -1757,10 +1760,17 @@ function OperationForm({
       carbon.from("supplierProcess").select("*").eq("processId", processId)
     ]);
 
-    const activeWorkCenters =
-      workCenters?.data?.filter((wc) => Boolean(wc.workCenter)) ?? [];
-
     if (process.error) throw new Error(process.error.message);
+    // A failed read would leave no work centers, and clear a valid one.
+    if (workCenters.error) throw new Error(workCenters.error.message);
+
+    const activeWorkCenters = workCenters.data.filter((wc) =>
+      Boolean(wc.workCenter)
+    );
+
+    keepForProcess(
+      activeWorkCenters.flatMap((wc) => (wc.workCenter ? [wc.workCenter] : []))
+    );
 
     setProcessData((p) => ({
       ...p,
@@ -1863,6 +1873,7 @@ function OperationForm({
           ? path.to.newQuoteOperation(quoteId, lineId)
           : path.to.quoteOperation(quoteId, lineId, item.id!)
       }
+      id={formId}
       method="post"
       defaultValues={item.data}
       validator={quoteOperationValidator}

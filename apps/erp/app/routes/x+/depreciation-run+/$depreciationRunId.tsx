@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   Card,
@@ -21,11 +22,6 @@ import { DateTime, Hyperlink } from "~/components";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
-import {
-  getDepreciationRun,
-  getDepreciationRunLines,
-  getPeriodRunRelatedItems
-} from "~/modules/accounting/accounting.service";
 import { depreciationRunLineDisplay } from "~/modules/accounting/accounting.utils";
 import {
   DepreciationRunDocuments,
@@ -48,24 +44,23 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Depreciation`, to: path.to.depreciationRuns },
     (data) => data?.run?.depreciationRunId
-  ),
-  module: "accounting"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.run?.depreciationRunId, "Depreciation Run");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
+  const { api } = await authorize(request, {
+    "accounting.depreciation": "View"
   });
 
   const { depreciationRunId } = params;
   if (!depreciationRunId) throw new Error("Could not find depreciationRunId");
 
   const [run, lines] = await Promise.all([
-    getDepreciationRun(client, depreciationRunId),
-    getDepreciationRunLines(client, depreciationRunId)
+    api.accounting.getDepreciationRun({ id: depreciationRunId }),
+    api.accounting.getDepreciationRunLines({ depreciationRunId })
   ]);
 
   if (run.error) {
@@ -89,12 +84,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     run: run.data,
     lines: lines.data ?? [],
-    relatedItems: getPeriodRunRelatedItems(
-      client,
-      companyId,
-      run.data.periodEnd,
-      journalIds.length <= MAX_LISTED_JOURNALS ? journalIds : []
-    )
+    relatedItems: api.accounting
+      .getPeriodRunRelatedItems({
+        periodEnd: run.data.periodEnd,
+        journalIds: journalIds.length <= MAX_LISTED_JOURNALS ? journalIds : []
+      })
+      .then(dataOrThrow)
   };
 }
 

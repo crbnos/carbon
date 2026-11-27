@@ -659,16 +659,14 @@ export function ARAPWorkbench({
           ["bucket4", i18n._(bucketMessages.bucket4)],
           ["unapplied", t`Unapplied`]
         ] as const
-      ).map(
-        ([key, header]): ColumnDef<WorkbenchRow> => ({
-          id: key,
-          header,
-          cell: ({ row }) =>
-            row.original.kind === "counterparty" ? (
-              <span className="tabular-nums">{money(row.original[key])}</span>
-            ) : null
-        })
-      ),
+      ).map(([key, header]): ColumnDef<WorkbenchRow> => ({
+        id: key,
+        header,
+        cell: ({ row }) =>
+          row.original.kind === "counterparty" ? (
+            <span className="tabular-nums">{money(row.original[key])}</span>
+          ) : null
+      })),
       ...(pending
         ? [
             {
@@ -744,7 +742,7 @@ export function ARAPWorkbench({
   const hasVariance = result
     ? Math.abs(result.variance) > VARIANCE_EPSILON
     : false;
-  const canAdjust = permissions.can("create", "accounting");
+  const canAdjust = permissions.has({ "accounting.journalEntries": "Create" });
 
   const filters = (
     <HStack>

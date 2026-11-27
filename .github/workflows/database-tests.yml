@@ -1,0 +1,123 @@
+name: Database tests
+
+# The ERP's database tests (apps/erp/test/database) skip without a local
+# database, so Checks' Test job, which has none, never runs them. This boots a
+# migrated database and PostgREST and runs them, and fails if they cannot run.
+#
+# On every pull request that can change what they test: the ERP, any package
+# it loads (the migrations among them) and the lockfile. A docs or MES-only
+# pull request does not wait 20 minutes for them.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/erp/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".nvmrc"
+      - ".github/workflows/database-tests.yml"
+      - "!**/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  database-tests:
+    name: Database tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CARBON_DEV_YES: "1"
+      # The stack's name; otherwise taken from the checkout directory.
+      CARBON_WORKTREE: ci-db
+      # localhost URLs: portless asks for sudo to bind its proxy.
+      CARBON_PORTLESS: "0"
+    steps:
+      # This job runs the pull request's code, so the token is not left in
+      # .git/config for it to read.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/cache@v6
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            docs/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @carbon/config build
+
+      # Applies every migration to a fresh database in the shared Postgres.
+      # The types and swagger are Database types' to check.
+      - name: Migrate an empty database
+        run: packages/dev/bin/crbn migrate --no-regen
+
+      # `crbn migrate` stops the stack's services when it is done; the tests
+      # that read through PostgREST need it running. `up` asks for
+      # SESSION_SECRET, which nothing here uses.
+      - name: Start PostgREST
+        env:
+          SESSION_SECRET: ci-database-tests
+        run: packages/dev/bin/crbn up --no-apps --no-migrate --minimal
+
+      # Without a local database the suite skips every test and passes, so
+      # this fails the job instead.
+      - name: The database and PostgREST answer
+        run: |
+          value() { grep -E "^$1=" .env.local | tail -1 | cut -d= -f2-; }
+          db_url=$(value SUPABASE_DB_URL)
+          port=$(value PORT_API)
+          key=$(value SUPABASE_SERVICE_ROLE_KEY)
+          if [ -z "$db_url" ] || [ -z "$port" ] || [ -z "$key" ]; then
+            echo "::error::crbn did not write SUPABASE_DB_URL, PORT_API and SUPABASE_SERVICE_ROLE_KEY to .env.local" >&2
+            exit 1
+          fi
+          case "$db_url" in
+            postgresql://*@127.0.0.1:*|postgresql://*@localhost:*) ;;
+            *)
+              echo "::error::SUPABASE_DB_URL is not a local database: the tests would skip" >&2
+              exit 1
+              ;;
+          esac
+          migrations=$(psql "$db_url" -Atc 'SELECT count(*) FROM supabase_migrations.schema_migrations')
+          if [ "${migrations:-0}" -eq 0 ]; then
+            echo "::error::The database has no migrations applied" >&2
+            exit 1
+          fi
+          for attempt in $(seq 1 30); do
+            if curl -fsS -o /dev/null -H "apikey: $key" "http://localhost:$port/rest/v1/"; then
+              echo "$migrations migrations applied; PostgREST answers on port $port"
+              echo "SUPABASE_DB_URL=$db_url" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::PostgREST does not answer on http://localhost:$port/rest/v1/" >&2
+          exit 1
+
+      - name: Database tests
+        working-directory: apps/erp
+        run: |
+          report="$RUNNER_TEMP/database-tests.json"
+          pnpm exec vitest run test/database --reporter=default --reporter=json --outputFile="$report"
+          # A run whose cases skipped passes too: hold it to having run them.
+          REPORT="$report" node -e '
+            const r = JSON.parse(require("node:fs").readFileSync(process.env.REPORT, "utf8"));
+            console.log(`${r.numPassedTests} passed, ${r.numPendingTests} skipped`);
+            if (r.numPassedTests === 0 || r.numPendingTests > r.numPassedTests / 10) {
+              console.error("::error::The database tests skipped: they found no database or PostgREST");
+              process.exit(1);
+            }
+          '

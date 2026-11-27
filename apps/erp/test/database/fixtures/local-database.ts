@@ -8,7 +8,7 @@ import {
   getPostgresClient,
   type KyselyDatabase
 } from "@carbon/database/client";
-import { PostgresDriver, sql } from "kysely";
+import { type Kysely, PostgresDriver, type RawBuilder, sql } from "kysely";
 import { Pool } from "pg";
 import { it } from "vitest";
 
@@ -70,4 +70,30 @@ export async function connectLocalTestDatabase({
     db
   );
   return db;
+}
+
+/**
+ * Runs `fn` with `db`'s writes to `table` refused where `refused` holds, so a
+ * test can fail an operation part-way through. A temporary view named after
+ * the table shadows it on this connection only (pg_temp is searched before
+ * public), and its CHECK OPTION refuses the row with SQLSTATE 44000. A trigger
+ * would need to own the table, which the test role does not, and its DDL
+ * locks the table against every other test running at the same time.
+ * `refused` is written into the view, which takes no bind parameters: build
+ * its values with `sql.lit`. Rows it matches are also hidden from reads.
+ */
+export async function withRefusedWrites<T>(
+  db: Kysely<KyselyDatabase>,
+  table: keyof KyselyDatabase & string,
+  refused: RawBuilder<unknown>,
+  fn: () => Promise<T>
+): Promise<T> {
+  await sql`CREATE TEMP VIEW ${sql.id(table)} AS SELECT * FROM public.${sql.id(table)} WHERE (${refused}) IS NOT TRUE WITH CHECK OPTION`.execute(
+    db
+  );
+  try {
+    return await fn();
+  } finally {
+    await sql`DROP VIEW pg_temp.${sql.id(table)}`.execute(db);
+  }
 }

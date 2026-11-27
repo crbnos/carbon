@@ -151,7 +151,7 @@ export const scarValidator = z.object({
       }
       try {
         return JSON.parse(str);
-        // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+        // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
       } catch (e) {
         ctx.addIssue({ code: "custom", message: "Invalid JSON" });
         return z.NEVER;

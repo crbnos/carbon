@@ -34,8 +34,8 @@ import {
 } from "~/hooks";
 import { path } from "~/utils/path";
 import ContractAmountsModal from "./ContractAmountsModal";
-import ContractMoney from "./ContractMoney";
 import { contractLineName, lineColumnKey } from "./contractGrid";
+import ContractMoney from "./ContractMoney";
 import type { ContractRouteData } from "./types";
 
 type ContractInvoiceGridProps = Pick<
@@ -86,7 +86,7 @@ const ContractInvoiceGrid = ({
   const contractId = contract.id!;
   const { currencyCode } = contract;
   const decimals = useCurrencyDecimals(currencyCode);
-  const canEdit = permissions.can("update", "sales");
+  const canEdit = permissions.has({ "sales.serviceContracts": "Edit" });
   const action = path.to.contractSchedule(contractId);
 
   // Every invoice with its rows, persisted or planned live.

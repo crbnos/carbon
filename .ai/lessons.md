@@ -6,6 +6,98 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Fix a quantity rule in the view every reader shares
+
+**Context:** MRP counted a job's scrap allowance as supply, because `openProductionOrders.quantityToReceive` is `productionQuantity − received`.
+
+**Problem:** The fix added a side read of `job` in `runMrp` and computed good units there. Available-to-promise, the buildable check and the item planning chart read the same view column, so they kept counting scrap and now disagreed with MRP.
+
+**Rule:** Before you change what a number means, grep every reader of its source column (`grep -rn '"quantityToReceive"'` across the view's readers, TS and SQL). Fix it at the source, the view or RPC, so every reader gets the same value. A side read that corrects one consumer is a symptom fix: delete it once the source is right.
+
+**Applies to:** `openProductionOrders` and the other planning views, `@carbon/planning` (`mrp/`, `promising/`), the item planning chart route.
+
+## A new scheduler state must reach every output, and the last op is the test
+
+**Context:** An operation with no candidate work center used to vanish. The fix gave it a conflict and made its successors wait.
+
+**Problem:** The live test put the op in the middle of a job, so the chain hid the gap. As the LAST op it has no placement and no reservation, so the job's projected completion, the lateness check and the quote lead time all ended at the op before it.
+
+**Rule:** When the selector gains a new state, list every consumer of a selection (projected completion, newly-late, quote lead time, the Forecast, dispatch numbering, `applyWorkCenterSelections`) and decide each one. Test the op first, in the middle and last in its job.
+
+**Applies to:** `scheduling/work-center-selector.ts`, `scheduling-engine.ts`, `quote-lead-time.ts`.
+
+## A new output decides each field; it never passes a stored id through
+
+**Context:** A pinned outside-processing op started emitting a placement so it counts in the forecast.
+
+**Problem:** The selection carried `op.workCenterId`, which can be a stale in-house machine. The op joined that machine's affected work centers and its dispatch numbering, shifting the real queue by one.
+
+**Rule:** When code starts producing a record it did not produce before, set each field on purpose. For an id copied from storage, find every downstream reader of that field before passing it through.
+
+**Applies to:** `WorkCenterSelection` producers, `applyWorkCenterSelections`, `priority-calculator.ts`.
+
+## Order events from two processes with one clock
+
+**Context:** A schedule run clears only the stale marks stamped before it started.
+
+**Problem:** The run's start came from the app server's clock and the mark from the job worker's clock. A few seconds of skew decided which marks were cleared.
+
+**Rule:** When timestamps written by different processes are compared to order events, take both from the database (`now()` in SQL, or `SELECT now()` once at the start). Never compare `Date.now()` from one host with a timestamp another host wrote.
+
+**Applies to:** `job.scheduleOutdatedAt` writers (MARK, nightly replan), schedule and MRP run starts, any cross-process "happened before" check.
+
+## A save lock stops duplicates, not stale overwrites
+
+**Context:** MRP and the scheduler rebuild their output from scratch, and two runs can overlap.
+
+**Problem:** An advisory lock at save time stopped double inserts. A run that read its inputs earlier could still save after a newer run, replacing the newer plan with an older one, and the newer run had already cleared the marks that would have replanned it.
+
+**Rule:** For a delete-and-rewrite job, record when each run started reading (database clock). Under the save lock, skip the save when a run that started later has already saved, and record the start of each run that does save. Newest read wins.
+
+**Applies to:** `runMrp`, `runLocationSchedule`, any regenerate-and-replace job.
+
+## A stored value joins a candidate set only through the pool's own rule
+
+**Context:** The scheduler picks a work center from the process pool (active centers at the job's location) and falls back to the op's stored work center.
+
+**Problem:** The capacity set took in every op's stored work center, from any location and whatever its process. So the fallback and the "started ops stay put" rule could book a machine at another plant, or one that does not run the process. A form that kept a stale hidden `workCenterId` after a process change fed it that data.
+
+**Rule:** When a stored value can stand in for a computed choice, check it with the same predicate that built the choice (`isValidWorkCenter`), in one function every path calls. When a form field's options depend on another field, clear or re-check the dependent value when that field changes (`workCenterForProcess`).
+
+**Applies to:** `finite-context.ts`, `work-center-selector.ts`, `startedOperationWorkCenter`, and the job, quote and make-method Bill of Process forms.
+
+## Time without a resource still runs on a calendar
+
+**Context:** An op with no work center gets a placeholder so its successors and the job's finish wait for it.
+
+**Problem:** Its work was added as continuous clock hours, so 40 hours ended in under two days, and the job read "early" when it was late. On the Forecast the same row was split at every night, like a machine's hours, so one op read as five.
+
+**Rule:** Lay work with no resource on the location's working calendar (the one people with no shifts use). Draw a row that has no resource as one bar, with no non-working split of its own.
+
+**Applies to:** `work-center-selector.ts` (the no-candidate branch), `quote-lead-time.ts`, `forecast.tsx` `nonWorkingIntervalsByLane`.
+
+## A value written on every run lives where no trigger fires
+
+**Context:** The schedule's newest-read-wins marker was first a column on `location`.
+
+**Problem:** Every saved schedule run updated the `location` row, and `location` has event triggers (`events: true`) and `broadcast_reference_changes`. Each run would queue a location update for webhooks and workflows and push a realtime refresh to every client of the company.
+
+**Rule:** Before adding a column that a job writes on every run, read the table's entry in `packages/database/src/event-system/attachments.ts`. If it has events or a broadcast, put the value in a lean table with no triggers (`serviceOnly()` in the manifest), as `locationScheduleRun` and `employeePin` do.
+
+**Applies to:** run markers, cursors, heartbeats and counters written by scheduled jobs or engines.
+
+## A hold reserves every resource the work will use
+
+**Context:** A started operation holds its machine before the scheduler places other jobs.
+
+**Problem:** The hold reserved the machine but not the operator, and could land on a machine the op would not run on. An earlier job took the operator, so the running op waited and the held machine sat idle.
+
+**Rule:** A reservation made on an op's behalf holds every finite resource the op will use (machine and operator), and only on the resource the placement will actually choose. Apply the selector's own eligibility rule rather than the stored value.
+
+**Applies to:** `startedOperationHolds`, `holdStartedOperations`, any pre-pass that reserves ahead of placement.
+
+---
+
 ## Aging report previews need seeded open documents
 
 **Context:** Sharing a local AR/AP aging UI preview.
@@ -368,15 +460,17 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `packages/database/supabase/migrations/` set-returning `LANGUAGE sql` functions consumed via `client.rpc(...)`; any app code that greedy-fills / picks "the first row" from an RPC result.
 
-## Tracked consumption/split must book against the entity's ACTUAL bin, not an arbitrary ledger row
+## Tracked consumption/split must book against the entity's ACTUAL bin, not an arbitrary ledger row (and a reversal against the row it reverses)
 
 **Context:** Building "return unused picks at job complete" surfaced a pre-existing bug in the `issue` edge function (`trackedEntitiesToOperation`). Consuming a batch that had been picked to a lineside shelf booked the Consumption + split `itemLedger` rows against `itemLedgers.find(il => il.trackedEntityId === id)?.storageUnitId` — the FIRST row for the entity in a `createdBy`-ordered list, i.e. an arbitrary bin. A picked entity has ledger rows in BOTH its warehouse source and its lineside bin, so consumption landed on the warehouse bin, leaving the entity at −N on-hand in one bin / +N in another: a per-bin-negative, internally inconsistent ledger, and the un-consumed remainder (a split entity) stranded on the wrong bin.
 
 **Problem:** For a tracked entity that has moved between bins (pick/transfer), "which bin holds the stock" is NOT the first ledger row — it's the bin whose net on-hand is positive. Picking any row's `storageUnitId` silently misplaces consumption and breaks any downstream feature that reasons about physical location (e.g. returning lineside remainder to source).
 
-**Rule:** When booking a consumption/split/movement ledger row for a tracked entity, resolve the storage unit from **net on-hand per bin** (the bin with the highest positive net), never `.find(...)?.storageUnitId` over an unordered/`createdBy`-ordered list. See `resolveTrackedEntityBin` (`packages/utils/src/resolve-tracked-entity-bin.ts`, pure + test-covered; exported by `@carbon/utils`). Scope such a fix to the path you can verify — the same `.find` pattern exists in other cases (e.g. `unconsumeTrackedEntities`); don't blanket-replace untested paths.
+**Rule:** When booking a consumption/split/movement ledger row for a tracked entity, resolve the storage unit from **net on-hand per bin** (the bin with the highest positive net), never `.find(...)?.storageUnitId` over an unordered/`createdBy`-ordered list. See `resolveTrackedEntityBin` (`packages/utils/src/resolve-tracked-entity-bin.ts`, pure + test-covered; exported by `@carbon/utils`). Scope such a fix to the path you can verify; don't blanket-replace untested paths.
 
-**Applies to:** `issueMaterial` (`apps/erp/app/modules/inventory/inventory.service.ts`) and any posting inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
+A reversal is different: once a unit is consumed, no bin nets positive, so `resolveTrackedEntityBin` has nothing to find. A put-back (unconsume, unissue, unpick, a void) books against the row it reverses. Read the entity's ledger with `.where("companyId", …)` and `.orderBy("createdAt", "desc")` and take the newest row of the entry type being reversed (for unconsume: the newest negative `Consumption` row). Take its bin and its `projectId` from that one row. `createdBy` is a user id, not a time: ordering by it, then taking the first row, returned a unit consumed from bin B to the bin it was received into (`unconsumeTrackedEntities`, fixed 2026-11-24, pinned by `apps/erp/test/database/unconsume-tracked-bin.test.ts`).
+
+**Applies to:** `issueMaterial` (`apps/erp/app/modules/inventory/inventory.service.ts`) and any posting inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins, or reversing one.
 
 ## A tracked entity's bin is where it IS, never the document line's bin — and "no storage unit" is a bin
 
@@ -387,16 +481,6 @@ Format: `Context → Problem → Rule → Applies to`
 **Rule:** Book a tracked entity's outbound row against its actual bin: `resolveTrackedEntityBins` (`@carbon/utils`, null-aware) through `getTrackedEntityBins` (`apps/erp/app/modules/shared/shared.service.ts`). Refuse when it has no stock anywhere rather than falling back to the line's bin. A void reverses into the bin the posting used (read the posted `itemLedger` rows), not the line's. A bin filter that must express "no storage unit" takes an explicit switch (`p_filter_storage_unit` on `get_available_tracked_entities`) and compares with `IS NOT DISTINCT FROM`.
 
 **Applies to:** `post-shipment` (Sales Order post/void, serial + batch), `post-stock-transfer` (`assertInSourceBin`), the stock transfer picker. Return and outbound-transfer shipments still use the line's bin.
-
-## Biome does not apply 3rd-level nested configs — enforce Deno via an override
-
-**Context:** Bringing Supabase edge functions (`packages/database/supabase/functions/**`, Deno) into Biome's lint surface for the new `noConsole` rule. These files sit outside the linted globs (`apps/*/app/**`, `packages/*/src/**`) and were never Biome-formatted.
-
-**Problem:** A dedicated nested `functions/biome.jsonc` (root:false, formatter off, noConsole only) is silently ignored. Biome applies the depth-1 nested config (`packages/biome.jsonc`) for the whole `packages/` subtree; a depth-2 nested config under it never governs — the `format` diagnostic keeps appearing and `formatter.enabled:false` has no effect. Letting `packages/biome.jsonc` (which `extends "//"`) govern the Deno files directly produces ~270 CI-failing errors (Deno globals → `noUndeclaredVariables`, `useImportType`, `organizeImports`, formatting) on never-linted code.
-
-**Rule:** Do not rely on 3-level Biome config nesting. Add the target path to the depth-1 config's `files.includes`, then scope an `overrides` entry there (glob relative to that config) that turns off `formatter`/`assist` and the Node-oriented error rules (`correctness.noUndeclaredVariables`, `noUnusedVariables`, `style.useImportType`) while inheriting the one rule you want (`noConsole` as a warning). Verify with `pnpm exec biome check --reporter=summary <dir>` expecting 0 errors. See `packages/biome.jsonc`.
-
-**Applies to:** `biome.jsonc` / `packages/biome.jsonc` rule scoping; any attempt to lint Deno edge functions or other non-`src/` trees.
 
 ## React Router v7 middleware `next()` never rejects on thrown Responses/errors
 
@@ -686,13 +770,13 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Applies to:** `BoardContainer` (`ColumnCard.tsx`) and any kanban wanting a pinned column; any dnd-kit board with sticky droppables.
 
-## Regenerating `src/email/previews/` fixtures requires a follow-up biome format pass
+## Regenerating `src/email/previews/` fixtures requires a follow-up format pass
 
 **Context:** Adding ChangeOrder* entries to `packages/documents/scripts/generate-notification-previews.mjs` and re-running it to emit the per-event preview fixtures.
 
-**Problem:** The generator writes raw `JSON.stringify(..., null, 6)` output (quoted keys, 6-space indent), but the committed fixtures are biome-formatted (unquoted keys, 2-space indent). Re-running the script therefore rewrites **all** existing fixtures into the raw style — 28 files of pure formatting churn drowning the 3 intended new files in the diff.
+**Problem:** The generator writes raw `JSON.stringify(..., null, 6)` output (quoted keys, 6-space indent), but the committed fixtures are formatted (unquoted keys, 2-space indent). Re-running the script therefore rewrites **all** existing fixtures into the raw style — 28 files of pure formatting churn drowning the 3 intended new files in the diff.
 
-**Rule:** After running `generate-notification-previews.mjs`, always run `pnpm exec biome check --write packages/documents/src/email/previews/` before reviewing the diff. Only intended fixture changes should remain; if pre-existing fixtures still show as modified, something else changed.
+**Rule:** After running `generate-notification-previews.mjs`, always run `pnpm exec oxfmt packages/documents/src/email/previews/` before reviewing the diff. Only intended fixture changes should remain; if pre-existing fixtures still show as modified, something else changed.
 
 **Applies to:** `packages/documents/scripts/generate-notification-previews.mjs`, `packages/documents/src/email/previews/*`, and any generator whose committed output is formatter-normalized.
 
@@ -913,13 +997,13 @@ will actually receive.
 **Applies to:** `packages/jobs/src/workflows/actions/update.ts`, and any generic
 company-scoping helper that takes a table name at run time.
 
-## Biome drops quotes from valid identifier keys, so a drift check that greps for `"key":` misses them
+## The formatter drops quotes from valid identifier keys, so a drift check that greps for `"key":` misses them
 
 **Context:** `scripts/check-workflow-catalog.ts` verifies the committed generated
 catalogue matches what the generator would produce, partly by grepping the label
 file for its keys.
 
-**Problem:** The generator emits `"notify":` but Biome formats the committed file
+**Problem:** The generator emits `"notify":` but the formatter rewrites the committed file
 to `notify:`. A regex anchored on `^ {2}"([^"]+)":` therefore skipped exactly the
 keys that happen to be valid JS identifiers — the check passed while genuinely
 missing entries.
@@ -929,7 +1013,7 @@ formatter's output, not the generator's. Make the quotes optional
 (`^ {2}"?([^":\s]+)"?:`), or compare parsed data rather than text.
 
 **Applies to:** `scripts/check-workflow-catalog.ts` and any future drift check
-that greps a Biome-formatted generated file.
+that greps a formatted generated file.
 
 ## Never hand-measure React Flow handle positions; and never `stopPropagation` inside a node
 
@@ -3475,7 +3559,7 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Context:** The jobs table's bulk-release toast needed "Released 1 job" / "Released N jobs". The table is `memo((props) => { … })`, and the toast text was written as `` t`${plural(count, { one: "Released # job", other: "Released # jobs" })}` `` with `t` from `useLingui()` and `plural` from `@lingui/core/macro`.
 
-**Problem:** Lingui 6.9.0's macro transform folds a nested `plural()` into the surrounding `t` only when the component or hook is a function declaration or a plain `const X = () => …`. When the function is an inline ARGUMENT of a call (`memo((props) => …)`), the `plural()` is expanded on its own into `i18n._(…)` on the global `@lingui/core` instance, and the outer `t` becomes `{0}` with that call as its value. The global instance is never activated here (see `.claude/rules/i18n-lingui-system.md`), so the string throws "Attempted to call a translation function without setting a locale" the first time it is built. Typecheck, Biome and `lingui:extract` all pass: the catalog shows a normal ICU plural msgid. Only the compiled output shows it.
+**Problem:** Lingui 6.9.0's macro transform folds a nested `plural()` into the surrounding `t` only when the component or hook is a function declaration or a plain `const X = () => …`. When the function is an inline ARGUMENT of a call (`memo((props) => …)`), the `plural()` is expanded on its own into `i18n._(…)` on the global `@lingui/core` instance, and the outer `t` becomes `{0}` with that call as its value. The global instance is never activated here (see `.claude/rules/i18n-lingui-system.md`), so the string throws "Attempted to call a translation function without setting a locale" the first time it is built. Typecheck, oxlint and `lingui:extract` all pass: the catalog shows a normal ICU plural msgid. Only the compiled output shows it.
 
 **Rule:** Do not call `plural()` (or `select()`) from `@lingui/core/macro` inside a component passed inline to `memo(…)` or any other call. Use `<Plural>` in JSX. For a string (a toast), either build it in a function-declaration hook (`function useX() { const { t } = useLingui(); return (n: number) => t`${plural(n, …)}`; }`), or choose between two whole `t` phrases (``n === 1 ? t`Released 1 job` : t`Released ${n} jobs` ``) — both phrases are extracted and translated, but a locale with more plural forms gets only two. When in doubt, read the compiled module (Vite `transformRequest` on the file) and check for an import of `i18n` from `@lingui/core`.
 
@@ -3485,7 +3569,7 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Context:** The sequence forms' week year warning named the tokens in its text: `<Trans>On 1 January 2027 {"%{yy}%{ww}"} gives 2753.</Trans>`.
 
-**Problem:** Lingui inlines a string literal expression into the message, so the msgid became `On 1 January 2027 %{yy}%{ww} gives 2753.` The braces then parse as ICU placeholders `{yy}` and `{ww}` with no value, and the page showed "On 1 January 2027 %% gives 2753." Typecheck, Biome and `lingui:extract` all pass.
+**Problem:** Lingui inlines a string literal expression into the message, so the msgid became `On 1 January 2027 %{yy}%{ww} gives 2753.` The braces then parse as ICU placeholders `{yy}` and `{ww}` with no value, and the page showed "On 1 January 2027 %% gives 2753." Typecheck, oxlint and `lingui:extract` all pass.
 
 **Rule:** Text that contains `{` or `}` goes into `<Trans>` or `t` as a named variable (`const token = "%{yy}"; … {token}`), which Lingui keeps as a placeholder and fills at runtime. Read the rendered text once after adding such a string.
 
@@ -3851,17 +3935,17 @@ Never edit main's migration to make it apply.
 
 **Problem:** `journalLine.accountId` and the order, invoice and supplier quote line FKs were `ON DELETE SET NULL`. Deleting an account with Draft or Provisional lines succeeded and silently emptied the lines' account; Posted lines only refused by accident, through the immutability trigger. The import also has to know, for every column that names an account, whether a merge may move it.
 
-**Rule:** Give a new foreign key to `account` `ON DELETE RESTRICT`, and classify it in `REFERENCE_POLICY` (`packages/database/src/account-import.ts`): `repoint`, `repoint-if-draft`, `repoint-if-unposted-journal` or `history`. The `apply-account-import` live-database test fails until it is listed. A soft reference (no FK) goes in `SOFT_REFERENCES` and the apply's `repointReferences`.
+**Rule:** Give a new foreign key to `account` `ON DELETE RESTRICT`, and classify it in `REFERENCE_POLICY` (`packages/database/src/account-import.ts`): `repoint`, `repoint-if-draft`, `repoint-if-unposted-journal` or `history`. The `apply-account-import` live-database test fails until it is listed. A soft reference (no FK) goes in `SOFT_REFERENCES` and the apply's `repointReferences`. (Enforced by `account-fk-restrict` for the RESTRICT half.)
 
 **Applies to:** migrations that add a column referencing `account`; `packages/database/src/account-import.ts`; `applyAccountImport` (`apps/erp/app/modules/accounting/accounting.service.ts`) and its live test `apps/erp/test/database/apply-account-import.test.ts`.
 
-## Committing with the hook off skips Biome too
+## Committing with the hook off skips the linter too
 
 **Context:** The chart of accounts import (2026-10-12) committed with `git -c core.hooksPath=/dev/null` so the Lingui catalogs, which the hook stages into any commit with `.ts` changes, could land in their own commit.
 
-**Problem:** The hook also runs lint-staged. Bypassing it skipped Biome's formatter, and a test file reached the branch unformatted. The self-review caught it, not the commit.
+**Problem:** The hook also runs lint-staged. Bypassing it skipped the formatter, and a test file reached the branch unformatted. The self-review caught it, not the commit.
 
-**Rule:** Before a commit with the hook off, run `pnpm biome check --write` on the staged files and the checks the hook would run (`pnpm --silent check:manifest`, `pnpm --silent db:check:datasets` for `packages/database`, `pnpm --silent db:check:backups` for migrations). Prefer committing the catalogs last with the hook on.
+**Rule:** Before a commit with the hook off, run `pnpm exec oxlint --fix` and `pnpm exec oxfmt` on the staged files and the checks the hook would run (`pnpm --silent check:manifest`, `pnpm --silent db:check:datasets` for `packages/database`, `pnpm --silent db:check:backups` for migrations). Prefer committing the catalogs last with the hook on.
 
 **Applies to:** any commit made with `--no-verify` or `core.hooksPath=/dev/null`.
 
@@ -4092,7 +4176,7 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Problem:** In zsh, `biome check $files` passes the whole list as ONE argument. Biome reported "File name too long" and "No files were processed", which reads as a Biome bug, not a shell one.
 
-**Rule:** Pass file lists through `xargs` (`git diff --name-only | xargs biome check`) or use zsh's `${=files}`. Don't trust a tool error about a path until you have checked how the shell passed it.
+**Rule:** Pass file lists through `xargs` (`git diff --name-only | xargs pnpm exec oxlint`) or use zsh's `${=files}`. Don't trust a tool error about a path until you have checked how the shell passed it.
 
 **Applies to:** every Bash call in this environment (the login shell is zsh).
 
@@ -4273,6 +4357,16 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** every Inngest function that polls an external service.
 
+## A service function's result is not the building block's result
+
+**Context:** 1,145 loader reads moved from `.service` building blocks to `api.<module>.<fn>(input)` (2026-10-18).
+
+**Problem:** The two results differ in four ways that a codemod changes silently. `paged` answers `data: { rows, count }`, not `data` and `count`. `unwrap` drops `count`. A refusal is `{ category, message, status }`, so a `PGRST116` check never matches. A service function that returns its building block's value as is (no `unwrap`/`paged`) answers `{ data: value }`, and a throw comes back as `{ error }`, not a throw. The `unwrap` data type also took the failure branch's `null` until `DataOf` was fixed, so 570 loader reads of `.data` after an `.error` check broke at once.
+
+**Rule:** Classify each service function by what its `run` returns before a caller swaps to it (`unwrap`, `paged`, or a plain value) and skip one the classifier does not know. Read a plain value with `dataOrThrow`. When a type error repeats hundreds of times, fix the shared type, not the call sites.
+
+**Applies to:** every move from a building block to its service function, in loaders, actions, jobs and tests.
+
 ## A fetcher's error goes to the boundary above the component that owns it
 
 **Context:** `CarbonProvider` (`@carbon/auth`, rendered by each app's `x+/_layout`) refreshes the session from a one-minute timer with `useFetcher().submit` to `/refresh-session`. In a background tab the POST failed with `TypeError: Failed to fetch` (the laptop asleep, the connection dropped), and the whole app was replaced by the root "Something broke on our end" screen.
@@ -4409,7 +4503,7 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Problem:** A worker saves the file only when it installs, and it reinstalls only when `service-worker.js` itself changes. Editing `offline.html` alone leaves every browser that already has the worker on the old copy, and the self-heal only fills a missing entry, it never replaces one.
 
-**Rule:** Every change to `offline.html` bumps the offline cache in both workers (ERP `OFFLINE_CACHE`, MES `SHELL_CACHE`). `offline-page.test.ts` in each app pins the page's hash to the cache name, so a change that skips the bump fails.
+**Rule:** Every change to `offline.html` bumps the offline cache in both workers (ERP `OFFLINE_CACHE`, MES `SHELL_CACHE`). The `offline-page-cache-bumped` check in `packages/checks` pins the page's hash to both cache names, so a change that skips the bump fails.
 
 **Applies to:** `apps/{erp,mes}/public/offline.html` and `service-worker.js`.
 
@@ -4614,7 +4708,7 @@ the error set against an untouched checkout of `main`.
 
 **Problem:** The quick fix, `role="button"` on the row, was applied to rows that already held a link, a chevron button or a date picker (document line summaries, share pages, the BOM list title). A button's children are presentational, so a screen reader hears one button named after the whole row and cannot reach the controls inside. A keyboard user gets two tab stops for one toggle. And a row handler that calls `preventDefault()` on Enter with no target check swallows Enter on the link inside, which then opens the row instead of following the link. Lint, typecheck and tests all pass.
 
-**Rule:** Before adding `role="button"`, look inside the element. If it holds a link, button or field, keep the row pointer-only (`biome-ignore` with the reason, ignore clicks on `a, button`) and make the existing chevron or a stretched link the control. Any `role="button"` Enter/Space handler starts with `if (e.target !== e.currentTarget) return;`. A page-wide bare-key shortcut (MES Space) checks `isBareKeyForAnotherControl` in its guard.
+**Rule:** Before adding `role="button"`, look inside the element. If it holds a link, button or field, keep the row pointer-only (`oxlint-disable-next-line` with the reason, ignore clicks on `a, button`) and make the existing chevron or a stretched link the control. Any `role="button"` Enter/Space handler starts with `if (e.target !== e.currentTarget) return;`. A page-wide bare-key shortcut (MES Space) checks `isBareKeyForAnotherControl` in its guard.
 
 **Applies to:** every a11y lint fix on a clickable container; `conventions-ui.md` → Accessibility tree.
 
@@ -5103,6 +5197,23 @@ unrelated page.
 **Applies to:** Any action whose redirect target is a `$id._index.tsx` that
 redirects (purchase orders, and the other records with a `/details` index).
 
+## A page that is off for this company redirects home, not to its module
+
+**Context:** A Settings page gated by a flag, a plan or the environment (ITAR
+Certifications, Companies, Backups, Webhooks) redirected to `/x/settings` when
+that gate was off.
+
+**Problem:** A module root opens on the first page of the module the person can
+view (`moduleIndexLoader`, `landingOf`), and that choice knows nothing about
+flags or plans. For a person whose first Settings page is the gated one, the root
+sends them straight back to it: a redirect loop. The one-page-role pass found it.
+
+**Rule:** When a page is unavailable for this company, redirect to
+`path.to.authenticatedRoot`, never to its own module root.
+
+**Applies to:** Every flag-, plan- or environment-gated route under a module whose
+root is `moduleIndexLoader`.
+
 ## A force delete treats the void's refusal as a fallback, not a stop
 
 - **Context:** the Admin force delete of invoices, receipts and payments (`decideDocumentForceDelete`).
@@ -5126,6 +5237,27 @@ redirects (purchase orders, and the other records with a `/details` index).
 **Rule:** Before a script that calls the local Supabase API over portless, wake the stack (one request to the ERP URL), then run it with `NODE_EXTRA_CA_CERTS=$HOME/.portless/ca.pem`.
 
 **Applies to:** `pnpm db:seed:dev`, and any `tsx` script that calls `SUPABASE_URL` on a portless stack.
+
+## A lock held across a whole run hangs on a one-connection pool
+
+- **Context:** An MRP run held a transaction advisory lock for its whole length, on one connection, so two runs of a company could not overlap.
+- **Problem:** The run did its reads and writes on other connections while that one stayed checked out. On a pool of one connection (a database test), the run waited for a connection that its own lock held, and hung.
+- **Rule:** Do not hold a lock across work that runs on other connections. Take the lock in the transaction that writes. Read a snapshot first, check it under the lock before the first write, and on a change roll back and try again (a bounded number of attempts, with a short random pause).
+- **Applies to:** `runMrp` (`loadPlanAndWrite`, `retryOnPlannedOrderChange`), `lockCompanyPlanning`, and any job that coordinates through `pg_advisory_xact_lock`.
+
+## A period list must come back sorted
+
+- **Context:** MRP and the planning pages read the weekly `period` rows for the window and create the missing ones.
+- **Problem:** The read had no ORDER BY, and the weeks created were appended after the weeks read. Callers take week 1 by position, so a gap in the period table put a later week first.
+- **Rule:** A function that returns a period list returns it sorted by start date, after any create. Never rely on the order a read or an insert happens to give.
+- **Applies to:** `getOrCreatePeriods` (`shared.service.ts`), `getOrCreateDemandPeriods` (`packages/planning/src/mrp/mrp.ts`), any list a caller indexes by position.
+
+## An update must omit a NOT NULL field it was not sent
+
+- **Context:** `upsertLocation` updates a location through `sanitize(...)`. `updateLocation` from the API or MCP may not send `planningTimeFenceDays`, which is NOT NULL.
+- **Problem:** `sanitize` turns a field that is present but `undefined` into null. Sent as null, the UPDATE fails on the NOT NULL column.
+- **Rule:** In an update path, leave an omitted NOT NULL field out of the payload, so the stored value stays. Give the default only on insert.
+- **Applies to:** `upsertLocation` (`resources.service.ts`), any `upsert*` that passes an optional field of a NOT NULL column through `sanitize`.
 
 ## Measure completed typechecks before claiming a speedup
 
@@ -5264,6 +5396,16 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 
 **Applies to:** Every new BEFORE/AFTER row trigger or interceptor that fills or derives a value on insert.
 
+## A component reads its data through an `api+` route, not from an effect
+
+**Context:** The MRP planning drawer read its planned orders, open jobs and open PO lines with the browser's Supabase client, from an async function started inside `useEffect`.
+
+**Problem:** A rejected read was never caught, so the drawer could spin for ever. The code also needed a read counter so an old answer could not land last, a version number bumped after each change, and a flag to skip the second read the revalidation caused. Every new way to change the data needed another trigger. The query ran in the browser, so it could not log a failure or answer with a status.
+
+**Rule:** Put a component's read in an `api+` route and read it with `useLoaderQuery`. Follow `.claude/rules/clientAction-patterns.md` → "A component that loads its own data"; copy `api+/production.planned-orders.ts` and `DrawerPlannedOrders`. An async call in an effect stays acceptable only for a third-party API or a load started by an event (a search box, a click).
+
+**Applies to:** Every drawer, panel or card in `apps/erp` and `apps/mes` that loads its own data. Before you write `useEffect(() => { (async () => …)() })` or `.then(` on a client read, write the route.
+
 ## `pg_temp.allows` cannot see a policy's role list
 
 **Context:** `authz-pieces.test.sql` evaluates a policy with `pg_temp.allows(table, command, clause, row)`, which reads the policy's `USING` or `WITH CHECK` text from `pg_policies` and runs it as the current role.
@@ -5273,6 +5415,26 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A helper that writes the rows you are about to update
+
+**Context:** `users_revokeInvites` deactivates each user, then marks the invites revoked with an UPDATE filtered on `revokedAt IS NULL`.
+
+**Problem:** `deactivateUser` (`@carbon/auth/users.server`) already stamps the invite revoked. For one user the operation's own UPDATE matched nothing, so it answered `{ revoked: 0 }` for a revoke that worked and skipped the audit entry that records the request's origin. Its unit test used two users, which take the job path, so it never saw the one-user path.
+
+**Rule:** Before calling a helper, read it to its end. If it writes the rows the next statement filters on, read their ids first and update by id. Count from the rows found, not from a second filtered write.
+
+**Applies to:** Any operation that calls a shared write (deactivate, post, close) and then updates the same rows.
+
+## A gate the manifest cannot show reads as membership
+
+**Context:** The MCP manifest published a gate over two or more modules (`{ create: "production", view: "projects" }`) as `{ module: null, actions: [] }`, the shape of a company-membership gate.
+
+**Problem:** `describe_tool` printed no permission and the digest wrote `none`, so a gate could lose a module, or become `{}`, without any digest line changing. The API still enforced the full gate, so nothing was open, but the contract a caller reads was wrong.
+
+**Rule:** The manifest publishes every page a gate names (`allOf` for pages of several modules, `oneOf` for a choice), and the digest line names them. When the generator meets a gate shape it does not know, fail generation rather than fall back to membership.
+
+**Applies to:** `scripts/lib/service-fn-metadata.ts`, `scripts/lib/manifest-digest.ts`, `apps/erp/test/mcp-tool-permissions.test.ts`.
 
 ## A component's outlet beside the route's outlet mounts the child route twice
 
@@ -5320,3 +5482,102 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** Move the posting's check into a pure function of the posting context and the date. The posting refuses with it, and the loader calls it on the context the posting loads (`loadProjectPostingContexts`), never on a copy of the rule. Before gating an action, grep its opener (`charging.open`) for every entry point and give each the same disabled state and reason. Disable the action only when no input the user can still change (the entry date) makes it post, and keep the server refusal for the inputs that are refused: a dated override (`costTreatmentEffectiveFrom`) leaves the dates before it open, so a today-only check would block entries the posting accepts.
 
 **Applies to:** `projectExpenseRefusal` / `getChargeCostRefusal`, and any action the UI disables with a reason the server decides by cost treatment or date.
+
+## A race test that relies on Promise.all can pass without the lock
+
+**Context:** Database tests for postings that read a row, then write from that read (a lot split, a serial increase, a calibration update).
+
+**Problem:** Two posts run with `Promise.all` interleave by timing. Often one finishes before the other starts, so the test passes with the row lock removed.
+
+**Rule:** Hold `FOR UPDATE` on the row from a third connection. Start each post on its own connection. Release the row only once every post's backend waits on a lock (`pg_stat_activity.wait_event_type = 'Lock'` by pid). `raceBehindRowLock` (`apps/erp/test/database/fixtures/row-lock-race.ts`) does this. Check the test fails with the lock removed.
+
+**Applies to:** Concurrency tests under `apps/erp/test/database/`.
+
+## A merge of stored fields into a partial update overwrites a concurrent save
+
+**Context:** `updateContractLine` and the contract line cell edit fill the fields a caller left out from a read of the line, then write every column.
+
+**Problem:** A save between the read and the write is overwritten with the stale value, and the call still reports success.
+
+**Rule:** Make the write conditional on the read (`updatedAt` matches the value read) and refuse an empty result as `conflict`. Or write only the fields sent.
+
+**Applies to:** Any operation or route that reads a record to fill omitted fields before an update.
+
+## An edit that empties a stored draft makes it read as unedited
+
+**Context:** A Draft contract's invoice schedule is planned live until its first edit stores it.
+
+**Problem:** Deleting the last stored planned invoice left the same state as an unedited Draft, so the schedule returned to the live plan while the dialog said the amounts became residuals.
+
+**Rule:** A draft that is stored on its first edit refuses an edit that would leave nothing stored, or stores a state that says it was emptied.
+
+**Applies to:** Contract and revenue schedule editors, and any "stored once edited" draft.
+
+## One advisory lock key for a global table with no unique key
+
+**Context:** `period` is shared by every company and has no unique key on (`periodType`, `startDate`). The planning screens, MRP and the dataset seeder each insert the weeks they miss.
+
+**Problem:** Each reads the missing weeks, then inserts them. Two writers at once insert the same week, and later reads return two rows for it. A per-company lock key does not serialize two companies.
+
+**Rule:** Every writer takes `pg_advisory_xact_lock(PERIOD_LOCK_KEY)` (`@carbon/database`) and reads the missing weeks again under it, in the transaction that inserts them.
+
+**Applies to:** `getOrCreatePeriods` (ERP), `getOrCreateDemandPeriods` (`@carbon/planning`), dataset tier 12, and any other global table written by read-then-insert.
+
+## Decide with the conditional write, then act on the rows it returned
+
+**Context:** `users_revokeInvites` checked the invites were pending, then deactivated the users, then marked the invites revoked.
+
+**Problem:** An invite accepted between the check and the deactivation got its new account deactivated.
+
+**Rule:** Do the conditional write that decides first: stamp `revokedAt` where `acceptedAt` and `revokedAt` are still null. Deactivate only the users whose rows it returned, and clear the stamp if the deactivation fails. Acceptance requires `revokedAt IS NULL` under the invite's row lock.
+
+**Applies to:** A destructive step that follows a status check: revoke, cancel, close, deactivate.
+
+## Database fixtures turn the interceptors off
+
+**Context:** `connectLocalTestDatabase` sets `app.sync_in_progress`, so the event-system interceptors do not run.
+
+**Problem:** A test that needs a row an interceptor creates (an item insert's `itemCost`) finds none, and a guard that reads it looks broken.
+
+**Rule:** Set `app.sync_in_progress` to `false` around the call that needs the interceptor, inside the test's transaction.
+
+**Applies to:** Database tests of item creates, and any write whose side rows come from an interceptor.
+
+## A stock-out with no bin chosen takes the bin that holds the stock, never NULL
+
+**Context:** Project Issue with the Storage Unit left empty counted only stock with no bin and booked the issue at "no storage unit". "No bin" went negative while named bins held the parts. The same gap sat in the maintenance spare-part issue, the direct sales invoice, the warehouse transfer shipment, the return shipments and the NCR close. A stock transfer pick also never checked that its From bin still held the stock.
+
+**Problem:** Each posting had written its own "which bin" rule, and an empty bin field quietly meant "no storage unit". Job issue and sales order shipments had been fixed to choose a bin from stock. The other paths were never brought into line, because nothing tied them to one rule.
+
+**Rule:** A posting that takes untracked stock out with no bin chosen calls a shared rule. Never default to NULL and never take "the first ledger row".
+1. Ordinary stock (issue, consumption, sale, transfer out): `planUntrackedDraw` (`shared.service.ts`), or `shipmentSourceBinChooser` when a document line names one bin. The nettable default comes first, then bins with stock, fullest first. Quarantine and lineside units are never guessed.
+2. Nonconforming or returned stock (NCR Scrap, Return to Supplier, return shipments): `planHeldUntrackedDraw` / `chooseHeldStockBin`. Held units (quarantine, MRB, rejected) come first.
+3. A serial or batch row posts at the bin the unit holds stock in (`getTrackedEntityBins`, `resolveTrackedEntityBin`).
+4. A pick or move from a named bin checks that the bin still holds the quantity.
+
+A new stock-out path names which rule it follows in its code comment and has a database test with stock only in a named bin.
+
+**Applies to:** every writer of a negative `itemLedger` row: `projects.service.ts`, `inventory.service.ts`, `invoicing.service.ts`, `quality.service.ts`, `shared.service.ts` (`createDocument`). See `.claude/rules/inventory-system.md` → "An untracked draw takes stock from the bins that hold it".
+
+## A guessed bin must leave stock an open inspection lot holds
+
+**Context:** The fix that made empty-bin stock-outs take a bin from stock read each bin's raw on-hand. A code review found that an NCR close, a return shipment and a Project Issue could now pick a quarantine or goods-in unit whose stock an open receipt lot holds. The hold guard (`check_inspection_hold`) then refused the whole posting. Before the fix the same posting succeeded at "no storage unit".
+
+**Problem:** A bin guess has two failure modes, not one: it can take the wrong bin, and it can take stock that is not free. Capping the bin at its free stock was not enough either: the planner then put a real shortfall back onto that capped bin (the first bin drawn).
+
+**Rule:** A path that guesses a bin reads stock net of inspection holds (`getUntrackedBinStock` with `inspectionHolds`) and runs its plan through `keepInspectionHeldStock`. When you change where a posting takes stock from, list every guard that can refuse that write (the hold guard, Prevent negative stock, `assertPickSourceNettable`) and test the case where the new bin trips it. A fix that turns a posting that used to succeed into a refusal is a regression, even if the old result was wrong.
+
+**Applies to:** `planUntrackedDraw`, `planHeldUntrackedDraw`, the shipment bin choosers, and any new writer of a negative untracked `itemLedger` row.
+
+## Parallel agents on one rule need the shared helper first
+
+**Context:** One PR fixed eight stock-out paths with five parallel subagents. The draw rule had a shared helper before the fan-out, and every agent used it. The return rule ("back to the bins the issues drew from") and the shipment line bin chooser had no helper, so the agents wrote the return rule three times and made a near copy of the chooser. The copies already differed: one broke ties by `entryNumber` and the others did not.
+
+**Problem:** A subagent sees only its own path and writes the rule inline. Nobody compares the copies until review, and by then they have drifted apart.
+
+**Rule:** Before fanning out work that applies one rule in several places, list every rule the paths share (draw, return, line bin, refusal message). Write each rule as a pure tested helper first, and name it in every agent's brief. Review the agents' diffs side by side for logic that repeats. Also check the small edits each agent made:
+- A new helper inserted between a function and its doc comment moves the comment onto the wrong function.
+- Two arrays matched by position silently break when someone adds a row; have each entry hold its own row instead.
+- A scripted multi-site edit can corrupt brackets; run the typecheck right after it.
+
+**Applies to:** Multi-path fixes run through the Agent tool or `/conductor`.

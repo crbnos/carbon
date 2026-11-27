@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -15,14 +15,13 @@ import {
   createEmployeeValidator,
   US_PERSON_ATTESTATION_REQUIRED
 } from "~/modules/users/users.models";
-import { getInvitable, originOf } from "~/modules/users/users.service";
+import { getInvitable } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "users"
+  const { client, companyId } = await authorize(request, {
+    "users.accounts": "Create"
   });
-
   const invitable = await getInvitable(client, companyId);
   if (invitable.error) {
     throw redirect(
@@ -42,9 +41,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(createEmployeeValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const { ip, city } = originOf(args.request);
-  const api = await carbon(args.request);
-  const result = await api.users.inviteEmployee({ ...input.data, ip, city });
+  const { api } = await authorize(args.request);
+  const result = await api.users.inviteEmployee(input.data);
   if (result.error?.message === US_PERSON_ATTESTATION_REQUIRED) {
     return validationError({
       fieldErrors: { usPersonAttestation: result.error.message }

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import type { LoaderFunctionArgs } from "react-router";
@@ -13,7 +13,7 @@ import { startOperationByScan } from "~/services/kanban-scan.server";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.
   rejectCrossSiteNavigation(request);
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, companyId } = await authorize(request, {});
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
 
@@ -23,7 +23,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       db: getDatabaseClient,
       post: erpPosting,
       requireMachinePermission: () =>
-        requirePermissions(request, { create: "production" })
+        authorize(request, { "production.jobs": "Create" })
     },
     { request, companyId, userId, operationId }
   );

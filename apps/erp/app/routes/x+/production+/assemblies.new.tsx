@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -13,9 +13,7 @@ import AssemblyInstructionForm from "~/modules/production/ui/Assemblies/Assembly
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    create: "production"
-  });
+  await authorize(request, { "production.assemblies": "Create" });
 
   const url = new URL(request.url);
 
@@ -31,7 +29,7 @@ export async function action(args: ActionFunctionArgs) {
     args
   );
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.production.createAssemblyInstruction({
     itemId: input.data.itemId,
     modelUploadId: input.data.modelUploadId

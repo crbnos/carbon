@@ -6,7 +6,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { DropdownMenuIcon, DropdownMenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback } from "react";
 import { LuCheckCheck, LuGitBranchPlus, LuLoaderCircle } from "react-icons/lu";
 import type { FetcherWithComponents } from "react-router";
 import { useFetcher } from "react-router";
@@ -39,9 +39,6 @@ export function usePurchaseOrderPlanningCommands(): {
   /** Opens the Finalize modal for a PO — a Release action's button. */
   finalizePurchaseOrder: (purchaseOrderId: string) => void;
   purchaseOrderDialogs: ReactNode;
-  /** Bumped each time a command settles, so lists read from the database
-   *  (the drawer's open orders) re-read. */
-  ordersVersion: number;
 } {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -51,21 +48,10 @@ export function usePurchaseOrderPlanningCommands(): {
   const finalize = useDrawerItem<string>();
   const openRevision = revision.open;
   const openFinalize = finalize.open;
-  const [ordersVersion, setOrdersVersion] = useState(0);
-
+  // A command posts through a router fetcher, so the root invalidation
+  // middleware marks the drawer's open-lines read stale: nothing to bump.
   const isBusy =
     statusFetcher.state !== "idle" || finalizeFetcher.state !== "idle";
-
-  // Once per settled command, not per state change.
-  const wasBusy = useRef(false);
-  useEffect(() => {
-    if (isBusy) {
-      wasBusy.current = true;
-    } else if (wasBusy.current) {
-      wasBusy.current = false;
-      setOrdersVersion((version) => version + 1);
-    }
-  }, [isBusy]);
 
   const reopen = useCallback(
     (purchaseOrderId: string) => {
@@ -80,9 +66,11 @@ export function usePurchaseOrderPlanningCommands(): {
     [statusFetcher.submit]
   );
 
-  const canUpdate = permissions.can("update", "purchasing");
-  const canDelete = permissions.can("delete", "purchasing");
-  const canCreate = permissions.can("create", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.materialPlanning": "Edit" });
+  const canDelete = permissions.has({ "purchasing.materialPlanning": "Full" });
+  const canCreate = permissions.has({
+    "purchasing.materialPlanning": "Create"
+  });
 
   const purchaseOrderMenuItems = useCallback(
     (order: PlanningPurchaseOrder) => {
@@ -146,10 +134,7 @@ export function usePurchaseOrderPlanningCommands(): {
           text={t`${revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order.`}
           confirmText={t`Create Revision`}
           onCancel={revision.close}
-          onSubmit={() => {
-            revision.close();
-            setOrdersVersion((version) => version + 1);
-          }}
+          onSubmit={revision.close}
         >
           <input type="hidden" name="status" value="Planned" />
           <input type="hidden" name="createRevision" value="true" />
@@ -169,8 +154,7 @@ export function usePurchaseOrderPlanningCommands(): {
   return {
     purchaseOrderMenuItems,
     finalizePurchaseOrder: openFinalize,
-    purchaseOrderDialogs,
-    ordersVersion
+    purchaseOrderDialogs
   };
 }
 

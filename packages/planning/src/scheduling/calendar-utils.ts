@@ -178,6 +178,40 @@ export function unionWindows(
 }
 
 /**
+ * Each person's availability from their shift rows: every shift expanded over
+ * the range in its own timezone, unioned. A person with no rows is absent.
+ */
+export function expandEmployeeShifts(
+  rows: (CalendarShiftRow & { employeeId: string; timezone: string })[],
+  rangeStart: number,
+  rangeEnd: number
+): Map<string, CalendarWindow[]> {
+  const shiftsByEmployee = new Map<string, Map<string, CalendarShiftRow[]>>();
+  for (const row of rows) {
+    let byTz = shiftsByEmployee.get(row.employeeId);
+    if (!byTz) {
+      byTz = new Map();
+      shiftsByEmployee.set(row.employeeId, byTz);
+    }
+    const list = byTz.get(row.timezone) ?? [];
+    list.push({
+      dayOfWeek: row.dayOfWeek,
+      startTime: row.startTime,
+      endTime: row.endTime
+    });
+    byTz.set(row.timezone, list);
+  }
+  const windowsByEmployee = new Map<string, CalendarWindow[]>();
+  for (const [employeeId, byTz] of shiftsByEmployee) {
+    const lists = Array.from(byTz.entries()).map(([tz, shifts]) =>
+      expandCalendar(shifts, rangeStart, rangeEnd, tz)
+    );
+    windowsByEmployee.set(employeeId, unionWindows(lists));
+  }
+  return windowsByEmployee;
+}
+
+/**
  * Intersect two disjoint, chronologically sorted window lists into the time
  * where BOTH are available (standard two-pointer sweep). Used to clip a
  * person's availability to their machine's open hours — a person can't run a

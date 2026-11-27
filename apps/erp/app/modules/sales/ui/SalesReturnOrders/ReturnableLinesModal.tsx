@@ -103,7 +103,6 @@ const ReturnableLinesBody = ({
   // Re-query whenever the term or the page size changes. The list is replaced
   // (limit grows cumulatively) rather than appended, which keeps `selected`
   // — keyed by shipmentLineId — untouched across loads.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher is stable; re-run only on query inputs
   useEffect(() => {
     const params = new URLSearchParams({
       customerId,
@@ -112,6 +111,7 @@ const ReturnableLinesBody = ({
     if (salesOrderId) params.set("salesOrderId", salesOrderId);
     if (search.trim()) params.set("search", search.trim());
     fetcher.load(`${returnableLinesUrl}?${params.toString()}`);
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher is stable; re-run only on query inputs
   }, [customerId, salesOrderId, search, limit]);
 
   const lines = fetcher.data?.lines ?? [];

@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { fetchAllFromTable } from "@carbon/database";
 import {
@@ -42,7 +41,6 @@ import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import { settingsToggle } from "~/modules/settings/settings.models";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { GoodsInStorageCard } from "~/modules/settings/ui/Quality";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -68,12 +66,12 @@ const samplingStandardValidator = z.object({
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { api, client, companyId } = await authorize(request, {
+    "settings.quality": "View"
   });
 
   const [companySettings, locations, storageUnits] = await Promise.all([
-    getCompanySettings(client, companyId),
+    api.settings.getCompanySettings({}),
     client
       .from("location")
       .select(
@@ -127,6 +125,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 // `settings.quality.update` it saves (the operation drops `intent`).
 const qualitySettingsForm = z.discriminatedUnion("intent", [
   settingsToggle("enforceInspectionFourEyes", "enforceInspectionFourEyes"),
+  settingsToggle("holdUnitsWithOpenIssues", "holdUnitsWithOpenIssues"),
   samplingStandardValidator,
   dashboardValidator,
   gaugeCalibrationValidator.transform((form) => ({
@@ -160,7 +159,7 @@ const qualitySettingsForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(qualitySettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.updateQualitySettings(input.data);
 }
 
@@ -193,6 +192,31 @@ export default function QualitySettingsRoute() {
     "enforceInspectionFourEyes",
     (companySettings as { enforceInspectionFourEyes?: boolean })
       .enforceInspectionFourEyes ?? false
+  );
+
+  const holdFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (data?.holdUnitsWithOpenIssues === undefined) return;
+      toast.success(
+        data.holdUnitsWithOpenIssues
+          ? t`Units with an open issue are now on hold`
+          : t`Open issues no longer stop work`
+      );
+    }
+  });
+  const holdEnabled = useSavedToggle(
+    holdFetcher,
+    "holdUnitsWithOpenIssues",
+    companySettings.holdUnitsWithOpenIssues ?? false
+  );
+  const handleHoldToggle = useCallback(
+    (checked: boolean) => {
+      holdFetcher.submit(
+        { intent: "holdUnitsWithOpenIssues", enabled: checked.toString() },
+        { method: "POST" }
+      );
+    },
+    [holdFetcher]
   );
 
   const handleFourEyesToggle = useCallback(
@@ -314,6 +338,49 @@ export default function QualitySettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Issues</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Issues: Hold Units</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Stop shop floor work on a serial unit while an issue linked to
+                it is open.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {holdEnabled ? (
+                    <Trans>Units with an open issue are on hold</Trans>
+                  ) : (
+                    <Trans>Open issues do not stop work</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  <Trans>
+                    When enabled, units marked Scrap or Return to Supplier stay
+                    blocked after the issue closes.
+                  </Trans>
+                </span>
+              </VStack>
+              <Switch
+                aria-label={t`Issues: Hold Units`}
+                checked={holdEnabled}
+                onCheckedChange={handleHoldToggle}
+                disabled={holdFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
         </Card>
 
         <SettingsSectionHeader>

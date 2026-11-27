@@ -24,6 +24,7 @@ import {
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function useItemsSubmodules() {
@@ -83,38 +84,32 @@ export default function useItemsSubmodules() {
         {
           name: t`Dimensions`,
           to: path.to.materialDimensions,
-          icon: <LuAxis3D />,
-          role: "employee"
+          icon: <LuAxis3D />
         },
         {
           name: t`Finishes`,
           to: path.to.materialFinishes,
-          icon: <LuDessert />,
-          role: "employee"
+          icon: <LuDessert />
         },
         {
           name: t`Grades`,
           to: path.to.materialGrades,
-          icon: <LuBeef />,
-          role: "employee"
+          icon: <LuBeef />
         },
         {
           name: t`Shapes`,
           to: path.to.materialForms,
-          icon: <LuShapes />,
-          role: "employee"
+          icon: <LuShapes />
         },
         {
           name: t`Substances`,
           to: path.to.materialSubstances,
-          icon: <LuGlassWater />,
-          role: "employee"
+          icon: <LuGlassWater />
         },
         {
           name: t`Types`,
           to: path.to.materialTypes,
-          icon: <LuPuzzle />,
-          role: "employee"
+          icon: <LuPuzzle />
         }
       ]
     },
@@ -124,25 +119,21 @@ export default function useItemsSubmodules() {
         {
           name: t`Change Notice Types`,
           to: path.to.changeNoticeTypes,
-          icon: <LuTags />,
-          role: "employee"
+          icon: <LuTags />
         },
         {
           name: t`Change Notice Actions`,
           to: path.to.changeNoticeRequiredActions,
-          icon: <LuListChecks />,
-          role: "employee"
+          icon: <LuListChecks />
         },
         {
           name: t`Item Groups`,
           to: path.to.itemPostingGroups,
-          role: "employee",
           icon: <LuGroup />
         },
         {
           name: t`Units`,
           to: path.to.uoms,
-          role: "employee",
           icon: <LuRuler />
         }
       ]
@@ -150,29 +141,9 @@ export default function useItemsSubmodules() {
   ];
 
   return {
-    groups: itemsRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
-        });
-
-        return filteredRoutes.length > 0;
-      })
-      .map((group) => ({
-        ...group,
-        routes: group.routes
-          .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else {
-              return true;
-            }
-          })
-          .map(addSavedViewsToRoutes)
-      }))
+    groups: visibleGroups(itemsRoutes, permissions).map((group) => ({
+      ...group,
+      routes: group.routes.map(addSavedViewsToRoutes)
+    }))
   };
 }

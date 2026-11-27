@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, type Caller } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { CSV_CONTENT_TYPE, encodeCsvTable } from "@carbon/files/csv";
 import { parseDate } from "@internationalized/date";
@@ -100,7 +100,7 @@ function readCell(row: Record<string, unknown>, key: string): unknown {
 }
 
 async function requestedColumns(
-  client: Awaited<ReturnType<typeof requirePermissions>>["client"],
+  client: Caller["client"],
   companyId: string,
   side: InvoiceSide,
   params: URLSearchParams
@@ -155,10 +155,7 @@ export async function loadInvoiceExportTable(
     side === "sales" ? "sales-invoices" : "purchase-invoices"
   );
   if (!list) throw new Response("Invoice list unavailable", { status: 500 });
-  const { client, companyId } = await requirePermissions(request, {
-    ...list.permission,
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(request, list.gate);
   const params = new URL(request.url).searchParams;
   const columns = await requestedColumns(client, companyId, side, params);
   params.delete("columns");

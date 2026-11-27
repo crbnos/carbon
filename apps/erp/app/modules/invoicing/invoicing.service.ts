@@ -8,7 +8,7 @@ import {
   NotFoundError,
   ServerFnError
 } from "@carbon/api/errors";
-import type { PermissionRule } from "@carbon/api/permissions";
+import { type PermissionRule, rowRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import { withStripe } from "@carbon/api/stock-stripes";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -98,7 +98,10 @@ import {
 } from "@carbon/database/tax-ledger";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
-import { isCompanyAdmin } from "@carbon/ee/approvals.server";
+import {
+  getCompanyAdminIds,
+  isCompanyAdmin
+} from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   dedupeViolations,
@@ -237,7 +240,6 @@ import {
   deletePurchaseInvoiceReleasingLeases,
   type ForceDeleteReversalAccounting,
   forceDeleteReceiptRefusal,
-  getCompanyAdminIds,
   getPurchaseOrderFundsRefusal,
   getSupplierPayment,
   getSupplierShipping,
@@ -349,7 +351,9 @@ import {
   isSalesInvoiceLocked,
   paymentJournalDifference,
   purchaseInvoiceRoundingAmount,
+  purchaseInvoiceSupplierChange,
   purchaseLineAccountClasses,
+  salesInvoiceCustomerChange,
   type stripeCustomerActions
 } from "./invoicing.models";
 import {
@@ -1611,6 +1615,12 @@ export async function updatePurchaseInvoiceLineOrder(
   });
 }
 
+/**
+ * Inserts a sales invoice with its opportunity and shipment. Sales owns
+ * `opportunity`, so pass the system client as `system` once the caller's
+ * invoicing permission has passed: the opportunity is written with it,
+ * scoped to `input.companyId`.
+ */
 export async function insertSalesInvoice(
   client: SupabaseClient<Database>,
   input: {
@@ -1631,7 +1641,8 @@ export async function insertSalesInvoice(
     exchangeRate?: number;
     exchangeRateUpdatedAt?: string;
     customFields?: Json;
-  }
+  },
+  system: SupabaseClient<Database> = client
 ): Promise<{
   data: { id: string; invoiceId: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
@@ -1659,7 +1670,7 @@ export async function insertSalesInvoice(
 
   const [opportunity, customerPayment, customerShipping, salesPerson] =
     await Promise.all([
-      client
+      system
         .from("opportunity")
         .insert({
           companyId: input.companyId,
@@ -6309,66 +6320,137 @@ export async function unlockedSalesInvoice(
   return null;
 }
 
+// Both tables hold `status`, the party currency and the audit columns; a cast
+// to one of them only names a table for supabase-js and Kysely.
 type InvoiceTable = "salesInvoice" | "purchaseInvoice";
 
 /** The dates a posted invoice still takes; every other field needs a Draft. */
 const POSTED_INVOICE_FIELDS = ["dateIssued", "dateDue", "datePaid"];
 
-/** Why `field` cannot be set on these invoices, or null when it can. */
-export async function refuseLockedInvoices(
-  ctx: ServiceContext,
-  table: InvoiceTable,
-  ids: string[],
-  field: string,
-  message: string
-) {
-  if (POSTED_INVOICE_FIELDS.includes(field)) return null;
-  // Both tables hold `status`; the cast only names one for supabase-js.
-  const invoices = await ctx.asCaller.supabase
-    .from(table as "salesInvoice")
-    .select("status")
-    .in("id", ids)
-    .eq("companyId", ctx.company.id);
-  if (invoices.error) {
-    return ctx.error("internal", "Failed to load the invoices", invoices.error);
+/** The refusal of a field a posted invoice no longer takes. */
+const LOCKED_INVOICE_MESSAGES: Record<InvoiceTable, string> = {
+  salesInvoice: "Cannot modify a locked sales invoice.",
+  purchaseInvoice: "Cannot modify a confirmed purchase invoice."
+};
+
+/** The party field of each kind of invoice, which brings its currency. */
+const INVOICE_PARTIES: Record<
+  InvoiceTable,
+  {
+    partyField: string;
+    partyTable: "customer" | "supplier";
+    partyChange: (
+      partyId: string,
+      currency: Parameters<typeof salesInvoiceCustomerChange>[1]
+    ) => Record<string, unknown>;
+    message: string;
   }
-  return invoices.data.some((invoice) => isSalesInvoiceLocked(invoice.status))
-    ? ctx.error("rule", message)
-    : null;
-}
+> = {
+  salesInvoice: {
+    partyField: "invoiceCustomerId",
+    partyTable: "customer",
+    partyChange: salesInvoiceCustomerChange,
+    message: "Invoice customer is required"
+  },
+  purchaseInvoice: {
+    partyField: "invoiceSupplierId",
+    partyTable: "supplier",
+    partyChange: purchaseInvoiceSupplierChange,
+    message: "Invoice supplier is required"
+  }
+};
 
 /**
- * Write one field on invoices of either kind. A new issue date or payment
- * term on a single invoice recomputes its due date (with several, nothing is
- * written); a new currency brings today's exchange rate; an empty value
- * clears the field.
+ * The id fields an invoice field write takes, and the table each names. Their
+ * foreign keys name the id alone, so they accept another company's row.
  */
-export async function writeInvoiceField(
+const INVOICE_FIELD_REFERENCES: Partial<
+  Record<string, Parameters<typeof refuseUnlessOwned>[1]>
+> = {
+  paymentTermId: "paymentTerm",
+  locationId: "location",
+  invoiceCustomerContactId: "customerContact",
+  invoiceCustomerLocationId: "customerLocation",
+  invoiceSupplierContactId: "supplierContact",
+  invoiceSupplierLocationId: "supplierLocation",
+  supplierId: "supplier"
+};
+
+/**
+ * Set one field on invoices of either kind. The party field (invoice customer
+ * or supplier) cannot be cleared, must be the company's and brings its
+ * currency; any other field takes the columns `invoiceFieldChanges` gives.
+ * The issue, due and paid dates are written on posted invoices too; every
+ * other field only on Drafts (`writeDraftInvoices`). A sales invoice's
+ * customer is `changeSalesInvoiceCustomer`'s.
+ */
+export async function updateInvoiceField(
   ctx: ServiceContext,
   table: InvoiceTable,
   { ids, field, value }: { ids: string[]; field: string; value?: string | null }
 ) {
-  const client = ctx.asCaller.supabase;
-  const companyId = ctx.company.id;
-  let changes: Record<string, unknown> = { [field]: value || null };
+  const party = INVOICE_PARTIES[table];
+  if (field === party.partyField) {
+    if (!value) return ctx.error("validation", party.message);
+    const currency = await partyCurrency(ctx, party.partyTable, value);
+    if (currency instanceof Error) return currency;
+    return writeDraftInvoices(
+      ctx,
+      table,
+      ids,
+      party.partyChange(value, currency)
+    );
+  }
 
-  if (field === "dateIssued" || field === "paymentTermId") {
-    if (ids.length !== 1) return { ids };
-    const invoice = await client
-      .from(table as "salesInvoice")
-      .select("dateIssued, paymentTermId")
-      .eq("id", ids[0]!)
-      .eq("companyId", companyId)
-      .single();
-    const dateDue = await computeInvoiceDateDue(client, {
-      dateIssued: field === "dateIssued" ? value : invoice.data?.dateIssued,
-      paymentTermId:
-        field === "paymentTermId" ? value : invoice.data?.paymentTermId,
-      companyId
-    });
-    if (dateDue) changes = { ...changes, dateDue };
-  } else if (field === "currencyCode" && value) {
-    const rate = await getExchangeRate(client, companyId, value);
+  const changes = await invoiceFieldChanges(ctx, table, ids, field, value);
+  if (changes instanceof Error) return changes;
+  if (POSTED_INVOICE_FIELDS.includes(field)) {
+    return writeInvoiceDates(ctx, table, ids, changes);
+  }
+  return writeDraftInvoices(ctx, table, ids, changes);
+}
+
+/**
+ * The columns one field write sets, or why it is refused. A new issue date
+ * or payment term recomputes the due date, so it takes one invoice; a new
+ * currency brings today's exchange rate; an empty value clears the field,
+ * except the issue date. An id must name a row of this company.
+ */
+async function invoiceFieldChanges(
+  ctx: ServiceContext,
+  table: InvoiceTable,
+  ids: string[],
+  field: string,
+  value?: string | null
+) {
+  // The panels' issue date is required: a cleared one would keep the due
+  // date it set.
+  if (field === "dateIssued" && !value) {
+    return ctx.error("validation", "Invoice date is required");
+  }
+  // Each invoice's due date follows its own issue date and term.
+  const [invoiceId] = ids;
+  const setsDueDate = field === "dateIssued" || field === "paymentTermId";
+  if (setsDueDate && (ids.length !== 1 || !invoiceId)) {
+    return ctx.error(
+      "validation",
+      "Set the issue date or payment term on one invoice at a time"
+    );
+  }
+  const reference = INVOICE_FIELD_REFERENCES[field];
+  if (value && reference) {
+    const refused = await refuseUnlessOwned(ctx, reference, { id: value });
+    if (refused) return refused;
+  }
+  if (invoiceId && (field === "dateIssued" || field === "paymentTermId")) {
+    return dueDateChanges(ctx, table, invoiceId, field, value);
+  }
+  if (field === "currencyCode" && value) {
+    const rate = await getExchangeRate(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      value
+    );
     if (rate.error) {
       return ctx.error(
         "internal",
@@ -6376,10 +6458,58 @@ export async function writeInvoiceField(
         rate.error
       );
     }
-    changes = { currencyCode: value, exchangeRate: rate.data };
+    return { currencyCode: value, exchangeRate: rate.data };
   }
+  return { [field]: value || null };
+}
 
-  const update = await client
+/** A new issue date or payment term, with the due date they give. */
+async function dueDateChanges(
+  ctx: ServiceContext,
+  table: InvoiceTable,
+  invoiceId: string,
+  field: "dateIssued" | "paymentTermId",
+  value?: string | null
+) {
+  const companyId = ctx.company.id;
+  const invoice = await ctx.asCaller.supabase
+    .from(table as "salesInvoice")
+    .select("dateIssued, paymentTermId")
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (invoice.error) {
+    return ctx.error("internal", "Failed to load the invoice", invoice.error);
+  }
+  if (!invoice.data) {
+    return ctx.error("notFound", "None of the invoices was found");
+  }
+  const changes = { [field]: value || null };
+  // Read the term as the system: the write is gated on invoicing, and the
+  // term table needs accounting, sales or purchasing view, without which
+  // the term would read as missing and the due date fall back to Net 30.
+  // The read is scoped by companyId.
+  const dateDue = await computeInvoiceDateDue(ctx.asSystem.supabase, {
+    dateIssued: field === "dateIssued" ? value : invoice.data.dateIssued,
+    paymentTermId:
+      field === "paymentTermId" ? value : invoice.data.paymentTermId,
+    companyId
+  });
+  return dateDue ? { ...changes, dateDue } : changes;
+}
+
+/**
+ * Write a date a posted invoice still takes, with the caller's client. The
+ * invoices it reached; none is a refusal: the ids are not the company's, or
+ * the caller's RLS hides them.
+ */
+async function writeInvoiceDates(
+  ctx: ServiceContext,
+  table: InvoiceTable,
+  ids: string[],
+  changes: Record<string, unknown>
+) {
+  const update = await ctx.asCaller.supabase
     .from(table as "salesInvoice")
     .update(
       unchecked({
@@ -6389,26 +6519,150 @@ export async function writeInvoiceField(
       })
     )
     .in("id", ids)
-    .eq("companyId", companyId);
+    .eq("companyId", ctx.company.id)
+    .select("id");
   if (update.error) {
     return ctx.error("internal", "Failed to update the invoices", update.error);
   }
-  return { ids };
+  if (update.data.length === 0) {
+    return ctx.error("notFound", "None of the invoices was found");
+  }
+  return { ids: update.data.map((row) => row.id) };
 }
 
-/** A party's currency at today's rate, or null when it has none. */
+/**
+ * Lock the company's invoices among `ids` `FOR UPDATE`, in id order, inside
+ * `tx`'s transaction: their ids, or the refusal when none is found or any is
+ * no longer a Draft. A post that claimed one first keeps the invoice it
+ * posts.
+ */
+async function lockDraftInvoices(
+  tx: ServiceContext,
+  table: InvoiceTable,
+  ids: string[]
+) {
+  const invoices = await tx.asSystem.pg
+    .selectFrom(table as "salesInvoice")
+    .select(["id", "status"])
+    .where("id", "in", ids)
+    .where("companyId", "=", tx.company.id)
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+  if (invoices.length === 0) {
+    return tx.error("notFound", "None of the invoices was found");
+  }
+  if (invoices.some((invoice) => isSalesInvoiceLocked(invoice.status))) {
+    return tx.error("rule", LOCKED_INVOICE_MESSAGES[table]);
+  }
+  return invoices.map((invoice) => invoice.id);
+}
+
+/**
+ * Write `changes` on invoices that are still Draft (`lockDraftInvoices`), as
+ * the system. One transaction, so a refusal writes none of them.
+ */
+async function writeDraftInvoices(
+  ctx: ServiceContext,
+  table: InvoiceTable,
+  ids: string[],
+  changes: Record<string, unknown>
+) {
+  if (ids.length === 0) {
+    return ctx.error("notFound", "None of the invoices was found");
+  }
+  const settled = await ctx.transaction(async (tx) => {
+    const reached = await lockDraftInvoices(tx, table, ids);
+    if (reached instanceof Error) return reached;
+    await tx.asSystem.pg
+      .updateTable(table as "salesInvoice")
+      .set(
+        unchecked({
+          ...changes,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .where("id", "in", reached)
+      .where("companyId", "=", ctx.company.id)
+      .execute();
+    return { ids: reached };
+  });
+  if (settled.error) return settled.error;
+  return settled.data;
+}
+
+/**
+ * Set the customer of sales invoices that are still Draft
+ * (`lockDraftInvoices`), and clear the ship-to of each whose customer
+ * changes: a ship-to is one of the old customer's locations, which sales
+ * rules would otherwise evaluate. One transaction, so a failed write keeps
+ * both.
+ */
+export async function changeSalesInvoiceCustomer(
+  ctx: ServiceContext,
+  { ids, customerId }: { ids: string[]; customerId: string }
+) {
+  const companyId = ctx.company.id;
+  if (ids.length === 0) {
+    return ctx.error("notFound", "None of the invoices was found");
+  }
+  const audit = {
+    updatedBy: ctx.auditUserId,
+    updatedAt: datetime.timestamp()
+  };
+  const settled = await ctx.transaction(async (tx) => {
+    const reached = await lockDraftInvoices(tx, "salesInvoice", ids);
+    if (reached instanceof Error) return reached;
+    const db = tx.asSystem.pg;
+    // Read under the lock just taken.
+    const customers = await db
+      .selectFrom("salesInvoice")
+      .select(["id", "customerId"])
+      .where("id", "in", reached)
+      .where("companyId", "=", companyId)
+      .execute();
+    const changed = customers
+      .filter((invoice) => invoice.customerId !== customerId)
+      .map((invoice) => invoice.id);
+    if (changed.length > 0) {
+      await db
+        .updateTable("salesInvoiceShipment")
+        .set({ customerLocationId: null, ...audit })
+        .where("id", "in", changed)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await db
+      .updateTable("salesInvoice")
+      .set({ customerId, ...audit })
+      .where("id", "in", reached)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { ids: reached };
+  });
+  if (settled.error) return settled.error;
+  return settled.data;
+}
+
+/**
+ * A party's currency at today's rate, or null when it has none. Refused when
+ * the party is not this company's.
+ */
 export async function partyCurrency(
   ctx: ServiceContext,
   table: "customer" | "supplier",
   id: string
 ) {
   const client = ctx.asCaller.supabase;
-  const party = await client
+  // Read as the system: the write is gated on invoicing, and the party tables
+  // need sales or purchasing view, which would hide the party.
+  const party = await ctx.asSystem.supabase
     .from(table as "customer")
     .select("currencyCode")
     .eq("id", id)
     .eq("companyId", ctx.company.id)
-    .single();
+    .maybeSingle();
   if (party.error) {
     return ctx.error(
       "internal",
@@ -6416,6 +6670,7 @@ export async function partyCurrency(
       party.error
     );
   }
+  if (!party.data) return ctx.error("notFound", `The ${table} was not found`);
   if (!party.data.currencyCode) return null;
   const rate = await getExchangeRate(
     client,
@@ -8376,6 +8631,59 @@ export function isDirectItemLine(line: SalesInvoiceLine): boolean {
   );
 }
 
+/** An untracked direct invoice line that takes stock out. */
+type DirectStockDraw = {
+  /** The line's ledger row; its bin is set once the bin is chosen. */
+  ledger: Database["public"]["Tables"]["itemLedger"]["Insert"];
+  lineId: string;
+  itemId: string;
+  locationId: string | null;
+  storageUnitId: string | null;
+  quantity: number;
+};
+
+/**
+ * The bin each untracked direct invoice line ships from, by line id: the bin
+ * the line names, else one that holds its common stock
+ * (`shipmentSourceBinChooser`, as a sales order shipment line takes one).
+ * Quarantine and lineside units are never guessed, and lines are planned in
+ * order, so two lines of one item do not count the same stock. Locks the
+ * draws first, so two postings never plan from the same on-hand. Call it
+ * inside the posting transaction.
+ */
+async function directInvoiceSourceBins(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  draws: DirectStockDraw[]
+): Promise<Map<string, string | null>> {
+  const bins = new Map<string, string | null>();
+  if (draws.length === 0) return bins;
+  const locationIds = [
+    ...new Set(
+      draws.map((draw) => draw.locationId).filter((id): id is string => !!id)
+    )
+  ].sort();
+  // One lock per location: an invoice ships from one or two.
+  for (const locationId of locationIds) {
+    await sharedPostings.lockUntrackedDraws(trx, {
+      companyId,
+      locationId,
+      itemIds: draws
+        .filter((draw) => draw.locationId === locationId)
+        .map((draw) => draw.itemId)
+    });
+  }
+  // A negative line puts stock back: it keeps the bin it names.
+  const outgoing = draws.filter((draw) => draw.quantity > 0);
+  const choose = await sharedPostings.shipmentSourceBinChooser(trx, {
+    companyId,
+    lines: outgoing.filter((draw) => !draw.storageUnitId),
+    inspectionHolds: "all"
+  });
+  for (const draw of outgoing) bins.set(draw.lineId, choose(draw));
+  return bins;
+}
+
 /**
  * The service range of a line whose revenue the posting defers. Only a
  * Service line is deferred: every other item type is a physical good, earned
@@ -9698,7 +10006,7 @@ const RECOGNIZED_REVENUE_VOID_ERROR =
   "Invoice has recognized revenue; reverse the revenue recognition or lease run that posted it first";
 
 export const postSalesInvoicePermission = {
-  update: "invoicing"
+  "invoicing.salesInvoices": "Edit"
 } satisfies PermissionRule<z.output<typeof postSalesInvoiceInput>>;
 
 /** Posts or voids a sales invoice: its ledger, cost and journal rows, atomically. */
@@ -9858,6 +10166,9 @@ export async function postSalesInvoice(
           "shipmentId"
         >[] = [];
 
+        // The untracked lines that take stock out, each with its ledger row:
+        // their bins are chosen inside the transaction.
+        const directStockDraws: DirectStockDraw[] = [];
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
 
@@ -10503,18 +10814,29 @@ export async function postSalesInvoice(
             items.data.find((item) => item.id === invoiceLine.itemId)
               ?.itemTrackingType ?? "Inventory";
           if (itemTrackingType === "Inventory") {
-            itemLedgerInserts.push({
-              postingDate: today,
+            const ledger: Database["public"]["Tables"]["itemLedger"]["Insert"] =
+              {
+                postingDate: today,
+                itemId: invoiceLine.itemId!,
+                quantity: round(-invoiceLine.quantity),
+                locationId: invoiceLine.locationId,
+                storageUnitId: invoiceLine.storageUnitId,
+                entryType: "Negative Adjmt.",
+                documentType: "Sales Shipment",
+                documentId: invoiceHeader.id ?? undefined,
+                externalDocumentId:
+                  invoiceHeader.customerReference ?? undefined,
+                createdBy: userId,
+                companyId
+              };
+            itemLedgerInserts.push(ledger);
+            directStockDraws.push({
+              ledger,
+              lineId: invoiceLine.id,
               itemId: invoiceLine.itemId!,
-              quantity: round(-invoiceLine.quantity),
               locationId: invoiceLine.locationId,
               storageUnitId: invoiceLine.storageUnitId,
-              entryType: "Negative Adjmt.",
-              documentType: "Sales Shipment",
-              documentId: invoiceHeader.id ?? undefined,
-              externalDocumentId: invoiceHeader.customerReference ?? undefined,
-              createdBy: userId,
-              companyId
+              quantity: invoiceLine.quantity
             });
           }
         }
@@ -10563,6 +10885,30 @@ export async function postSalesInvoice(
                 );
               }
             }
+          }
+
+          // A line with no bin ships from a bin that holds its stock, never
+          // from "no storage unit" while a bin holds it. Its shipment line
+          // and ledger row both name that bin, so the void puts the stock
+          // back where it came from (it reverses the ledger rows).
+          const sourceBins = await directInvoiceSourceBins(
+            trx,
+            companyId,
+            directStockDraws
+          );
+          const sourceBinOf = (lineId: string, named: string | null) =>
+            sourceBins.has(lineId) ? (sourceBins.get(lineId) ?? null) : named;
+          for (const line of shipmentLineInserts) {
+            line.storageUnitId = sourceBinOf(
+              line.lineId!,
+              line.storageUnitId ?? null
+            );
+          }
+          for (const draw of directStockDraws) {
+            draw.ledger.storageUnitId = sourceBinOf(
+              draw.lineId,
+              draw.ledger.storageUnitId ?? null
+            );
           }
 
           if (shipmentLineInserts.length > 0) {
@@ -13650,9 +13996,9 @@ export const postMemoInput = z.object({
   memoId: z.string()
 });
 
-export const postMemoPermission = {
-  update: "invoicing"
-} satisfies PermissionRule<z.output<typeof postMemoInput>>;
+export const postMemoPermission = rowRule("memo", "Edit", {
+  id: "memoId"
+}) satisfies PermissionRule<z.output<typeof postMemoInput>>;
 
 /** Posts or voids a credit/debit memo and its journal, atomically. */
 export async function postMemo(
@@ -13777,8 +14123,8 @@ export function paymentKind(
     isDeposit: isAR
       ? Boolean(
           payment.rentalAgreementId ??
-            payment.salesOrderId ??
-            payment.customerContractId
+          payment.salesOrderId ??
+          payment.customerContractId
         )
       : !isReimbursement && Boolean(payment.purchaseOrderId),
     partyId,
@@ -16055,7 +16401,7 @@ export const postPaymentInput = z.object({
 });
 
 export const postPaymentPermission = {
-  update: "invoicing"
+  "invoicing.payments": "Edit"
 } satisfies PermissionRule<z.output<typeof postPaymentInput>>;
 
 /** Posts or voids a payment: settlements, funding and its journal, atomically. */
@@ -17691,7 +18037,7 @@ export const postPurchaseInvoiceInput = z.object({
 });
 
 export const postPurchaseInvoicePermission = {
-  update: "invoicing"
+  "invoicing.purchaseInvoices": "Edit"
 } satisfies PermissionRule<z.output<typeof postPurchaseInvoiceInput>>;
 
 /** Posts or voids a purchase invoice: receipts, cost, ledger and journal rows. */
@@ -20845,7 +21191,7 @@ export async function notifyDocumentForceDelete(
   try {
     const userIds =
       event === "Requested"
-        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+        ? (await getCompanyAdminIds(ctx.asSystem.supabase, companyId)).filter(
             (id) => id !== requestedBy
           )
         : requestedBy === ctx.auditUserId
@@ -23081,9 +23427,9 @@ export async function adjustPurchaseInvoiceRounding(
     const posted = invoice.status !== "Draft";
     if (posted) {
       // A posted invoice's adjustment posts a journal.
-      if (!ctx.can({ update: "accounting" })) {
+      if (!ctx.can({ "accounting.journalEntries": "Edit" })) {
         throw new ForbiddenError(
-          "Adjusting a posted invoice needs accounting update permission."
+          "Adjusting a posted invoice needs Edit on Journal Entries."
         );
       }
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);

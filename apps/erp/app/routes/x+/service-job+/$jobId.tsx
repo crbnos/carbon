@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -17,16 +18,11 @@ import {
 import { isServiceJobLocked, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import {
-  getServiceJob,
-  getServiceJobEstimateLines,
-  getServiceJobItems,
-  getServiceJobTime
-} from "~/modules/service/service.service";
 import { ServiceJobExplorer } from "~/modules/service/ui/ServiceJob/ServiceJobExplorer";
 import ServiceJobHeader from "~/modules/service/ui/ServiceJob/ServiceJobHeader";
 import {
@@ -35,7 +31,6 @@ import {
   ServiceJobProblem
 } from "~/modules/service/ui/ServiceJob/ServiceJobNotes";
 import ServiceJobProperties from "~/modules/service/ui/ServiceJob/ServiceJobProperties";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -44,12 +39,11 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Jobs`, to: path.to.serviceJobs },
     (data) => data?.job?.serviceJobId
-  ),
-  module: "service"
+  )
 };
 
 async function getServiceJobFiles(
-  client: Parameters<typeof getServiceJob>[0],
+  client: SupabaseClient<Database>,
   companyId: string,
   jobId: string
 ) {
@@ -60,19 +54,19 @@ async function getServiceJobFiles(
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "service"
+  const { api, client, companyId } = await authorize(request, {
+    "service.jobs": "View"
   });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
   const [job, time, items, estimateLines, companySettings] = await Promise.all([
-    getServiceJob(client, jobId),
-    getServiceJobTime(client, jobId),
-    getServiceJobItems(client, jobId),
-    getServiceJobEstimateLines(client, jobId),
-    getCompanySettings(client, companyId)
+    api.service.getServiceJob({ jobId }),
+    api.service.getServiceJobTime({ jobId }),
+    api.service.getServiceJobItems({ jobId }),
+    api.service.getServiceJobEstimateLines({ jobId }),
+    api.settings.getCompanySettings({})
   ]);
 
   if (job.error || !job.data || job.data.companyId !== companyId) {

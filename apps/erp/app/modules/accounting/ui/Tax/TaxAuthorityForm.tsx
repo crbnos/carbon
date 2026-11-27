@@ -72,8 +72,8 @@ const TaxAuthorityForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "accounting.taxAuthorities": "Edit" })
+    : !permissions.has({ "accounting.taxAuthorities": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

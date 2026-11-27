@@ -37,11 +37,11 @@ import { usePermissions } from "~/hooks";
 import { MACHINE_TIME_REVIEW_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import type { getUnattributedMachineTime } from "../../production.service";
+import type { MachineTimeSuggestion } from "./machine-time-suggestions.ee";
 import {
   MachineTimeInstant,
   useMachineTimeDuration
 } from "./MachineTimeTable.ee";
-import type { MachineTimeSuggestion } from "./machine-time-suggestions.ee";
 
 type JobOperationStatus = Database["public"]["Enums"]["jobOperationStatus"];
 
@@ -90,7 +90,8 @@ const MachineTimeDrawer = ({
 
   const isRunning = !machineTime.endTime;
   const isBusy = fetcher.state !== "idle";
-  const canAnswer = permissions.can("update", "production") && !isRunning;
+  const canAnswer =
+    permissions.has({ "production.unattributedTime": "Edit" }) && !isRunning;
   const pendingOperationId = fetcher.formData?.get("jobOperationId");
   const isDismissing = fetcher.formData?.get("intent") === "dismiss";
   const workCenterName =

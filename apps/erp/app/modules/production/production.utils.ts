@@ -3,6 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { PageGate } from "@carbon/database/access";
+import { fetchAll } from "@carbon/database/fetch-all";
+import { resolvePlanningTimeFenceDays } from "@carbon/utils";
 import type { AssemblyStep } from "@carbon/viewer";
 import { isPlanFlagged } from "@carbon/viewer/steps";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -58,7 +61,6 @@ function getJobMethodTreeArrayToTree(items: JobMethod[]): JobMethodTreeItem[] {
       lookup[itemId] = { id: itemId, children: [] };
     }
 
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
     lookup[itemId]["data"] = item;
 
     const treeItem = lookup[itemId];
@@ -71,7 +73,6 @@ function getJobMethodTreeArrayToTree(items: JobMethod[]): JobMethodTreeItem[] {
         lookup[parentId] = { id: parentId, children: [] };
       }
 
-      // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
       lookup[parentId]["children"].push(treeItem);
     }
   }
@@ -150,3 +151,262 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
     flagged: isPlanFlagged(step.warnings, step.motion) ? true : undefined
   };
 }
+
+// ── Planned orders in the planning drawers ─────────────────────────────────
+// Read with the caller's client, as the drawers read their open jobs and PO
+// lines: `plannedOrder` is read as `planningAction` is, from either Material
+// Planning page, the two pages that open these drawers.
+
+const DRAWER_PLANNED_ORDER_COLUMNS =
+  "id, itemId, periodId, splitIndex, status, orderType, quantity, scrapQuantity, quantityTrace, dueDate, releaseDate, firmedAt" as const;
+
+/** The Planned and Firm planned orders of a location and type, in the
+ *  common segment: a Converted row is its job or PO line now. */
+function plannedOrdersQuery(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; locationId: string; orderType: "Make" | "Buy" }
+) {
+  return client
+    .from("plannedOrder")
+    .select(DRAWER_PLANNED_ORDER_COLUMNS)
+    .eq("companyId", args.companyId)
+    .eq("locationId", args.locationId)
+    .eq("orderType", args.orderType)
+    .eq("planningSegmentId", "")
+    .in("status", ["Planned", "Firm"]);
+}
+
+export type DrawerPlannedOrder = NonNullable<
+  Awaited<ReturnType<typeof plannedOrdersQuery>>["data"]
+>[number];
+
+type PlannedOrderRead =
+  | { data: DrawerPlannedOrder[]; error: null }
+  | { data: null; error: Error };
+
+/**
+ * The Planned and Firm planned orders of one item at one location, by due
+ * date: the rows of the drawer's Planned Orders grid. Planned orders exist
+ * only in the common segment. A Converted row is its job or PO line now, which
+ * the drawer lists as an open order. Paged, so production's `max_rows` (1000)
+ * never cuts an item with many short orders.
+ */
+export async function getDrawerPlannedOrders(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    itemId: string;
+    locationId: string;
+    orderType: "Make" | "Buy";
+  }
+): Promise<PlannedOrderRead> {
+  const read = await fetchAll<DrawerPlannedOrder>(() =>
+    plannedOrdersQuery(client, args)
+      .eq("itemId", args.itemId)
+      .order("dueDate", { ascending: true })
+      .order("id", { ascending: true })
+  );
+  if (read.error) return { data: null, error: new Error(read.error.message) };
+  return { data: read.data ?? [], error: null };
+}
+
+/** Item ids per request: the ids travel in the URL (`in.(…)`). */
+const PLANNED_ORDER_ITEM_CHUNK = 100;
+
+/**
+ * The Planned and Firm planned orders of many items at one location, for a
+ * bulk Make / Order on the planning grids: each suggested order of a row then
+ * names the planned order it stands for. 100 items per request, so a large
+ * selection never builds a URL the gateway refuses, and each request paged
+ * by id, so production's `max_rows` (1000) never cuts it short.
+ */
+export async function getRowPlannedOrders(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    orderType: "Make" | "Buy";
+    itemIds: string[];
+  }
+): Promise<PlannedOrderRead> {
+  const itemIds = [...new Set(args.itemIds)];
+  const chunks: string[][] = [];
+  for (let i = 0; i < itemIds.length; i += PLANNED_ORDER_ITEM_CHUNK) {
+    chunks.push(itemIds.slice(i, i + PLANNED_ORDER_ITEM_CHUNK));
+  }
+  const reads = await Promise.all(
+    chunks.map((ids) =>
+      fetchAll<DrawerPlannedOrder>(() =>
+        plannedOrdersQuery(client, args)
+          .in("itemId", ids)
+          .order("id", { ascending: true })
+      )
+    )
+  );
+  const failed = reads.find((read) => read.error)?.error;
+  if (failed) return { data: null, error: new Error(failed.message) };
+  return { data: reads.flatMap((read) => read.data ?? []), error: null };
+}
+
+/**
+ * The location's own planning time fence, in calendar days: the value an
+ * item with no fence of its own inherits. The one read of
+ * `location.planningTimeFenceDays`; `getPlanningTimeFenceDays` resolves the
+ * item's fence from it.
+ */
+export function getLocationPlanningTimeFenceDays(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; locationId: string }
+) {
+  return client
+    .from("location")
+    .select("planningTimeFenceDays")
+    .eq("companyId", args.companyId)
+    .eq("id", args.locationId)
+    .maybeSingle();
+}
+
+/**
+ * The item's planning time fence at a location, in calendar days, as MRP
+ * resolves it: the item's own value, else the location's, else 0 (no fence).
+ */
+export async function getPlanningTimeFenceDays(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; itemId: string; locationId: string }
+): Promise<{ data: number; error: null } | { data: null; error: Error }> {
+  const [itemPlanning, location] = await Promise.all([
+    client
+      .from("itemPlanning")
+      .select("planningTimeFenceDays")
+      .eq("companyId", args.companyId)
+      .eq("itemId", args.itemId)
+      .eq("locationId", args.locationId)
+      .maybeSingle(),
+    getLocationPlanningTimeFenceDays(client, args)
+  ]);
+  const failed = itemPlanning.error ?? location.error;
+  if (failed) return { data: null, error: new Error(failed.message) };
+  return {
+    data: resolvePlanningTimeFenceDays(
+      itemPlanning.data?.planningTimeFenceDays,
+      location.data?.planningTimeFenceDays
+    ),
+    error: null
+  };
+}
+
+/**
+ * The production planning drawer's Open Jobs: one item's make-to-stock jobs
+ * at one location that are not finished — Draft and Planned (editable) and
+ * the released ones, listed read-only so an action on them has a row to sit
+ * on. Read with the caller's client, so RLS applies.
+ */
+export function getPlanningOpenJobs(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; itemId: string; locationId: string }
+) {
+  return (
+    client
+      .from("job")
+      .select("id, jobId, status, quantity, startDate, dueDate, deadlineType")
+      .eq("companyId", args.companyId)
+      .eq("itemId", args.itemId)
+      // the drawer's location only: the rows are editable and charted there
+      .eq("locationId", args.locationId)
+      .is("salesOrderId", null)
+      .is("salesOrderLineId", null)
+      .in("status", ["Draft", "Planned", "Ready", "In Progress", "Paused"])
+  );
+}
+
+/** The planned orders of its week an action or document draws on. */
+export type PlannedOrderDrawScope = "all" | "overdue" | "notOverdue" | "none";
+
+/**
+ * Which planned orders of its week a new-supply action (or the document
+ * ordered against it) draws on. The current week also holds every overdue
+ * planned order (`plannedOrderWeekIndex`), so the scope decides who gets
+ * those:
+ * - an action of a week already past (the week turned before MRP ran again)
+ *   draws only on the overdue ones, when it is the one that takes them
+ *   (`takesOverdue`), else on none;
+ * - the current week's action draws only on its own week's when the row has
+ *   an Order / Make of a past week, Open or Dismissed (that action counted
+ *   the overdue ones);
+ * - any other action draws on all of its week's.
+ * The drawer passes `takesOverdue` for the latest Open past week's action
+ * only; the convert passes it for every past week's document.
+ */
+export function plannedOrderDrawScope(args: {
+  pastWeek: boolean;
+  takesOverdue: boolean;
+  currentWeek: boolean;
+  rowHasPastWeekAction: boolean;
+}): PlannedOrderDrawScope {
+  if (args.pastWeek) return args.takesOverdue ? "overdue" : "none";
+  return args.currentWeek && args.rowHasPastWeekAction ? "notOverdue" : "all";
+}
+
+/** Whether a planned order is inside a draw scope. */
+export function isInDrawScope(
+  scope: PlannedOrderDrawScope,
+  isOverdue: boolean
+): boolean {
+  switch (scope) {
+    case "all":
+      return true;
+    case "overdue":
+      return isOverdue;
+    case "notOverdue":
+      return !isOverdue;
+    case "none":
+      return false;
+  }
+}
+
+/** `production.syncAssemblyToOperation`: the sync rewrites the job operation's steps as the system. */
+export const syncAssemblyToOperationPermission = {
+  "production.assemblies": "Edit",
+  "production.jobs": "Edit"
+} satisfies PageGate;
+
+/** A planned order is a planning suggestion, not a document: a Make one is
+ *  changed from production's Material Planning, a Buy one from purchasing's. */
+export const plannedOrderChangePages = {
+  Make: { "production.materialPlanning": "Edit" },
+  Buy: { "purchasing.materialPlanning": "Edit" }
+} as const satisfies Record<"Make" | "Buy", PageGate>;
+
+/** Firm / unfirm / edit a planned order: either page lets the call in, and
+ *  the body checks the one its order type needs (`plannedOrderChangePages`). */
+export const plannedOrderChangeGate = [
+  plannedOrderChangePages.Make,
+  plannedOrderChangePages.Buy
+] as const;
+
+/** `production.applyPlanningActions`: Edit on Material Planning lets the call
+ *  in. An action on a planned order needs no more (`plannedOrderChangePages`);
+ *  an action on a job also needs `applyPlanningJobActionsPermission`, which
+ *  the body checks per action. */
+export const applyPlanningActionsPermission = {
+  "production.materialPlanning": "Edit"
+} satisfies PageGate;
+
+/** An Apply that edits or cancels a job: checked per action. */
+export const applyPlanningJobActionsPermission = {
+  "production.jobs": "Edit"
+} satisfies PageGate;
+
+/** `purchasing.applyPlanningActions`: Edit on Purchase Orders or on Purchasing
+ *  → Material Planning lets the call in. The body checks each action: one on
+ *  a PO line needs `applyPurchasingLineActionsPermission`, one on a planned
+ *  order `plannedOrderChangePages.Buy`. */
+export const applyPurchasingPlanningActionsGate = [
+  { "purchasing.purchaseOrders": "Edit" },
+  plannedOrderChangePages.Buy
+] as const;
+
+/** An Apply that edits or deletes a purchase order line: checked per action. */
+export const applyPurchasingLineActionsPermission = {
+  "purchasing.purchaseOrders": "Edit"
+} satisfies PageGate;

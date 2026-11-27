@@ -110,6 +110,19 @@ export type BinStock = {
   storageUnitId: string | null;
   projectId?: string | null;
   nettable: boolean;
+  /**
+   * An active, non-nettable unit that is not lineside: a quarantine, MRB or
+   * rejected area. A guess for consumption never takes from it; a draw of
+   * nonconforming or returned stock looks there first (`planHeldStockDraw`).
+   */
+  held?: boolean;
+  /**
+   * An open inspection lot holds untracked stock in this unit
+   * (`getUntrackedBinStock` with `inspectionHolds`): `quantity` is already
+   * net of it, and a draw must not take the unit below it, or the hold guard
+   * refuses the posting (`keepInspectionHeldStock`).
+   */
+  inspectionHeld?: boolean;
   quantity: number;
 };
 
@@ -208,6 +221,213 @@ export function planStripedUntrackedDraw(args: {
       });
   }
   return draws;
+}
+
+/**
+ * Where a draw of nonconforming or returned untracked stock comes from when no
+ * bin was chosen: an NCR's Scrap or Return to Supplier, a return shipment.
+ * That stock usually sits where it was set aside, so, unlike a consumption
+ * guess, held units (quarantine, MRB, rejected) are candidates and come first:
+ * the preferred bin, then held units, then nettable units and no storage unit,
+ * each fullest first. Lineside and inactive units are never drawn. A shortfall
+ * goes to the preferred bin, else the first bin drawn, else no storage unit.
+ * One stripe: these draws take one owner's stock.
+ */
+export function planHeldStockDraw(args: {
+  bins: readonly BinStock[];
+  preferredStorageUnitId: string | null;
+  quantity: number;
+}): { storageUnitId: string | null; quantity: number }[] {
+  let left = round(args.quantity);
+  if (left <= 0) return [];
+  const draws: { storageUnitId: string | null; quantity: number }[] = [];
+  for (const [storageUnitId, available] of heldDrawOrder(
+    args.bins,
+    args.preferredStorageUnitId
+  )) {
+    if (left <= 0) break;
+    const take = round(Math.min(left, Math.max(0, available)));
+    if (take <= 0) continue;
+    draws.push({ storageUnitId, quantity: take });
+    left = round(left - take);
+  }
+  if (left > 0) {
+    const shortBin =
+      args.preferredStorageUnitId ?? draws[0]?.storageUnitId ?? null;
+    const existing = draws.find((d) => d.storageUnitId === shortBin);
+    if (existing) existing.quantity = round(existing.quantity + left);
+    else draws.push({ storageUnitId: shortBin, quantity: left });
+  }
+  return draws;
+}
+
+/**
+ * The one bin a return shipment line should name, by `planHeldStockDraw`'s
+ * order: the first candidate that holds `quantity`, else the first with any
+ * stock, else the preferred bin (null: no storage unit).
+ */
+export function chooseHeldStockBin(args: {
+  bins: readonly BinStock[];
+  preferredStorageUnitId: string | null;
+  quantity: number;
+}): string | null {
+  const order = heldDrawOrder(args.bins, args.preferredStorageUnitId).filter(
+    ([, qty]) => round(qty) > 0
+  );
+  const need = round(args.quantity);
+  const covering = order.find(([, qty]) => round(qty) >= need);
+  const chosen = covering ?? order[0];
+  return chosen ? chosen[0] : args.preferredStorageUnitId;
+}
+
+function heldDrawOrder(
+  bins: readonly BinStock[],
+  preferred: string | null
+): [string | null, number][] {
+  const held = new Map<string | null, number>();
+  const rest = new Map<string | null, number>();
+  let preferredOnHand: number | null = null;
+  for (const bin of bins) {
+    if (bin.storageUnitId !== null && bin.storageUnitId === preferred) {
+      preferredOnHand = (preferredOnHand ?? 0) + bin.quantity;
+      continue;
+    }
+    const target = bin.held ? held : bin.nettable ? rest : null;
+    if (!target) continue;
+    target.set(
+      bin.storageUnitId,
+      (target.get(bin.storageUnitId) ?? 0) + bin.quantity
+    );
+  }
+  return [
+    ...(preferred !== null && preferredOnHand !== null
+      ? ([[preferred, preferredOnHand]] as [string | null, number][])
+      : []),
+    ...fullestFirst(held),
+    ...fullestFirst(rest)
+  ];
+}
+
+/**
+ * Moves what a planned draw takes beyond a unit's free stock to no storage
+ * unit, for a unit an open inspection lot holds stock in. A planner puts a
+ * real shortfall on the preferred or first bin drawn; on such a unit that
+ * would take the lot's own stock, and the hold guard would refuse the whole
+ * posting. Other bins keep their shortfall.
+ */
+export function keepInspectionHeldStock<
+  T extends {
+    storageUnitId: string | null;
+    projectId?: string | null;
+    quantity: number;
+  }
+>(draws: readonly T[], bins: readonly BinStock[]): T[] {
+  const free = (draw: T) =>
+    bins
+      .filter(
+        (bin) =>
+          bin.storageUnitId === draw.storageUnitId &&
+          (bin.projectId ?? null) === (draw.projectId ?? null)
+      )
+      .reduce((sum, bin) => sum + Math.max(0, bin.quantity), 0);
+  const held = (draw: T) =>
+    draw.storageUnitId !== null &&
+    bins.some(
+      (bin) => bin.storageUnitId === draw.storageUnitId && bin.inspectionHeld
+    );
+  const out: T[] = [];
+  for (const draw of draws) {
+    if (!held(draw)) {
+      out.push(draw);
+      continue;
+    }
+    const take = round(Math.min(draw.quantity, free(draw)));
+    const excess = round(draw.quantity - take);
+    if (take > 0) out.push({ ...draw, quantity: take });
+    if (excess <= 0) continue;
+    const noBin = out.find(
+      (d) =>
+        d.storageUnitId === null &&
+        (d.projectId ?? null) === (draw.projectId ?? null)
+    );
+    if (noBin) noBin.quantity = round(noBin.quantity + excess);
+    else out.push({ ...draw, storageUnitId: null, quantity: excess });
+  }
+  return out;
+}
+
+/**
+ * Where a return of drawn stock goes back to: the bins (and stripes) the
+ * document's rows drew from, the newest draw first, each up to what it still
+ * has out (its draws less its returns). What no bin has out goes to
+ * `fallback`. With `stripe`, every return books that one stripe and the rows
+ * are netted per bin only. `order` is the row's recency (its `entryNumber`).
+ */
+export function planReturnToDrawnBins(args: {
+  rows: readonly {
+    storageUnitId: string | null;
+    projectId?: string | null;
+    quantity: number;
+    order: number;
+  }[];
+  quantity: number;
+  fallback: { storageUnitId: string | null; projectId: string | null };
+  stripe?: string | null;
+}): StripedBinDraw[] {
+  const oneStripe = args.stripe !== undefined;
+  const keyOf = (bin: string | null, stripe: string | null) =>
+    `${bin ?? ""}\u0000${oneStripe ? "" : (stripe ?? "")}`;
+  const bins = new Map<
+    string,
+    {
+      storageUnitId: string | null;
+      projectId: string | null;
+      out: number;
+      latest: number;
+    }
+  >();
+  for (const row of args.rows) {
+    const projectId = oneStripe
+      ? (args.stripe ?? null)
+      : (row.projectId ?? null);
+    const k = keyOf(row.storageUnitId, projectId);
+    const bin = bins.get(k) ?? {
+      storageUnitId: row.storageUnitId,
+      projectId,
+      out: 0,
+      latest: -Infinity
+    };
+    bin.out = round(bin.out - row.quantity);
+    if (row.quantity < 0) bin.latest = Math.max(bin.latest, row.order);
+    bins.set(k, bin);
+  }
+  let left = round(args.quantity);
+  const returns: StripedBinDraw[] = [];
+  for (const bin of [...bins.values()].sort((a, b) => b.latest - a.latest)) {
+    if (left <= 0) break;
+    const take = round(Math.min(left, bin.out));
+    if (take <= 0) continue;
+    returns.push({
+      storageUnitId: bin.storageUnitId,
+      projectId: bin.projectId,
+      quantity: take
+    });
+    left = round(left - take);
+  }
+  if (left > 0) {
+    const fallback = {
+      storageUnitId: args.fallback.storageUnitId,
+      projectId: oneStripe ? (args.stripe ?? null) : args.fallback.projectId
+    };
+    const same = returns.find(
+      (r) =>
+        r.storageUnitId === fallback.storageUnitId &&
+        r.projectId === fallback.projectId
+    );
+    if (same) same.quantity = round(same.quantity + left);
+    else returns.push({ ...fallback, quantity: left });
+  }
+  return returns;
 }
 
 /** The advisory lock key of untracked draws of one item at one location

@@ -210,13 +210,13 @@ const NOTE_PREFIX = "carbon:model-upload:";
 const NOTE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Runs `use` against localStorage. Storage can be missing or throw (a private
+ * Runs `read` against localStorage. Storage can be missing or throw (a private
  * window, blocked site data, a full quota); a lost note only costs the
  * reminder, never the upload, so the error is swallowed.
  */
-function withStorage<T>(use: (store: Storage) => T): T | null {
+function withStorage<T>(read: (store: Storage) => T): T | null {
   try {
-    return use(window.localStorage);
+    return read(window.localStorage);
   } catch {
     return null;
   }

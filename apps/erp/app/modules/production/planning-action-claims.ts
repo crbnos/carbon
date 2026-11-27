@@ -81,8 +81,8 @@ export async function releasePlanningActionClaims(
           AND o."locationId" = a."locationId"
           AND o."planningSegmentId" = a."planningSegmentId"
           AND o."type" = a."type"
-          AND COALESCE(o."purchaseOrderLineId", o."jobId", o."periodId")
-            = COALESCE(a."purchaseOrderLineId", a."jobId", a."periodId")
+          AND COALESCE(o."purchaseOrderLineId", o."jobId", o."plannedOrderId", o."periodId")
+            = COALESCE(a."purchaseOrderLineId", a."jobId", a."plannedOrderId", a."periodId")
           AND COALESCE(o."fromProjectId", '') = COALESCE(a."fromProjectId", '')
           AND COALESCE(o."toProjectId", '') = COALESCE(a."toProjectId", '')
           AND o."status" <> 'Actioned'

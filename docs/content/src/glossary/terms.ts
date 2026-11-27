@@ -1404,7 +1404,33 @@ export const terms = {
   },
   "item-planning-horizon": {
     term: msg`Planning Horizon (Days)`,
-    definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`
+    definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`,
+    href: "/docs/reference/planning#planning-horizon"
+  },
+  "planning-time-fence": {
+    term: msg`Planning time fence`,
+    definition: msg`How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence.`,
+    href: "/docs/reference/planning#the-planning-time-fence"
+  },
+  "item-planning-time-fence": {
+    term: msg`Planning time fence (days)`,
+    definition: msg`How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item.`,
+    href: "/docs/reference/planning#the-planning-time-fence"
+  },
+  "planned-order": {
+    term: msg`Planned Order`,
+    definition: msg`Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents.`,
+    href: "/docs/reference/planning#planned-orders"
+  },
+  "firm-planned-order": {
+    term: msg`Firm`,
+    definition: msg`A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP.`,
+    href: "/docs/reference/planning#firm-unfirm-and-edit"
+  },
+  "convert-planned-order": {
+    term: msg`Convert`,
+    definition: msg`Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status.`,
+    href: "/docs/reference/planning#ordering-converts-planned-orders"
   },
   "delivery-date-check": {
     term: msg`Delivery Date Check`,
@@ -1413,7 +1439,7 @@ export const terms = {
   },
   "planning-action": {
     term: msg`Planning action`,
-    definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it.`,
+    definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it.`,
     href: "/docs/reference/planning#planning-actions"
   },
   "reschedule-tolerance": {
@@ -2143,20 +2169,26 @@ export const terms = {
 
   // ── Users: Employee types (EmployeeTypeForm) ────────────────────────────
   "employee-type-default-permissions": {
-    term: msg`Default Permissions`,
-    definition: msg`The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated.`
+    term: msg`Access`,
+    definition: msg`The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request.`,
+    href: "/docs/reference/permissions#employee-types"
+  },
+  "access-level": {
+    term: msg`Access level`,
+    definition: msg`One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records.`,
+    href: "/docs/reference/permissions#levels"
   },
 
   // ── Users: Employee permissions (EmployeePermissionsForm) ───────────────
   "employee-permissions-employee-type-override": {
     term: msg`Employee Type`,
-    definition: msg`Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults.`
+    definition: msg`Switching the type changes the levels this person inherits on every module; their personal overrides stay.`
   },
 
   // ── Users: Bulk permissions (BulkEditPermissionsForm) ───────────────────
   "bulk-permissions-update-type": {
     term: msg`Type of Permission Update`,
-    definition: msg`Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below.`
+    definition: msg`Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has.`
   },
 
   // ── Users: Customer account (CreateCustomerModal) ───────────────────────
@@ -2182,7 +2214,7 @@ export const terms = {
   // ── Users: Create employee (CreateEmployeeModal) ────────────────────────
   "create-employee-employee-type": {
     term: msg`Employee Type`,
-    definition: msg`The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template.`
+    definition: msg`The role this employee gets their access levels from; a later edit of the type reaches them too.`
   },
   "create-employee-location": {
     term: msg`Location`,

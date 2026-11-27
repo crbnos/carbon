@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getPostgresClient } from "@carbon/database/client";
+import { pageClaims } from "./page-claims";
 import {
   DownloadTokenExpiredError,
   verifyDownloadToken
@@ -91,7 +93,8 @@ function storageClient(objects: Map<string, Set<string>>) {
 const key = (views: string[]): Extract<Actor, { type: "apiKey" }> => ({
   type: "apiKey",
   createdBy: "key-creator",
-  scopes: Object.fromEntries(
+  permissions: pageClaims(
+    Object.fromEntries(
     MODULES.map((module) => [
       module,
       {
@@ -102,7 +105,32 @@ const key = (views: string[]): Extract<Actor, { type: "apiKey" }> => ({
       }
     ])
   )
+  )
 });
+
+/** Every item the item gates read is a Part, at the Postgres wire. */
+const partsDatabase = (() => {
+  const connection = {
+    executeQuery: async () => ({
+      rows: ["i", "item-1", "r-1"].map((id) => ({ id, type: "Part" }))
+    }),
+    // oxlint-disable-next-line require-yield -- never streamed
+    streamQuery: async function* () {
+      throw new Error("not streamed");
+    }
+  };
+  const done = async () => undefined;
+  class Driver {
+    init = done;
+    acquireConnection = async () => connection;
+    beginTransaction = done;
+    commitTransaction = done;
+    rollbackTransaction = done;
+    releaseConnection = done;
+    destroy = done;
+  }
+  return getPostgresClient({} as never, Driver as never);
+})();
 
 function contextOf(
   actor: Actor,
@@ -117,9 +145,8 @@ function contextOf(
     company: { id: COMPANY, groupId: "group-1" },
     caller: { ...rowsClient(rows), ...files } as never,
     system: () => files as never,
-    pg: () => {
-      throw new Error("No transaction here");
-    },
+    // The item gates read the item's type, which picks its page.
+    pg: () => partsDatabase,
     kv: () => {
       throw new Error("No cache here");
     }

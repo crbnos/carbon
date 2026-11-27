@@ -2,15 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { maintenanceDispatchValidator } from "~/modules/resources/resources.models";
-import { getFailureModesList } from "~/modules/resources/resources.service";
 import MaintenanceDispatchForm from "~/modules/resources/ui/Maintenance/MaintenanceDispatchForm";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
@@ -21,17 +20,16 @@ export const meta = newRecordMeta("Maintenance Dispatch");
 
 export const handle: Handle = {
   breadcrumb: msg`Maintenance`,
-  to: path.to.maintenanceDispatches,
-  module: "resources"
+  to: path.to.maintenanceDispatches
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "resources"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "resources.dispatches": "Create"
   });
 
   const [failureModes, defaults] = await Promise.all([
-    getFailureModesList(client, companyId),
+    api.resources.getFailureModesList({}),
     getUserDefaults(client, userId, companyId)
   ]);
 
@@ -44,7 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(maintenanceDispatchValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.resources.createMaintenanceDispatch(input.data);
   return respond(args.request, result).redirect(
     result.data

@@ -11,14 +11,15 @@ import {
 } from "@carbon/api/errors";
 import {
   type PermissionRule,
-  resolvePermissions
+  resolvePermissions,
+  rowRule
 } from "@carbon/api/permissions";
 import type {
   CarbonError,
   ErrorCategory,
   ServiceContext
 } from "@carbon/api/service-fn.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
@@ -253,7 +254,7 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import { months } from "../shared/shared.models";
 import {
   allocateJournalLineIds,
@@ -3871,25 +3872,66 @@ export async function reopenAccountingPeriod(
   }
 }
 
+/**
+ * The month (1–12) a company's fiscal year starts, for generating its
+ * periods. Read as the system, as `getReportFiscalStartMonth` reads it:
+ * `fiscalYearSettings` needs settings view, which `create: accounting` does
+ * not give, and RLS would hide the row. A failed read is returned, never
+ * read as January; a company with no row starts in January.
+ */
+export async function getFiscalStartMonth(
+  companyId: string,
+  system: SupabaseClient<Database> = getCarbonServiceRole()
+) {
+  const settings = await system
+    .from("fiscalYearSettings")
+    .select("startMonth")
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (settings.error) return { data: null, error: settings.error };
+  return {
+    data: MONTH_NUMBER[settings.data?.startMonth ?? "January"] ?? 1,
+    error: null
+  };
+}
+
+/**
+ * `startMonth` is the month the caller showed the range from: the Generate
+ * Fiscal Year dialog reads it when it opens, so a change saved after that
+ * would create periods other than the ones it showed. A different stored
+ * month is refused; left out, the stored month is used.
+ */
 export async function createFiscalYearPeriods(
   client: SupabaseClient<Database>,
-  args: { companyId: string; fiscalYear: number; userId: string }
+  args: {
+    companyId: string;
+    fiscalYear: number;
+    userId: string;
+    startMonth?: number;
+  },
+  system: SupabaseClient<Database>
 ) {
-  const settings = await getFiscalYearSettings(client, args.companyId);
-  const startMonth = settings.data?.startMonth
-    ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
-    : 1;
+  const fiscalStart = await getFiscalStartMonth(args.companyId, system);
+  if (fiscalStart.error) return { data: null, error: fiscalStart.error };
+  const startMonth = fiscalStart.data;
+  if (args.startMonth !== undefined && args.startMonth !== startMonth) {
+    return {
+      data: null,
+      error: ruleError(
+        `The fiscal year now starts in ${months[startMonth - 1]}, not ${
+          months[args.startMonth - 1]
+        }. Open Generate Fiscal Year again to see the periods it creates.`
+      )
+    };
+  }
 
-  const existing = await (client.from("accountingPeriod") as any)
+  const existing = await client
+    .from("accountingPeriod")
     .select("periodNumber")
     .eq("companyId", args.companyId)
     .eq("fiscalYear", args.fiscalYear);
-  if (existing.error) return existing;
-  const existingNumbers = new Set(
-    ((existing.data ?? []) as { periodNumber: number | null }[]).map(
-      (p) => p.periodNumber
-    )
-  );
+  if (existing.error) return { data: null, error: existing.error };
+  const existingNumbers = new Set(existing.data.map((p) => p.periodNumber));
 
   const rows = fiscalYearPeriodDates(
     args.fiscalYear,
@@ -3899,18 +3941,18 @@ export async function createFiscalYearPeriods(
     companyId: args.companyId,
     startDate: period.startDate,
     endDate: period.endDate,
-    status: "Inactive",
-    closeStatus: "Open",
+    status: "Inactive" as const,
+    closeStatus: "Open" as const,
     fiscalYear: args.fiscalYear,
     periodNumber: period.periodNumber,
     createdBy: args.userId
   }));
 
   if (rows.length === 0) {
-    return { data: [], error: null };
+    return { data: [] as { id: string }[], error: null };
   }
 
-  return (client.from("accountingPeriod") as any).insert(rows).select("id");
+  return client.from("accountingPeriod").insert(rows).select("id");
 }
 
 // A single readiness evaluator, keyed by the autoCheckKey that binds it to an
@@ -4151,23 +4193,20 @@ export async function getPeriodRunPreview(
       { periodEnd, type },
       previewRevenueRecognitionRun
     )
-      .then(
-        (result): RunPreview =>
-          result.error
-            ? {
-                count: 0,
-                amount: 0,
-                error: previewError(result.error, fallback)
-              }
-            : { ...result.data, error: null }
+      .then((result): RunPreview =>
+        result.error
+          ? {
+              count: 0,
+              amount: 0,
+              error: previewError(result.error, fallback)
+            }
+          : { ...result.data, error: null }
       )
-      .catch(
-        (error): RunPreview => ({
-          count: 0,
-          amount: 0,
-          error: previewError(error, fallback)
-        })
-      );
+      .catch((error): RunPreview => ({
+        count: 0,
+        amount: 0,
+        error: previewError(error, fallback)
+      }));
   const [revenue, lease, depreciation] = await Promise.all([
     previewRun("Revenue Recognition", "Failed to preview revenue recognition"),
     previewRun("Lease", "Failed to preview the lease run"),
@@ -4193,13 +4232,11 @@ export async function getPeriodRunPreview(
           error: null
         };
       })
-      .catch(
-        (error): RunPreview => ({
-          count: 0,
-          amount: 0,
-          error: previewError(error, "Failed to calculate depreciation")
-        })
-      )
+      .catch((error): RunPreview => ({
+        count: 0,
+        amount: 0,
+        error: previewError(error, "Failed to calculate depreciation")
+      }))
   ]);
   return { revenue, lease, depreciation };
 }
@@ -9586,8 +9623,8 @@ export async function getLeaseNetInvestment(
     // Not commenced yet on `asOf`.
     if (!agreement?.startDate || agreement.startDate > asOf) continue;
 
-    const lineSchedule = [...(scheduleByLine.get(line.id) ?? [])].sort(
-      (a, b) => (a.periodDate < b.periodDate ? -1 : 1)
+    const lineSchedule = [...(scheduleByLine.get(line.id) ?? [])].sort((a, b) =>
+      a.periodDate < b.periodDate ? -1 : 1
     );
 
     // Accumulate at full precision; round once per figure.
@@ -9681,7 +9718,7 @@ export type LeaseLiabilities = LeaseLiabilitySummary & {
  * lines of posted purchase invoices (posting date in the range). Schedule
  * lines, payments and events are read for the Operating and Finance assets
  * of leases past Draft only, every read paged. Reads the lease tables, whose
- * RLS is `purchasing_view` — a caller without purchasing view gets an empty
+ * RLS is View on Leases (Purchasing) — a caller without it gets an empty
  * report, so the report route requires it.
  */
 export async function getLeaseLiabilities(
@@ -10310,8 +10347,8 @@ export async function returnFixedAssetToService(
 
 /** Capitalize a unit, return an asset to inventory, attach a job to a CIP
  *  asset or capitalize a CIP asset (`postAssetTransfer`), run as the caller:
- *  the caller holds the transfer's permission, and `update: accounting` too
- *  when a capitalization enters its own cost.
+ *  the caller holds the transfer's permission, raised to Edit on
+ *  `accounting.assets` when a capitalization enters its own cost.
  */
 export async function invokeAssetTransfer(
   client: SupabaseClient<Database>,
@@ -10328,14 +10365,10 @@ export async function invokeAssetTransfer(
     transfer as z.input<typeof postAssetTransferInput>,
     postAssetTransfer,
     {
-      as: (input) => {
-        const required = resolvePermissions(postAssetTransferPermission, input);
-        return input.type === "capitalize" &&
-          input.cost != null &&
-          required !== "system"
-          ? { ...required, update: "accounting" }
-          : required;
-      }
+      as: (input) =>
+        input.type === "capitalize" && input.cost != null
+          ? { "accounting.assets": "Edit" }
+          : resolvePermissions(postAssetTransferPermission, input)
     }
   );
 }
@@ -11024,11 +11057,11 @@ export async function applyCtaToReportPeriodSeriesForReport(
   reportingCompanyId: string,
   args: Parameters<typeof applyCtaToReportPeriodSeries>[3]
 ) {
-  const { client, companyGroupId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee",
-    bypassRls: true
-  });
+  const { client, companyGroupId } = await authorize(
+    request,
+    { "accounting.reporting": "View" },
+    { bypassRls: true }
+  );
   const root = await client
     .from("company")
     .select("id")
@@ -13260,8 +13293,8 @@ export async function outOfServiceRefusal(
 
   // A unit on rent goes to maintenance through the agreement's Return (with
   // "Take out of service"), never around it. Read with the service role,
-  // scoped to the company and the asset: agreement lines need sales_view,
-  // which an accountant may not hold, and under RLS that reads as "not on
+  // scoped to the company and the asset: agreement lines need View on Rental
+  // Agreements, which an accountant may not hold, and under RLS that reads as "not on
   // rent". A failed read refuses rather than passes.
   const onRent = await getOnRentLineForAsset(system, fixedAssetId, companyId);
   if (onRent.error) {
@@ -15004,11 +15037,11 @@ async function adjustCost(
 export const postAssetTransferPermission = {
   by: "type",
   rules: {
-    capitalize: { create: "accounting" },
-    return: { create: "accounting" },
-    attachJob: { create: "accounting" },
-    capitalizeCip: { create: "accounting" },
-    adjustCost: { update: "accounting" }
+    capitalize: { "accounting.assets": "Create" },
+    return: { "accounting.assets": "Create" },
+    attachJob: { "accounting.assets": "Create" },
+    capitalizeCip: { "accounting.assets": "Create" },
+    adjustCost: { "accounting.assets": "Edit" }
   }
 } satisfies PermissionRule<z.output<typeof postAssetTransferInput>>;
 
@@ -15029,7 +15062,7 @@ export async function postAssetTransfer(
   switch (input.type) {
     case "capitalize":
       // An entered cost puts a number of the caller's own on the books.
-      if (input.cost != null && !ctx.can({ update: "accounting" })) {
+      if (input.cost != null && !ctx.can({ "accounting.assets": "Edit" })) {
         throw new ForbiddenError();
       }
       return capitalize(db, { ...input, companyId, userId });
@@ -15057,7 +15090,7 @@ class RollbackPreview extends Error {
 }
 
 export const previewAssetCapitalizationPermission = {
-  view: "accounting"
+  "accounting.assets": "View"
 } satisfies PermissionRule<z.output<typeof previewAssetCapitalizationInput>>;
 
 export async function previewAssetCapitalization(
@@ -15209,10 +15242,6 @@ async function repointReferences(
     trx
   );
 }
-
-export const applyAccountImportPermission = {
-  update: "accounting"
-} satisfies PermissionRule<z.output<typeof applyAccountImportInput>>;
 
 export async function applyAccountImport(
   ctx: ServiceContext,
@@ -16575,7 +16604,7 @@ export const postChargeInput = z.object({
 });
 
 export const postChargePermission = {
-  update: "invoicing"
+  "invoicing.charges": "Edit"
 } satisfies PermissionRule<z.output<typeof postChargeInput>>;
 
 /**
@@ -17534,7 +17563,7 @@ export const postReimbursementInput = z.object({
 });
 
 export const postReimbursementPermission = {
-  update: "invoicing"
+  "invoicing.reimbursements": "Edit"
 } satisfies PermissionRule<z.output<typeof postReimbursementInput>>;
 
 /**
@@ -20407,27 +20436,25 @@ async function loadRecognitionRows(
     if (isAccountClass(account.class)) classById.set(account.id, account.class);
   }
 
-  const rows = scheduled.map(
-    (row): RecognitionRow => ({
-      scheduleId: row.scheduleId,
-      runId: row.runId,
-      runReadableId: row.runReadableId,
-      runPeriodEnd: row.runPeriodEnd,
-      runType: row.runType,
-      // Every journal takes its own month: there is no period yet.
-      postingDate: monthEndOf(row.scheduledDate),
-      type: row.type,
-      amount: Number(row.amount),
-      debitAccountId: row.debitAccountId,
-      creditAccountId: row.creditAccountId,
-      salesInvoiceLineId: row.salesInvoiceLineId,
-      rentalAgreementLineId: row.rentalAgreementLineId,
-      customerContractLineId: row.customerContractLineId,
-      rentalLeaseScheduleLineId: row.rentalLeaseScheduleLineId,
-      leaseId: row.leaseId,
-      leaseScheduleLineId: row.leaseScheduleLineId
-    })
-  );
+  const rows = scheduled.map((row): RecognitionRow => ({
+    scheduleId: row.scheduleId,
+    runId: row.runId,
+    runReadableId: row.runReadableId,
+    runPeriodEnd: row.runPeriodEnd,
+    runType: row.runType,
+    // Every journal takes its own month: there is no period yet.
+    postingDate: monthEndOf(row.scheduledDate),
+    type: row.type,
+    amount: Number(row.amount),
+    debitAccountId: row.debitAccountId,
+    creditAccountId: row.creditAccountId,
+    salesInvoiceLineId: row.salesInvoiceLineId,
+    rentalAgreementLineId: row.rentalAgreementLineId,
+    customerContractLineId: row.customerContractLineId,
+    rentalLeaseScheduleLineId: row.rentalLeaseScheduleLineId,
+    leaseId: row.leaseId,
+    leaseScheduleLineId: row.leaseScheduleLineId
+  }));
   return {
     rows,
     sources: {
@@ -22354,8 +22381,8 @@ async function recostProjectIssues(
   const byIssue = Map.groupBy(issues, (issue) => issue.id);
   const adjustments = [...byIssue.values()].flatMap((rows) => {
     const issue = rows[0]!;
-    const entries = rows.map(
-      (row) => recostByCostLedger.get(row.costLedgerId)!
+    const entries = rows.map((row) =>
+      recostByCostLedger.get(row.costLedgerId)!
     );
     const amount = round(
       entries.reduce((sum, entry) => sum + entry.delta.delta, 0)
@@ -22759,10 +22786,6 @@ export type ActivateAccountingResult = {
 
 const OPENING_JOURNAL_DESCRIPTION = "Opening Balance";
 
-export const activateAccountingPermission = {
-  update: "accounting"
-} satisfies PermissionRule<z.output<typeof activateAccountingInput>>;
-
 export async function activateAccounting(
   ctx: ServiceContext,
   raw: z.input<typeof activateAccountingInput>
@@ -23127,7 +23150,7 @@ export type JournalLegacyDocumentsResult = {
 };
 
 export const journalLegacyDocumentsPermission = {
-  update: "accounting"
+  "accounting.journalEntries": "Edit"
 } satisfies PermissionRule<z.output<typeof journalLegacyDocumentsInput>>;
 
 export async function repairLegacyJournals(
@@ -24071,8 +24094,11 @@ export const proposeRevenueRecognitionRunInput = z.object({
   type: z.enum(["Revenue Recognition", "Lease"]).default("Revenue Recognition")
 });
 
+// Both run pages: the posting contract types `type` as optional (it
+// defaults), so a rule keyed on it cannot type-check for its callers.
 export const proposeRevenueRecognitionRunPermission = {
-  create: "accounting"
+  "accounting.revenueRecognition": "Create",
+  "accounting.leases": "Create"
 } satisfies PermissionRule<z.output<typeof proposeRevenueRecognitionRunInput>>;
 
 /** Proposes ONE Draft run for the period, or null when nothing is due (see
@@ -24118,7 +24144,11 @@ class PreviewRollback extends Error {
 }
 
 export const previewRevenueRecognitionRunPermission = {
-  view: "accounting"
+  by: "type",
+  rules: {
+    "Revenue Recognition": { "accounting.revenueRecognition": "View" },
+    Lease: { "accounting.leases": "View" }
+  }
 } satisfies PermissionRule<z.output<typeof previewRevenueRecognitionRunInput>>;
 
 export async function previewRevenueRecognitionRun(
@@ -24160,9 +24190,11 @@ export type RunRecalculation = {
   deleted: boolean;
 };
 
-export const recalculateRevenueRecognitionRunPermission = {
-  update: "accounting"
-} satisfies PermissionRule<
+export const recalculateRevenueRecognitionRunPermission = rowRule(
+  "revenueRecognitionRun",
+  "Edit",
+  { id: "runId" }
+) satisfies PermissionRule<
   z.output<typeof recalculateRevenueRecognitionRunInput>
 >;
 

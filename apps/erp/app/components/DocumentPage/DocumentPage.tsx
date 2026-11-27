@@ -24,7 +24,7 @@ type DocumentPageContextType = {
 const DocumentPageContext = createContext<DocumentPageContextType>({
   hasSidebar: false,
   isSidebarOpen: false,
-  // biome-ignore lint/suspicious/noEmptyBlockStatements: no-op outside a DocumentPage
+  // oxlint-disable-next-line no-empty-function -- no-op outside a DocumentPage
   toggleSidebar: () => {}
 });
 

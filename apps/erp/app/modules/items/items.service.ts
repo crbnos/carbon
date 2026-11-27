@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { NotFoundError, ServerFnError } from "@carbon/api/errors";
-import type { PermissionRule } from "@carbon/api/permissions";
+import {
+  type GateLevel,
+  type PermissionRule,
+  type RowHop,
+  rowRule
+} from "@carbon/api/permissions";
 import {
   CarbonError,
   type ServiceContext
@@ -18,6 +23,7 @@ import {
   fetchAllRecords,
   getCompanyTimeZone
 } from "@carbon/database";
+import { type Action, ITEM_TYPE_PAGES } from "@carbon/database/access";
 import {
   type ExpressionBuilder,
   type Kysely,
@@ -43,6 +49,7 @@ import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/context.server";
 import { NotificationEvent } from "@carbon/notifications";
+import type { JSONContent } from "@carbon/react";
 import {
   datetime,
   getReadableIdWithRevision,
@@ -54,7 +61,7 @@ import {
   withPathIds
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type { Transaction } from "kysely";
+import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { data } from "react-router";
 import { z } from "zod";
@@ -63,6 +70,7 @@ import {
   getCompanySettings,
   loadMethodWriteRefusals
 } from "~/modules/settings/settings.service";
+import type { ListItem } from "~/types";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
   listCount,
@@ -89,7 +97,7 @@ import { normalizeOperationSourceIds } from "../shared/shared.models";
 import * as sharedPostings from "../shared/shared.service";
 import { invokePosting } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
-import type { MethodType, SourcingType } from "../shared/types";
+import type { MethodItemType, MethodType, SourcingType } from "../shared/types";
 import type { plmReleaseControl } from "./items.models";
 import {
   type ChangeNoticeChangeType,
@@ -149,15 +157,19 @@ import {
   type toolValidator,
   type unitOfMeasureValidator
 } from "./items.models";
-import { getNextRevision } from "./items.utils";
+import { getConfigurationParameters, getNextRevision } from "./items.utils";
 import {
   checkMaterialProperties,
   clearsSubstanceOrShape,
   generatedIdsNeedSubstanceAndShape,
+  generatedMaterialUpdateRefusal,
   generateMaterialIdentity,
+  type MaterialPropertyField,
   type MaterialPropertyLookups,
   type MaterialPropertyValues,
+  materialCostFields,
   materialItemUpdateFields,
+  newMaterialRevisions,
   noMaterialProperties,
   resolveMaterialProperties,
   sentFields,
@@ -181,6 +193,12 @@ const SERVICES_LIST_COLUMNS =
 
 const logger = getLogger("erp", "items");
 
+/** Activating a method version is an edit of its item, on the item type's page. */
+export const activateMethodVersionPermission = itemRule("Edit", {
+  id: "id",
+  from: "makeMethod"
+});
+
 export async function activateMethodVersion(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -199,7 +217,7 @@ export async function activateMethodVersion(
       id
     },
     sharedPostings.convertDocument,
-    { as: sharedPostings.convertDocumentPermission }
+    { as: activateMethodVersionPermission }
   );
 }
 
@@ -301,6 +319,72 @@ async function requireCompanyPermission(
   return { error: gate.error };
 }
 
+/**
+ * The item policies key on the page of each item's type, so a write that
+ * skips RLS asks that page's key for every type the items have: one read of
+ * the types, then one check per page (at most five). A type no page owns
+ * (Fixture) is refused, as its policy refuses it.
+ */
+async function requireItemPagePermission(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemIds: string[],
+  action: Action
+): Promise<{ error: ServiceError | null }> {
+  if (itemIds.length === 0) return { error: null };
+  const items = await client
+    .from("item")
+    .select("type")
+    .in("id", [...new Set(itemIds)])
+    .eq("companyId", companyId);
+  if (items.error) return { error: items.error };
+  const pages = new Set<string>();
+  for (const { type } of items.data) {
+    const page = ITEM_TYPE_PAGES[type];
+    if (!page) return { error: { message: `${type} items cannot be changed` } };
+    pages.add(page);
+  }
+  const checks = await Promise.all(
+    [...pages].map((page) =>
+      requireCompanyPermission(client, companyId, `${page}_${action}`)
+    )
+  );
+  return { error: checks.find((check) => check.error)?.error ?? null };
+}
+
+/** A refusal thrown inside a transaction, which rolls it back. Its message is
+ *  written for the person. */
+class RuleRefusal extends Error {}
+
+// A thrown Kysely/Postgres error in the { message, code } shape services
+// return. The code is the SQLSTATE (23505 for a taken revision label).
+function writeError(error: unknown): ServiceError {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code: unknown }).code)
+      : undefined;
+  const message = error instanceof Error ? error.message : String(error);
+  return code ? { code, message } : { message };
+}
+
+/**
+ * The service error of a failed transaction, logged as `failure`: a
+ * {@link RuleRefusal} is a rule refusal (a warning), anything else a write
+ * failure.
+ */
+function transactionError(
+  error: unknown,
+  failure: string,
+  context: Record<string, unknown>
+): ServiceError {
+  if (error instanceof RuleRefusal) {
+    logger.warning(failure, { ...context, error });
+    return ruleError(error.message);
+  }
+  logger.error(failure, { ...context, error });
+  return writeError(error);
+}
+
 // What a new revision inherits from the revision it was copied from, beyond the
 // item row and the method: replenishment (batch size, scrap percent, lead time,
 // the preferred supplier and its purchasing unit), each location's reorder
@@ -347,9 +431,10 @@ async function copyItemPlanningAndPurchasing(
   // A reorder policy is only meaningful with its parameters (Maximum
   // Quantity needs a reorder point and a maximum, and so on), so the policy
   // and its sizing parameters are copied together, location by location.
-  // The planning horizon and the responsible employee are not copied: a new
-  // revision inherits the company defaults for both. A location the source
-  // has no planning row for keeps the defaults.
+  // The planning horizon, the planning time fence and the responsible
+  // employee are not copied: a new revision inherits the company defaults for
+  // the first and last, and the location's fence. A location the source has
+  // no planning row for keeps the defaults.
   await trx
     .updateTable("itemPlanning as target")
     .from("itemPlanning as source")
@@ -515,11 +600,18 @@ export async function createRevision(
   }
 
   // The revision is written with Kysely: the item INSERT policy asks for
-  // parts_create in the item's company.
+  // create on the page of the item's type.
+  const page = ITEM_TYPE_PAGES[item.type];
+  if (!page) {
+    return {
+      data: null,
+      error: { message: `${item.type} items cannot have revisions` }
+    };
+  }
   const permitted = await requireCompanyPermission(
     client,
     companyId,
-    "parts_create"
+    `${page}_create`
   );
   if (permitted.error) return { data: null, error: permitted.error };
 
@@ -529,6 +621,22 @@ export async function createRevision(
   let revisionItemId: string;
   try {
     revisionItemId = await db.transaction().execute(async (trx) => {
+      if (item.type === "Material") {
+        // A rename of the material takes this lock too: under it the readable
+        // id read before the transaction is still the material's.
+        await lockMaterialReadableIds(trx, companyId, [item.readableId]);
+        const source = await trx
+          .selectFrom("item")
+          .select("readableId")
+          .where("id", "=", item.id)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (source?.readableId !== item.readableId) {
+          throw new RuleRefusal(
+            `Material ${item.readableId} was renamed. Send the call again`
+          );
+        }
+      }
       const inserted = await trx
         .insertInto("item")
         .values({
@@ -565,13 +673,14 @@ export async function createRevision(
       return inserted.id;
     });
   } catch (error) {
-    logger.error("Failed to create revision", {
-      companyId,
-      sourceItemId: item.id,
-      revision,
-      error
-    });
-    return { data: null, error: writeError(error) };
+    return {
+      data: null,
+      error: transactionError(error, "Failed to create revision", {
+        companyId,
+        sourceItemId: item.id,
+        revision
+      })
+    };
   }
 
   if (item.replenishmentSystem !== "Buy") {
@@ -653,39 +762,112 @@ export async function deleteSupplierPart(
   );
 }
 
+/**
+ * Deletes a configuration parameter group of the company. Its parameters move
+ * to the same item's Ungrouped group in the same transaction, so a refused or
+ * failed move leaves the group and its parameters as they were. The Ungrouped
+ * group itself is refused, as its Delete menu item is disabled.
+ */
 export async function deleteConfigurationParameterGroup(
   client: SupabaseClient<Database>,
-  id: string
-) {
-  // Get any parameters that belong to this group
-  const { data: parameters } = await client
-    .from("configurationParameter")
-    .select("id")
-    .eq("configurationParameterGroupId", id);
-
-  if (parameters && parameters.length > 0) {
-    // Get the ungrouped group
-    const { data: ungrouped } = await client
-      .from("configurationParameterGroup")
-      .select("id")
-      .eq("isUngrouped", true)
-      .single();
-
-    if (ungrouped) {
-      // Update all parameters to use the ungrouped group
-      await client
-        .from("configurationParameter")
-        .update({ configurationParameterGroupId: ungrouped.id })
-        .eq("configurationParameterGroupId", id);
-    }
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+): Promise<
+  { data: { id: string }[]; error: null } | { data: null; error: ServiceError }
+> {
+  const { id, companyId } = args;
+  // Kysely bypasses RLS: the group's DELETE policy asks for delete on the page
+  // of its item's type. The move is part of the delete, so it needs no more.
+  // A group the caller cannot read is refused here, before the transaction.
+  const owner = await client
+    .from("configurationParameterGroup")
+    .select("itemId")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (owner.error) return { data: null, error: owner.error };
+  if (!owner.data) {
+    return {
+      data: null,
+      error: ruleError("Configuration parameter group not found")
+    };
   }
-  return requireAffected(
-    client
-      .from("configurationParameterGroup")
-      .delete()
-      .eq("id", id)
-      .select("id")
+  const permitted = await requireItemPagePermission(
+    client,
+    companyId,
+    [owner.data.itemId],
+    "delete"
   );
+  if (permitted.error) return { data: null, error: permitted.error };
+
+  try {
+    const deleted = await db.transaction().execute(async (trx) => {
+      // The lock holds off a parameter added to the group meanwhile.
+      const group = await trx
+        .selectFrom("configurationParameterGroup")
+        .select(["itemId", "isUngrouped"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!group) {
+        throw new RuleRefusal("Configuration parameter group not found");
+      }
+      if (group.isUngrouped) {
+        throw new RuleRefusal("The Ungrouped group cannot be deleted");
+      }
+
+      const parameters = await trx
+        .selectFrom("configurationParameter")
+        .select("id")
+        .where("configurationParameterGroupId", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+      if (parameters.length > 0) {
+        // Every configurable item has its own Ungrouped group.
+        const ungrouped = await trx
+          .selectFrom("configurationParameterGroup")
+          .select("id")
+          .where("itemId", "=", group.itemId)
+          .where("companyId", "=", companyId)
+          .where("isUngrouped", "=", true)
+          .executeTakeFirst();
+        if (!ungrouped) {
+          throw new RuleRefusal(
+            "The item has no Ungrouped group to move this group's parameters to"
+          );
+        }
+        await trx
+          .updateTable("configurationParameter")
+          .set({ configurationParameterGroupId: ungrouped.id })
+          .where("configurationParameterGroupId", "=", id)
+          .where("itemId", "=", group.itemId)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      const removed = await trx
+        .deleteFrom("configurationParameterGroup")
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .returning("id")
+        .execute();
+      if (removed.length !== 1) {
+        throw new Error(`Configuration parameter group ${id} was not deleted`);
+      }
+      return removed;
+    });
+    return { data: deleted, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: transactionError(
+        error,
+        "Failed to delete the configuration parameter group",
+        { companyId, id }
+      )
+    };
+  }
 }
 
 // An item delete cascades to its supplier parts, and a price break restricts
@@ -727,11 +909,12 @@ export async function deleteItem(
   id: string,
   companyId: string
 ): Promise<{ data: null; error: ServiceError | null }> {
-  // The item DELETE policy asks for parts_delete in the item's company.
-  const permitted = await requireCompanyPermission(
+  // The item DELETE policy asks for delete on the page of the item's type.
+  const permitted = await requireItemPagePermission(
     client,
     companyId,
-    "parts_delete"
+    [id],
+    "delete"
   );
   if (permitted.error) return { data: null, error: permitted.error };
 
@@ -2070,7 +2253,6 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
     // node: it keeps the made copy, whatever order the rows came in.
     const existing = lookup[itemId].data as Method | undefined;
     if (!existing || existing.isPickDescendant) {
-      // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
       lookup[itemId]["data"] = item;
     }
 
@@ -2084,7 +2266,6 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
         lookup[parentId] = { id: parentId, children: [] };
       }
 
-      // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
       lookup[parentId]["children"].push(treeItem);
     }
   }
@@ -2421,6 +2602,29 @@ export async function getPartUsedIn(
   return readUsedIn(client, itemId, companyId);
 }
 
+// Where each of several items is used, in one call: one per item swamps the
+// connection pool on a change notice with hundreds of items.
+export async function getItemsUsedIn(
+  client: SupabaseClient<Database>,
+  itemIds: string[],
+  companyId: string
+): Promise<{
+  data: Map<string, ItemUsedIn>;
+  error: { message: string } | null;
+}> {
+  const usedIn = new Map<string, ItemUsedIn>();
+  if (itemIds.length === 0) return { data: usedIn, error: null };
+
+  const { data, error } = await client.rpc("get_items_used_in", {
+    item_ids: [...new Set(itemIds)],
+    company_id: companyId
+  });
+  if (error) return { data: usedIn, error };
+  for (const row of data ?? [])
+    usedIn.set(row.itemId, row.usedIn as unknown as ItemUsedIn);
+  return { data: usedIn, error: null };
+}
+
 export async function getPickMethod(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2716,6 +2920,37 @@ export async function updateDefaultRevision(
     .in("itemId", itemIds);
 }
 
+/**
+ * Refuses a configuration group that is not one of the item's. The foreign key
+ * checks only that the group exists, and a parameter in another item's group
+ * is hidden from its own item's card. No group (Ungrouped) passes.
+ */
+export async function requireItemConfigurationGroup(
+  client: SupabaseClient<Database>,
+  args: {
+    groupId: string | null | undefined;
+    itemId: string;
+    companyId: string;
+  }
+): Promise<{ data: null; error: ServiceError | null }> {
+  if (args.groupId == null) return { data: null, error: null };
+  const group = await client
+    .from("configurationParameterGroup")
+    .select("id")
+    .eq("id", args.groupId)
+    .eq("itemId", args.itemId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (group.error) return { data: null, error: group.error };
+  if (!group.data) {
+    return {
+      data: null,
+      error: ruleError("The group is not one of this item's groups")
+    };
+  }
+  return { data: null, error: null };
+}
+
 export async function updateConfigurationParameterOrder(
   client: SupabaseClient<Database>,
   data: Omit<
@@ -2723,14 +2958,34 @@ export async function updateConfigurationParameterOrder(
     "configurationParameterGroupId"
   > & {
     configurationParameterGroupId?: string | null;
+    companyId: string;
     updatedBy: string;
   }
 ) {
+  if (data.configurationParameterGroupId != null) {
+    const parameter = await client
+      .from("configurationParameter")
+      .select("itemId")
+      .eq("id", data.id)
+      .eq("companyId", data.companyId)
+      .maybeSingle();
+    if (parameter.error) return { data: null, error: parameter.error };
+    // A missing parameter is refused by the update below.
+    if (parameter.data) {
+      const group = await requireItemConfigurationGroup(client, {
+        groupId: data.configurationParameterGroupId,
+        itemId: parameter.data.itemId,
+        companyId: data.companyId
+      });
+      if (group.error) return group;
+    }
+  }
   return requireAffected(
     client
       .from("configurationParameter")
       .update(sanitize(data))
       .eq("id", data.id)
+      .eq("companyId", data.companyId)
       .select("id")
   );
 }
@@ -2774,6 +3029,12 @@ export async function updateRevision(
   );
 }
 
+/**
+ * Saves the parameter `id` of the item, or without `id` adds one to the sent
+ * group, else to the item's Ungrouped group (made when the item has none).
+ * A group must be one of the item's (`requireItemConfigurationGroup`). An add
+ * answers the new parameter's id.
+ */
 export async function upsertConfigurationParameter(
   client: SupabaseClient<Database>,
   configurationParameter: z.infer<typeof configurationParameterValidator> & {
@@ -2782,6 +3043,13 @@ export async function upsertConfigurationParameter(
   }
 ) {
   const { userId, ...data } = configurationParameter;
+  const group = await requireItemConfigurationGroup(client, {
+    groupId: data.configurationParameterGroupId,
+    itemId: data.itemId,
+    companyId: data.companyId
+  });
+  if (group.error) return group;
+
   if (configurationParameter.id) {
     return requireAffected(
       client
@@ -2794,6 +3062,8 @@ export async function upsertConfigurationParameter(
           })
         )
         .eq("id", configurationParameter.id)
+        .eq("itemId", data.itemId)
+        .eq("companyId", data.companyId)
         .select("id")
     );
   }
@@ -2802,7 +3072,11 @@ export async function upsertConfigurationParameter(
   const existingGroups = await client
     .from("configurationParameterGroup")
     .select("id, isUngrouped, sortOrder")
-    .eq("itemId", data.itemId);
+    .eq("itemId", data.itemId)
+    .eq("companyId", data.companyId);
+  if (existingGroups.error) {
+    return { data: null, error: existingGroups.error };
+  }
 
   const ungroupedGroup = existingGroups.data?.find(
     (group) => group.isUngrouped
@@ -2831,12 +3105,17 @@ export async function upsertConfigurationParameter(
     ungroupedGroupId = ungroupedGroupInsert.data.id;
   }
 
-  return client.from("configurationParameter").insert({
-    ...data,
-    key: data.key ?? "",
-    createdBy: userId,
-    configurationParameterGroupId: ungroupedGroupId
-  });
+  return client
+    .from("configurationParameter")
+    .insert({
+      ...data,
+      key: data.key ?? "",
+      createdBy: userId,
+      configurationParameterGroupId:
+        data.configurationParameterGroupId ?? ungroupedGroupId
+    })
+    .select("id")
+    .single();
 }
 
 export async function upsertConfigurationParameterGroup(
@@ -2849,22 +3128,29 @@ export async function upsertConfigurationParameterGroup(
   }
 ) {
   const { itemId, ...data } = configurationParameterGroup;
+  // A group of another item or company, or one RLS hides, matches no row:
+  // `.single()` refuses it.
   if (configurationParameterGroup.id) {
-    return requireAffected(
-      client
-        .from("configurationParameterGroup")
-        .update({
-          name: data.name
-        })
-        .eq("id", configurationParameterGroup.id)
-        .select("id")
-    );
+    return client
+      .from("configurationParameterGroup")
+      .update({
+        name: data.name
+      })
+      .eq("id", configurationParameterGroup.id)
+      .eq("itemId", itemId)
+      .eq("companyId", data.companyId)
+      .select("id")
+      .single();
   }
 
   const existingGroups = await client
     .from("configurationParameterGroup")
     .select("id, isUngrouped, sortOrder")
-    .eq("itemId", itemId);
+    .eq("itemId", itemId)
+    .eq("companyId", data.companyId);
+  if (existingGroups.error) {
+    return { data: null, error: existingGroups.error };
+  }
 
   const maxSortOrder =
     existingGroups.data?.reduce(
@@ -2872,12 +3158,16 @@ export async function upsertConfigurationParameterGroup(
       1
     ) ?? 0;
 
-  return client.from("configurationParameterGroup").insert({
-    ...data,
-    itemId,
-    name: data.name,
-    sortOrder: maxSortOrder + 1
-  });
+  return client
+    .from("configurationParameterGroup")
+    .insert({
+      ...data,
+      itemId,
+      name: data.name,
+      sortOrder: maxSortOrder + 1
+    })
+    .select("id")
+    .single();
 }
 
 export async function upsertConfigurationRule(
@@ -2993,14 +3283,10 @@ export async function getRecipeProcessIdsForItem(
   if (operations.error) {
     return { data: [] as string[], error: operations.error };
   }
-  const ids = Array.from(
-    new Set(
-      (operations.data ?? [])
-        .map((o) => o.processId)
-        .filter((id): id is string => !!id)
-    )
-  );
-  return { data: ids, error: null };
+  return {
+    data: pluckUnique(operations.data, (operation) => operation.processId),
+    error: null
+  };
 }
 
 /**
@@ -3080,20 +3366,8 @@ export async function upsertItemShelfLife(
     return client.from("itemShelfLife").delete().eq("itemId", args.itemId);
   }
 
-  const days = args.mode === "Fixed Duration" ? (args.days ?? null) : null;
-  const triggerProcessId =
-    args.mode === "Fixed Duration" ? (args.triggerProcessId ?? null) : null;
-  // triggerTiming only matters when there's a trigger process. Reset to the
-  // default 'After' otherwise so the column never carries a stale value
-  // from a prior config.
-  const triggerTiming = triggerProcessId
-    ? (args.triggerTiming ?? "After")
-    : "After";
-  // Calculate-from-BOM is meaningful only on Fixed Duration; the table
-  // CHECK enforces the same rule. Coerce any stale flag back to false on
-  // mode switches so the row never carries an inconsistent combo.
-  const calculateFromBom =
-    args.mode === "Fixed Duration" ? (args.calculateFromBom ?? false) : false;
+  const { days, triggerProcessId, triggerTiming, calculateFromBom } =
+    normalizeShelfLifePolicy(args.mode, args);
 
   // Reject trigger processes that aren't on the item's active recipe.
   // The set-shelf-life helper gates on processId equality, so a process
@@ -3165,6 +3439,241 @@ export async function upsertItemShelfLife(
   });
 }
 
+/** The shelf-life fields a form or call sends. An undefined `mode` leaves the
+ *  item's policy alone. */
+type ShelfLifeSetup = {
+  mode?: (typeof shelfLifeModes)[number];
+  days?: number;
+  triggerProcessId?: string;
+  triggerTiming?: (typeof shelfLifeTriggerTimings)[number];
+  calculateFromBom?: boolean;
+};
+
+/**
+ * The itemShelfLife row a managed mode stores. Days, the trigger process and
+ * calculate-from-BOM belong to Fixed Duration only (the table's CHECK holds
+ * the last), and the timing to a trigger process; otherwise they reset, so a
+ * row never keeps a value from an earlier policy.
+ */
+function normalizeShelfLifePolicy(
+  mode: Exclude<(typeof shelfLifeModes)[number], "NotManaged">,
+  setup: ShelfLifeSetup
+): {
+  mode: Exclude<(typeof shelfLifeModes)[number], "NotManaged">;
+  days: number | null;
+  triggerProcessId: string | null;
+  triggerTiming: (typeof shelfLifeTriggerTimings)[number];
+  calculateFromBom: boolean;
+} {
+  const fixed = mode === "Fixed Duration";
+  const triggerProcessId = fixed ? (setup.triggerProcessId ?? null) : null;
+  return {
+    mode,
+    days: fixed ? (setup.days ?? null) : null,
+    triggerProcessId,
+    triggerTiming: triggerProcessId
+      ? (setup.triggerTiming ?? "After")
+      : "After",
+    calculateFromBom: fixed ? (setup.calculateFromBom ?? false) : false
+  };
+}
+
+/** The shelf-life setup of an item form or call, by its item field names. */
+function shelfLifeSetupOf(item: {
+  shelfLifeMode?: ShelfLifeSetup["mode"];
+  shelfLifeDays?: number;
+  shelfLifeTriggerProcessId?: string;
+  shelfLifeTriggerTiming?: ShelfLifeSetup["triggerTiming"];
+  shelfLifeCalculateFromBom?: boolean;
+}): ShelfLifeSetup {
+  return {
+    mode: item.shelfLifeMode,
+    days: item.shelfLifeDays,
+    triggerProcessId: item.shelfLifeTriggerProcessId,
+    triggerTiming: item.shelfLifeTriggerTiming,
+    calculateFromBom: item.shelfLifeCalculateFromBom
+  };
+}
+
+/**
+ * Writes the items' shelf-life policy (one setup for all of them) inside the
+ * caller's transaction, with the rules of {@link upsertItemShelfLife}. The
+ * setup is checked for every item before the one write. Throws
+ * {@link RuleRefusal} for a trigger process that is not on an item's recipe.
+ */
+async function writeItemShelfLife(
+  trx: KyselyTx,
+  args: {
+    itemIds: string[];
+    companyId: string;
+    userId: string;
+    updatedAt: string;
+    shelfLife: ShelfLifeSetup;
+  }
+): Promise<void> {
+  const { itemIds, companyId, updatedAt } = args;
+  const { mode } = args.shelfLife;
+
+  // mode undefined = caller didn't surface the field; leave any existing
+  // row alone (matches upsertItemShelfLife semantics).
+  if (mode === undefined || itemIds.length === 0) return;
+
+  if (mode === "NotManaged") {
+    await trx
+      .deleteFrom("itemShelfLife")
+      .where("itemId", "in", itemIds)
+      .where("companyId", "=", companyId)
+      .execute();
+    return;
+  }
+
+  const policy = normalizeShelfLifePolicy(mode, args.shelfLife);
+
+  // Reject trigger processes that aren't on each item's active recipe.
+  // The set-shelf-life helper gates on processId equality, so picking a
+  // process the recipe never runs would silently never set the expiry.
+  if (policy.triggerProcessId) {
+    const onRecipe = await trx
+      .selectFrom("methodOperation as mo")
+      .innerJoin("activeMakeMethods as amm", "amm.id", "mo.makeMethodId")
+      .select("amm.itemId")
+      .where("amm.itemId", "in", itemIds)
+      .where("amm.companyId", "=", companyId)
+      .where("mo.processId", "=", policy.triggerProcessId)
+      .where("mo.methodCorrectionId", "is", null)
+      .execute();
+    const allowed = new Set(pluckUnique(onRecipe, (row) => row.itemId));
+    if (itemIds.some((itemId) => !allowed.has(itemId))) {
+      throw new RuleRefusal(
+        "Shelf-life trigger process must be one of the operations on this item's recipe"
+      );
+    }
+  }
+
+  // An item that has a policy keeps its creator. A row of another company is
+  // left alone, and the write fails.
+  const written = await trx
+    .insertInto("itemShelfLife")
+    .values(
+      itemIds.map((itemId) => ({
+        itemId,
+        ...policy,
+        companyId,
+        createdBy: args.userId
+      }))
+    )
+    .onConflict((oc) =>
+      oc
+        .column("itemId")
+        .doUpdateSet({ ...policy, updatedBy: args.userId, updatedAt })
+        .where("itemShelfLife.companyId", "=", companyId)
+    )
+    .executeTakeFirst();
+  if (Number(written.numInsertedOrUpdatedRows) !== itemIds.length) {
+    throw new Error("The shelf-life policy was not saved for every item");
+  }
+}
+
+/**
+ * Sets the items' default storage unit at its location inside the caller's
+ * transaction, as {@link upsertItemDefaultPickMethod} does: no storage unit
+ * leaves the pick methods alone. Throws {@link RuleRefusal} for a storage unit
+ * that is not the company's.
+ */
+async function writeItemDefaultPickMethod(
+  trx: KyselyTx,
+  args: {
+    itemIds: string[];
+    companyId: string;
+    userId: string;
+    updatedAt: string;
+    storageUnitId: string | undefined;
+  }
+): Promise<void> {
+  const { itemIds, companyId, userId, updatedAt, storageUnitId } = args;
+  if (!storageUnitId || itemIds.length === 0) return;
+
+  const storageUnit = await trx
+    .selectFrom("storageUnit")
+    .select("locationId")
+    .where("id", "=", storageUnitId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!storageUnit) {
+    throw new RuleRefusal(`Storage unit ${storageUnitId} not found`);
+  }
+
+  await trx
+    .insertInto("pickMethod")
+    .values(
+      itemIds.map((itemId) => ({
+        itemId,
+        locationId: storageUnit.locationId,
+        defaultStorageUnitId: storageUnitId,
+        companyId,
+        createdBy: userId,
+        updatedBy: userId,
+        updatedAt
+      }))
+    )
+    .onConflict((oc) =>
+      oc
+        .columns(["itemId", "locationId"])
+        .doUpdateSet({
+          defaultStorageUnitId: storageUnitId,
+          updatedBy: userId,
+          updatedAt
+        })
+        .where("pickMethod.companyId", "=", companyId)
+    )
+    .execute();
+}
+
+/**
+ * Writes the items' group (posting group) and unit cost inside the caller's
+ * transaction; a field left out of `cost` is left alone. The item insert
+ * trigger creates each item's itemCost row, so this updates it. Throws
+ * {@link RuleRefusal} for a group that is not the company's (its foreign key
+ * checks only that it exists, and Kysely bypasses RLS) and for an item whose
+ * cost row is missing, naming it `label`.
+ */
+async function writeItemCost(
+  trx: KyselyTx,
+  args: {
+    itemIds: string[];
+    label: string;
+    companyId: string;
+    userId: string;
+    updatedAt: string;
+    cost: { itemPostingGroupId?: string | null; unitCost?: number | null };
+  }
+): Promise<void> {
+  const { itemIds, companyId, cost } = args;
+  if (itemIds.length === 0 || Object.keys(cost).length === 0) return;
+
+  if (cost.itemPostingGroupId) {
+    const group = await trx
+      .selectFrom("itemPostingGroup")
+      .select("id")
+      .where("id", "=", cost.itemPostingGroupId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!group) {
+      throw new RuleRefusal(`Item group ${cost.itemPostingGroupId} not found`);
+    }
+  }
+
+  const updated = await trx
+    .updateTable("itemCost")
+    .set({ ...cost, updatedBy: args.userId, updatedAt: args.updatedAt })
+    .where("itemId", "in", itemIds)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (Number(updated.numUpdatedRows) !== itemIds.length) {
+    throw new RuleRefusal(`Item cost for ${args.label} not found`);
+  }
+}
+
 /**
  * Atomic counterpart to {@link upsertPickMethod} + {@link upsertItemShelfLife}.
  *
@@ -3184,13 +3693,7 @@ export async function upsertPickMethodWithShelfLife(
     customFields?: Json;
     companyId: string;
     userId: string;
-    shelfLife: {
-      mode?: (typeof shelfLifeModes)[number];
-      days?: number;
-      triggerProcessId?: string;
-      triggerTiming?: (typeof shelfLifeTriggerTimings)[number];
-      calculateFromBom?: boolean;
-    };
+    shelfLife: ShelfLifeSetup;
   }
 ) {
   const updatedAt = datetime.timestamp();
@@ -3224,94 +3727,13 @@ export async function upsertPickMethodWithShelfLife(
       .where("companyId", "=", args.companyId)
       .execute();
 
-    const { mode, days, triggerProcessId, triggerTiming, calculateFromBom } =
-      args.shelfLife;
-
-    // mode undefined = caller didn't surface the field; leave any existing
-    // row alone (matches upsertItemShelfLife semantics).
-    if (mode === undefined) return;
-
-    if (mode === "NotManaged") {
-      await trx
-        .deleteFrom("itemShelfLife")
-        .where("itemId", "=", args.itemId)
-        .where("companyId", "=", args.companyId)
-        .execute();
-      return;
-    }
-
-    const normalizedDays = mode === "Fixed Duration" ? (days ?? null) : null;
-    const normalizedTriggerProcess =
-      mode === "Fixed Duration" ? (triggerProcessId ?? null) : null;
-    const normalizedTriggerTiming = normalizedTriggerProcess
-      ? (triggerTiming ?? "After")
-      : "After";
-    const normalizedCalcFromBom =
-      mode === "Fixed Duration" ? (calculateFromBom ?? false) : false;
-
-    // Reject trigger processes that aren't on the item's active recipe.
-    // The set-shelf-life helper gates on processId equality, so picking a
-    // process the recipe never runs would silently never set the expiry.
-    if (normalizedTriggerProcess) {
-      const recipeProcessIds = await trx
-        .selectFrom("methodOperation as mo")
-        .innerJoin("activeMakeMethods as amm", "amm.id", "mo.makeMethodId")
-        .select("mo.processId")
-        .where("amm.itemId", "=", args.itemId)
-        .where("amm.companyId", "=", args.companyId)
-        .where("mo.processId", "is not", null)
-        .where("mo.methodCorrectionId", "is", null)
-        .execute();
-      const allowed = new Set(
-        recipeProcessIds
-          .map((r) => r.processId)
-          .filter((id): id is string => !!id)
-      );
-      if (!allowed.has(normalizedTriggerProcess)) {
-        throw new Error(
-          "Shelf-life trigger process must be one of the operations on this item's recipe"
-        );
-      }
-    }
-
-    const existing = await trx
-      .selectFrom("itemShelfLife")
-      .select("itemId")
-      .where("itemId", "=", args.itemId)
-      .where("companyId", "=", args.companyId)
-      .executeTakeFirst();
-
-    if (existing) {
-      await trx
-        .updateTable("itemShelfLife")
-        .set({
-          mode,
-          days: normalizedDays,
-          triggerProcessId: normalizedTriggerProcess,
-          triggerTiming: normalizedTriggerTiming,
-          calculateFromBom: normalizedCalcFromBom,
-          updatedBy: args.userId,
-          updatedAt
-        })
-        .where("itemId", "=", args.itemId)
-        .where("companyId", "=", args.companyId)
-        .execute();
-      return;
-    }
-
-    await trx
-      .insertInto("itemShelfLife")
-      .values({
-        itemId: args.itemId,
-        mode,
-        days: normalizedDays,
-        triggerProcessId: normalizedTriggerProcess,
-        triggerTiming: normalizedTriggerTiming,
-        calculateFromBom: normalizedCalcFromBom,
-        companyId: args.companyId,
-        createdBy: args.userId
-      })
-      .execute();
+    await writeItemShelfLife(trx, {
+      itemIds: [args.itemId],
+      companyId: args.companyId,
+      userId: args.userId,
+      updatedAt,
+      shelfLife: args.shelfLife
+    });
   });
 }
 
@@ -3592,99 +4014,157 @@ const typedItemTables = {
   Service: "service"
 } as const;
 
+/** The fields a part, tool or consumable is created with. */
+type NewTypedItem = Pick<
+  z.infer<typeof itemValidator>,
+  | "id"
+  | "name"
+  | "description"
+  | "replenishmentSystem"
+  | "defaultMethodType"
+  | "itemTrackingType"
+  | "unitOfMeasureCode"
+  | "postingGroupId"
+  | "unitCost"
+  | "defaultStorageUnitId"
+  | "shelfLifeMode"
+  | "shelfLifeDays"
+  | "shelfLifeTriggerProcessId"
+  | "shelfLifeTriggerTiming"
+  | "shelfLifeCalculateFromBom"
+> & {
+  revision?: string;
+  modelUploadId?: string;
+  lotSize?: number;
+  customFields?: Json;
+  companyId: string;
+  createdBy: string;
+};
+
 /**
- * Creates a consumable (item row and consumable row) or updates one; on update
- * `id` is the item id (uuid) or the consumable's readable id and the write is
- * a full replace, so omitted optional fields are cleared, but `active` is left
- * as stored.
+ * Creates a part, tool or consumable numbered `item.id`: the item row and its
+ * type row, its item group and unit cost, a part's batch size, the default
+ * storage unit and the shelf life, in one transaction, so a refused or failed
+ * step leaves no item holding the number against a retry. A part made in
+ * house gets no unit cost, and one only bought no batch size. A number
+ * another item has fails as a unique violation (23505). Returns the new
+ * item's id.
+ */
+export async function insertTypedItem(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  type: "Part" | "Tool" | "Consumable",
+  item: NewTypedItem
+): Promise<
+  { data: { id: string }; error: null } | { data: null; error: ServiceError }
+> {
+  const { companyId, createdBy } = item;
+  // Kysely bypasses RLS: the item INSERT policy asks for create on the page
+  // of the item's type.
+  const permitted = await requireCompanyPermission(
+    client,
+    companyId,
+    `${ITEM_TYPE_PAGES[type]}_create`
+  );
+  if (permitted.error) return { data: null, error: permitted.error };
+
+  const isPart = type === "Part";
+  try {
+    const id = await db.transaction().execute(async (trx) => {
+      const inserted = await trx
+        .insertInto("item")
+        .values({
+          readableId: item.id,
+          revision: item.revision,
+          name: item.name,
+          description: item.description,
+          type,
+          replenishmentSystem: item.replenishmentSystem,
+          defaultMethodType: item.defaultMethodType,
+          itemTrackingType: item.itemTrackingType,
+          unitOfMeasureCode: item.unitOfMeasureCode,
+          active: true,
+          modelUploadId: item.modelUploadId,
+          companyId,
+          createdBy
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      // A type row left by the number's deleted items is taken over.
+      const typed = { createdBy, customFields: toJson(item.customFields) };
+      await trx
+        .insertInto(typedItemTables[type])
+        .values({ id: item.id, companyId, ...typed })
+        .onConflict((oc) => oc.columns(["id", "companyId"]).doUpdateSet(typed))
+        .execute();
+
+      const writes = {
+        itemIds: [inserted.id],
+        companyId,
+        userId: createdBy,
+        updatedAt: datetime.timestamp()
+      };
+      const madeInHouse = isPart && item.replenishmentSystem === "Make";
+      await writeItemCost(trx, {
+        ...writes,
+        label: item.id,
+        cost: {
+          itemPostingGroupId: item.postingGroupId ?? null,
+          unitCost: madeInHouse ? null : (item.unitCost ?? null)
+        }
+      });
+      if (
+        isPart &&
+        item.replenishmentSystem !== "Buy" &&
+        item.lotSize !== undefined
+      ) {
+        await trx
+          .updateTable("itemReplenishment")
+          .set({ lotSize: item.lotSize })
+          .where("itemId", "=", inserted.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+      await writeItemDefaultPickMethod(trx, {
+        ...writes,
+        storageUnitId: item.defaultStorageUnitId
+      });
+      await writeItemShelfLife(trx, {
+        ...writes,
+        shelfLife: shelfLifeSetupOf(item)
+      });
+      return inserted.id;
+    });
+    return { data: { id }, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: transactionError(
+        error,
+        `Failed to create ${typedItemTables[type]}`,
+        {
+          companyId,
+          readableId: item.id
+        }
+      )
+    };
+  }
+}
+
+/**
+ * Updates a consumable; `id` is the item id (uuid) or the consumable's
+ * readable id and the write is a full replace, so omitted optional fields are
+ * cleared, but `active` is left as stored. `insertTypedItem` creates one.
  */
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
-  consumable:
-    | (z.infer<typeof consumableValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof consumableValidator> & {
-        companyId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in consumable) {
-    const itemInsert = await client
-      .from("item")
-      .insert({
-        readableId: consumable.id,
-        name: consumable.name,
-        description: consumable.description,
-        type: "Consumable",
-        replenishmentSystem: consumable.replenishmentSystem,
-        defaultMethodType: consumable.defaultMethodType,
-        itemTrackingType: consumable.itemTrackingType,
-        unitOfMeasureCode: consumable.unitOfMeasureCode,
-        active: true,
-        companyId: consumable.companyId,
-        createdBy: consumable.createdBy
-      })
-      .select("id")
-      .single();
-    if (itemInsert.error) return itemInsert;
-    const itemId = itemInsert.data?.id;
-
-    const [consumableInsert, itemCostUpdate] = await Promise.all([
-      client.from("consumable").upsert({
-        id: consumable.id,
-        companyId: consumable.companyId,
-        createdBy: consumable.createdBy,
-        customFields: consumable.customFields
-      }),
-      client
-        .from("itemCost")
-        .update(
-          sanitize({
-            itemPostingGroupId: consumable.postingGroupId,
-            unitCost: consumable.unitCost
-          })
-        )
-        .eq("itemId", itemId)
-    ]);
-
-    if (consumableInsert.error) return consumableInsert;
-    if (itemCostUpdate.error) return itemCostUpdate;
-
-    if (itemId) {
-      const pickMethod = await upsertItemDefaultPickMethod(client, {
-        itemId,
-        userId: consumable.createdBy,
-        storageUnitId: consumable.defaultStorageUnitId
-      });
-      if (pickMethod.error) return pickMethod;
-
-      const shelfLife = await upsertItemShelfLife(client, {
-        itemId,
-        userId: consumable.createdBy,
-        companyId: consumable.companyId,
-        mode: consumable.shelfLifeMode,
-        days: consumable.shelfLifeDays,
-        triggerProcessId: consumable.shelfLifeTriggerProcessId,
-        triggerTiming: consumable.shelfLifeTriggerTiming,
-        calculateFromBom: consumable.shelfLifeCalculateFromBom
-      });
-      if (shelfLife.error) return shelfLife;
-    }
-
-    const newConsumable = await client
-      .from("consumables")
-      .select("id")
-      .eq("readableId", consumable.id)
-      .eq("companyId", consumable.companyId)
-      .single();
-
-    return newConsumable;
+  consumable: z.infer<typeof consumableValidator> & {
+    companyId: string;
+    updatedBy: string;
+    customFields?: Json;
   }
-
+) {
   const updated = await updateTypedItem(client, {
     id: consumable.id,
     companyId: consumable.companyId,
@@ -3872,8 +4352,9 @@ export async function resolveItemIdFromExtractedText(
  * Creates a part (item row and part row) or updates one; on update `id` is the
  * item id (uuid) or the part's readable id and the write is a full replace, so
  * omitted optional fields are cleared, but `active` is left as stored.
- * `createPart` / `updatePart` are the operations; create also queues the
- * part's model optimisation.
+ * `updatePart` is the operation. The create writes one row at a time, so a
+ * late failure leaves the item behind: `createPart` creates through
+ * `insertTypedItem` instead, in one transaction.
  */
 export async function upsertPart(
   client: SupabaseClient<Database>,
@@ -3929,6 +4410,7 @@ export async function upsertPart(
           })
         )
         .eq("itemId", itemId)
+        .eq("companyId", part.companyId)
     ]);
 
     if (partInsert.error) return partInsert;
@@ -3942,7 +4424,8 @@ export async function upsertPart(
       const itemReplenishmentInsert = await client
         .from("itemReplenishment")
         .update({ lotSize: part.lotSize })
-        .eq("itemId", itemId);
+        .eq("itemId", itemId)
+        .eq("companyId", part.companyId);
 
       if (itemReplenishmentInsert.error) return itemReplenishmentInsert;
     }
@@ -4469,7 +4952,7 @@ export async function upsertItemUnitSalePrice(
  * leaves no empty version and no source set Active. Kysely bypasses RLS, so the
  * caller's client is checked for what the makeMethod policies ask; the copy then
  * runs as the system, since the method line policies ask for no more than
- * parts_create, while get-method's own gate asks for production update.
+ * create on the item's page, while get-method's own gate asks for production update.
  */
 export async function createMakeMethodVersion(
   client: SupabaseClient<Database>,
@@ -4505,20 +4988,22 @@ export async function createMakeMethodVersion(
     .single();
   if (source.error) return { data: null, error: source.error };
 
-  // The makeMethod policies ask for parts_create to insert and parts_update to
-  // set a version Active.
+  // The makeMethod policies ask for create on the page of the item's type to
+  // insert, and update to set a version Active.
   const activate = args.activate === true && source.data.status === "Draft";
-  const permitted = await requireCompanyPermission(
+  const permitted = await requireItemPagePermission(
     client,
     companyId,
-    "parts_create"
+    [source.data.itemId],
+    "create"
   );
   if (permitted.error) return { data: null, error: permitted.error };
   if (activate) {
-    const canActivate = await requireCompanyPermission(
+    const canActivate = await requireItemPagePermission(
       client,
       companyId,
-      "parts_update"
+      [source.data.itemId],
+      "update"
     );
     if (canActivate.error) return { data: null, error: canActivate.error };
   }
@@ -5675,26 +6160,84 @@ async function planMaterialPropertyChanges(
   };
 }
 
-async function materialIdIsTaken(
+/** What a new material is created with: its properties, and the readable id
+ *  and name derived from them when the company generates material IDs (null
+ *  when IDs are typed). */
+export type NewMaterialPlan = {
+  generated: { readableId: string; name: string } | null;
+  properties: MaterialPropertyValues;
+};
+
+/**
+ * Plans a new material from the properties sent, checked as the properties
+ * panel checks them. With generated material IDs the readable id and name are
+ * derived from them; without a substance and a shape that is refused.
+ */
+export async function planNewMaterial(
   client: SupabaseClient<Database>,
-  readableId: string,
-  companyId: string
+  material: { companyId: string } & Partial<
+    Record<MaterialPropertyField, string | null>
+  >
 ): Promise<
-  { data: boolean; error: null } | { data: null; error: ServiceError }
+  { data: NewMaterialPlan; error: null } | { data: null; error: ServiceError }
 > {
-  const taken = await client
-    .from("item")
-    .select("id")
-    .eq("readableId", readableId)
-    .eq("companyId", companyId)
-    .eq("type", "Material")
-    .limit(1);
-  if (taken.error) return { data: null, error: taken.error };
-  return { data: taken.data.length > 0, error: null };
+  const generatedIds = await materialIdsAreGenerated(
+    client,
+    material.companyId
+  );
+  if (generatedIds.error) return { data: null, error: generatedIds.error };
+
+  const plan = await planMaterialPropertyChanges(client, {
+    companyId: material.companyId,
+    current: noMaterialProperties,
+    changes: sentMaterialProperties(material),
+    generatedIds: generatedIds.data
+  });
+  if (plan.error) return plan;
+  if (generatedIds.data && !plan.data.generated) {
+    return { data: null, error: ruleError(generatedIdsNeedSubstanceAndShape) };
+  }
+  return {
+    data: { generated: plan.data.generated, properties: plan.data.next },
+    error: null
+  };
+}
+
+/**
+ * Serializes the creates of one material ID in a company, so each decides
+ * under it whether the ID is free. Two creates of a new ID with different
+ * sizes would both find it free, both add revisions and share one material
+ * row. Transaction-scoped: released at commit.
+ */
+export async function lockMaterialReadableId(
+  trx: KyselyTx,
+  companyId: string,
+  readableId: string
+): Promise<void> {
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`material-id:${companyId}:${readableId}`}, 0))`.execute(
+    trx
+  );
+}
+
+/**
+ * {@link lockMaterialReadableId} for several IDs, in sorted order, so two
+ * transactions that lock the same IDs never wait on each other in a cycle.
+ * A rename locks its old and new ID, so it waits for a create of either and
+ * for a new revision of the old one.
+ */
+export async function lockMaterialReadableIds(
+  trx: KyselyTx,
+  companyId: string,
+  readableIds: string[]
+): Promise<void> {
+  for (const readableId of [...new Set(readableIds)].sort()) {
+    await lockMaterialReadableId(trx, companyId, readableId);
+  }
 }
 
 // Kysely bypasses RLS, so the caller's client must be able to update the
-// material row first. Its policy (parts_update) also covers item and itemCost.
+// material row first. Its policy (Materials Edit) also covers the material's
+// item and itemCost rows.
 async function requireMaterialUpdatable(
   client: SupabaseClient<Database>,
   args: { readableId: string; companyId: string; updatedBy: string }
@@ -5707,24 +6250,6 @@ async function requireMaterialUpdatable(
     .select("id")
     .single();
   return { error: probe.error };
-}
-
-class MaterialRuleViolation extends Error {}
-
-// A thrown Kysely/Postgres error in the { message, code } shape services
-// return. The code is the SQLSTATE (23505 for a taken revision label).
-function writeError(error: unknown): ServiceError {
-  const code =
-    error && typeof error === "object" && "code" in error
-      ? String((error as { code: unknown }).code)
-      : undefined;
-  const message = error instanceof Error ? error.message : String(error);
-  return code ? { code, message } : { message };
-}
-
-function materialWriteError(error: unknown): ServiceError {
-  if (error instanceof MaterialRuleViolation) return ruleError(error.message);
-  return writeError(error);
 }
 
 async function writeMaterialIdentity(
@@ -5742,7 +6267,7 @@ async function writeMaterialIdentity(
   const newReadableId = args.newReadableId ?? readableId;
   const renamed = newReadableId !== readableId;
   if (!newReadableId) {
-    throw new MaterialRuleViolation("Material ID cannot be empty");
+    throw new RuleRefusal("Material ID cannot be empty");
   }
   if (!renamed && args.name === undefined && !Object.keys(changes).length) {
     return readableId;
@@ -5750,6 +6275,9 @@ async function writeMaterialIdentity(
 
   const updatedAt = datetime.timestamp();
   if (renamed) {
+    // A create of either ID, and a new revision of the old one, take these
+    // locks before their own check.
+    await lockMaterialReadableIds(trx, companyId, [readableId, newReadableId]);
     const taken = await trx
       .selectFrom("item")
       .select("id")
@@ -5758,9 +6286,7 @@ async function writeMaterialIdentity(
       .where("type", "=", "Material")
       .executeTakeFirst();
     if (taken) {
-      throw new MaterialRuleViolation(
-        `Material ${newReadableId} already exists`
-      );
+      throw new RuleRefusal(`Material ${newReadableId} already exists`);
     }
   }
 
@@ -5771,7 +6297,7 @@ async function writeMaterialIdentity(
     .where("companyId", "=", companyId)
     .executeTakeFirst();
   if (Number(material.numUpdatedRows) !== 1) {
-    throw new MaterialRuleViolation(`Material ${readableId} not found`);
+    throw new RuleRefusal(`Material ${readableId} not found`);
   }
 
   if (renamed || args.name !== undefined) {
@@ -5811,7 +6337,9 @@ async function getNewMaterialSizes(
     .eq("type", "Material");
   if (existing.error) return { data: null, error: existing.error };
 
-  const revisions = new Set(existing.data.map((item) => item.revision));
+  const revisions = new Set(
+    pluckUnique(existing.data, (item) => item.revision)
+  );
   const sizes = [...new Set(args.sizes)].filter(
     (size) => size && !revisions.has(size)
   );
@@ -5841,205 +6369,32 @@ async function getNewMaterialSizes(
 }
 
 /**
- * Creates a material or updates one by item id or readable id; an update keeps
- * any optional field it leaves out, and `sizes` adds a revision per new size.
- * Property changes follow updateMaterialProperties: dependents reset, picks
- * are checked against their substance and shape, and with generated material
- * IDs on the readable id and name are derived from the properties (any `id`
- * or `name` sent for them is ignored). `readableId` renames a material when
- * IDs are typed by hand. An update's material, item and item cost writes land
- * together or not at all; the pick method, shelf life and new sizes are
- * written after them.
+ * Updates a material by item id or readable id; it keeps any optional field
+ * it leaves out, and `sizes` adds a revision per new size. Property changes
+ * follow updateMaterialProperties: dependents reset, picks are checked against
+ * their substance and shape, and with generated material IDs on the readable
+ * id and name are derived from the properties. There it refuses a
+ * `readableId` or a derived `name` it would not write
+ * (`generatedMaterialUpdateRefusal`); a call that changes no property writes a
+ * sent `name` to the item, as the properties panel does. `readableId` renames
+ * the material when IDs are typed by hand. An item group must be the
+ * company's. The material, item, item cost, pick method and shelf life writes
+ * land together or not at all; new sizes are added after them.
  */
-export async function upsertMaterial(
+export async function updateMaterial(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  material:
-    | (z.infer<typeof materialValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-        sizes?: string[];
-      })
-    | (z.infer<typeof materialValidator> & {
-        companyId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
+  material: z.infer<typeof materialValidator> & {
+    companyId: string;
+    updatedBy: string;
+    customFields?: Json;
+  }
 ) {
   const generatedIds = await materialIdsAreGenerated(
     client,
     material.companyId
   );
   if (generatedIds.error) return generatedIds;
-
-  if ("createdBy" in material) {
-    const plan = await planMaterialPropertyChanges(client, {
-      companyId: material.companyId,
-      current: noMaterialProperties,
-      changes: sentMaterialProperties(material),
-      generatedIds: generatedIds.data
-    });
-    if (plan.error) return plan;
-    if (generatedIds.data && !plan.data.generated) {
-      return {
-        data: null,
-        error: ruleError(generatedIdsNeedSubstanceAndShape)
-      };
-    }
-    const readableId = plan.data.generated?.readableId ?? material.id;
-    const name = plan.data.generated?.name ?? material.name;
-
-    // An existing id would take the new item rows as extra revisions and
-    // overwrite its material row; sizes on an update add revisions instead.
-    const taken = await materialIdIsTaken(
-      client,
-      readableId,
-      material.companyId
-    );
-    if (taken.error) return taken;
-    if (taken.data) {
-      return {
-        data: null,
-        error: ruleError(`Material ${readableId} already exists`)
-      };
-    }
-
-    // Collect every newly-created item id across the sizes / no-sizes
-    // branches so the shelf-life policy can be applied uniformly.
-    const newItemIds: string[] = [];
-
-    if (material.sizes) {
-      const itemInserts = await Promise.all(
-        material.sizes.map((size) =>
-          client
-            .from("item")
-            .insert({
-              readableId,
-              name,
-              description: material.description,
-              mpn: material.mpn,
-              type: "Material",
-              replenishmentSystem: material.replenishmentSystem,
-              defaultMethodType: material.defaultMethodType,
-              itemTrackingType: material.itemTrackingType,
-              unitOfMeasureCode: material.unitOfMeasureCode,
-              active: true,
-              revision: size,
-              companyId: material.companyId,
-              createdBy: material.createdBy
-            })
-            .select("id")
-            .single()
-        )
-      );
-
-      const hasErrors = itemInserts.some((insert) => insert.error);
-      if (hasErrors) {
-        const firstError = itemInserts.find((insert) => insert.error);
-        return firstError!;
-      }
-      for (const insert of itemInserts) {
-        if (insert.data?.id) newItemIds.push(insert.data.id);
-      }
-      const itemCostUpdate = await Promise.all(
-        itemInserts.map((insert) =>
-          client
-            .from("itemCost")
-            .update(
-              sanitize({
-                itemPostingGroupId: material.postingGroupId,
-                unitCost: material.unitCost
-              })
-            )
-            .eq("itemId", insert.data?.id ?? "")
-        )
-      );
-      if (itemCostUpdate.some((update) => update.error)) {
-        logger.error("Failed to update item cost", {
-          error: itemCostUpdate.find((update) => update.error)?.error
-        });
-      }
-    } else {
-      const itemInsert = await client
-        .from("item")
-        .insert({
-          readableId,
-          name,
-          description: material.description,
-          mpn: material.mpn,
-          type: "Material",
-          replenishmentSystem: material.replenishmentSystem,
-          defaultMethodType: material.defaultMethodType,
-          itemTrackingType: material.itemTrackingType,
-          unitOfMeasureCode: material.unitOfMeasureCode,
-          active: true,
-          companyId: material.companyId,
-          createdBy: material.createdBy
-        })
-        .select("id")
-        .single();
-      if (itemInsert.error) return itemInsert;
-      const itemId = itemInsert.data?.id;
-      if (itemId) newItemIds.push(itemId);
-      const itemCostUpdate = await client
-        .from("itemCost")
-        .update(
-          sanitize({
-            itemPostingGroupId: material.postingGroupId,
-            unitCost: material.unitCost
-          })
-        )
-        .eq("itemId", itemId);
-      if (itemCostUpdate.error) {
-        logger.error("Failed to update item cost", {
-          error: itemCostUpdate.error
-        });
-      }
-    }
-
-    for (const itemId of newItemIds) {
-      const pickMethod = await upsertItemDefaultPickMethod(client, {
-        itemId,
-        userId: material.createdBy,
-        storageUnitId: material.defaultStorageUnitId
-      });
-      if (pickMethod.error) return pickMethod;
-
-      const shelfLife = await upsertItemShelfLife(client, {
-        itemId,
-        userId: material.createdBy,
-        companyId: material.companyId,
-        mode: material.shelfLifeMode,
-        days: material.shelfLifeDays,
-        triggerProcessId: material.shelfLifeTriggerProcessId,
-        triggerTiming: material.shelfLifeTriggerTiming,
-        calculateFromBom: material.shelfLifeCalculateFromBom
-      });
-      if (shelfLife.error) return shelfLife;
-    }
-
-    const materialInsert = await client.from("material").upsert({
-      id: readableId,
-      ...plan.data.next,
-      companyId: material.companyId,
-      createdBy: material.createdBy,
-      customFields: material.customFields
-    });
-
-    if (materialInsert.error) return materialInsert;
-
-    const newMaterial = await client
-      .from("materials")
-      .select("*")
-      .eq("readableId", readableId)
-      .eq("companyId", material.companyId);
-
-    return {
-      data: newMaterial.data?.[0] ?? null,
-      error: newMaterial.error
-    };
-  }
 
   const { companyId, updatedBy } = material;
   const item = await resolveTypedItemRevision(client, {
@@ -6067,6 +6422,15 @@ export async function upsertMaterial(
   });
   if (plan.error) return plan;
 
+  if (generatedIds.data) {
+    const refusal = generatedMaterialUpdateRefusal(
+      readableId,
+      plan.data.generated,
+      material
+    );
+    if (refusal) return { data: null, error: ruleError(refusal) };
+  }
+
   let newSizes: string[] = [];
   if (material.sizes?.length) {
     const sizes = await getNewMaterialSizes(client, {
@@ -6081,17 +6445,8 @@ export async function upsertMaterial(
 
   const itemUpdate = sentFields(
     material,
-    materialItemUpdateFields(generatedIds.data)
+    materialItemUpdateFields(plan.data.generated !== null)
   );
-
-  const costUpdate: { itemPostingGroupId?: string | null; unitCost?: number } =
-    {};
-  if ("postingGroupId" in material) {
-    costUpdate.itemPostingGroupId = material.postingGroupId || null;
-  }
-  if (typeof material.unitCost === "number") {
-    costUpdate.unitCost = material.unitCost;
-  }
 
   const permitted = await requireMaterialUpdatable(client, {
     readableId,
@@ -6101,8 +6456,14 @@ export async function upsertMaterial(
   if (permitted.error) return { data: null, error: permitted.error };
 
   const updatedAt = datetime.timestamp();
+  const writes = { itemIds: [itemId], companyId, userId: updatedBy, updatedAt };
   try {
     readableId = await db.transaction().execute(async (trx) => {
+      await writeItemCost(trx, {
+        ...writes,
+        label: itemId,
+        cost: materialCostFields(material, { clearsEmptyGroup: true })
+      });
       const saved = await writeMaterialIdentity(trx, {
         readableId,
         newReadableId: generatedIds.data
@@ -6130,42 +6491,25 @@ export async function upsertMaterial(
           .execute();
       }
 
-      // The item insert trigger creates the itemCost row, so this updates it.
-      if (Object.keys(costUpdate).length > 0) {
-        const cost = await trx
-          .updateTable("itemCost")
-          .set({ ...costUpdate, updatedBy, updatedAt })
-          .where("itemId", "=", itemId)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst();
-        if (Number(cost.numUpdatedRows) !== 1) {
-          throw new MaterialRuleViolation(`Item cost for ${itemId} not found`);
-        }
-      }
+      await writeItemDefaultPickMethod(trx, {
+        ...writes,
+        storageUnitId: material.defaultStorageUnitId
+      });
+      await writeItemShelfLife(trx, {
+        ...writes,
+        shelfLife: shelfLifeSetupOf(material)
+      });
       return saved;
     });
   } catch (error) {
-    return { data: null, error: materialWriteError(error) };
+    return {
+      data: null,
+      error: transactionError(error, "Failed to update material", {
+        companyId,
+        itemId
+      })
+    };
   }
-
-  const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId,
-    userId: updatedBy,
-    storageUnitId: material.defaultStorageUnitId
-  });
-  if (pickMethod.error) return pickMethod;
-
-  const shelfLife = await upsertItemShelfLife(client, {
-    itemId,
-    userId: updatedBy,
-    companyId,
-    mode: material.shelfLifeMode,
-    days: material.shelfLifeDays,
-    triggerProcessId: material.shelfLifeTriggerProcessId,
-    triggerTiming: material.shelfLifeTriggerTiming,
-    calculateFromBom: material.shelfLifeCalculateFromBom
-  });
-  if (shelfLife.error) return shelfLife;
 
   if (newSizes.length > 0) {
     const source = await getItem(client, itemId);
@@ -6185,6 +6529,147 @@ export async function upsertMaterial(
     .select("id, readableId, readableIdWithRevision, revision, name")
     .eq("id", itemId)
     .single();
+}
+
+/**
+ * Creates a material under the readable id and name of `plan` (from
+ * {@link planNewMaterial}), with one revision per distinct size in `sizes`: a
+ * repeated or empty size is ignored, and no size makes the initial revision.
+ * An ID another material has is refused, and so is an item group of another
+ * company. The item revisions, their item cost, the material row, the pick
+ * method and the shelf life are written in one transaction: a refused setup
+ * rolls the whole create back and leaves the ID free for a corrected call.
+ * Returns the id of the revision the `materials` view shows, read in that
+ * transaction.
+ */
+export async function insertMaterial(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  material: z.infer<typeof materialValidator> & {
+    companyId: string;
+    createdBy: string;
+    customFields?: Json;
+    sizes?: string[];
+  },
+  plan: {
+    readableId: string;
+    name: string;
+    properties: MaterialPropertyValues;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: ServiceError | null;
+}> {
+  const { companyId, createdBy } = material;
+  const { readableId, name } = plan;
+
+  // Kysely bypasses RLS: the item INSERT policy asks for create on the page
+  // of the item's type. The pick method and shelf life rows ask for the same.
+  const permitted = await requireCompanyPermission(
+    client,
+    companyId,
+    `${ITEM_TYPE_PAGES.Material}_create`
+  );
+  if (permitted.error) return { data: null, error: permitted.error };
+
+  try {
+    const id = await db.transaction().execute(async (trx) => {
+      // An existing ID would take the new item rows as extra revisions and
+      // overwrite its material row; sizes on an update add revisions instead.
+      await lockMaterialReadableId(trx, companyId, readableId);
+      const taken = await trx
+        .selectFrom("item")
+        .select("id")
+        .where("readableId", "=", readableId)
+        .where("companyId", "=", companyId)
+        .where("type", "=", "Material")
+        .executeTakeFirst();
+      if (taken) {
+        throw new RuleRefusal(`Material ${readableId} already exists`);
+      }
+
+      const items = await trx
+        .insertInto("item")
+        .values(
+          newMaterialRevisions(material.sizes).map((revision) => ({
+            readableId,
+            name,
+            description: material.description,
+            mpn: material.mpn,
+            type: "Material" as const,
+            replenishmentSystem: material.replenishmentSystem,
+            defaultMethodType: material.defaultMethodType,
+            itemTrackingType: material.itemTrackingType,
+            unitOfMeasureCode: material.unitOfMeasureCode,
+            active: true,
+            revision,
+            companyId,
+            createdBy
+          }))
+        )
+        .returning("id")
+        .execute();
+      const writes = {
+        itemIds: items.map((item) => item.id),
+        companyId,
+        userId: createdBy,
+        updatedAt: datetime.timestamp()
+      };
+
+      await writeItemCost(trx, {
+        ...writes,
+        label: readableId,
+        cost: materialCostFields(material, { clearsEmptyGroup: false })
+      });
+
+      // A row left by the material's deleted items is taken over, as the
+      // upsert before this did.
+      const properties = {
+        ...plan.properties,
+        createdBy,
+        customFields: toJson(material.customFields)
+      };
+      await trx
+        .insertInto("material")
+        .values({ id: readableId, companyId, ...properties })
+        .onConflict((oc) =>
+          oc.columns(["id", "companyId"]).doUpdateSet(properties)
+        )
+        .execute();
+
+      await writeItemDefaultPickMethod(trx, {
+        ...writes,
+        storageUnitId: material.defaultStorageUnitId
+      });
+      await writeItemShelfLife(trx, {
+        ...writes,
+        shelfLife: shelfLifeSetupOf(material)
+      });
+
+      // Read under the ID's lock, before a rename or another create of the
+      // ID can commit: the revision the material list opens.
+      const shown = await trx
+        .selectFrom("materials")
+        .select("id")
+        .where("readableId", "=", readableId)
+        .where("companyId", "=", companyId)
+        .where("id", "in", writes.itemIds)
+        .executeTakeFirst();
+      if (!shown?.id) {
+        throw new Error(`Material ${readableId} is missing after its insert`);
+      }
+      return shown.id;
+    });
+    return { data: { id }, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: transactionError(error, "Failed to create material", {
+        companyId,
+        readableId
+      })
+    };
+  }
 }
 
 /**
@@ -6257,7 +6742,13 @@ export async function updateMaterialProperties(
         })
       );
     } catch (error) {
-      return { data: null, error: materialWriteError(error) };
+      return {
+        data: null,
+        error: transactionError(error, "Failed to change material properties", {
+          companyId,
+          readableId
+        })
+      };
     }
   }
 
@@ -6774,99 +7265,18 @@ export async function upsertUnitOfMeasure(
 }
 
 /**
- * Creates a tool (item row and tool row) or updates one; on update `id` is the
- * item id (uuid) or the tool's readable id and the write is a full replace, so
- * omitted optional fields are cleared, but `active` is left as stored.
+ * Updates a tool; `id` is the item id (uuid) or the tool's readable id and the
+ * write is a full replace, so omitted optional fields are cleared, but
+ * `active` is left as stored. `insertTypedItem` creates one.
  */
 export async function upsertTool(
   client: SupabaseClient<Database>,
-  tool:
-    | (z.infer<typeof toolValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof toolValidator> & {
-        companyId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in tool) {
-    const itemInsert = await client
-      .from("item")
-      .insert({
-        readableId: tool.id,
-        revision: tool.revision ?? "0",
-        name: tool.name,
-        description: tool.description,
-        type: "Tool",
-        replenishmentSystem: tool.replenishmentSystem,
-        defaultMethodType: tool.defaultMethodType,
-        itemTrackingType: tool.itemTrackingType,
-        unitOfMeasureCode: tool.unitOfMeasureCode,
-        active: true,
-        modelUploadId: tool.modelUploadId,
-        companyId: tool.companyId,
-        createdBy: tool.createdBy
-      })
-      .select("id")
-      .single();
-    if (itemInsert.error) return itemInsert;
-    const itemId = itemInsert.data?.id;
-
-    const [toolInsert, itemCostUpdate] = await Promise.all([
-      client.from("tool").upsert({
-        id: tool.id,
-        companyId: tool.companyId,
-        createdBy: tool.createdBy,
-        customFields: tool.customFields
-      }),
-      client
-        .from("itemCost")
-        .update(
-          sanitize({
-            itemPostingGroupId: tool.postingGroupId,
-            unitCost: tool.unitCost
-          })
-        )
-        .eq("itemId", itemId)
-    ]);
-
-    if (toolInsert.error) return toolInsert;
-    if (itemCostUpdate.error) return itemCostUpdate;
-
-    if (itemId) {
-      const pickMethod = await upsertItemDefaultPickMethod(client, {
-        itemId,
-        userId: tool.createdBy,
-        storageUnitId: tool.defaultStorageUnitId
-      });
-      if (pickMethod.error) return pickMethod;
-
-      const shelfLife = await upsertItemShelfLife(client, {
-        itemId,
-        userId: tool.createdBy,
-        companyId: tool.companyId,
-        mode: tool.shelfLifeMode,
-        days: tool.shelfLifeDays,
-        triggerProcessId: tool.shelfLifeTriggerProcessId,
-        triggerTiming: tool.shelfLifeTriggerTiming,
-        calculateFromBom: tool.shelfLifeCalculateFromBom
-      });
-      if (shelfLife.error) return shelfLife;
-    }
-
-    const newTool = await client
-      .from("tools")
-      .select("*")
-      .eq("readableId", tool.id)
-      .eq("companyId", tool.companyId)
-      .single();
-
-    return newTool;
+  tool: z.infer<typeof toolValidator> & {
+    companyId: string;
+    updatedBy: string;
+    customFields?: Json;
   }
-
+) {
   const updated = await updateTypedItem(client, {
     id: tool.id,
     companyId: tool.companyId,
@@ -7730,11 +8140,21 @@ async function discardChangeNoticeDrafts(
     return { error: null };
   }
 
-  // The item and makeMethod DELETE policies both ask for parts_delete.
-  const permitted = await requireCompanyPermission(
+  // The item and makeMethod DELETE policies both ask for delete on the page
+  // of the item's type; a Version draft is a method of its item.
+  const methods = makeMethodIds.length
+    ? await client
+        .from("makeMethod")
+        .select("itemId")
+        .in("id", makeMethodIds)
+        .eq("companyId", companyId)
+    : { data: [], error: null };
+  if (methods.error) return { error: methods.error };
+  const permitted = await requireItemPagePermission(
     client,
     companyId,
-    "parts_delete"
+    [...itemIds, ...methods.data.map((method) => method.itemId)],
+    "delete"
   );
   if (permitted.error) return permitted;
 
@@ -7964,12 +8384,14 @@ export async function updateChangeNoticeAffectedItemChangeType(
     return { data: { id }, error: null };
   }
 
-  // The current Draft is deleted at the end, which takes parts_delete. Refuse
-  // now rather than after the swap, when the old draft could only be orphaned.
-  const canDiscard = await requireCompanyPermission(
+  // The current Draft is deleted at the end, which takes delete on the page of
+  // its item's type (a draft item has its source's type). Refuse now rather
+  // than after the swap, when the old draft could only be orphaned.
+  const canDiscard = await requireItemPagePermission(
     client,
     companyId,
-    "parts_delete"
+    [affected.data.newItemId ?? affected.data.itemId],
+    "delete"
   );
   if (canDiscard.error) return { data: null, error: canDiscard.error };
 
@@ -8069,6 +8491,8 @@ type ChangeNoticeAffectedItemRow =
 
 export type ChangeNoticeAffectedItemWithLabel = ChangeNoticeAffectedItemRow & {
   item: ChangeNoticeStagingItemLabel | null;
+  // The version of the CO-owned Draft make method (null before it exists).
+  draftVersion: number | null;
 };
 
 const ITEM_LABEL_COLUMNS =
@@ -8100,20 +8524,26 @@ async function stitchItemLabels(
   return { labels, error: null };
 }
 
-// The affected items of a CO, each stitched to a minimal item label.
+// The affected items of a CO (or the one `affectedId` names), each stitched to
+// a minimal item label and its draft's version.
 export async function getChangeNoticeAffectedItems(
   client: SupabaseClient<Database>,
   changeNoticeId: string,
-  companyId: string
+  companyId: string,
+  affectedId?: string
 ): Promise<{
   data: ChangeNoticeAffectedItemWithLabel[];
   error: { message: string } | null;
 }> {
-  const affected = await client
+  let query = client
     .from("changeOrderAffectedItem")
-    .select("*")
+    .select(
+      "*, draftMakeMethod:makeMethod!changeOrderAffectedItem_draftMakeMethodId_fkey(version)"
+    )
     .eq("changeOrderId", changeNoticeId)
-    .eq("companyId", companyId)
+    .eq("companyId", companyId);
+  if (affectedId) query = query.eq("id", affectedId);
+  const affected = await query
     .order("sortOrder", { ascending: true })
     .order("createdAt", { ascending: true });
 
@@ -8129,7 +8559,171 @@ export async function getChangeNoticeAffectedItems(
   if (error) return { data: [], error };
 
   return {
-    data: rows.map((r) => ({ ...r, item: labels.get(r.itemId) ?? null })),
+    data: rows.map(({ draftMakeMethod, ...r }) => ({
+      ...r,
+      item: labels.get(r.itemId) ?? null,
+      draftVersion: draftMakeMethod?.version ?? null
+    })),
+    error: null
+  };
+}
+
+// One affected item with its CO-owned Draft make method's rows shaped as the
+// embedded BillOfMaterial / BillOfProcess editors expect (same assembly as
+// x+/part+/$itemId.make.$makeMethodId). Loaded for the open item only: a
+// change notice can hold hundreds of items.
+export async function getChangeNoticeAffectedItemDraft(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    changeNoticeId: string;
+    affectedId: string;
+    locations: ListItem[];
+    partTags: { name: string }[];
+    operationTags: { name: string }[];
+  }
+) {
+  const affected = await getChangeNoticeAffectedItems(
+    client,
+    args.changeNoticeId,
+    companyId,
+    args.affectedId
+  );
+  if (affected.error) return { data: null, error: affected.error };
+  const affectedItem = affected.data[0];
+  if (!affectedItem) return { data: null, error: null };
+  // The draft lives on the same item for a Version, or on the new item
+  // (newItemId) for Revision / New Part.
+  const draftItemId = affectedItem.newItemId ?? affectedItem.itemId;
+  const draftMakeMethodId = affectedItem.draftMakeMethodId;
+
+  if (!draftMakeMethodId) {
+    return {
+      data: {
+        affectedItem,
+        draftItemId,
+        makeMethod: null,
+        methodMaterials: [],
+        methodOperations: [],
+        tags: [],
+        configurable: false,
+        configurationRules: [],
+        parameters: [],
+        revisionStatus: null,
+        releaseControl: null,
+        partData: null
+      },
+      error: null
+    };
+  }
+
+  // Revision / Replacement Part / New Part edit the item's attributes + files
+  // on the draft item, embedded on the CO card. Parts only; Version has no
+  // attribute editing.
+  const needsAttributes =
+    (affectedItem.changeType === "Revision" ||
+      affectedItem.changeType === "Replacement Part" ||
+      affectedItem.changeType === "New Part") &&
+    affectedItem.item?.type === "Part";
+  const [
+    makeMethod,
+    methodMaterials,
+    methodOperations,
+    manufacturing,
+    revisionLock,
+    part
+  ] = await Promise.all([
+    getMakeMethodById(client, draftMakeMethodId, companyId),
+    getMethodMaterialsByMakeMethod(client, draftMakeMethodId),
+    getMethodOperationsByMakeMethodId(client, draftMakeMethodId),
+    getItemManufacturing(client, draftItemId, companyId),
+    getRevisionLock(client, { itemId: draftItemId, companyId }),
+    needsAttributes
+      ? Promise.all([
+          getPart(client, draftItemId, companyId),
+          getSupplierParts(client, draftItemId, companyId),
+          getPickMethods(client, draftItemId, companyId)
+        ])
+      : null
+  ]);
+
+  // An empty editor must mean an empty draft, never a failed read.
+  const failed =
+    makeMethod.error ??
+    methodMaterials.error ??
+    methodOperations.error ??
+    manufacturing.error ??
+    part?.find((result) => result.error)?.error;
+  if (failed) return { data: null, error: failed };
+
+  const partSummary = part?.[0].data;
+  const partData = partSummary
+    ? {
+        itemId: draftItemId,
+        locations: args.locations,
+        partSummary,
+        files: getItemFiles(client, draftItemId, companyId),
+        supplierParts: part?.[1].data ?? [],
+        pickMethods: part?.[2].data ?? [],
+        makeMethods: getMakeMethods(client, draftItemId, companyId),
+        tags: args.partTags
+      }
+    : null;
+
+  const config = manufacturing.data?.requiresConfiguration
+    ? await Promise.all([
+        getConfigurationParameters(client, draftItemId, companyId),
+        getConfigurationRules(client, draftItemId, companyId)
+      ]).then(([{ parameters }, configurationRules]) => ({
+        parameters,
+        configurationRules
+      }))
+    : {
+        parameters: [] as Awaited<
+          ReturnType<typeof getConfigurationParameters>
+        >["parameters"],
+        configurationRules: [] as Awaited<
+          ReturnType<typeof getConfigurationRules>
+        >
+      };
+
+  return {
+    data: {
+      affectedItem,
+      draftItemId,
+      makeMethod: makeMethod.data,
+      methodMaterials:
+        methodMaterials.data?.map((m) => ({
+          ...m,
+          description: m.item?.name ?? "",
+          methodOperationId: m.methodOperationId ?? undefined,
+          methodType: m.methodType as MethodType,
+          itemType: m.itemType as MethodItemType
+        })) ?? [],
+      methodOperations:
+        methodOperations.data?.map((operation) => ({
+          ...operation,
+          description: operation.description ?? "",
+          procedureId: operation.procedureId ?? undefined,
+          assemblyInstructionId: operation.assemblyInstructionId ?? undefined,
+          inspectionDocumentId: operation.inspectionDocumentId ?? undefined,
+          operationSupplierProcessId:
+            operation.operationSupplierProcessId ?? undefined,
+          operationMinimumCost: operation.operationMinimumCost ?? 0,
+          operationLeadTime: operation.operationLeadTime ?? 0,
+          operationUnitCost: operation.operationUnitCost ?? 0,
+          tags: operation.tags ?? [],
+          workCenterId: operation.workCenterId ?? undefined,
+          workInstruction: operation.workInstruction as JSONContent | null
+        })) ?? [],
+      tags: args.operationTags,
+      configurable: manufacturing.data?.requiresConfiguration ?? false,
+      configurationRules: config.configurationRules,
+      parameters: config.parameters,
+      revisionStatus: revisionLock.revisionStatus,
+      releaseControl: revisionLock.releaseControl,
+      partData
+    },
     error: null
   };
 }
@@ -8796,97 +9390,109 @@ export type ChangeNoticeDiff = {
 
 // Editable item attribute columns compared for the attribute diff. `mpn` lives on
 // item; the item group (itemPostingGroupId) lives on itemCost and is merged in
-// separately by readItemAttributes. `active` is intentionally excluded — a CO
+// separately by readItemsAttributes. `active` is intentionally excluded — a CO
 // draft is created inactive until release, so it always differs (not a real edit).
 const ITEM_ATTRIBUTE_COLUMNS =
   "name, description, unitOfMeasureCode, itemTrackingType, defaultMethodType, replenishmentSystem, sourcingType, thumbnailPath, mpn";
 
-// Read one make method's materials + operations + per-operation children (real
-// method tables — the v2 substrate). Empty for a null makeMethodId (e.g. a Buy
-// item with no method, or before a draft exists).
-async function readMethodRows(
-  client: SupabaseClient<Database>,
-  makeMethodId: string | null,
-  companyId: string
-): Promise<{
+type MethodRows = {
   materials: Row[];
   operations: Row[];
   children: ChildrenByOperationId;
+};
+
+const NO_METHOD_ROWS: MethodRows = {
+  materials: [],
+  operations: [],
+  children: {}
+};
+
+// Several make methods' materials + operations + per-operation children, one
+// read per table for all of them (a change notice can hold hundreds of items).
+async function readMethodsRows(
+  client: SupabaseClient<Database>,
+  makeMethodIds: string[],
+  companyId: string
+): Promise<{
+  data: Map<string, MethodRows>;
   error: { message: string } | null;
 }> {
-  const empty = { materials: [], operations: [], children: {}, error: null };
-  if (!makeMethodId) return empty;
+  const byMethod = new Map<string, MethodRows>();
+  const ids = [...new Set(makeMethodIds)];
+  if (ids.length === 0) return { data: byMethod, error: null };
 
   const [materials, operations] = await Promise.all([
-    client
-      .from("methodMaterial")
-      .select("*")
-      .eq("makeMethodId", makeMethodId)
-      .eq("companyId", companyId)
-      // v1: corrections are not part of the change-notice diff.
-      .is("methodCorrectionId", null)
-      .order("order", { ascending: true }),
-    client
-      .from("methodOperation")
-      .select("*")
-      .eq("makeMethodId", makeMethodId)
-      .eq("companyId", companyId)
-      .is("methodCorrectionId", null)
-      .order("order", { ascending: true })
-  ]);
-  if (materials.error) return { ...empty, error: materials.error };
-  if (operations.error) return { ...empty, error: operations.error };
-
-  const ops = (operations.data ?? []) as Row[];
-  const children: ChildrenByOperationId = {};
-  const opIds = ops
-    .map((o) => o.id)
-    .filter((id): id is string => typeof id === "string");
-
-  if (opIds.length > 0) {
-    const [steps, parameters, tools] = await Promise.all([
+    fetchAllByIds(ids, (batch) =>
       client
-        .from("methodOperationStep")
+        .from("methodMaterial")
         .select("*")
-        .in("operationId", opIds)
-        .eq("companyId", companyId),
-      client
-        .from("methodOperationParameter")
-        .select("*")
-        .in("operationId", opIds)
-        .eq("companyId", companyId),
-      client
-        .from("methodOperationTool")
-        .select("*")
-        .in("operationId", opIds)
+        .in("makeMethodId", batch)
         .eq("companyId", companyId)
-    ]);
-    if (steps.error) return { ...empty, error: steps.error };
-    if (parameters.error) return { ...empty, error: parameters.error };
-    if (tools.error) return { ...empty, error: tools.error };
+        // v1: corrections are not part of the change-notice diff.
+        .is("methodCorrectionId", null)
+        .order("order", { ascending: true })
+        .order("id")
+    ),
+    fetchAllByIds(ids, (batch) =>
+      client
+        .from("methodOperation")
+        .select("*")
+        .in("makeMethodId", batch)
+        .eq("companyId", companyId)
+        .is("methodCorrectionId", null)
+        .order("order", { ascending: true })
+        .order("id")
+    )
+  ]);
+  if (materials.error) return { data: byMethod, error: materials.error };
+  if (operations.error) return { data: byMethod, error: operations.error };
 
-    for (const id of opIds)
-      children[id] = { steps: [], parameters: [], tools: [] };
-    for (const r of (steps.data ?? []) as Row[]) {
-      const op = r.operationId;
-      if (typeof op === "string") children[op]?.steps.push(r);
-    }
-    for (const r of (parameters.data ?? []) as Row[]) {
-      const op = r.operationId;
-      if (typeof op === "string") children[op]?.parameters.push(r);
-    }
-    for (const r of (tools.data ?? []) as Row[]) {
-      const op = r.operationId;
-      if (typeof op === "string") children[op]?.tools.push(r);
-    }
+  for (const id of ids)
+    byMethod.set(id, { materials: [], operations: [], children: {} });
+  for (const row of materials.data as Row[])
+    byMethod.get(row.makeMethodId as string)?.materials.push(row);
+
+  const childrenByOperation = new Map<string, OperationChildren>();
+  for (const row of operations.data as Row[]) {
+    const method = byMethod.get(row.makeMethodId as string);
+    if (!method || typeof row.id !== "string") continue;
+    method.operations.push(row);
+    method.children[row.id] = emptyChildren();
+    childrenByOperation.set(row.id, method.children[row.id]);
   }
+  const opIds = [...childrenByOperation.keys()];
+  if (opIds.length === 0) return { data: byMethod, error: null };
 
-  return {
-    materials: (materials.data ?? []) as Row[],
-    operations: ops,
-    children,
-    error: null
-  };
+  const [steps, parameters, tools] = await Promise.all(
+    (
+      [
+        "methodOperationStep",
+        "methodOperationParameter",
+        "methodOperationTool"
+      ] as const
+    ).map((table) =>
+      fetchAllByIds(opIds, (batch) =>
+        client
+          .from(table)
+          .select("*")
+          .in("operationId", batch)
+          .eq("companyId", companyId)
+          // Insertion order, as the diff read them one method at a time.
+          .order("createdAt")
+          .order("id")
+      )
+    )
+  );
+  const failed = steps.error ?? parameters.error ?? tools.error;
+  if (failed) return { data: byMethod, error: failed };
+
+  const childrenOf = (row: Row) =>
+    childrenByOperation.get(row.operationId as string);
+  for (const r of steps.data as Row[]) childrenOf(r)?.steps.push(r);
+  for (const r of parameters.data as Row[]) childrenOf(r)?.parameters.push(r);
+  for (const r of tools.data as Row[]) childrenOf(r)?.tools.push(r);
+
+  return { data: byMethod, error: null };
 }
 
 // The v2 draft method is created by copying the base method, so it initially
@@ -8919,48 +9525,75 @@ function correlate(
   }
 }
 
-async function readItemAttributes(
+// Several items' attribute rows, keyed by item id; the item group lives on
+// itemCost, not item, so it is merged in to diff too.
+async function readItemsAttributes(
   client: SupabaseClient<Database>,
-  itemId: string,
+  itemIds: string[],
   companyId: string
-): Promise<Row | null> {
-  const [item, cost] = await Promise.all([
-    client
-      .from("item")
-      .select(ITEM_ATTRIBUTE_COLUMNS)
-      .eq("id", itemId)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    // The item group lives on itemCost, not item — merge it in so it diffs too.
-    client
-      .from("itemCost")
-      .select("itemPostingGroupId")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .maybeSingle()
+): Promise<{ data: Map<string, Row>; error: { message: string } | null }> {
+  const byItem = new Map<string, Row>();
+  const ids = [...new Set(itemIds)];
+  if (ids.length === 0) return { data: byItem, error: null };
+
+  const [items, costs] = await Promise.all([
+    fetchAllByIds(ids, (batch) =>
+      client
+        .from("item")
+        .select(`id, ${ITEM_ATTRIBUTE_COLUMNS}`)
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(ids, (batch) =>
+      client
+        .from("itemCost")
+        .select("itemId, itemPostingGroupId")
+        .in("itemId", batch)
+        .eq("companyId", companyId)
+        .order("itemId")
+    )
   ]);
-  if (!item.data) return null;
-  return {
-    ...(item.data as Row),
-    itemPostingGroupId: cost.data?.itemPostingGroupId ?? null
-  };
+  if (items.error) return { data: byItem, error: items.error };
+  if (costs.error) return { data: byItem, error: costs.error };
+
+  const groupByItem = new Map(
+    costs.data.map((c) => [c.itemId, c.itemPostingGroupId])
+  );
+  for (const { id, ...attributes } of items.data)
+    byItem.set(id, {
+      ...attributes,
+      itemPostingGroupId: groupByItem.get(id) ?? null
+    });
+  return { data: byItem, error: null };
 }
 
-// One item's supplier parts for the diff. Mirrors getSupplierParts
-// (items.service) — active rows for the item.
-async function readSupplierPartRows(
+// Several items' active supplier parts (as getSupplierParts reads them), keyed
+// by item id.
+async function readSupplierPartRowsByItem(
   client: SupabaseClient<Database>,
-  itemId: string,
+  itemIds: string[],
   companyId: string
-): Promise<{ data: Row[]; error: { message: string } | null }> {
-  const res = await client
-    .from("supplierPart")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .eq("active", true);
-  if (res.error) return { data: [], error: res.error };
-  return { data: (res.data ?? []) as Row[], error: null };
+): Promise<{ data: Map<string, Row[]>; error: { message: string } | null }> {
+  const byItem = new Map<string, Row[]>();
+  const ids = [...new Set(itemIds)];
+  if (ids.length === 0) return { data: byItem, error: null };
+
+  const res = await fetchAllByIds(ids, (batch) =>
+    client
+      .from("supplierPart")
+      .select("*")
+      .in("itemId", batch)
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("id")
+  );
+  if (res.error) return { data: byItem, error: res.error };
+  for (const row of res.data as Row[]) {
+    const itemId = row.itemId as string;
+    byItem.set(itemId, [...(byItem.get(itemId) ?? []), row]);
+  }
+  return { data: byItem, error: null };
 }
 
 // Resolve item-group ids → their names for readable diff display.
@@ -8996,11 +9629,14 @@ async function readItemReadableIds(
   const map = new Map<string, string>();
   const unique = [...new Set(itemIds)].filter((id) => id.length > 0);
   if (unique.length === 0) return map;
-  const items = await client
-    .from("item")
-    .select("id, readableIdWithRevision")
-    .in("id", unique)
-    .eq("companyId", companyId);
+  const items = await fetchAllByIds(unique, (batch) =>
+    client
+      .from("item")
+      .select("id, readableIdWithRevision")
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .order("id")
+  );
   for (const row of items.data ?? []) {
     if (row.id && row.readableIdWithRevision)
       map.set(row.id, row.readableIdWithRevision);
@@ -9176,8 +9812,8 @@ async function stampOperationRefNames(
 
 // For every affected item: read the base (source Active) method as `base` and the
 // CO-owned Draft method as `target` (both REAL method tables), correlate by
-// natural keys, run the pure `diffMethod`, and collect. Also returns the manual
-// supersession declarations. Flat selects scoped by companyId (no embeds).
+// natural keys, run the pure `diffMethod`, and collect. Each table is read once
+// for the whole notice; the diffs are then computed in memory.
 export async function getChangeNoticeDiff(
   client: SupabaseClient<Database>,
   changeNoticeId: string,
@@ -9190,21 +9826,54 @@ export async function getChangeNoticeDiff(
   );
   if (affected.error) return { data: { items: [] }, error: affected.error };
 
-  const items: ChangeNoticeItemDiff[] = [];
+  // A Version's draft is on the same item; Revision / Replacement Part / New Part
+  // draft a new item (a New Part's IS its own item).
+  const draftItemIdOf = (a: ChangeNoticeAffectedItemWithLabel) =>
+    a.newItemId ?? a.itemId;
+  // Supplier parts on the draft item (Revision/Replacement Part/New Part; a
+  // Version shares the live item's suppliers, which are not a CO change).
+  const diffsSupplierParts = (a: ChangeNoticeAffectedItemWithLabel) =>
+    draftItemIdOf(a) !== a.itemId || a.changeType === "New Part";
 
-  for (const affectedItem of affected.data) {
-    const base = await readMethodRows(
+  const [methods, attributes, supplierParts] = await Promise.all([
+    readMethodsRows(
       client,
-      affectedItem.baseMakeMethodId,
+      affected.data.flatMap((a) =>
+        [a.baseMakeMethodId, a.draftMakeMethodId].filter(
+          (id): id is string => !!id
+        )
+      ),
       companyId
-    );
-    if (base.error) return { data: { items: [] }, error: base.error };
-    const target = await readMethodRows(
+    ),
+    readItemsAttributes(
       client,
-      affectedItem.draftMakeMethodId,
+      affected.data.flatMap((a) => [a.itemId, draftItemIdOf(a)]),
       companyId
-    );
-    if (target.error) return { data: { items: [] }, error: target.error };
+    ),
+    readSupplierPartRowsByItem(
+      client,
+      affected.data
+        .filter(diffsSupplierParts)
+        .flatMap((a) =>
+          a.changeType === "Revision"
+            ? [draftItemIdOf(a), a.itemId]
+            : [draftItemIdOf(a)]
+        ),
+      companyId
+    )
+  ]);
+  const failed = methods.error ?? attributes.error ?? supplierParts.error;
+  if (failed) return { data: { items: [] }, error: failed };
+
+  // Copies: correlate() and the name stamping below write into the rows.
+  const methodRows = (id: string | null): MethodRows =>
+    structuredClone((id && methods.data.get(id)) || NO_METHOD_ROWS);
+  const attributeRow = (itemId: string): Row | null =>
+    structuredClone(attributes.data.get(itemId) ?? null);
+
+  const diffs = affected.data.map((affectedItem) => {
+    const base = methodRows(affectedItem.baseMakeMethodId);
+    const target = methodRows(affectedItem.draftMakeMethodId);
 
     // Reconstruct source pointers by natural key.
     correlate(base.materials, target.materials, "itemId", MATERIAL_SOURCE_KEY);
@@ -9231,52 +9900,18 @@ export async function getChangeNoticeDiff(
     const isNewPart = affectedItem.changeType === "New Part";
 
     // Attribute diff: base = source item columns; target = the draft item's
-    // columns. For a Version the draft is on the same item, so there is no
-    // attribute change (Q2) and both sides read the same row. For a New Part
-    // there is no predecessor, so we pass a null base to surface every attribute
-    // as an addition (see diffAttributes).
-    const draftItemId = affectedItem.newItemId ?? affectedItem.itemId;
-    const baseAttributes = await readItemAttributes(
-      client,
-      affectedItem.itemId,
-      companyId
-    );
+    // columns. For a Version both sides are the same row (no attribute change);
+    // a New Part has a null base, so every attribute is an addition.
+    const draftItemId = draftItemIdOf(affectedItem);
+    const baseAttributes = attributeRow(affectedItem.itemId);
     const targetAttributes =
       draftItemId === affectedItem.itemId
         ? baseAttributes
-        : await readItemAttributes(client, draftItemId, companyId);
+        : attributeRow(draftItemId);
 
-    // Supplier parts on the draft item (Revision/Replacement Part/New Part; a
-    // Version shares the live item's suppliers, which are not a CO change). A
-    // Revision is diffed against the source revision it was copied from; the
-    // other two start with none, so theirs are all additions. A New Part's
-    // draft item IS its own item (draftItemId === itemId), so gate on the
-    // change type too.
-    let draftSupplierParts: Row[] = [];
-    let sourceSupplierParts: Row[] | null = null;
-    if (draftItemId !== affectedItem.itemId || isNewPart) {
-      const draftParts = await readSupplierPartRows(
-        client,
-        draftItemId,
-        companyId
-      );
-      if (draftParts.error) {
-        return { data: { items: [] }, error: draftParts.error };
-      }
-      draftSupplierParts = draftParts.data;
-      if (affectedItem.changeType === "Revision") {
-        const sourceParts = await readSupplierPartRows(
-          client,
-          affectedItem.itemId,
-          companyId
-        );
-        if (sourceParts.error) {
-          return { data: { items: [] }, error: sourceParts.error };
-        }
-        sourceSupplierParts = sourceParts.data;
-      }
-    }
-
+    // A Revision is diffed against the source revision it was copied from; the
+    // other two start with none, so theirs are all additions.
+    const ownSupplierParts = diffsSupplierParts(affectedItem);
     const diff = diffMethod({
       baseMaterials: base.materials,
       targetMaterials: target.materials,
@@ -9286,80 +9921,92 @@ export async function getChangeNoticeDiff(
       targetAttributes,
       baseOperationChildren: base.children,
       targetOperationChildren: target.children,
-      baseSupplierParts: sourceSupplierParts,
-      targetSupplierParts: draftSupplierParts
+      baseSupplierParts:
+        ownSupplierParts && affectedItem.changeType === "Revision"
+          ? (supplierParts.data.get(affectedItem.itemId) ?? [])
+          : null,
+      targetSupplierParts: ownSupplierParts
+        ? (supplierParts.data.get(draftItemId) ?? [])
+        : []
     });
-
-    // Label BOM lines by their component's readable id and BOP tools by the tool
-    // item's readable id (both reference item UUIDs) — store-independent. One
-    // batch resolve over every referenced item id.
     const componentIds = [...base.materials, ...target.materials]
       .map((m) => m.itemId)
       .filter((id): id is string => typeof id === "string");
-    const toolIds = diff.operations.flatMap((op) =>
-      (op.children?.tools ?? [])
-        .flatMap((tool) => [tool.before, tool.after])
-        .map((row) => (row as { toolId?: string } | null)?.toolId)
-        .filter((id): id is string => typeof id === "string")
-    );
-    const readableIds = await readItemReadableIds(
-      client,
-      [...componentIds, ...toolIds],
-      companyId
-    );
+    return { affectedItem, diff, componentIds };
+  });
+
+  // Label BOM lines by their component's readable id and BOP tools by the tool
+  // item's readable id (both reference item UUIDs) — store-independent.
+  const allOperations = diffs.flatMap(({ diff }) => diff.operations);
+  const toolIds = allOperations.flatMap((op) =>
+    (op.children?.tools ?? [])
+      .flatMap((tool) => [tool.before, tool.after])
+      .map((row) => (row as { toolId?: string } | null)?.toolId)
+      .filter((id): id is string => typeof id === "string")
+  );
+  const readableIds = await readItemReadableIds(
+    client,
+    [...diffs.flatMap(({ componentIds }) => componentIds), ...toolIds],
+    companyId
+  );
+  for (const { diff } of diffs) {
     stampMaterialReadableIds(diff.materials, readableIds);
     stampToolReadableIds(diff.operations, readableIds);
-    await stampOperationRefNames(client, diff.operations, companyId);
+  }
+  await stampOperationRefNames(client, allOperations, companyId);
 
-    // Resolve the item-group id → name so the attribute diff reads "Group A →
-    // Group B" instead of opaque ids. A modified attribute carries the id in
-    // `changedFields`; an added/removed one (a New Part) carries it on the raw
-    // before/after row that the full-property list renders directly.
-    const groupIds = diff.attributes.flatMap((a) => {
-      const ids: string[] = [];
+  // Resolve the item-group id → name so the attribute diff reads "Group A →
+  // Group B" instead of opaque ids. A modified attribute carries the id in
+  // `changedFields`; an added/removed one (a New Part) carries it on the raw
+  // before/after row that the full-property list renders directly.
+  const allAttributes = diffs.flatMap(({ diff }) => diff.attributes);
+  const groupIds = allAttributes.flatMap((a) => {
+    const ids: string[] = [];
+    const cf = a.changedFields?.itemPostingGroupId;
+    if (cf) {
+      if (typeof cf.before === "string") ids.push(cf.before);
+      if (typeof cf.after === "string") ids.push(cf.after);
+    }
+    for (const row of [a.before, a.after]) {
+      const gid = (row as { itemPostingGroupId?: unknown } | null)
+        ?.itemPostingGroupId;
+      if (typeof gid === "string") ids.push(gid);
+    }
+    return ids;
+  });
+  if (groupIds.length > 0) {
+    const names = await readPostingGroupNames(client, groupIds, companyId);
+    for (const a of allAttributes) {
       const cf = a.changedFields?.itemPostingGroupId;
       if (cf) {
-        if (typeof cf.before === "string") ids.push(cf.before);
-        if (typeof cf.after === "string") ids.push(cf.after);
+        if (typeof cf.before === "string")
+          cf.before = names.get(cf.before) ?? cf.before;
+        if (typeof cf.after === "string")
+          cf.after = names.get(cf.after) ?? cf.after;
       }
       for (const row of [a.before, a.after]) {
-        const gid = (row as { itemPostingGroupId?: unknown } | null)
-          ?.itemPostingGroupId;
-        if (typeof gid === "string") ids.push(gid);
-      }
-      return ids;
-    });
-    if (groupIds.length > 0) {
-      const names = await readPostingGroupNames(client, groupIds, companyId);
-      for (const a of diff.attributes) {
-        const cf = a.changedFields?.itemPostingGroupId;
-        if (cf) {
-          if (typeof cf.before === "string")
-            cf.before = names.get(cf.before) ?? cf.before;
-          if (typeof cf.after === "string")
-            cf.after = names.get(cf.after) ?? cf.after;
-        }
-        for (const row of [a.before, a.after]) {
-          const r = row as { itemPostingGroupId?: unknown } | null;
-          if (r && typeof r.itemPostingGroupId === "string") {
-            r.itemPostingGroupId =
-              names.get(r.itemPostingGroupId) ?? r.itemPostingGroupId;
-          }
+        const r = row as { itemPostingGroupId?: unknown } | null;
+        if (r && typeof r.itemPostingGroupId === "string") {
+          r.itemPostingGroupId =
+            names.get(r.itemPostingGroupId) ?? r.itemPostingGroupId;
         }
       }
     }
-
-    items.push({
-      affectedItemId: affectedItem.id,
-      itemId: affectedItem.itemId,
-      materials: diff.materials,
-      operations: diff.operations,
-      attributes: diff.attributes,
-      supplierParts: diff.supplierParts
-    });
   }
 
-  return { data: { items }, error: null };
+  return {
+    data: {
+      items: diffs.map(({ affectedItem, diff }) => ({
+        affectedItemId: affectedItem.id,
+        itemId: affectedItem.itemId,
+        materials: diff.materials,
+        operations: diff.operations,
+        attributes: diff.attributes,
+        supplierParts: diff.supplierParts
+      }))
+    },
+    error: null
+  };
 }
 
 /**
@@ -9789,7 +10436,7 @@ const methodLockQueries = {
 
 // Every base query is scoped by companyId (defense-in-depth; the id is a global
 // UUID but tenant scoping is a golden rule). The lock is advisory — RLS +
-// requirePermissions are the real boundary — so a null/unresolvable status
+// authorize are the real boundary — so a null/unresolvable status
 // leaves the gate open by design (see checkRevisionLock).
 async function resolveMethodLock(
   client: SupabaseClient<Database>,
@@ -10559,8 +11206,8 @@ function normalizeSupersessionMode(
 // Release IS the Implementation -> Done transition, so every other status means
 // the item is still a draft.
 //
-// Pass a service-role client: reading `changeOrder` requires `parts_view`, which
-// the caller need not have.
+// Pass a service-role client: reading `changeOrder` requires View on Change
+// Notices, which the caller need not have.
 // -----------------------------------------------------------------------------
 const RELEASED_CHANGE_ORDER_STATUS = "Done";
 
@@ -10756,6 +11403,38 @@ export function priceBreakRows(
 
 export const isMakeMethodId = (id: string) => id.startsWith("make_");
 
+/**
+ * The gate of an operation on one item's data: the page of the item's type
+ * (Parts, Materials, Tools, Consumables or Services) at `level`. `id` names
+ * the item, or a row that leads to it through `from` and `path`
+ * (`[fk, table]` hops ending at `item`). An item type no page owns, a
+ * Fixture, is refused.
+ */
+export function itemRule<const L extends GateLevel, const K extends string>(
+  level: L,
+  at: { id: K; from?: string; path?: readonly RowHop[] }
+) {
+  return rowRule("item", level, at);
+}
+
+/**
+ * `itemRule` for an input field that holds an item id or a make method id
+ * (`copyMethod`'s source and target), which no single row rule can name:
+ * `run` checks it with `refusalOf`.
+ */
+export function itemOrMethodRule<
+  const L extends GateLevel,
+  const K extends string
+>(level: L, field: K, id: string) {
+  return isMakeMethodId(id)
+    ? itemRule(level, {
+        id: field,
+        from: "makeMethod",
+        path: [["itemId", "item"]]
+      })
+    : itemRule(level, { id: field });
+}
+
 // ── Change notices ──────────────────────────────────────────────────────────
 
 const onShapeDataValidator = z.object({
@@ -10933,9 +11612,11 @@ async function copyMakeMethodOperations(
   });
 }
 
-export const syncMakeMethodPermission = {
-  update: "resources"
-} satisfies PermissionRule<z.output<typeof syncInput>>;
+export const syncMakeMethodPermission = itemRule("Edit", {
+  id: "makeMethodId",
+  from: "makeMethod",
+  path: [["itemId", "item"]]
+}) satisfies PermissionRule<z.output<typeof syncInput>>;
 
 /**
  * What the Onshape sync does with a make method. An Active one is never

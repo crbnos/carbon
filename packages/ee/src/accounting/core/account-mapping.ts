@@ -122,7 +122,6 @@ type AccountDefaultAccountColumns = Exclude<
 >;
 type AssertAccountSuffix<T extends `${string}Account` | `${string}AccountId`> =
   T;
-// biome-ignore lint/correctness/noUnusedVariables: compile-time assertion
 type _accountDefaultColumnsAllMatchCollectorPattern =
   AssertAccountSuffix<AccountDefaultAccountColumns>;
 

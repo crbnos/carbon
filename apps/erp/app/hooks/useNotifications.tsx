@@ -45,7 +45,6 @@ export function useNotifications({
 
   // Initial fetch — runs once per (carbon/user/company) tuple, and again when
   // `reloads` is bumped.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `reloads` is a trigger, not an input
   useEffect(() => {
     if (!carbon) return;
     let cancelled = false;

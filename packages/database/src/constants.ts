@@ -414,6 +414,7 @@ export const Constants = {
       ],
       inventoryCountStatus: ["Draft", "Pending", "Posted"],
       invoiceAutomation: [
+        "Manual",
         "Draft Only",
         "Post",
         "Post and Email",
@@ -748,6 +749,7 @@ export const Constants = {
       performanceBasedPaymentEventType: ["Severable", "Cumulative"],
       periodCloseStatus: ["Open", "Locked", "Closed"],
       periodType: ["Week", "Day", "Month"],
+      permissionLevel: ["None", "View", "Create", "Edit", "Full"],
       pickingListLineStatus: ["Pending", "Picked", "Short", "Cancelled"],
       pickingListStatus: [
         "Draft",
@@ -757,6 +759,8 @@ export const Constants = {
         "Partial",
       ],
       pickMethodSortMethod: ["Default", "FEFO", "FIFO", "LIFO"],
+      plannedOrderStatus: ["Planned", "Firm", "Converted"],
+      plannedOrderType: ["Make", "Buy", "Transfer"],
       planningActionStatus: ["Open", "Dismissed", "Actioned"],
       planningActionType: [
         "Order",

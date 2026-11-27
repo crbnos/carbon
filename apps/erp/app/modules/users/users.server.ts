@@ -3,71 +3,109 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { accountProfileValidator } from "@carbon/account";
-import { defineServiceFn } from "@carbon/api/service-fn.server";
+import {
+  CarbonError,
+  defineServiceFn,
+  type ErrorCategory
+} from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
-import { CarbonEdition, CONTROLLED_ENVIRONMENT } from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { deactivateUser } from "@carbon/auth/users.server";
-import { insertAuditLogEntries } from "@carbon/ee/audit.server";
+import { LEVELS, pageById } from "@carbon/database/access";
 import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
 import {
-  insertEmployeeType,
-  updateEmployee,
-  upsertEmployeeType,
-  upsertEmployeeTypePermissions
+  ACCESS_READER_GATE,
+  SUBJECT_RULES,
+  subjectGates
+} from "@carbon/ee/permission-grants";
+import {
+  adminRemovalRefusal,
+  adminTypeChangeRefusal,
+  grantWriteRefusal,
+  deleteEmployeeType as removeEmployeeType,
+  subjectEntitlement
 } from "@carbon/ee/permissions.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
-import { batchTrigger } from "@carbon/jobs";
+import {
+  batchTrigger,
+  type InviteRefresh,
+  refreshResentInvite
+} from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import {
   datetime,
-  Edition,
   isAllowedAvatarValue,
   isOwnAvatarUpload,
   isOwnSignaturePath,
+  pluckUnique,
   requireAffected,
   requiresItarEntityCertification
 } from "@carbon/utils";
-import { nanoid } from "nanoid";
 import { z } from "zod";
 import {
+  refuseKeyWithout,
+  refuseUnlessOwned
+} from "~/modules/shared/shared.service";
+import {
+  bulkPermissionEditTypes,
+  convertConsoleOperatorPermission,
+  convertOperatorValidator,
   createOperatorValidator,
-  employeeTypePermissionsValidator,
+  grantModule,
+  grantsSchema,
   itarEntityCertificationValidator,
   itarUserCertificationValidator,
+  permissionsValidator,
   US_PERSON_ATTESTATION_REQUIRED,
-  userFlagValidator,
-  userPermissionsValidator
+  userFlagValidator
 } from "./users.models";
 import * as service from "./users.service";
 
 const logger = getLogger("erp", "users");
+
+/** The error each refused invite refresh answers. */
+const REFRESH_REFUSAL = {
+  noInvite: "notFound",
+  accepted: "rule",
+  revoked: "conflict"
+} as const satisfies Record<
+  Extract<InviteRefresh, { failure: string }>["failure"],
+  ErrorCategory
+>;
 // ---------------------------------------------------------------------------
 // Operations (`defineServiceFn`): what the routes, the API and MCP all run
 // ---------------------------------------------------------------------------
 //
-// The writes that send an invite or write an audit record are not published
-// (no `@mcp`): they take the request's IP, city and user agent as input, which
-// an API caller could set to anything, and the permission editors write that IP
-// into the permission audit log. They wait for a context that carries the
-// request.
+// The invite emails and the audit records show the request's IP, city and
+// user agent. They come from `ctx.origin`, which the entry point reads from
+// the request's headers, never from the input: a caller cannot set them.
 
-/** Where the request came from, as the route read it from its headers. */
-const requestOrigin = {
-  ip: z.string().optional(),
-  city: z.string().optional()
-};
 /**
  * Invite an employee: create their account in the company and email them
  * the invite link.
  *
  * @remarks
- * Without role authoring (the PERMISSIONS feature), the invite always gets
- * the Admin employee type, whatever was asked for. In a controlled
- * environment the inviter must attest the person is a U.S. person (a
- * `validation` error otherwise). Once SSO is on, an email outside its
- * domains is refused (a `rule` error, its only one). A deactivated or
- * still-invited person is re-added (see `createEmployeeAccount`).
+ * The person gets the employee type's permissions when they accept the
+ * invite, which they do from the email, outside the API. Without role
+ * authoring (the PERMISSIONS feature), the invite always gets the Admin
+ * employee type, whatever was asked for. Only an Admin may invite someone as
+ * Admin. A first-time invite writes the employee under the caller's
+ * permissions, so it needs Edit on Accounts and Create on Employees as well;
+ * an API key without them is refused. In a controlled environment the inviter
+ * must attest the person is a U.S. person (a `validation` error otherwise).
+ * Once SSO is on, an email outside its domains is refused (a `rule` error). A
+ * deactivated or still-invited person is invited again: a new code, and the
+ * link already sent stops working. Returns the new employee's user id.
+ *
+ * @param email - The person's email address. The invite link goes to it.
+ * @param firstName - The person's first name.
+ * @param lastName - The person's last name.
+ * @param employeeType - The employee type that decides the person's permissions. See users_getEmployeeTypes.
+ * @param locationId - The person's location. See resources_getLocations.
+ * @param usPersonAttestation - Controlled environments only: the inviter attests the person is a U.S. person (22 CFR 120.62). Ignored elsewhere.
+ *
+ * @mcp
  */
 export const inviteEmployee = defineServiceFn({
   input: z.object({
@@ -76,11 +114,16 @@ export const inviteEmployee = defineServiceFn({
     lastName: z.string().min(1),
     employeeType: z.string().min(1),
     locationId: z.string().min(1),
-    usPersonAttestation: z.boolean().default(false),
-    ...requestOrigin
+    usPersonAttestation: z.boolean().default(false)
   }),
-  permission: { create: "users" },
+  permission: { "users.accounts": "Create" },
   async run(ctx, input) {
+    const keyRefused = refuseKeyWithout(ctx, {
+      "users.accounts": "Edit",
+      "people.employees": "Create"
+    });
+    if (keyRefused) return keyRefused;
+
     const companyId = ctx.company.id;
     const client = ctx.asCaller.supabase;
 
@@ -97,6 +140,20 @@ export const inviteEmployee = defineServiceFn({
         .maybeSingle();
       if (adminType.data?.id) employeeType = adminType.data.id;
     }
+    // A re-add of a deactivated person moves them off the type they had.
+    const existing = await ctx.asSystem.pg
+      .selectFrom("employee")
+      .innerJoin("user", "user.id", "employee.id")
+      .select("employee.employeeTypeId")
+      .where("employee.companyId", "=", companyId)
+      .where("user.email", "=", input.email.toLowerCase())
+      .executeTakeFirst();
+    const adminRefused = await adminTypeChangeRefusal(ctx.asSystem.pg, {
+      companyId,
+      actor: ctx.actor,
+      typeIds: [employeeType, existing?.employeeTypeId]
+    });
+    if (adminRefused) return grantWriteRefusal(ctx, adminRefused);
 
     // 22 CFR 120.62: the inviter attests the invitee is a U.S. person.
     if (CONTROLLED_ENVIRONMENT && !input.usPersonAttestation) {
@@ -135,25 +192,46 @@ export const inviteEmployee = defineServiceFn({
       ...sender,
       email: input.email,
       code: created.code,
-      name: `${input.firstName} ${input.lastName}`.trim(),
-      ip: input.ip,
-      city: input.city
+      name: `${input.firstName} ${input.lastName}`.trim()
     });
     return { userId: created.userId };
   }
 });
 /**
- * Invite a customer contact: create their portal account and email them the
- * invite link.
+ * Invite a customer contact: create their customer portal account and email
+ * them the invite link.
+ *
+ * @remarks
+ * The contact must be one of the customer's contacts and have an email
+ * address. The person gets the customer portal permissions when they accept
+ * the invite, which they do from the email, outside the API. A person who
+ * already has an account or a pending invite in the company is refused (a
+ * `conflict` error): users_resendInvites sends a pending invite again. A
+ * person whose account was deactivated is invited again. The account is
+ * written under the caller's permissions, so the caller also needs Edit on
+ * Customers. Returns the new account's user id.
+ *
+ * @param customerContactId - The customer contact to invite. See sales_getCustomerContacts.
+ * @param customerId - The contact's customer. See sales_getCustomers.
+ *
+ * @mcp
  */
 export const inviteCustomerContact = defineServiceFn({
   input: z.object({
     customerContactId: z.string().min(1),
-    customerId: z.string().min(1),
-    ...requestOrigin
+    customerId: z.string().min(1)
   }),
-  permission: { create: "users" },
-  async run(ctx, { customerContactId, customerId, ...origin }) {
+  permission: { "users.accounts": "Create" },
+  async run(ctx, { customerContactId, customerId }) {
+    const refused = service.refuseUnlessCan(ctx, { "sales.customers": "Edit" });
+    if (refused) return refused;
+    const uninvitable = await service.refuseUninvitableContact(ctx, {
+      role: "customer",
+      id: customerContactId,
+      customerId
+    });
+    if (uninvitable) return uninvitable;
+
     const created = await service.createCustomerAccount(
       ctx.asCaller.supabase,
       ctx.asSystem.pg,
@@ -171,22 +249,47 @@ export const inviteCustomerContact = defineServiceFn({
         created
       );
     }
-    return service.emailAccountInvite(ctx, created, origin);
+    return service.emailAccountInvite(ctx, created);
   }
 });
 
 /**
- * Invite a supplier contact: create their portal account and email them the
- * invite link.
+ * Invite a supplier contact: create their supplier portal account and email
+ * them the invite link.
+ *
+ * @remarks
+ * The contact must be one of the supplier's contacts and have an email
+ * address. The person gets the supplier portal permissions when they accept
+ * the invite, which they do from the email, outside the API. A person who
+ * already has an account or a pending invite in the company is refused (a
+ * `conflict` error): users_resendInvites sends a pending invite again. A
+ * person whose account was deactivated is invited again. The account is
+ * written under the caller's permissions, so the caller also needs Edit on
+ * Suppliers. Returns the new account's user id.
+ *
+ * @param supplierContactId - The supplier contact to invite. See purchasing_getSupplierContacts.
+ * @param supplierId - The contact's supplier. See purchasing_getSuppliers.
+ *
+ * @mcp
  */
 export const inviteSupplierContact = defineServiceFn({
   input: z.object({
     supplierContactId: z.string().min(1),
-    supplierId: z.string().min(1),
-    ...requestOrigin
+    supplierId: z.string().min(1)
   }),
-  permission: { create: "users" },
-  async run(ctx, { supplierContactId, supplierId, ...origin }) {
+  permission: { "users.accounts": "Create" },
+  async run(ctx, { supplierContactId, supplierId }) {
+    const refused = service.refuseUnlessCan(ctx, {
+      "purchasing.suppliers": "Edit"
+    });
+    if (refused) return refused;
+    const uninvitable = await service.refuseUninvitableContact(ctx, {
+      role: "supplier",
+      id: supplierContactId,
+      supplierId
+    });
+    if (uninvitable) return uninvitable;
+
     const created = await service.createSupplierAccount(
       ctx.asCaller.supabase,
       ctx.asSystem.pg,
@@ -204,27 +307,51 @@ export const inviteSupplierContact = defineServiceFn({
         created
       );
     }
-    return service.emailAccountInvite(ctx, created, origin);
+    return service.emailAccountInvite(ctx, created);
   }
 });
 
 /**
- * Send pending invites again.
+ * Send invites again.
  *
  * @remarks
- * One user is re-invited at once: the invite gets a new code (the old link
- * stops working), its acceptance and revocation are cleared, and its
- * `createdAt` restarts the controlled-environment expiry. Several are queued
- * as a job (`queued: true`). Refused when the user has no invite here.
+ * For a person who is invited and has not accepted, or whose account was
+ * deactivated: what the Employees, Customers and Suppliers lists offer it
+ * on. One user is re-invited at once: the invite gets a new code (the link
+ * already sent stops working), its acceptance and revocation are cleared,
+ * and its `createdAt` restarts the controlled-environment expiry. Several
+ * users are queued as a job (`queued: true`), which sends the emails a few
+ * moments later. Refused, for every user, when one is on the Admin type and
+ * the caller is not an Admin (a `forbidden` error), has no invite here (a
+ * `notFound` error), has an active account in the company, or was a customer
+ * or supplier contact whose account was deactivated (a `rule` error; invite
+ * that contact again with users_inviteCustomerContact or
+ * users_inviteSupplierContact). An invite revoked after this call read it is
+ * not sent (a `conflict` error for one user; the job skips it for several).
+ *
+ * @param userIds - The users to invite again, at least one. See users_getEmployees (status Invited or Inactive), users_getCustomers and users_getSuppliers.
+ *
+ * @mcp
  */
 export const resendInvites = defineServiceFn({
   input: z.object({
-    userIds: z.array(z.string().min(1)).min(1),
-    ...requestOrigin
+    userIds: z.array(z.string().min(1)).min(1)
   }),
-  permission: { create: "users" },
-  async run(ctx, { userIds, ip, city }) {
+  permission: { "users.accounts": "Create" },
+  async run(ctx, input) {
     const companyId = ctx.company.id;
+    const userIds = pluckUnique(input.userIds, (id) => id);
+    // Accepting brings a deactivated person back on the type they kept: an Admin's is an Admin's call.
+    const adminRefused = await adminRemovalRefusal(ctx.asSystem.pg, {
+      companyId,
+      actor: ctx.actor,
+      userIds
+    });
+    if (adminRefused) return grantWriteRefusal(ctx, adminRefused);
+    // Each invite's revocation as read here: the refresh clears only that one.
+    const reinvitable = await service.readReinviteRevocations(ctx, userIds);
+    if (reinvitable.error) return reinvitable.error;
+    const revokedAt = reinvitable.data;
     if (userIds.length > 1) {
       try {
         await batchTrigger(
@@ -234,8 +361,8 @@ export const resendInvites = defineServiceFn({
               id,
               type: "resend" as const,
               companyId,
-              location: city ?? "Unknown",
-              ip: ip ?? "127.0.0.1"
+              ...service.inviteOrigin(ctx.origin),
+              revokedAt: revokedAt.get(id) ?? null
             }
           }))
         );
@@ -259,40 +386,29 @@ export const resendInvites = defineServiceFn({
       return ctx.error("internal", "Failed to load company or user");
     }
 
-    const existingInvite = await serviceRole
-      .from("invite")
-      .select("createdBy")
-      .eq("email", user.data.email)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (existingInvite.error || !existingInvite.data) {
-      return ctx.error(
-        "notFound",
-        "No invite record found for user",
-        existingInvite.error
-      );
-    }
-
-    const refreshed = await serviceRole
-      .from("invite")
-      .update({
-        code: nanoid(),
-        acceptedAt: null,
-        revokedAt: null,
-        createdAt: datetime.timestamp()
-      })
-      .eq("email", user.data.email)
-      .eq("companyId", companyId)
-      .select("code")
-      .single();
-    if (refreshed.error || !refreshed.data) {
-      return ctx.error("internal", "Failed to refresh invite", refreshed.error);
+    // An acceptance or a revoke since the check above fails the refresh: no
+    // new code, no email.
+    const refreshed = await refreshResentInvite(serviceRole, {
+      userId,
+      email: user.data.email,
+      companyId,
+      revokedAt: revokedAt.get(userId) ?? null
+    }).catch((cause: unknown) =>
+      ctx.error(
+        "internal",
+        cause instanceof Error ? cause.message : "Failed to refresh invite",
+        cause
+      )
+    );
+    if (refreshed instanceof CarbonError) return refreshed;
+    if ("failure" in refreshed) {
+      return ctx.error(REFRESH_REFUSAL[refreshed.failure], refreshed.message);
     }
 
     const inviter = await serviceRole
       .from("user")
       .select("email, fullName")
-      .eq("id", existingInvite.data.createdBy)
+      .eq("id", refreshed.createdBy)
       .single();
 
     await service.sendInviteEmail(ctx, {
@@ -302,110 +418,85 @@ export const resendInvites = defineServiceFn({
         fullName: inviter.data?.fullName ?? null
       },
       email: user.data.email,
-      code: refreshed.data.code,
-      name: user.data.fullName ?? "",
-      ip,
-      city
+      code: refreshed.code,
+      name: user.data.fullName ?? ""
     });
     return { queued: false };
   }
 });
 
 /**
- * Revoke pending invites, and take the users' access to the company away.
+ * Revoke pending invites, so the links already sent stop working.
  *
  * @remarks
- * One user is deactivated at once (and, on Cloud, the subscription's seat
- * count updated); several are deactivated by a job. Then every open invite
- * of theirs here is marked revoked, and each revocation is written to the
- * audit log when the company keeps one.
+ * Revoking deactivates the user, so it needs Full on Accounts, as the
+ * lists' Revoke Invite does. Only an invite not yet accepted is taken:
+ * every user must have an invite here that is not accepted, and no membership
+ * in the company (an employee who already joined is deactivated with
+ * users_deactivateUsers). Every invite still pending is marked revoked first,
+ * and only its user is deactivated: an invite accepted in the meantime is
+ * left alone. An invite already revoked is not revoked again, but its user is
+ * deactivated again, which finishes a deactivation that did not run. One user
+ * is deactivated at once (and, on Cloud, the subscription's seat count
+ * updated); several are deactivated by a job, which skips a user whose invite
+ * was sent again or accepted since. A deactivation that fails before it
+ * changes the account leaves the invite pending; one that may have changed
+ * it, or could not be queued, leaves the invite revoked, and the job or a
+ * revoke sent again finishes it. Each revocation that stands is written to
+ * the audit log when the company keeps one. Returns how many invites this
+ * call revoked.
+ *
+ * @param userIds - The invited users, from 1 to 100. See users_getEmployees (status Invited) and users_getUnrevokedInviteEmails.
+ *
+ * @mcp destructive
  */
 export const revokeInvites = defineServiceFn({
   input: z.object({
-    userIds: z.array(z.string().min(1)).min(1),
-    ip: z.string().optional(),
-    userAgent: z.string().optional()
+    userIds: z.array(z.string().min(1)).min(1).max(100)
   }),
-  permission: { create: "users" },
-  async run(ctx, { userIds, ip, userAgent }) {
-    const companyId = ctx.company.id;
-    const actorId = ctx.auditUserId;
-    const serviceRole = ctx.asSystem.supabase;
-
-    const users = await serviceRole
-      .from("user")
-      .select("id, email")
-      .in("id", userIds);
-    if (users.error) {
-      return ctx.error("internal", "Failed to load users", users.error);
-    }
-
-    if (users.data.length === 1) {
-      const deactivated = await deactivateUser(
-        serviceRole,
-        users.data[0].id,
-        companyId,
-        actorId,
-        ip
-      );
-      if (!deactivated.success) {
-        return ctx.error(
-          "internal",
-          "Failed to deactivate user",
-          deactivated.message
-        );
-      }
-      if (CarbonEdition === Edition.Cloud) {
-        await updateSubscriptionQuantityForCompany(companyId);
-      }
-    } else {
-      await batchTrigger(
-        "user-admin",
-        userIds.map((id) => ({
-          payload: { id, type: "deactivate" as const, companyId, actorId, ip }
-        }))
-      );
-    }
+  permission: { "users.accounts": "Full" },
+  async run(ctx, { userIds }) {
+    const pending = await service.readRevocableInvites(ctx, userIds);
+    if (pending.error) return pending.error;
 
     const revokedAt = datetime.timestamp();
-    const revoked = await serviceRole
-      .from("invite")
-      .update({ revokedAt })
-      .in(
-        "email",
-        users.data.map((user) => user.email)
+    const stamped = await service.stampPendingInvites(
+      ctx,
+      pending.data,
+      revokedAt
+    );
+    if (stamped.error) return stamped.error;
+
+    // Each user to deactivate, with the revocation its job must still find:
+    // this call's, or an earlier one's whose deactivation may not have run.
+    const stampedIds = new Set(stamped.data);
+    const toDeactivate = pending.data
+      .filter(
+        (invite) => invite.revokedAt !== null || stampedIds.has(invite.inviteId)
       )
-      .eq("companyId", companyId)
-      .is("revokedAt", null)
-      .select("id");
-    if (revoked.error) {
-      return ctx.error("internal", "Failed to revoke invites", revoked.error);
+      .map((invite) => ({
+        id: invite.userId,
+        revokedAt: invite.revokedAt ?? revokedAt
+      }));
+
+    // One user is deactivated here; several, or one whose deactivation threw
+    // after its writes, by the job.
+    const deactivated =
+      toDeactivate.length === 1
+        ? await service.deactivateRevokedUser(ctx, toDeactivate[0].id)
+        : "queue";
+    if (deactivated instanceof CarbonError) {
+      await service.restoreStampedInvites(ctx, stamped.data, revokedAt);
+      return deactivated;
     }
 
-    // Best effort: a company without audit logging has no audit log table.
-    if (revoked.data.length > 0) {
-      try {
-        await insertAuditLogEntries(
-          serviceRole,
-          companyId,
-          revoked.data.map((invite) => ({
-            tableName: "invite" as const,
-            entityType: "invite" as const,
-            entityId: invite.id,
-            recordId: invite.id,
-            operation: "UPDATE" as const,
-            actorId,
-            diff: { revokedAt: { old: null, new: revokedAt } },
-            metadata: { ipAddress: ip, userAgent }
-          }))
-        );
-      } catch (err) {
-        logger.warning("Audit write skipped for a revoked invite", {
-          error: err
-        });
-      }
-    }
-    return { revoked: revoked.data.length };
+    const unqueued =
+      deactivated === "queue"
+        ? await service.queueRevokedDeactivations(ctx, toDeactivate)
+        : null;
+    await service.auditRevokedInvites(ctx, stamped.data, revokedAt);
+    if (unqueued) return unqueued;
+    return { revoked: stamped.data.length };
   }
 });
 
@@ -414,27 +505,48 @@ export const revokeInvites = defineServiceFn({
  * here.
  *
  * @remarks
- * Refuses the caller's own account. One user is deactivated at once, and
+ * Takes employees, customer accounts and supplier accounts, active or still
+ * invited. Each user loses their membership, their permissions and their
+ * groups in the company, and their open invite here is revoked. An
+ * employee's job record (title, location, manager) stays. Refuses the
+ * caller's own account, an Admin's unless the caller is an Admin (a
+ * `forbidden` error), and a user with no membership, account or invite in
+ * the company (a `notFound` error). One user is deactivated at once, and
  * `message` says how it went; several are deactivated by a job
- * (`queued: true`).
+ * (`queued: true`) a few moments later. To give an employee access back,
+ * send the invite again (users_resendInvites); a customer or supplier
+ * contact is invited again with users_inviteCustomerContact or
+ * users_inviteSupplierContact.
+ *
+ * @param userIds - The users to deactivate, at least one. See users_getEmployees, users_getCustomers and users_getSuppliers.
+ *
+ * @mcp destructive
  */
 export const deactivateUsers = defineServiceFn({
   input: z.object({
-    userIds: z.array(z.string().min(1)).min(1),
-    ip: z.string().optional()
+    userIds: z.array(z.string().min(1)).min(1)
   }),
-  permission: { delete: "users" },
-  async run(ctx, { userIds, ip }) {
+  permission: { "users.accounts": "Full" },
+  async run(ctx, { userIds }) {
     const companyId = ctx.company.id;
+    const { ip } = ctx.origin;
     const actorId = ctx.auditUserId;
     if (userIds.includes(actorId)) {
       return ctx.error("rule", "You cannot deactivate yourself");
     }
+    const adminRefused = await adminRemovalRefusal(ctx.asSystem.pg, {
+      companyId,
+      actor: ctx.actor,
+      userIds
+    });
+    if (adminRefused) return grantWriteRefusal(ctx, adminRefused);
+    const outside = await service.refuseUnlessCompanyUsers(ctx, userIds);
+    if (outside) return outside;
 
     if (userIds.length === 1) {
       // The service role: "userPermission" has no UPDATE policy, so under the
       // caller's client the permission strip matched no rows and the user
-      // kept every grant for this company. It also updates the Stripe seats.
+      // kept every grant for this company.
       const result = await deactivateUser(
         ctx.asSystem.supabase,
         userIds[0],
@@ -468,93 +580,74 @@ export const deactivateUsers = defineServiceFn({
   }
 });
 
-const companyPermissions = z.record(z.string(), userPermissionsValidator);
 /**
- * Change an employee's employee type and their permissions in the company.
+ * Change an employee's employee type and replace their overrides in the
+ * company.
  *
  * @remarks
  * Needs role authoring (the PERMISSIONS feature). The employee and the type
- * must both be the company's, and the caller must be a claims admin. The
- * change is written to the permission audit log.
+ * must both be the company's. Access is the role's grants with these
+ * overrides on top. The move and the overrides are one write and one entry in
+ * the permission audit log, which records the request's IP.
  */
 export const updateEmployeePermissions = defineServiceFn({
   input: z.object({
     id: z.string().min(1),
     employeeType: z.string().min(1),
-    permissions: companyPermissions,
-    ip: z.string().optional()
+    grants: grantsSchema
   }),
-  permission: { update: "users" },
-  async run(ctx, { id, employeeType, permissions, ip }) {
-    const gated = await service.refuseUnlessPermissionsFeature(ctx);
-    if (gated) return gated;
-
-    const result = await updateEmployee(ctx.asCaller.supabase, {
-      id,
+  permission: subjectGates("Edit").person,
+  async run(ctx, { id, employeeType, grants }) {
+    const refused = await service.saveAccessGrants(ctx, {
+      subjectType: "person",
+      subjectId: id,
+      change: { set: grants },
       employeeType,
-      permissions,
-      companyId: ctx.company.id,
-      actorId: ctx.auditUserId,
-      ip
+      ip: ctx.origin.ip
     });
-    if (!result.success)
-      return service.permissionsWriteError(ctx, result.message);
+    if (refused) return refused;
     return { id };
   }
 });
 
 /**
- * Change several employees' permissions in the company, in a job.
+ * Apply the same overrides to several employees in the company, in a job.
  *
  * @remarks
  * Needs role authoring (the PERMISSIONS feature). Every user must be an
- * employee of the company. `editType: "add"` only grants; any other value
- * also takes away what `permissions` leaves unchecked.
+ * employee of the company. The call only queues one job per user (`count`):
+ * the grants change a few moments later, and each change is written to the
+ * permission audit log. `editType: "add"` only raises a level; `"update"`
+ * sets it.
  */
 export const bulkUpdatePermissions = defineServiceFn({
   input: z.object({
-    editType: z.string().min(1),
+    editType: z.enum(bulkPermissionEditTypes),
     userIds: z.array(z.string().min(1)).min(1),
-    permissions: companyPermissions,
-    ip: z.string().optional()
+    grants: grantsSchema
   }),
-  permission: { update: "users" },
-  async run(ctx, { editType, userIds, permissions, ip }) {
-    const gated = await service.refuseUnlessPermissionsFeature(ctx);
-    if (gated) return gated;
+  permission: subjectGates("Edit").person,
+  async run(ctx, { editType, userIds, grants }) {
+    const unentitled = await grantWriteRefusal(
+      ctx,
+      await subjectEntitlement(ctx.asCaller.supabase, ctx.company.id, "person")
+    );
+    if (unentitled) return unentitled;
 
     const companyId = ctx.company.id;
-    // The job writes these users' grants as the service role: every id must
-    // be an employee of this company. One batched read.
-    const uniqueUserIds = [...new Set(userIds)];
-    const members = await ctx.asSystem.supabase
-      .from("employee")
-      .select("id")
-      .in("id", uniqueUserIds)
-      .eq("companyId", companyId);
-    if (members.error || (members.data ?? []).length !== uniqueUserIds.length) {
-      logger.error("Bulk permission edit names users outside the company", {
-        companyId,
-        userIds: uniqueUserIds,
-        error: members.error
-      });
-      return ctx.error("notFound", "Employee not found");
-    }
+    const outside = await service.refuseUnlessCompanyEmployees(ctx, userIds);
+    if (outside) return outside;
 
-    await batchTrigger(
-      "update-permissions",
-      userIds.map((id) => ({
-        payload: {
-          id,
-          permissions,
-          addOnly: editType === "add",
-          companyId,
-          actorId: ctx.auditUserId,
-          ip
-        }
-      }))
-    );
-    return { count: userIds.length };
+    const uniqueUserIds = [...new Set(userIds)];
+    await service.queuePermissionUpdates({
+      userIds: uniqueUserIds,
+      companyId,
+      actorId: ctx.auditUserId,
+      grants,
+      addOnly: editType === "add",
+      ip: ctx.origin.ip
+    });
+    return { count: uniqueUserIds.length };
   }
 });
 
@@ -562,155 +655,264 @@ export const bulkUpdatePermissions = defineServiceFn({
  * Create an employee type with its permissions.
  *
  * @remarks
- * Needs role authoring (the PERMISSIONS feature). The type and its
- * permissions are two writes: when the permissions fail, the type stays.
+ * Needs role authoring (the PERMISSIONS feature). The type and its grants
+ * are written in one transaction: when the grants fail, no type is created.
  */
 export const createEmployeeType = defineServiceFn({
   input: z.object({
     name: z.string().trim().min(1),
-    permissions: employeeTypePermissionsValidator
+    grants: grantsSchema
   }),
-  permission: { create: "users" },
-  async run(ctx, { name, permissions }) {
-    const gated = await service.refuseUnlessPermissionsFeature(ctx);
-    if (gated) return gated;
-
-    const client = ctx.asCaller.supabase;
-    const companyId = ctx.company.id;
-    const created = await insertEmployeeType(client, { name, companyId });
-    const employeeTypeId = created.data?.id;
-    if (created.error || !employeeTypeId) {
-      return ctx.error(
-        "internal",
-        "Failed to insert employee type",
-        created.error
-      );
-    }
-
-    const saved = await upsertEmployeeTypePermissions(
-      client,
-      employeeTypeId,
-      companyId,
-      permissions
-    );
-    if (saved.error) {
-      return ctx.error(
-        "internal",
-        "Failed to insert employee type permissions",
-        saved.error
-      );
-    }
-    return { id: employeeTypeId };
+  // Edit, not Create: the grants are written without RLS, which asks Edit of
+  // a grant write.
+  permission: subjectGates("Edit").role,
+  async run(ctx, { name, grants }) {
+    return service.writeEmployeeType(ctx, {
+      employeeType: { name },
+      grants
+    });
   }
 });
 
 /**
- * Rename an employee type and change its permissions.
+ * Rename an employee type and replace its grants.
  *
  * @remarks
- * Needs role authoring (the PERMISSIONS feature). Two writes, as for
- * `createEmployeeType`.
+ * Needs role authoring (the PERMISSIONS feature). Refused when the type is
+ * not the company's. One transaction, as for `createEmployeeType`.
  */
 export const updateEmployeeType = defineServiceFn({
   input: z.object({
     id: z.string().min(1),
     name: z.string().trim().min(1),
-    permissions: employeeTypePermissionsValidator
+    grants: grantsSchema
   }),
-  permission: { update: "users" },
-  async run(ctx, { id, name, permissions }) {
-    const gated = await service.refuseUnlessPermissionsFeature(ctx);
-    if (gated) return gated;
-
-    const client = ctx.asCaller.supabase;
-    const updated = await upsertEmployeeType(client, { id, name });
-    if (updated.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update employee type",
-        updated.error
-      );
-    }
-
-    const saved = await upsertEmployeeTypePermissions(
-      client,
-      id,
-      ctx.company.id,
-      permissions
-    );
-    if (saved.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update employee type permissions",
-        saved.error
-      );
-    }
-    return { id };
+  permission: subjectGates("Edit").role,
+  async run(ctx, { id, name, grants }) {
+    return service.writeEmployeeType(ctx, {
+      employeeType: { id, name },
+      grants
+    });
   }
 });
 
-const groupMembers = z.array(z.string().min(1)).min(1);
+/**
+ * Delete an employee type.
+ *
+ * @remarks
+ * Needs role authoring (the PERMISSIONS feature). A protected type (Admin,
+ * Console Operator) is never deleted.
+ */
+export const deleteEmployeeType = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: subjectGates("Full").role,
+  async run(ctx, { id }) {
+    const refused = await grantWriteRefusal(
+      ctx,
+      removeEmployeeType(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        id
+      })
+    );
+    return refused ?? { id };
+  }
+});
 
 /**
- * Create a group with its members: users (`user_<id>`) and groups
- * (`group_<id>`). When the members cannot be saved, the group is removed.
+ * What an employee can do on each page, and the grant that decides it: the
+ * Admin type, their own override, or their role.
+ */
+export const getEffectiveAccess = defineServiceFn({
+  input: z.object({ userId: z.string().min(1) }),
+  permission: subjectGates("View").person,
+  async run(ctx, { userId }) {
+    const access = await service.readEffectiveAccess(ctx, userId);
+    if (!access) return ctx.error("notFound", SUBJECT_RULES.person.notFound);
+    return access;
+  }
+});
+
+/**
+ * The employees whose level on a page reaches `level`, and, with the
+ * settings view, the API keys.
+ */
+export const getPageAccessHolders = defineServiceFn({
+  input: z.object({
+    page: z
+      .string()
+      .min(1)
+      .refine((page) => pageById(page) !== undefined, {
+        message: "Unknown page"
+      }),
+    level: z.enum(LEVELS)
+  }),
+  permission: ACCESS_READER_GATE,
+  async run(ctx, { page, level }) {
+    return service.readPageAccessHolders(ctx, page, level);
+  }
+});
+
+/**
+ * Every role's grants in the company.
+ *
+ * @remarks
+ * The person access editor reads them too (what each employee type would
+ * give the person), so an Accounts viewer may read them without the
+ * Employee Types page.
+ */
+export const getRoleGrants = defineServiceFn({
+  input: z.object({}),
+  permission: ACCESS_READER_GATE,
+  async run(ctx) {
+    return service.readRoleGrants(ctx);
+  }
+});
+
+/** The grants of a role, a person or an API key in the company. */
+export const getAccessGrants = defineServiceFn({
+  input: z.object({
+    subjectType: permissionsValidator.shape.subjectType,
+    subjectId: z.string().min(1)
+  }),
+  permission: { by: "subjectType", rules: subjectGates("View") },
+  async run(ctx, { subjectType, subjectId }) {
+    return service.readAccessGrants(ctx, subjectType, subjectId);
+  }
+});
+
+/**
+ * Replace the grants of a role, a person or an API key with the given set.
+ *
+ * @remarks
+ * Each grant names a module and, optionally, one of its pages, with a level:
+ * None, View, Create, Edit or Full. A null level stores no grant, so the
+ * subject inherits; None removes access. A role edit applies to everyone on
+ * the role at once. Roles and people need role authoring (the PERMISSIONS
+ * feature), API keys the API_KEYS feature.
+ */
+export const upsertAccessGrants = defineServiceFn({
+  input: permissionsValidator,
+  permission: { by: "subjectType", rules: subjectGates("Edit") },
+  async run(ctx, { subjectType, subjectId, grants }) {
+    const refused = await service.saveAccessGrants(ctx, {
+      subjectType,
+      subjectId,
+      change: { set: grants },
+      ip: ctx.origin.ip
+    });
+    if (refused) return refused;
+    return { subjectType, subjectId };
+  }
+});
+
+/**
+ * Remove one grant of a role, a person or an API key, so the subject inherits
+ * that module or page again.
+ */
+export const deleteAccessGrant = defineServiceFn({
+  input: z.object({
+    subjectType: permissionsValidator.shape.subjectType,
+    subjectId: z.string().min(1),
+    module: grantModule,
+    page: z.string().min(1).nullable()
+  }),
+  permission: { by: "subjectType", rules: subjectGates("Edit") },
+  async run(ctx, { subjectType, subjectId, module, page }) {
+    const refused = await service.saveAccessGrants(ctx, {
+      subjectType,
+      subjectId,
+      change: { remove: { module, page } },
+      ip: ctx.origin.ip
+    });
+    if (refused) return refused;
+    return { subjectType, subjectId };
+  }
+});
+
+// A member without the prefix would be dropped silently by the write.
+const groupMembers = z
+  .array(
+    z.string().regex(/^(user|group)_.+/, {
+      message: "A member is user_<id> or group_<id>"
+    })
+  )
+  .min(1);
+
+/**
+ * Create a group with its members.
+ *
+ * @remarks
+ * Needs Create on Groups, as the New Group form does. Members are users
+ * (`user_<id>`) and groups (`group_<id>`), each the company's (a `notFound`
+ * error otherwise); a member sent twice is saved once. The group and its
+ * members are saved together, or neither is.
+ *
+ * @param name - The group's name.
+ * @param selections - The members, at least one: `user_<userId>` (see users_getEmployees) or `group_<groupId>` (see users_getGroups).
+ *
+ * @mcp
  */
 export const createGroup = defineServiceFn({
   input: z.object({ name: z.string().trim().min(1), selections: groupMembers }),
-  permission: { create: "users" },
+  permission: { "users.groups": "Create" },
   async run(ctx, { name, selections }) {
-    const client = ctx.asCaller.supabase;
-    const created = await service.insertGroup(client, {
-      name,
-      companyId: ctx.company.id
-    });
-    const groupId = created.data?.id;
-    if (created.error || !groupId) {
-      return ctx.error("internal", "Failed to insert group", created.error);
-    }
+    const members = service.groupMembersOf(selections);
+    const foreign = await service.refuseForeignGroupMembers(ctx, members);
+    if (foreign) return foreign;
 
-    const members = await service.upsertGroupMembers(
-      client,
-      groupId,
-      selections
-    );
-    if (members.error) {
-      await service.deleteGroup(client, groupId);
-      return ctx.error(
-        "internal",
-        "Failed to insert group members",
-        members.error
-      );
+    try {
+      const id = await service.insertGroupWithMembers(ctx.asSystem.pg, {
+        name,
+        companyId: ctx.company.id,
+        members
+      });
+      return { id };
+    } catch (err) {
+      return ctx.error("internal", "Failed to create the group", err);
     }
-    return { id: groupId };
   }
 });
 
-/** Rename a group and replace its members. */
+/**
+ * Rename a group and replace its members.
+ *
+ * @remarks
+ * Needs Edit on Groups. The members sent replace every member the group
+ * had, in one write with the name. Each member must be the company's (a
+ * `notFound` error otherwise) and a group is never its own member (a
+ * `validation` error); a member sent twice is saved once. Refused when the
+ * group is not the company's.
+ *
+ * @param id - The group. See users_getGroups.
+ * @param name - The group's name.
+ * @param selections - Every member, at least one: `user_<userId>` (see users_getEmployees) or `group_<groupId>` (see users_getGroups).
+ *
+ * @mcp
+ */
 export const updateGroup = defineServiceFn({
   input: z.object({
     id: z.string().min(1),
     name: z.string().trim().min(1),
     selections: groupMembers
   }),
-  // The route has only ever required view; row-level security decides the
-  // write. Kept as it was, so this stays unpublished.
-  permission: { view: "users" },
+  permission: { "users.groups": "Edit" },
   async run(ctx, { id, name, selections }) {
-    const client = ctx.asCaller.supabase;
-    const [group, members] = await Promise.all([
-      service.upsertGroup(client, { id, name, companyId: ctx.company.id }),
-      service.upsertGroupMembers(client, id, selections)
-    ]);
-    if (group.error) {
-      return ctx.error("internal", "Failed to update group", group.error);
-    }
-    if (members.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update group members",
-        members.error
-      );
+    const missing = await refuseUnlessOwned(ctx, "group", { id });
+    if (missing) return missing;
+    const members = service.groupMembersOf(selections);
+    const foreign = await service.refuseForeignGroupMembers(ctx, members, id);
+    if (foreign) return foreign;
+
+    try {
+      const replaced = await service.replaceGroup(ctx.asSystem.pg, {
+        id,
+        name,
+        companyId: ctx.company.id,
+        members
+      });
+      if (!replaced) return ctx.error("notFound", "Group not found");
+    } catch (err) {
+      return ctx.error("internal", "Failed to update group", err);
     }
     return { id };
   }
@@ -727,7 +929,7 @@ export const updateGroup = defineServiceFn({
  */
 export const addConsoleOperator = defineServiceFn({
   input: createOperatorValidator,
-  permission: { create: "users" },
+  permission: { "users.operators": "Create" },
   async run(ctx, { firstName, lastName, locationId }) {
     const companyId = ctx.company.id;
     const operatorType = await ctx.asSystem.supabase
@@ -786,30 +988,20 @@ export const addConsoleOperator = defineServiceFn({
  * Give a person a new console PIN. Their old PIN stops working at once.
  *
  * @remarks
- * A PIN pins in as that person at any MES console, so resetting one hands
- * over their shop-floor identity. Users update covers console operators
- * (PIN-only accounts made for this); for anyone else, an admin included, the
- * caller also needs settings update, the permission that turns console mode
- * on. The PIN is stored only as a hash and returned once.
+ * A PIN pins in as that person at any MES console, with their access, so
+ * resetting one hands over their shop-floor identity. Operators Edit covers a
+ * console operator (the Console Operator type); anyone else also needs Edit on
+ * Accounts and on Settings → People. Only an Admin resets an Admin's PIN, and
+ * no one resets the PIN of someone with more access than they hold on any page
+ * (`pinResetRefusal`). The PIN is stored only as a hash and returned once.
  */
 export const resetConsoleOperatorPin = defineServiceFn({
   input: z.object({ operatorId: z.string().min(1) }),
-  permission: { update: "users" },
+  permission: { "users.operators": "Edit" },
   async run(ctx, { operatorId }) {
-    const user = await ctx.asCaller.supabase
-      .from("user")
-      .select("id, isConsoleOperator")
-      .eq("id", operatorId)
-      .single();
-    if (user.error || !user.data) {
-      return ctx.error("notFound", "Operator not found", user.error);
-    }
-    if (!user.data.isConsoleOperator && !ctx.can({ update: "settings" })) {
-      return ctx.error("forbidden", "You do not have permission to do this");
-    }
+    const refused = await service.refusePinReset(ctx, operatorId);
+    if (refused) return refused;
 
-    // The (employee, company) foreign key refuses an operator outside this
-    // company.
     const pin = generateConsolePin();
     try {
       await setEmployeePin(ctx.asSystem.pg, {
@@ -825,11 +1017,32 @@ export const resetConsoleOperatorPin = defineServiceFn({
   }
 });
 
-/** Where a certification was signed, as the route read it. */
-const signedFrom = {
-  ipAddress: z.string().optional(),
-  userAgent: z.string().optional()
-};
+/**
+ * Turn a console operator into a full user: a sign-in account under a real
+ * email, the chosen employee type, and an invite email.
+ *
+ * @remarks
+ * Needs Accounts Edit as well as Operators Edit: it moves the person to an
+ * employee type. When the grant write refuses, nothing is converted. The
+ * permission audit log records the request's IP.
+ */
+export const convertConsoleOperator = defineServiceFn({
+  input: convertOperatorValidator.extend({
+    operatorId: z.string().min(1)
+  }),
+  permission: convertConsoleOperatorPermission,
+  async run(ctx, { operatorId, email, employeeType }) {
+    const refused = await service.convertConsoleOperatorToUser(ctx, {
+      userId: operatorId,
+      email,
+      employeeType,
+      ip: ctx.origin.ip
+    });
+    if (refused) return refused;
+    return { id: operatorId };
+  }
+});
+
 const RIDER_SIGNER =
   "The Rider must be accepted by a representative of the company it binds.";
 
@@ -838,9 +1051,9 @@ const RIDER_SIGNER =
  *
  * @remarks
  * It unblocks the whole company's controlled-environment gate, so it needs
- * users update, and the signer must be a real person of the company: an API
- * key signs as no one, and Carbon staff (who hold users update in companies
- * they set up) cannot bind a customer.
+ * Edit on Accounts, and the signer must be a real person of the company: an
+ * API key signs as no one, and Carbon staff (who hold Edit on Accounts in
+ * companies they set up) cannot bind a customer.
  */
 export const certifyItarEntity = defineServiceFn({
   input: z.object({
@@ -848,11 +1061,10 @@ export const certifyItarEntity = defineServiceFn({
     acceptRider: z.boolean(),
     fullLegalName: z.string(),
     title: z.string(),
-    complianceContact: z.string(),
-    ...signedFrom
+    complianceContact: z.string()
   }),
-  permission: { update: "users" },
-  async run(ctx, { ipAddress, userAgent, ...form }) {
+  permission: { "users.accounts": "Edit" },
+  async run(ctx, form) {
     if (ctx.actor.type !== "user") return ctx.error("forbidden", RIDER_SIGNER);
     const signer = await ctx.asSystem.supabase
       .from("user")
@@ -873,8 +1085,8 @@ export const certifyItarEntity = defineServiceFn({
       fullLegalName: parsed.data.fullLegalName,
       title: parsed.data.title,
       complianceContact: parsed.data.complianceContact,
-      ipAddress,
-      userAgent
+      ipAddress: ctx.origin.ip,
+      userAgent: ctx.origin.userAgent
     });
   }
 });
@@ -885,11 +1097,10 @@ export const certifyItarUser = defineServiceFn({
     certifyUsPerson: z.boolean(),
     agreeNotify: z.boolean(),
     understandPenalty: z.boolean(),
-    fullLegalName: z.string(),
-    ...signedFrom
+    fullLegalName: z.string()
   }),
-  permission: {},
-  async run(ctx, { ipAddress, userAgent, ...form }) {
+  permission: "employee",
+  async run(ctx, form) {
     const parsed = itarUserCertificationValidator.safeParse(form);
     if (!parsed.success) {
       return ctx.error("validation", service.firstIssue(parsed.error));
@@ -897,8 +1108,8 @@ export const certifyItarUser = defineServiceFn({
     return service.recordItarCertification(ctx, {
       type: "user",
       fullLegalName: parsed.data.fullLegalName,
-      ipAddress,
-      userAgent
+      ipAddress: ctx.origin.ip,
+      userAgent: ctx.origin.userAgent
     });
   }
 });
@@ -909,7 +1120,7 @@ export const certifyItarUser = defineServiceFn({
  */
 export const getItarCertificationStatus = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: { "settings.itarCertifications": "View" },
   async run(ctx) {
     return await service.getItarCertificationStatus(
       ctx.asCaller.supabase,
@@ -926,7 +1137,7 @@ export const getItarCertificationStatus = defineServiceFn({
  */
 export const getItarEntityCertification = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -945,7 +1156,7 @@ export const getItarEntityCertification = defineServiceFn({
  */
 export const getItarCertificationReport = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: { "settings.itarCertifications": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -964,7 +1175,7 @@ export const getItarCertificationReport = defineServiceFn({
  */
 export const deleteGroup = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
-  permission: { delete: "users" },
+  permission: { "users.groups": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -988,7 +1199,7 @@ export const getCustomers = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1008,7 +1219,7 @@ export const getCustomers = defineServiceFn({
  */
 export const getEmployee = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1028,7 +1239,7 @@ export const getEmployee = defineServiceFn({
  */
 export const getUnrevokedInviteEmails = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1047,7 +1258,7 @@ export const getUnrevokedInviteEmails = defineServiceFn({
  */
 export const getUsersWithVerifiedMfa = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1074,7 +1285,7 @@ export const getEmployees = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1102,7 +1313,7 @@ export const getConsoleOperators = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.operators": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1122,7 +1333,7 @@ export const getConsoleOperators = defineServiceFn({
  */
 export const getEmployeeType = defineServiceFn({
   input: z.looseObject({ employeeTypeId: z.string() }),
-  permission: { view: "users" },
+  permission: { "users.employeeTypes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1149,7 +1360,8 @@ export const getEmployeeTypes = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  // Picking a type on invite / convert is Accounts work, so Accounts viewers list them too.
+  permission: ACCESS_READER_GATE,
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1169,7 +1381,7 @@ export const getEmployeeTypes = defineServiceFn({
  */
 export const getInvitable = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1185,9 +1397,9 @@ export const getInvitable = defineServiceFn({
  */
 export const getModules = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
-  async run(ctx) {
-    return unwrap(ctx, await service.getModules(ctx.asCaller.supabase));
+  permission: { "users.employeeTypes": "View" },
+  async run() {
+    return service.getModules();
   }
 });
 
@@ -1198,7 +1410,7 @@ export const getModules = defineServiceFn({
  */
 export const getGroup = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
-  permission: { view: "users" },
+  permission: { "users.groups": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1214,7 +1426,7 @@ export const getGroup = defineServiceFn({
  */
 export const getGroupMembers = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
-  permission: { view: "users" },
+  permission: { "users.groups": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1242,7 +1454,7 @@ export const getGroups = defineServiceFn({
     search: z.string().nullable().optional(),
     uid: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.groups": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1262,7 +1474,7 @@ export const getGroups = defineServiceFn({
  */
 export const getGroupEmails = defineServiceFn({
   input: z.looseObject({ groupIds: z.array(z.string()) }),
-  permission: { view: "users" },
+  permission: { "users.groups": "View" },
   async run(ctx, input) {
     return await service.getGroupEmails(
       ctx.asCaller.supabase,
@@ -1283,7 +1495,7 @@ export const getUserSelectGroups = defineServiceFn({
     limit: z.number(),
     offset: z.number()
   }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1303,7 +1515,7 @@ export const getUserSelectGroups = defineServiceFn({
  */
 export const getUserSelectGroupMembers = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1328,7 +1540,7 @@ export const searchUsersForSelect = defineServiceFn({
     excludeSelf: z.boolean().optional(),
     allowedIds: z.array(z.string()).optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1348,31 +1560,12 @@ export const searchUsersForSelect = defineServiceFn({
  */
 export const resolveUserSelectIds = defineServiceFn({
   input: z.looseObject({ ids: z.array(z.string()) }),
-  permission: { update: "users" },
+  permission: { "users.accounts": "Edit" },
   async run(ctx, input) {
     return await service.resolveUserSelectIds(
       ctx.asCaller.supabase,
       ctx.company.id,
       payload(ctx, input.ids).build() as never
-    );
-  }
-});
-
-/**
- * Get permissions by employee type
- *
- * @mcp read
- */
-export const getPermissionsByEmployeeType = defineServiceFn({
-  input: z.looseObject({ employeeTypeId: z.string() }),
-  permission: { view: "users" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getPermissionsByEmployeeType(
-        ctx.asCaller.supabase,
-        input.employeeTypeId as never
-      )
     );
   }
 });
@@ -1392,7 +1585,7 @@ export const getSuppliers = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1411,7 +1604,7 @@ export const getSuppliers = defineServiceFn({
 /** Change the caller's name, phone and about text. */
 export const updateOwnProfile = defineServiceFn({
   input: accountProfileValidator,
-  permission: {},
+  permission: "employee",
   async run(ctx, profile) {
     const saved = await service.updatePublicAccount(ctx.asCaller.supabase, {
       id: ctx.auditUserId,
@@ -1435,7 +1628,7 @@ export const updateOwnProfile = defineServiceFn({
  */
 export const updateOwnAvatar = defineServiceFn({
   input: z.object({ path: z.string() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, { path }) {
     const userId = ctx.auditUserId;
     if (!isAllowedAvatarValue(userId, path)) {
@@ -1483,7 +1676,7 @@ export const updateOwnAvatar = defineServiceFn({
  */
 export const updateOwnSignature = defineServiceFn({
   input: z.object({ path: z.string().nullable() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, { path }) {
     const userId = ctx.auditUserId;
     if (path !== null && !isOwnSignaturePath(userId, path)) {
@@ -1519,7 +1712,7 @@ export const upsertAttributeValue = defineServiceFn({
     type: z.string().min(1),
     value: z.union([z.boolean(), z.number(), z.string()])
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, { userId, ...value }) {
     const refused = await service.refuseAttributeValueChange(
       ctx,
@@ -1560,7 +1753,7 @@ export const deleteAttributeValue = defineServiceFn({
     userAttributeId: z.string().min(1),
     userAttributeValueId: z.string().min(1)
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, value) {
     const refused = await service.refuseAttributeValueChange(
       ctx,
@@ -1591,7 +1784,7 @@ export const deleteAttributeValue = defineServiceFn({
  */
 export const setOwnFlag = defineServiceFn({
   input: userFlagValidator,
-  permission: {},
+  permission: "employee",
   async run(ctx, { flag, value }) {
     const userId = ctx.auditUserId;
     const client = ctx.asCaller.supabase;
@@ -1626,7 +1819,7 @@ export const setOwnFlag = defineServiceFn({
  */
 export const getNotificationPreferences = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {},
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1650,7 +1843,7 @@ export const upsertNotificationPreference = defineServiceFn({
     channel: z.enum(["email", "slack"]),
     enabled: z.boolean()
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1669,7 +1862,7 @@ export const upsertNotificationPreference = defineServiceFn({
  */
 export const getAccount = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1685,7 +1878,7 @@ export const getAccount = defineServiceFn({
  */
 export const getCurrentUser = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {},
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1701,7 +1894,7 @@ export const getCurrentUser = defineServiceFn({
  */
 export const getAllAttributeCategories = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {},
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1721,7 +1914,7 @@ export const getAllAttributeCategories = defineServiceFn({
  */
 export const getAttributeCategoryWithValues = defineServiceFn({
   input: z.looseObject({ categoryId: z.string() }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1748,7 +1941,7 @@ export const updatePublicAccount = defineServiceFn({
     about: z.string().optional(),
     phone: z.string().optional()
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -36,14 +36,12 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "purchasing"
-  });
+  const { api } = await authorize(request, { "purchasing.rfqs": "View" });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const rfq = await getPurchasingRFQ(client, rfqId);
+  const rfq = await api.purchasing.getPurchasingRFQ({ id: rfqId });
   if (rfq.error) {
     throw redirect(
       path.to.purchasingRfqs,
@@ -58,11 +56,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "purchasing"
+  const { client: viewClient } = await authorize(request, {
+    "purchasing.rfqs": "View"
   });
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "purchasing"
+  const { client, companyId, userId } = await authorize(request, {
+    "purchasing.rfqs": "Edit"
   });
 
   const { rfqId: id } = params;

@@ -6,11 +6,15 @@ import { expect, it } from "vitest";
 import {
   allocateAcrossBudgets,
   type BinStock,
+  chooseHeldStockBin,
   chooseSourceBin,
+  keepInspectionHeldStock,
   linesideCredit,
   orderOldFirst,
   type PickedBudget,
   pickFactor,
+  planHeldStockDraw,
+  planReturnToDrawnBins,
   planStripedUntrackedDraw,
   recordSharedTakes,
   type SharedTakes,
@@ -548,4 +552,187 @@ it("chooseSourceBin picks no storage unit over a short preferred bin", () => {
       quantity: 3
     })
   ).toBeNull();
+});
+
+// A quarantine, MRB or rejected unit: active, not lineside, not nettable.
+const heldBin = (storageUnitId: string, quantity: number) => ({
+  storageUnitId,
+  quantity,
+  nettable: false,
+  held: true
+});
+// Lineside or inactive: neither nettable nor held.
+const lineside = (storageUnitId: string, quantity: number) => ({
+  storageUnitId,
+  quantity,
+  nettable: false
+});
+
+it("planHeldStockDraw takes held stock before nettable stock", () => {
+  expect(
+    planHeldStockDraw({
+      bins: [bin("A", 50), heldBin("Q", 3), bin(null, 10)],
+      preferredStorageUnitId: null,
+      quantity: 5
+    })
+  ).toEqual([
+    { storageUnitId: "Q", quantity: 3 },
+    { storageUnitId: "A", quantity: 2 }
+  ]);
+});
+
+it("planHeldStockDraw takes the preferred bin first", () => {
+  expect(
+    planHeldStockDraw({
+      bins: [heldBin("Q", 9), bin("R", 4)],
+      preferredStorageUnitId: "R",
+      quantity: 6
+    })
+  ).toEqual([
+    { storageUnitId: "R", quantity: 4 },
+    { storageUnitId: "Q", quantity: 2 }
+  ]);
+});
+
+it("planHeldStockDraw never draws lineside stock", () => {
+  expect(
+    planHeldStockDraw({
+      bins: [lineside("L", 9), bin("A", 2)],
+      preferredStorageUnitId: null,
+      quantity: 2
+    })
+  ).toEqual([{ storageUnitId: "A", quantity: 2 }]);
+});
+
+it("planHeldStockDraw puts a shortfall on the first bin drawn", () => {
+  expect(
+    planHeldStockDraw({
+      bins: [bin("A", 2)],
+      preferredStorageUnitId: null,
+      quantity: 5
+    })
+  ).toEqual([{ storageUnitId: "A", quantity: 5 }]);
+});
+
+it("planHeldStockDraw puts a shortfall on the preferred bin", () => {
+  expect(
+    planHeldStockDraw({
+      bins: [bin("A", 2)],
+      preferredStorageUnitId: "R",
+      quantity: 5
+    })
+  ).toEqual([
+    { storageUnitId: "A", quantity: 2 },
+    { storageUnitId: "R", quantity: 3 }
+  ]);
+});
+
+it("planHeldStockDraw books no storage unit when nothing holds stock", () => {
+  expect(
+    planHeldStockDraw({ bins: [], preferredStorageUnitId: null, quantity: 1 })
+  ).toEqual([{ storageUnitId: null, quantity: 1 }]);
+});
+
+it("chooseHeldStockBin picks the held bin that holds the quantity", () => {
+  expect(
+    chooseHeldStockBin({
+      bins: [bin("A", 50), heldBin("Q", 1), heldBin("R", 4)],
+      preferredStorageUnitId: null,
+      quantity: 3
+    })
+  ).toBe("R");
+});
+
+it("chooseHeldStockBin falls back to nettable stock", () => {
+  expect(
+    chooseHeldStockBin({
+      bins: [bin("A", 50), heldBin("Q", 1)],
+      preferredStorageUnitId: null,
+      quantity: 3
+    })
+  ).toBe("A");
+});
+
+it("chooseHeldStockBin keeps the preferred bin when nothing holds stock", () => {
+  expect(
+    chooseHeldStockBin({
+      bins: [bin("A", 0)],
+      preferredStorageUnitId: "R",
+      quantity: 3
+    })
+  ).toBe("R");
+});
+
+it("keepInspectionHeldStock moves a shortfall off a unit a lot holds stock in", () => {
+  const bins = [
+    {
+      storageUnitId: "Q",
+      quantity: 4,
+      nettable: false,
+      held: true,
+      inspectionHeld: true
+    }
+  ];
+  expect(
+    keepInspectionHeldStock(
+      [{ storageUnitId: "Q", projectId: null, quantity: 10 }],
+      bins
+    )
+  ).toEqual([
+    { storageUnitId: "Q", projectId: null, quantity: 4 },
+    { storageUnitId: null, projectId: null, quantity: 6 }
+  ]);
+});
+
+it("keepInspectionHeldStock leaves a shortfall on a bin no lot holds", () => {
+  expect(
+    keepInspectionHeldStock(
+      [{ storageUnitId: "A", projectId: null, quantity: 10 }],
+      [bin("A", 4)]
+    )
+  ).toEqual([{ storageUnitId: "A", projectId: null, quantity: 10 }]);
+});
+
+it("planReturnToDrawnBins returns to the newest draw first, up to what it has out", () => {
+  expect(
+    planReturnToDrawnBins({
+      rows: [
+        { storageUnitId: "A", quantity: -3, order: 1 },
+        { storageUnitId: "B", quantity: -2, order: 2 },
+        { storageUnitId: "B", quantity: 1, order: 3 }
+      ],
+      quantity: 3,
+      fallback: { storageUnitId: null, projectId: null }
+    })
+  ).toEqual([
+    { storageUnitId: "B", projectId: null, quantity: 1 },
+    { storageUnitId: "A", projectId: null, quantity: 2 }
+  ]);
+});
+
+it("planReturnToDrawnBins puts what no bin has out on the fallback", () => {
+  expect(
+    planReturnToDrawnBins({
+      rows: [{ storageUnitId: "A", quantity: -1, order: 1 }],
+      quantity: 3,
+      fallback: { storageUnitId: "F", projectId: null }
+    })
+  ).toEqual([
+    { storageUnitId: "A", projectId: null, quantity: 1 },
+    { storageUnitId: "F", projectId: null, quantity: 2 }
+  ]);
+});
+
+it("planReturnToDrawnBins books one stripe when given one", () => {
+  expect(
+    planReturnToDrawnBins({
+      rows: [
+        { storageUnitId: "A", projectId: "P", quantity: -1, order: 1 },
+        { storageUnitId: "A", projectId: null, quantity: -1, order: 2 }
+      ],
+      quantity: 2,
+      fallback: { storageUnitId: null, projectId: null },
+      stripe: "P"
+    })
+  ).toEqual([{ storageUnitId: "A", projectId: "P", quantity: 2 }]);
 });

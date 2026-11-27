@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { dataOrThrow, respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getOnshapePanelOrigin } from "@carbon/ee/onshape";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -23,13 +23,9 @@ import {
   partValidator
 } from "~/modules/items/items.models";
 import {
-  getConfigurationRules,
   getItemChangeNoticeDataOnce,
-  getItemManufacturing,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId,
   getRevisionLock
 } from "~/modules/items/items.service";
 import { getConfigurationParameters } from "~/modules/items/items.utils";
@@ -52,16 +48,16 @@ import {
 import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
 import { methodVersionSlot } from "~/modules/items/ui/Item/MakeMethodTools";
 import { ConfigurationParametersForm } from "~/modules/items/ui/Parts";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "parts.parts": "View" },
+    { bypassRls: true }
+  );
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -85,8 +81,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getRevisionLock(client, { itemId, companyId }),
     // Part → CO traceability (4b): CO history for this part + type labels.
     getItemChangeNoticeDataOnce(client, itemId, companyId),
-    getTagsList(client, companyId, "operation"),
-    getItemManufacturing(client, itemId, companyId),
+    api.shared.getTagsList({ table: "operation" }),
+    api.items.getItemManufacturing({ id: itemId }),
     getOnshapePanelOrigin(client, companyId)
   ]);
   const revisionStatus = revisionLock.revisionStatus;
@@ -117,12 +113,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [fullMethod, methodMaterials, methodOperations, configData] =
     await Promise.all([
       getMakeMethodByIdOnce(client, makeMethod.id, companyId),
-      getMethodMaterialsByMakeMethod(client, makeMethod.id),
-      getMethodOperationsByMakeMethodId(client, makeMethod.id),
+      api.items.getMethodMaterialsByMakeMethod({ makeMethodId: makeMethod.id }),
+      api.items.getMethodOperationsByMakeMethodId({
+        makeMethodId: makeMethod.id
+      }),
       partManufacturing.data?.requiresConfiguration
         ? Promise.all([
             getConfigurationParameters(client, itemId, companyId),
-            getConfigurationRules(client, itemId, companyId)
+            api.items.getConfigurationRules({ itemId }).then(dataOrThrow)
           ]).then(([configurationParametersAndGroups, configurationRules]) => ({
             configurationParametersAndGroups,
             configurationRules
@@ -182,7 +180,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { itemId } = input.params;
   const formData = input.formData ?? new FormData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
 
   if (input.data.intent === "manufacturing") {
     const validation = await validator(itemManufacturingValidator).validate(
@@ -379,7 +377,9 @@ export default function PartDetailsRoute() {
           /> */}
 
           <CadModel
-            isReadOnly={!permissions.can("update", "parts") || !!draftLock}
+            isReadOnly={
+              !permissions.has({ "parts.parts": "Edit" }) || !!draftLock
+            }
             metadata={{ itemId }}
             modelUpload={partData?.partSummary ?? null}
             title={t`CAD Model`}
@@ -387,7 +387,7 @@ export default function PartDetailsRoute() {
           />
           <ExternalSourceCard
             itemId={itemId}
-            canDetach={permissions.can("update", "parts")}
+            canDetach={permissions.has({ "parts.parts": "Edit" })}
             onshapeOrigin={onshapeOrigin}
           />
           <ItemRiskRegister itemId={itemId} />

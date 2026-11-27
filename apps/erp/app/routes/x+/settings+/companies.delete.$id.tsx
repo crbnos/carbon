@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { flags } from "@carbon/env/flags.server";
@@ -19,8 +19,8 @@ import {
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId, email } = await authorize(request, {
+    "settings.companies": "View"
   });
 
   // Multi-company management: Carbon staff, and the companies the
@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     !isInternalEmail(email) &&
     !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const { id } = params;
@@ -47,12 +47,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyGroupId, companyId, email } = await requirePermissions(
-    request,
-    {
-      delete: "settings"
-    }
-  );
+  const { companyGroupId, companyId, email } = await authorize(request, {
+    "settings.companies": "Full"
+  });
 
   // Multi-company management: Carbon staff, and the companies the
   // `multi-company-management` flag turns it on for.
@@ -60,7 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     !isInternalEmail(email) &&
     !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const { id } = params;

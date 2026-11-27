@@ -86,7 +86,6 @@ const PurchaseOrderProperties = () => {
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
   const { t } = useLingui();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (field: keyof PurchaseOrder, value: string | null) => {
       if (value === routeData?.purchaseOrder[field]) {
@@ -103,10 +102,10 @@ const PurchaseOrderProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [orderId, routeData?.purchaseOrder]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -121,6 +120,7 @@ const PurchaseOrderProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [orderId]
   );
 
@@ -135,7 +135,7 @@ const PurchaseOrderProperties = () => {
       ? optimisticAssignment
       : routeData?.purchaseOrder?.assignee;
 
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.purchaseOrders": "Edit" });
   const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
   const isDisabled = !canUpdate || isLocked;
   // A released order never changes who it buys from or in what currency.

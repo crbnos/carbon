@@ -10,7 +10,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getConfig } from "~/modules/settings/settings.service";
 import {
   WebhooksTable,
   WebhooksUpgradeOverlay
@@ -28,11 +27,11 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, webhooksList, {
     dataKey: "webhooks",
-    firstPage: async ({ client }) => {
-      const config = await getConfig(client);
+    firstPage: async ({ api }) => {
+      const config = await api.settings.getConfig({});
       if (config.error || !config.data?.apiUrl) {
         throw redirect(
-          path.to.settings,
+          path.to.authenticatedRoot,
           await flash(
             request,
             error(

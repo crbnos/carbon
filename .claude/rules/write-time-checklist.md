@@ -31,6 +31,7 @@ Answer before you write a file, and again over the diff before you commit. `/exe
 - **Only if** the write sets a column with a coupled sibling (`quantity`/`scrapQuantity`, price/tax percent/tax amount, `dueDate`/`deadlineType`): is the sibling in the same write? [numeric-precision]
 - **Only if** the write claims a status, then mutates another document: does the claim return every column the mutation derives from, and does the mutation use those, not the request body? Does a failed claim's release surface its own error?
 - **Only if** it is a diff-sync (read, diff, write on a unique key): take `pg_advisory_xact_lock` on the scope before the read, restate the assumed row state in each DELETE/UPDATE, and compare jsonb structurally.
+- **Only if** the write takes untracked stock out (a negative `itemLedger` row): when no bin was chosen, does the bin come from stock (`planUntrackedDraw`; `planHeldUntrackedDraw` for nonconforming or returned stock; `shipmentSourceBinChooser` for a document line), never NULL or "the first row" by default? Does a serial or batch row use the bin the unit holds stock in? Does a reversal book against the row it reverses? [inventory-system]
 - **Only if** the batch emits an event: emit it once, after the batch.
 - **Only if** a scheduled job short-circuits on "no work": does the predicate include every table the run writes, stale output included?
 
@@ -81,6 +82,7 @@ Answer before you write a file, and again over the diff before you commit. `/exe
 - No `fetcher.submit` in a loop: one request with every id, and the server branches per row. A bulk button shows the eligible count from the handler's own predicate.
 - A list filtered by status renders only that status, and every count and empty check reads the filtered set.
 - Avoid `useEffect`. If you need one, put it in a named hook. Toasts key on `fetcher.state` and `fetcher.data`. [conventions-ui]
+- Does a component load data with an async call in `useEffect` (`(async () => …)()`, `.then(`) on the browser client? Move the read to an `api+` route and read it with `useLoaderQuery`. A router action needs no trigger; call `refetch()` after a plain `fetch`. [clientAction-patterns]
 - Editable cells commit on blur or close, never per keystroke.
 - A change to a shared `Grid`, `Table` or `packages/react` component for one consumer is a prop that defaults to the old behaviour.
 - The loader returns only what the page renders. Do not fetch a whole table to show one field.

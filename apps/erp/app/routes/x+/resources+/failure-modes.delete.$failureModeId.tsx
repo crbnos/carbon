@@ -2,30 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteFailureMode,
-  getFailureMode
-} from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "resources.failureModes": "View"
   });
   const { failureModeId } = params;
   if (!failureModeId) throw notFound("failureModeId not found");
 
-  const failureMode = await getFailureMode(client, failureModeId);
+  const failureMode = await api.resources.getFailureMode({ failureModeId });
   if (failureMode.error) {
     throw redirect(
       `${path.to.failureModes}?${getParams(request)}`,
@@ -39,40 +36,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { failureMode: failureMode.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["failureModeId"] });
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  const result = await api.resources.deleteFailureMode({
+    failureModeId: input.params.failureModeId
   });
-
-  const { failureModeId } = params;
-  if (!failureModeId) {
-    throw redirect(
-      `${path.to.failureModes}?${getParams(request)}`,
-      await flash(request, error(null, "Failed to get a failure mode id"))
-    );
-  }
-
-  const { error: deleteFailureModeError } = await deleteFailureMode(
-    client,
-    failureModeId
-  );
-  if (deleteFailureModeError) {
-    const errorMessage = getDatabaseErrorMessage(
-      deleteFailureModeError,
-      "Failed to delete failure mode",
-      { referenced: "Failure mode is used elsewhere, cannot delete" }
-    );
-
-    throw redirect(
-      `${path.to.failureModes}?${getParams(request)}`,
-      await flash(request, error(deleteFailureModeError, errorMessage))
-    );
-  }
-
-  throw redirect(
-    `${path.to.failureModes}?${getParams(request)}`,
-    await flash(request, success("Successfully deleted failure mode"))
-  );
+  const list = `${path.to.failureModes}?${getParams(args.request)}`;
+  return respond(args.request, result).redirect(list, {
+    message: "Successfully deleted failure mode",
+    onError: list
+  });
 }
 
 export default function DeleteFailureModeRoute() {

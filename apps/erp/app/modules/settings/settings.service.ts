@@ -7,6 +7,7 @@ import { createGunzip } from "node:zlib";
 import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type {
+  Actor,
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
@@ -17,7 +18,6 @@ import {
   SUPABASE_URL,
   VERCEL_URL
 } from "@carbon/auth";
-import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
@@ -27,6 +27,7 @@ import {
   fetchAllFromTable,
   getCompanyTimeZone
 } from "@carbon/database";
+import { ownersOf } from "@carbon/database/access";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import {
   type Kysely,
@@ -34,7 +35,7 @@ import {
   type KyselyTx,
   withTransaction
 } from "@carbon/database/client";
-import { single, updateRows } from "@carbon/database/rows";
+import { single } from "@carbon/database/rows";
 import {
   accountDefaults,
   accounts,
@@ -181,7 +182,6 @@ import {
   type XeroProvider
 } from "@carbon/ee/accounting";
 import { enableAuditLog } from "@carbon/ee/audit.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
   ensureOnshapeReleaseWebhook,
   getIntegrationServerHooks,
@@ -221,16 +221,16 @@ import {
   takePanelPlan
 } from "@carbon/ee/onshape";
 import {
-  ONSHAPE_PANEL_INTEGRATION_IDS,
-  ONSHAPE_V2_INTEGRATION_ID
-} from "@carbon/ee/onshape/integration-id";
-import { panelCompanyChoices } from "@carbon/ee/onshape/panel-session.server";
-import {
   isOnshapeOAuthIntegrationId,
   loadOnshapeOAuthConfig,
   patchOnshapeOAuthGrant,
   patchOnshapeSettings
 } from "@carbon/ee/onshape.server";
+import {
+  ONSHAPE_PANEL_INTEGRATION_IDS,
+  ONSHAPE_V2_INTEGRATION_ID
+} from "@carbon/ee/onshape/integration-id";
+import { panelCompanyChoices } from "@carbon/ee/onshape/panel-session.server";
 import {
   isIntegrationComingSoon,
   isIntegrationWhitelisted
@@ -258,16 +258,19 @@ import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
   datetime,
+  indexBy,
   isInternalEmail,
   labelSizes,
   requireAffected,
   requiresItarEntityCertification,
   searchFilter,
+  toSafeHref,
   withLabelDpi
 } from "@carbon/utils";
-import { parseAbsolute } from "@internationalized/date";
+import { parseAbsolute, parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { type Insertable, type Selectable, sql } from "kysely";
+import isEqual from "lodash/isEqual";
 import { nanoid } from "nanoid";
 import { data } from "react-router";
 import { extract as tarExtract } from "tar-stream";
@@ -330,10 +333,8 @@ import type {
 } from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
-import {
-  getItarCertificationStatus,
-  getPermissionCacheKey
-} from "~/modules/users/users.service";
+import { DataType } from "~/modules/shared/types";
+import { getItarCertificationStatus } from "~/modules/users/users.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
@@ -410,7 +411,7 @@ export async function getApiKey(
   return client
     .from("apiKey")
     .select(
-      "id, name, expiresAt, scopes, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId"
+      "id, name, expiresAt, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId, permission(module, page, level)"
     )
     .eq("id", id)
     .eq("companyId", companyId)
@@ -428,7 +429,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*", { count: listCount(args) })
+    .select("*, permission(module, page, level)", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -674,6 +675,209 @@ export async function getCustomFieldsTables(
   return query;
 }
 
+// Custom field tables whose rows a company group shares: a record carries
+// `companyGroupId`, not `companyId`.
+const GROUP_CUSTOM_FIELD_TABLES = new Set(["account", "currency"]);
+
+/**
+ * What edits the records of a custom field table: the pages that own the
+ * table, whose Edit row-level security asks of a write (one page per item type
+ * for a table the item pages share), and the column that ties a record to the
+ * company. Data is null when the table has no custom fields.
+ */
+export async function getCustomFieldTableEditScope(
+  client: SupabaseClient<Database>,
+  table: string
+) {
+  const { data, error } = await client
+    .from("customFieldTable")
+    .select("table")
+    .eq("table", table)
+    .maybeSingle();
+  if (error || !data) return { data: null, error };
+  return {
+    data: {
+      pages: ownersOf(table),
+      scopeColumn: GROUP_CUSTOM_FIELD_TABLES.has(table)
+        ? ("companyGroupId" as const)
+        : ("companyId" as const)
+    },
+    error: null
+  };
+}
+
+/** A table's custom fields, with what decides the values each takes. */
+export async function getTableCustomFieldTypes(
+  client: SupabaseClient<Database>,
+  table: string,
+  companyId: string
+) {
+  return client
+    .from("customField")
+    .select("id, dataTypeId, listOptions")
+    .eq("table", table)
+    .eq("companyId", companyId);
+}
+
+export type CustomFieldType = {
+  id: string;
+  dataTypeId: number;
+  listOptions: string[] | null;
+};
+
+function isIsoDate(value: string) {
+  try {
+    parseDate(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether a record's properties panel (`CustomFormInlineFields`) can send
+ * this value for a field of this type. A File field has no input there.
+ */
+function isCustomFieldValue(field: CustomFieldType, value: unknown) {
+  switch (field.dataTypeId) {
+    case DataType.Boolean:
+      return value === "on" || value === "";
+    case DataType.Date:
+      return value === null || (typeof value === "string" && isIsoDate(value));
+    case DataType.List:
+      return (
+        value === null ||
+        (typeof value === "string" && (field.listOptions ?? []).includes(value))
+      );
+    case DataType.Numeric:
+      return (
+        value === null ||
+        (typeof value === "number" && Number.isFinite(value)) ||
+        (typeof value === "string" &&
+          value.trim() !== "" &&
+          Number.isFinite(Number(value)))
+      );
+    case DataType.Text:
+      return typeof value === "string";
+    case DataType.Link:
+      return (
+        typeof value === "string" &&
+        (value === "" || toSafeHref(value) !== null)
+      );
+    case DataType.User:
+    case DataType.Customer:
+    case DataType.Supplier:
+      return typeof value === "string" && value.length > 0;
+    default:
+      return false;
+  }
+}
+
+/**
+ * What a save does with each custom field key it sent, given the values the
+ * records hold (`stored`, one map per record). `write` is the values it
+ * writes: each a value its field's panel input sends. `notFields` (keys that
+ * are not one of the table's custom fields) and `badValues` (a value its
+ * field's input never sends) refuse the save, unless every record already
+ * holds that value: such a key is in none of the three, taken but not written.
+ * A caller that sends back the stored map (a panel loaded before the panel
+ * sent only its changed field, an API caller) sends a deleted field's value,
+ * or one stored in another shape, unchanged. Values compare as JSON: an
+ * object's members in any order, an array's items in theirs.
+ */
+export function classifyCustomFieldKeys(
+  sent: Record<string, unknown>,
+  fields: readonly CustomFieldType[],
+  stored: readonly (Record<string, unknown> | null)[]
+) {
+  const fieldById = indexBy(fields, (field) => field.id);
+  const heldByEveryRecord = (key: string) =>
+    stored.length > 0 &&
+    stored.every((values) => isEqual(values?.[key], sent[key]));
+  const write: Record<string, unknown> = {};
+  const notFields: string[] = [];
+  const badValues: string[] = [];
+  for (const [key, value] of Object.entries(sent)) {
+    const field = fieldById.get(key);
+    if (field && isCustomFieldValue(field, value)) write[key] = value;
+    else if (heldByEveryRecord(key)) continue;
+    else if (field) badValues.push(key);
+    else notFields.push(key);
+  }
+  return { write, notFields, badValues };
+}
+
+type CustomFieldRecord = {
+  id: string;
+  customFields: Record<string, unknown> | null;
+};
+
+function fromCustomFieldTable(client: SupabaseClient<Database>, table: string) {
+  // The table is only known at runtime, so the generated types cannot name it.
+  return (client as unknown as SupabaseClient).from(table);
+}
+
+/** The stored custom field values of some records of one table. */
+export async function getRecordsCustomFields(
+  client: SupabaseClient<Database>,
+  args: {
+    table: string;
+    ids: string[];
+    scopeColumn: "companyId" | "companyGroupId";
+    scopeId: string;
+  }
+) {
+  return fromCustomFieldTable(client, args.table)
+    .select("id, customFields")
+    .in("id", args.ids)
+    .eq(args.scopeColumn, args.scopeId)
+    .overrideTypes<CustomFieldRecord[], { merge: false }>();
+}
+
+/**
+ * The change a save makes to a record's custom fields: the values it sets,
+ * and the keys a null clears. Keys it does not name are left as stored.
+ */
+function customFieldsPatch(customFields: Record<string, unknown>) {
+  const set: Record<string, unknown> = {};
+  const clear: string[] = [];
+  for (const [key, value] of Object.entries(customFields)) {
+    if (value === null) clear.push(key);
+    else if (value !== undefined) set[key] = value;
+  }
+  return { set, clear };
+}
+
+/**
+ * Set some custom field values on the records of one company (or, for a table
+ * a company group shares, of its group), as one UPDATE that merges them into
+ * each record's stored map (`set_record_custom_fields`): a value another save
+ * wrote to a field this one does not name is kept. RLS on the table applies.
+ */
+export async function updateRecordCustomFields(
+  client: SupabaseClient<Database>,
+  args: {
+    table: string;
+    ids: string[];
+    scopeColumn: "companyId" | "companyGroupId";
+    scopeId: string;
+    customFields: Record<string, unknown>;
+    updatedBy: string;
+  }
+) {
+  const { set, clear } = customFieldsPatch(args.customFields);
+  const { data, error } = await client.rpc("set_record_custom_fields", {
+    p_table: args.table,
+    p_ids: args.ids,
+    p_scope_column: args.scopeColumn,
+    p_scope_id: args.scopeId,
+    p_set: set as Json,
+    p_clear: clear,
+    p_updated_by: args.updatedBy
+  });
+  return { data: data ?? null, error };
+}
+
 export async function getIntegration(
   client: SupabaseClient<Database>,
   id: string,
@@ -901,14 +1105,28 @@ export async function getItemSerialSequenceByItemId(
     .maybeSingle();
 }
 
+/**
+ * A sequence's fields as the form or the API sends them: the API may send a
+ * null timing (follow the company setting) and leave the label flag out.
+ */
+type ItemSerialSequenceFields = Omit<
+  z.infer<typeof itemSerialSequenceValidator>,
+  "id" | "serialNumberTiming" | "printLabelOnCompletion"
+> & {
+  serialNumberTiming?:
+    | z.infer<typeof itemSerialSequenceValidator>["serialNumberTiming"]
+    | null;
+  printLabelOnCompletion?: boolean;
+};
+
 export async function upsertItemSerialSequence(
   client: SupabaseClient<Database>,
   itemSerialSequence:
-    | (Omit<z.infer<typeof itemSerialSequenceValidator>, "id"> & {
+    | (ItemSerialSequenceFields & {
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof itemSerialSequenceValidator>, "id"> & {
+    | (ItemSerialSequenceFields & {
         id: string;
         companyId: string;
         updatedBy: string;
@@ -921,14 +1139,17 @@ export async function upsertItemSerialSequence(
       .select("id")
       .single();
   }
+  // A sequence stays on its item: the update matches only that item's row.
   const { id, companyId, ...update } = itemSerialSequence;
-  return client
-    .from("itemSerialSequence")
-    .update(sanitize(update))
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
+  return requireAffected(
+    client
+      .from("itemSerialSequence")
+      .update(sanitize(update))
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .eq("itemId", update.itemId)
+      .select("id")
+  );
 }
 
 export async function deleteItemSerialSequence(
@@ -1288,17 +1509,125 @@ export async function insertSubsidiary(
 }
 
 /** Only the company fields: `updateSubsidiaryDetails` gates it and drops the cached time zone. */
+/**
+ * Writes a subsidiary's details. Bypasses row-level security when given the
+ * system client (Settings → Company owns `company`), so it is scoped to the
+ * caller's company group.
+ */
 export async function updateSubsidiary(
   client: SupabaseClient<Database>,
   id: string,
+  companyGroupId: string,
   subsidiary: Partial<z.infer<typeof subsidiaryValidator>> & {
     updatedBy: string;
   }
 ) {
   const { id: _, ...data } = subsidiary;
   return requireAffected(
-    client.from("company").update(data).eq("id", id).select("id")
+    client
+      .from("company")
+      .update(data)
+      .eq("id", id)
+      .eq("companyGroupId", companyGroupId)
+      .select("id")
   );
+}
+
+/**
+ * Who may own a company group: an active employee of any company in it. The
+ * one rule behind the billing page's list (`listOwnershipCandidates`) and the
+ * transfer's check (`readOwnershipTransfer`). Read past RLS: the group's other
+ * companies are not the caller's.
+ */
+function ownershipCandidates(db: Kysely<KyselyDatabase>, groupId: string) {
+  return db
+    .selectFrom("employee")
+    .innerJoin("company", "company.id", "employee.companyId")
+    .innerJoin("userToCompany", (join) =>
+      join
+        .onRef("userToCompany.userId", "=", "employee.id")
+        .onRef("userToCompany.companyId", "=", "employee.companyId")
+    )
+    .where("employee.active", "=", true)
+    .where("userToCompany.role", "=", "employee")
+    .where("company.companyGroupId", "=", groupId);
+}
+
+/** The users the owner of `companyId`'s group may hand it to (`ownershipCandidates`). */
+export async function listOwnershipCandidates(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{ id: string; fullName: string | null; email: string }[]> {
+  const company = await db
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  if (!company?.companyGroupId) return [];
+  return ownershipCandidates(db, company.companyGroupId)
+    .innerJoin("user", "user.id", "employee.id")
+    .select(["user.id", "user.fullName", "user.email"])
+    .distinct()
+    .orderBy("user.fullName")
+    .execute();
+}
+
+/**
+ * What deciding a transfer of the company group's ownership reads: the group
+ * and its owner, and whether the new owner is one of its
+ * `ownershipCandidates`. Read past RLS: `transferCompanyOwnership` decides
+ * itself.
+ */
+export async function readOwnershipTransfer(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; newOwnerId: string }
+): Promise<{
+  groupId: string;
+  ownerId: string | null;
+  newOwnerIsGroupEmployee: boolean;
+} | null> {
+  const group = await db
+    .selectFrom("company")
+    .innerJoin("companyGroup", "companyGroup.id", "company.companyGroupId")
+    .select(["companyGroup.id as groupId", "companyGroup.ownerId"])
+    .where("company.id", "=", args.companyId)
+    .executeTakeFirst();
+  if (!group) return null;
+
+  const employee = await ownershipCandidates(db, group.groupId)
+    .select("employee.id")
+    .where("employee.id", "=", args.newOwnerId)
+    .limit(1)
+    .executeTakeFirst();
+
+  return {
+    groupId: group.groupId,
+    ownerId: group.ownerId,
+    newOwnerIsGroupEmployee: employee !== undefined
+  };
+}
+
+/**
+ * Hand the company group to `toOwnerId`, only while `fromOwnerId` still owns
+ * it. False when the group changed hands since it was read.
+ */
+export async function setCompanyGroupOwner(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    groupId: string;
+    fromOwnerId: string;
+    toOwnerId: string;
+    userId: string;
+  }
+): Promise<boolean> {
+  const updated = await db
+    .updateTable("companyGroup")
+    .set({ ownerId: args.toOwnerId, updatedBy: args.userId })
+    .where("id", "=", args.groupId)
+    .where("ownerId", "=", args.fromOwnerId)
+    .returning("id")
+    .executeTakeFirst();
+  return updated !== undefined;
 }
 
 export async function updateCompanyPlan(
@@ -1732,9 +2061,9 @@ export async function setLocationResponsibleEmployee(
     userId: string;
   }
 ) {
-  // `location` is a resources table: without resources_update, row-level
-  // security matches no row and the update succeeds having changed nothing.
-  // Returning the row lets the caller tell the two apart.
+  // `location` belongs to Resources → Locations; the operation passes the
+  // system client, so the write is scoped to the company. Returning the row
+  // tells a location of another company (no row) from a written one.
   return client
     .from("location")
     .update({ responsibleEmployee: args.employeeId, updatedBy: args.userId })
@@ -2659,42 +2988,6 @@ export async function getOeeDevicesTabData(
 const INTEGRATION_CACHE_TTL = 3600;
 const PIECE_HEALTHY_CACHE_TTL = 300;
 
-/**
- * Drop the cached auth record for an API key so a scope change or revocation
- * takes effect immediately in the common case. An in-flight auth read can still
- * re-prime the cache with the pre-write row, so the hard bound is the 30s TTL —
- * callers that delete the row should bust AGAIN after the delete commits, using
- * the returned keyHash (unreadable from the DB once the row is gone).
- *
- * Service-role on purpose: apiKey's RLS SELECT requires `settings_view`, but the
- * routes that revoke or rescope a key gate on `users_update`, so the caller's own
- * client cannot see the row and the bust would silently do nothing.
- */
-export async function invalidateApiKeyCache(
-  id: string,
-  companyId: string
-): Promise<string | null> {
-  const { data, error } = await getCarbonServiceRole()
-    .from("apiKey")
-    .select("keyHash")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  // A failed lookup is indistinguishable from a missing row at the return type,
-  // and neither may block the revoke — log it so a stale scope surviving its TTL
-  // is diagnosable rather than silent.
-  if (error) {
-    logger.error("Failed to read api key for cache bust", {
-      error,
-      id,
-      companyId
-    });
-  }
-  if (!data?.keyHash) return null;
-  await bustApiKeyCache(data.keyHash);
-  return data.keyHash;
-}
-
 export async function clearCustomFieldsCache(companyId?: string) {
   const keys = companyId ? `customFields:${companyId}:*` : "customFields:*";
   redis.keys(keys).then(function (keys) {
@@ -2851,7 +3144,12 @@ export async function deleteCustomField(
     clearCustomFieldsCache(companyId);
   } finally {
     return requireAffected(
-      client.from("customField").delete().eq("id", id).select("id")
+      client
+        .from("customField")
+        .delete()
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .select("id")
     );
   }
 }
@@ -3141,8 +3439,16 @@ export async function upsertCustomField(
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof customFieldValidator>, "id"> & {
+    // An update writes only the fields it is given: its table and data type
+    // never change.
+    | (Partial<
+        Pick<
+          z.infer<typeof customFieldValidator>,
+          "name" | "listOptions" | "tags" | "required"
+        >
+      > & {
         id: string;
+        companyId: string;
         updatedBy: string;
       })
 ) {
@@ -3153,7 +3459,8 @@ export async function upsertCustomField(
       const sortOrders = await client
         .from("customField")
         .select("sortOrder")
-        .eq("table", customField.table);
+        .eq("table", customField.table)
+        .eq("companyId", customField.companyId);
 
       if (sortOrders.error) return sortOrders;
       const maxSortOrder = sortOrders.data.reduce((max, item) => {
@@ -3162,18 +3469,19 @@ export async function upsertCustomField(
 
       return client
         .from("customField")
-        .insert([{ ...customField, sortOrder: maxSortOrder + 1 }]);
+        .insert([{ ...customField, sortOrder: maxSortOrder + 1 }])
+        .select("id")
+        .single();
     }
+    const { id, companyId, ...changes } = customField;
     return requireAffected(
       client
         .from("customField")
-        .update(
-          sanitize({
-            ...customField,
-            updatedBy: customField.updatedBy
-          })
-        )
-        .eq("id", customField.id)
+        // Not sanitized: a key left undefined is left out of the JSON, so a
+        // field the update was not given is not written.
+        .update(changes)
+        .eq("id", id)
+        .eq("companyId", companyId)
         .select("id")
     );
   }
@@ -3825,6 +4133,14 @@ export async function getProviderDimensionTargets(
 type CompanySettingsUpdate =
   Database["public"]["Tables"]["companySettings"]["Update"];
 
+/**
+ * Whose console PIN turning console mode on generates: a person's own. An
+ * API key gets none, since whoever holds the key may not be its creator.
+ */
+export function consolePinUserId(actor: Actor): string | undefined {
+  return actor.type === "user" ? actor.userId : undefined;
+}
+
 /** The fields the caller sent: an absent (undefined) one is left out. */
 export function sentFields<T extends object>(fields: T): Partial<T> {
   return Object.fromEntries(
@@ -3841,7 +4157,12 @@ export function nothingSent(
     : null;
 }
 
-/** Writes the sent fields to the company's settings row, as the caller. */
+/**
+ * Writes the sent fields to the company's settings row. Bypasses row-level
+ * security: Settings → Company owns the row, and the calling settings page's
+ * operation permission is the gate. Call it only with that operation's
+ * validated fields.
+ */
 export async function saveCompanySettings(
   ctx: ServiceContext,
   fields: CompanySettingsUpdate,
@@ -3850,7 +4171,7 @@ export async function saveCompanySettings(
   const changes = sentFields(fields);
   if (Object.keys(changes).length === 0) return null;
   const { error } = await requireAffected(
-    ctx.asCaller.supabase
+    ctx.asSystem.supabase
       .from("companySettings")
       .update(changes)
       .eq("id", ctx.company.id)
@@ -4070,14 +4391,13 @@ export async function createHeadquarters(
     );
   }
 
-  const [job] = await Promise.all([
-    insertEmployeeJob(client, {
-      id: ctx.auditUserId,
-      companyId,
-      locationId: headquarters.data.id
-    }),
-    redis.del(getPermissionCacheKey(ctx.auditUserId))
-  ]);
+  // No claims clear: the cache holds one field per company, and a company
+  // just created has none yet.
+  const job = await insertEmployeeJob(client, {
+    id: ctx.auditUserId,
+    companyId,
+    locationId: headquarters.data.id
+  });
   if (job.error) {
     return ctx.error(
       "internal",
@@ -4099,12 +4419,6 @@ export function generateTestLabel(
   const labelSize = labelSizes.find((s) => s.id === mediaSizeId);
   if (!labelSize?.zpl) return null;
   return generateTestLabelZPL(withLabelDpi(labelSize, dpi), printedAt);
-}
-
-/** An API key action on a company without the plan. */
-export function apiKeysEntitlement(ctx: ServiceContext, err: unknown) {
-  if (!(err instanceof EntitlementError)) throw err;
-  return ctx.error("entitlement", "API keys require the Business plan");
 }
 
 /** The integration's stored metadata and its `settings` object, for a merge. */
@@ -4356,35 +4670,7 @@ export async function seedCompany(
     if (!employeeTypeId)
       throw new Error("Failed to insert admin employee type");
 
-    // get the modules
-    const modules = (await trx
-      .selectFrom("modules")
-      .select("name")
-      .execute()) as { name: string }[];
-
-    // create employee type permissions for admin
-    const employeeTypePermissions = modules.reduce<
-      Database["public"]["Tables"]["employeeTypePermission"]["Insert"][]
-    >((acc, module) => {
-      if (module.name) {
-        acc.push({
-          employeeTypeId: employeeTypeId,
-          // @ts-expect-error - it's legit, chill typescript
-          module: module.name,
-          create: [companyId],
-          update: [companyId],
-          delete: [companyId],
-          view: [companyId]
-        });
-      }
-      return acc;
-    }, []);
-
-    // insert employee type permissions
-    await trx
-      .insertInto("employeeTypePermission")
-      .values(employeeTypePermissions)
-      .execute();
+    // The Admin type resolves to Full on every page with no permission rows.
 
     // insert employee
     await trx
@@ -4750,54 +5036,6 @@ export async function seedCompany(
         await trx.insertInto("fixedAssetClass").values(classRows).execute();
       }
     } // end if (!identityOnly)
-
-    const user = await single(
-      trx,
-      "userPermission",
-      { id: userId },
-      { columns: ["permissions"] }
-    );
-    if (user.error) throw new Error(user.error.message);
-
-    const currentPermissions = (user.data?.permissions ?? {}) as Record<
-      string,
-      string[]
-    >;
-    const newPermissions = { ...currentPermissions };
-    modules.forEach(({ name }) => {
-      const module = name?.toLowerCase();
-      if (`${module}_view` in newPermissions) {
-        newPermissions[`${module}_view`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_view`] = [companyId];
-      }
-
-      if (`${module}_create` in newPermissions) {
-        newPermissions[`${module}_create`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_create`] = [companyId];
-      }
-
-      if (`${module}_update` in newPermissions) {
-        newPermissions[`${module}_update`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_update`] = [companyId];
-      }
-
-      if (`${module}_delete` in newPermissions) {
-        newPermissions[`${module}_delete`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_delete`] = [companyId];
-      }
-    });
-
-    const { error } = await updateRows(
-      trx,
-      "userPermission",
-      { permissions: newPermissions },
-      { id: userId }
-    );
-    if (error) throw new Error(error.message);
 
     // For subsidiaries: set companyGroupId + parentCompanyId now that the
     // reference data (including the supplier/customer sequences) has been
@@ -7076,10 +7314,7 @@ export async function pushOnshapeAssembly(
       { status: 500 }
     );
   }
-  const childMethodFor = (
-    childItem: AssemblyPushItemRow,
-    childMade: boolean
-  ) =>
+  const childMethodFor = (childItem: AssemblyPushItemRow, childMade: boolean) =>
     childMade
       ? methodByItemId.get(childItem.id)
       : childItem.defaultMethodType === "Make to Order"
@@ -8565,7 +8800,7 @@ export async function pushOnshapeRelease(
   }
   // An item the notice could not take is removed: left in place it is outside
   // change control, and a re-push would reuse it instead of staging it. The
-  // service role removes it because the pusher may lack parts_delete.
+  // service role removes it because the pusher may lack Full on its page.
   const stageInNotice = async (
     label: string,
     itemId: string,
@@ -8929,9 +9164,8 @@ export async function pushOnshapeRelease(
   // Delete the revision's copies of the base's Onshape lines (manual lines stay),
   // then the lines a previous push of this release wrote.
   const baseMethodIdByTargetMethodId = new Map<string, string>(
-    bomTargets.flatMap(
-      (target): Array<[string, string]> =>
-        target.baseMethodId ? [[target.methodId, target.baseMethodId]] : []
+    bomTargets.flatMap((target): Array<[string, string]> =>
+      target.baseMethodId ? [[target.methodId, target.baseMethodId]] : []
     )
   );
   const copyTargetMethodIds = [...baseMethodIdByTargetMethodId.entries()]

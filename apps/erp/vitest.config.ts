@@ -41,6 +41,16 @@ const isolates = (file: string) =>
 const isolated = tests.filter(isolates);
 const shared = tests.filter((file) => !isolates(file));
 
+// A database test does real work against Postgres and PostgREST, and on a CI
+// runner a test that takes 2 seconds alone has taken more than 5. Vitest's
+// default 5 seconds failed a different one of them on one run in five. They
+// get the minute that `databaseTest` (test/database/fixtures/local-database.ts)
+// already gives the tests written with it.
+const DATABASE_TEST_TIMEOUT = 60_000;
+const usesDatabase = (file: string) => file.startsWith("test/database/");
+const withoutDatabase = (files: string[]) =>
+  files.filter((file) => !usesDatabase(file));
+
 export default defineConfig({
   // Compile Lingui macros in .ts modules as the app does, so a service that
   // reads a `msg` table can be imported without stubbing the macro. Components
@@ -57,8 +67,35 @@ export default defineConfig({
     // modules instead; a file that does keeps its own, since a module
     // another file loaded first would ignore it.
     projects: [
-      { extends: true, test: { name: "isolated", include: isolated } },
-      { extends: true, test: { name: "shared", include: shared, isolate: false } }
+      {
+        extends: true,
+        test: { name: "isolated", include: withoutDatabase(isolated) }
+      },
+      {
+        extends: true,
+        test: {
+          name: "shared",
+          include: withoutDatabase(shared),
+          isolate: false
+        }
+      },
+      {
+        extends: true,
+        test: {
+          name: "database isolated",
+          include: isolated.filter(usesDatabase),
+          testTimeout: DATABASE_TEST_TIMEOUT
+        }
+      },
+      {
+        extends: true,
+        test: {
+          name: "database",
+          include: shared.filter(usesDatabase),
+          isolate: false,
+          testTimeout: DATABASE_TEST_TIMEOUT
+        }
+      }
     ],
     passWithNoTests: true,
     // @carbon/env throws at import time when these are unset; tests that

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { PageGate } from "@carbon/database/access";
 import { round } from "@carbon/database/precision";
 import {
   type CurrencyRate,
@@ -141,4 +142,46 @@ export function flatChargeShare({
   if (ordered <= 0 || quantity >= remainingQuantity) return left;
   const share = round((charge * quantity) / ordered, decimals);
   return Math.abs(share) < Math.abs(left) ? share : left;
+}
+
+// A conversion sets the source's status and makes the next document. The
+// service function, the posting's rule and the button share these gates.
+
+export const quoteToSalesOrderPermission = {
+  "sales.quotes": "Edit",
+  "sales.salesOrders": "Create"
+} satisfies PageGate;
+
+export const salesRfqToQuotePermission = {
+  "sales.rfqs": "Edit",
+  "sales.quotes": "Create"
+} satisfies PageGate;
+
+export const supplierQuoteToPurchaseOrderPermission = {
+  "purchasing.supplierQuotes": "Edit",
+  "purchasing.purchaseOrders": "Create"
+} satisfies PageGate;
+
+/**
+ * The work center an operation keeps when its process changes: the current one
+ * while it runs the new process (at the picker's location, when it filters by
+ * one), else none. The picker only lists those work centers, so any other value
+ * would be saved while the field shows empty.
+ */
+export function workCenterForProcess({
+  workCenterId,
+  processWorkCenters,
+  locationId
+}: {
+  workCenterId: string | null | undefined;
+  processWorkCenters: { id: string; locationId: string | null }[];
+  locationId?: string | null;
+}): string {
+  if (!workCenterId) return "";
+  const runsProcess = processWorkCenters.some(
+    (workCenter) =>
+      workCenter.id === workCenterId &&
+      (!locationId || workCenter.locationId === locationId)
+  );
+  return runsProcess ? workCenterId : "";
 }

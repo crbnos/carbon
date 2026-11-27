@@ -10,6 +10,7 @@ import {
 } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
+import { anyOf, type PageId, writersOf } from "@carbon/database/access";
 import * as materialRequests from "@carbon/database/material-request";
 import { syncReceiptBatchQuantities } from "@carbon/database/receipt-batch-numbers";
 import { convertUnitPrice } from "@carbon/database/supplier-part-price";
@@ -35,7 +36,7 @@ import {
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
-import { getItemReplenishment } from "~/modules/items/items.service";
+import { getItemReplenishment, itemRule } from "~/modules/items/items.service";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import { releaseCheckedJobs } from "~/modules/production/production.server";
 import {
@@ -68,6 +69,7 @@ import {
   getLocationTimeZone,
   invokeCreate,
   invokePosting,
+  refuseKeyWithout,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
@@ -86,6 +88,7 @@ import {
   shipmentFixedAssetLineUpdateValidator,
   shipmentSourceDocumentType,
   stockTransferStatusType,
+  storageTypesGate,
   warehouseTransferStatusType
 } from "./inventory.models";
 import type { Blocked } from "./inventory.service";
@@ -133,7 +136,7 @@ export const createReceipt = defineServiceFn({
     sourceDocument: z.enum(receiptSourceDocumentType).optional(),
     sourceDocumentId: z.string().default("")
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.receipts": "Create" },
 
   async run(ctx, { sourceDocument, sourceDocumentId }) {
     const locationId = await service.defaultLocationOf(ctx);
@@ -252,7 +255,7 @@ export const updateReceipt = defineServiceFn({
     supplierId: z.string().optional(),
     customFields: customFieldsInput
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.receipts": "Edit" },
 
   async run(ctx, { id, ...receipt }) {
     const current = await ctx.asCaller.supabase
@@ -385,7 +388,7 @@ export const postReceipt = defineServiceFn({
     acknowledged: z.boolean().default(false),
     postingDate: z.string().optional()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.receipts": "Edit" },
 
   async run(ctx, { receiptId, acknowledged, postingDate }) {
     const companyId = ctx.company.id;
@@ -626,7 +629,7 @@ export const postReceipt = defineServiceFn({
  */
 export const voidReceipt = defineServiceFn({
   input: z.object({ receiptId: z.string() }),
-  permission: { update: "inventory" },
+  permission: { "inventory.receipts": "Edit" },
 
   async run(ctx, { receiptId }) {
     const receipt = await ctx.asCaller.supabase
@@ -688,7 +691,7 @@ export const splitReceiptLine = defineServiceFn({
     locationId: z.string().min(1),
     quantity: z.number()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.receipts": "Edit" },
 
   async run(ctx, { receiptId, receiptLineId, locationId, quantity }) {
     const line = await ctx.asCaller.supabase
@@ -739,7 +742,7 @@ export const updateReceiptLines = defineServiceFn({
     field: z.enum(["storageUnitId", "receivedQuantity"]),
     value: z.string().nullable()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.receipts": "Edit" },
 
   async run(ctx, { ids, field, value }) {
     const lines = await ctx.asCaller.supabase
@@ -920,7 +923,7 @@ export const updateReceiptLines = defineServiceFn({
  */
 export const updateReceiptFixedAssetLine = defineServiceFn({
   input: receiptFixedAssetLineUpdateValidator,
-  permission: { update: "inventory" },
+  permission: { "inventory.receipts": "Edit" },
 
   async run(ctx, { id, ...change }) {
     const serviceRole = ctx.asSystem.supabase;
@@ -976,7 +979,7 @@ export const setReceiptLineBatch = defineServiceFn({
     properties: z.record(z.string(), z.unknown()).default({}),
     trackedEntityId: z.string().optional()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.receipts": "Create" },
 
   async run(ctx, input) {
     const [line, receipt] = await Promise.all([
@@ -1076,7 +1079,7 @@ export const setReceiptLineSerial = defineServiceFn({
     expiryDate: z.string().optional(),
     properties: z.record(z.string(), z.unknown()).optional()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.receipts": "Create" },
 
   async run(ctx, input) {
     const line = await service.receiptLineOf(ctx, input);
@@ -1158,7 +1161,7 @@ export const setReceiptLineSerialProperties = defineServiceFn({
     receiptLineId: z.string(),
     properties: z.record(z.string(), z.unknown())
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.receipts": "Create" },
 
   async run(ctx, input) {
     const line = await service.receiptLineOf(ctx, input);
@@ -1217,7 +1220,7 @@ export const assignReceiptReturnEntity = defineServiceFn({
     trackedEntityId: z.string(),
     index: z.number().int().min(0).optional()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.receipts": "Create" },
 
   async run(ctx, { receiptId, receiptLineId, trackedEntityId, index }) {
     const client = ctx.asCaller.supabase;
@@ -1398,7 +1401,7 @@ export const removeReceiptReturnEntity = defineServiceFn({
     receiptLineId: z.string(),
     trackedEntityId: z.string()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.receipts": "Create" },
 
   async run(ctx, { receiptId, receiptLineId, trackedEntityId }) {
     const [returnLine, entity, receipt] = await Promise.all([
@@ -1486,7 +1489,7 @@ export const createShipment = defineServiceFn({
     sourceDocument: z.enum(shipmentSourceDocumentType).optional(),
     sourceDocumentId: z.string().default("")
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.shipments": "Create" },
 
   async run(ctx, { sourceDocument, sourceDocumentId }) {
     let locationId = await service.defaultLocationOf(ctx);
@@ -1635,7 +1638,7 @@ export const updateShipment = defineServiceFn({
     customerId: z.string().optional(),
     customFields: customFieldsInput
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.shipments": "Edit" },
 
   async run(ctx, { id, ...shipment }) {
     const current = await ctx.asCaller.supabase
@@ -1800,7 +1803,7 @@ export const postShipment = defineServiceFn({
     postingDate: z.string().optional(),
     locale: z.string().default("en-US")
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.shipments": "Edit" },
 
   async run(ctx, { shipmentId, acknowledged, postingDate, locale }) {
     const companyId = ctx.company.id;
@@ -2121,7 +2124,7 @@ export const postShipment = defineServiceFn({
  */
 export const voidShipment = defineServiceFn({
   input: z.object({ shipmentId: z.string() }),
-  permission: { update: "inventory" },
+  permission: { "inventory.shipments": "Edit" },
 
   async run(ctx, { shipmentId }) {
     const shipment = await ctx.asCaller.supabase
@@ -2174,7 +2177,7 @@ export const splitShipmentLine = defineServiceFn({
     locationId: z.string().min(1),
     quantity: z.number()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.shipments": "Edit" },
 
   async run(ctx, { shipmentId, shipmentLineId, locationId, quantity }) {
     const line = await ctx.asCaller.supabase
@@ -2225,7 +2228,7 @@ export const updateShipmentLines = defineServiceFn({
     field: z.enum(["storageUnitId", "shippedQuantity", "serialNumber"]),
     value: z.string().nullable()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.shipments": "Edit" },
 
   async run(ctx, { ids, field, value }) {
     const lines = await ctx.asCaller.supabase
@@ -2282,7 +2285,7 @@ export const updateShipmentLines = defineServiceFn({
  */
 export const updateShipmentFixedAssetLine = defineServiceFn({
   input: shipmentFixedAssetLineUpdateValidator,
-  permission: { update: "inventory" },
+  permission: { "inventory.shipments": "Edit" },
 
   async run(ctx, { id, ...change }) {
     const serviceRole = ctx.asSystem.supabase;
@@ -2350,7 +2353,7 @@ export const assignShipmentLineEntity = defineServiceFn({
       index: z.number().int().min(0)
     })
   ]),
-  permission: { create: "inventory" },
+  permission: { "inventory.shipments": "Create" },
 
   async run(ctx, input) {
     const { shipmentId, shipmentLineId, trackedEntityId } = input;
@@ -2610,7 +2613,7 @@ export const createStockTransfer = defineServiceFn({
       ),
     customFields: customFieldsInput
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.stockTransfers": "Create" },
 
   async run(
     ctx,
@@ -2831,7 +2834,7 @@ export const createStockTransfer = defineServiceFn({
  */
 export const pickAllStockTransferLines = defineServiceFn({
   input: z.object({ stockTransferId: z.string().min(1) }),
-  permission: { create: "inventory" },
+  permission: { "inventory.stockTransfers": "Create" },
 
   async run(ctx, { stockTransferId }) {
     const transfer = await ctx.asCaller.supabase
@@ -2895,7 +2898,7 @@ export const pickAllStockTransferLines = defineServiceFn({
  */
 export const getTrackedStockAtLocation = defineServiceFn({
   input: z.object({ locationId: z.string().min(1) }),
-  permission: { view: "inventory" },
+  permission: { "inventory.stockTransfers": "View" },
 
   async run(ctx, { locationId }) {
     try {
@@ -2941,7 +2944,7 @@ export const assignBatchToUnnumberedStock = defineServiceFn({
     comment: z.string().nullish()
   }),
   // Creates stock records, like an inventory adjustment.
-  permission: { create: "inventory", update: "inventory" },
+  permission: { "inventory.quantities": "Edit" },
 
   async run(ctx, input) {
     try {
@@ -2989,7 +2992,7 @@ export const setStockTransferStatus = defineServiceFn({
     status: z.enum(stockTransferStatusType),
     acknowledged: z.boolean().default(false)
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.stockTransfers": "Edit" },
 
   async run(ctx, { id, status, acknowledged }) {
     const current = await ctx.asCaller.supabase
@@ -3012,7 +3015,7 @@ export const setStockTransferStatus = defineServiceFn({
     if (
       status !== "Completed" &&
       current.data.status === "Completed" &&
-      !ctx.can({ delete: "inventory" })
+      !ctx.can({ "inventory.stockTransfers": "Full" })
     ) {
       return ctx.error(
         "forbidden",
@@ -3138,7 +3141,7 @@ export const pickStockTransferLine = defineServiceFn({
     locationId: z.string(),
     trackedEntityId: z.string().optional()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.stockTransfers": "Create" },
 
   async run(ctx, { lineId, quantity, locationId, trackedEntityId }) {
     const line = await service.stockTransferLineOf(ctx, lineId, {
@@ -3184,7 +3187,7 @@ export const unpickStockTransferLine = defineServiceFn({
     locationId: z.string(),
     trackedEntityId: z.string().optional()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.stockTransfers": "Create" },
 
   async run(ctx, { lineId, locationId, trackedEntityId }) {
     const line = await service.stockTransferLineOf(ctx, lineId);
@@ -3232,7 +3235,7 @@ export const pickStockTransferLineEntity = defineServiceFn({
     quantity: z.number().positive(),
     locationId: z.string().min(1)
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.stockTransfers": "Edit" },
 
   async run(ctx, { lineId, trackedEntityId, quantity, locationId }) {
     const line = await service.stockTransferLineOf(ctx, lineId, {
@@ -3283,7 +3286,7 @@ export const updateStockTransferLines = defineServiceFn({
     field: z.enum(["fromStorageUnitId", "toStorageUnitId"]),
     value: z.string().nullable()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.stockTransfers": "Edit" },
 
   async run(ctx, { ids, field, value }) {
     const refusal = await service.updateStockTransferLineStorageUnits(
@@ -3341,7 +3344,7 @@ export const setWarehouseTransferStatus = defineServiceFn({
     status: z.enum(warehouseTransferStatusType),
     acknowledged: z.boolean().default(false)
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.warehouseTransfers": "Edit" },
 
   async run(ctx, { id, status, acknowledged }) {
     const transfer = await ctx.asCaller.supabase
@@ -3425,7 +3428,7 @@ export const createWarehouseTransferLine = defineServiceFn({
     unitOfMeasureCode: z.string().optional(),
     ...warehouseTransferLineFields
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.warehouseTransfers": "Edit" },
 
   async run(ctx, { transferId, ...line }) {
     const transfer = await service.unlockedWarehouseTransfer(ctx, transferId);
@@ -3467,7 +3470,7 @@ export const updateWarehouseTransferLine = defineServiceFn({
     id: z.string(),
     ...warehouseTransferLineFields
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.warehouseTransfers": "Edit" },
 
   async run(ctx, { transferId, id, ...line }) {
     const transfer = await service.unlockedWarehouseTransfer(ctx, transferId);
@@ -3507,7 +3510,7 @@ export const updateWarehouseTransferLine = defineServiceFn({
  */
 export const removeWarehouseTransferLine = defineServiceFn({
   input: z.object({ transferId: z.string(), id: z.string() }),
-  permission: { update: "inventory" },
+  permission: { "inventory.warehouseTransfers": "Edit" },
 
   async run(ctx, { transferId, id }) {
     const transfer = await service.unlockedWarehouseTransfer(ctx, transferId);
@@ -3557,7 +3560,7 @@ export const createInventoryCount = defineServiceFn({
     storageUnitIds: z.array(z.string()).optional(),
     itemType: z.enum(inventoryItemTypes).optional()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.inventoryCount": "Create" },
 
   async run(ctx, { locationId, isBlind, notes, storageUnitIds, itemType }) {
     const companyId = ctx.company.id;
@@ -3648,7 +3651,7 @@ export const createReceiptPutAway = defineServiceFn({
     receiptId: z.string(),
     acknowledged: z.boolean().default(false)
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.stockTransfers": "Create" },
 
   async run(ctx, { receiptId, acknowledged }) {
     const receipt = await ctx.asSystem.supabase
@@ -3729,7 +3732,7 @@ export const createReceiptPutAway = defineServiceFn({
  */
 export const postInventoryCount = defineServiceFn({
   input: z.object({ inventoryCountId: z.string() }),
-  permission: { update: "inventory" },
+  permission: { "inventory.inventoryCount": "Edit" },
 
   async run(ctx, { inventoryCountId }) {
     const header = await service.getInventoryCount(
@@ -3778,9 +3781,9 @@ export const postInventoryCount = defineServiceFn({
  *
  * @remarks
  * A positive or negative adjustment, a set quantity, a scrap (with its scrap
- * reason) or an unscrap of a Scrapped tracked entity. It writes the ledger
- * entry, updates the tracked entity, maintains cost layers and posts the
- * journal in one transaction. Stock held for inspection is refused first.
+ * reason) or an unscrap of a Scrapped tracked entity of the item. It writes
+ * the ledger entry, updates the tracked entity, maintains cost layers and
+ * posts the journal in one transaction. Stock held for inspection is refused first.
  * Then storage rules run on the `inventoryAdjustment` surface and, when a
  * storage unit is named, on `pick`
  * (a decrease or scrap) or `place` (an increase or unscrap): a blocking rule
@@ -3790,6 +3793,32 @@ export const postInventoryCount = defineServiceFn({
  * Every adjustment but an unscrap needs `locationId`; an unscrap resolves its
  * location, bin and cost from the original scrap.
  *
+ * The stock of a Serial or Batch item is always a serial or lot, as on the
+ * quantities page. Without `trackedEntityId`, an increase (a positive
+ * adjustment, or a set quantity) creates a new one numbered `readableId`
+ * with that quantity, even when a lot with that number exists; a decrease
+ * takes the one numbered `readableId` in `storageUnitId` (with no number,
+ * stock with no number in the unit, else the unit's only serial or lot); a
+ * scrap, and a move to another storage unit (`originalStorageUnitId`), need
+ * `trackedEntityId`; an unscrap without it restores stock with no serial or
+ * lot. A `trackedEntityId` that names no serial or lot is a new one, as the
+ * page sends: an increase creates it, a decrease is taken as above, and a
+ * move is refused. A serial item moves one unit at a time, and an increase
+ * that would give a serial more than one unit is refused.
+ *
+ * The posting date is today in the company's time zone; there is no other.
+ * An increase is valued at the item's current cost: its standard cost
+ * (Standard), its unit cost (Average), or the average of its open cost
+ * layers, else its unit cost (FIFO, LIFO). To value opening stock at another
+ * cost, set the item's cost first. A decrease relieves cost by the costing
+ * method, and an unscrap restores the cost the scrap took.
+ *
+ * @param quantity - A positive magnitude: `adjustmentType` says which way stock moves. For a set quantity, the quantity on hand to reach.
+ * @param trackedEntityId - The serial or lot to adjust: one of this item with stock at `locationId`. Leave it out for a new serial or lot, and for an item that is not Serial or Batch.
+ * @param readableId - The serial or batch number. It numbers a new serial or lot, finds the one a decrease takes when `trackedEntityId` is left out, and renames the one `trackedEntityId` names.
+ * @param expirationDate - The expiry of the serial or lot (YYYY-MM-DD). A new one left without takes the item's fixed-duration shelf life; a change to an existing one is kept in its history.
+ * @param projectId - The project that owns untracked stock or a new serial or lot: a project that keeps project stock. Left out, common stock. An existing serial or lot stays with its owner.
+ *
  * @mcp
  */
 export const adjustInventory = defineServiceFn({
@@ -3797,7 +3826,6 @@ export const adjustInventory = defineServiceFn({
     .object({
       itemId: z.string().min(1),
       adjustmentType: z.enum(inventoryAdjustmentTypes),
-      /** A positive magnitude; the type says which way it moves. */
       quantity: z.number().min(0),
       locationId: z.string().optional(),
       storageUnitId: z.string().optional(),
@@ -3808,6 +3836,8 @@ export const adjustInventory = defineServiceFn({
       comment: z.string().optional(),
       scrapReasonId: z.string().optional(),
       unscrapOfItemLedgerId: z.string().optional(),
+      // The stock owner the quantities page sends for a row in project stock.
+      projectId: z.string().optional(),
       acknowledged: z.boolean().default(false)
     })
     .refine((d) => d.adjustmentType !== "Scrap" || !!d.scrapReasonId, {
@@ -3819,16 +3849,14 @@ export const adjustInventory = defineServiceFn({
       message: "Location is required"
     }),
   // The adjustment route's gate, and the update the posting itself requires.
-  permission: { create: "inventory", update: "inventory" },
+  permission: { "inventory.quantities": "Edit" },
 
   async run(ctx, { acknowledged, ...adjustment }) {
-    const serial = await service.serialQuantityRefusal(
-      ctx,
-      adjustment.itemId,
-      adjustment.quantity
-    );
-    if (serial) return serial;
+    const refused = await service.refuseTrackedAdjustment(ctx, adjustment);
+    if (refused) return refused;
 
+    // Checked on what the caller sent: the posting gives a new serial or lot
+    // its id, so the untracked branch still runs when none is named.
     const held = await service.inspectionHoldAdjustmentRefusal(
       ctx.asSystem.pg,
       ctx.company.id,
@@ -3893,7 +3921,7 @@ export const removeStorageUnit = defineServiceFn({
     storageUnitId: z.string(),
     cascade: z.boolean().default(false)
   }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.storageUnits": "Full" },
 
   async run(ctx, { storageUnitId, cascade }) {
     const unit = await ctx.asCaller.supabase
@@ -3949,7 +3977,7 @@ export const setPickingListStatus = defineServiceFn({
     status: z.enum(pickingListStatusType),
     acknowledged: z.boolean().optional()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.pickingLists": "Edit" },
 
   async run(ctx, { pickingListId, status, acknowledged }) {
     const client = ctx.asCaller.supabase;
@@ -3973,7 +4001,7 @@ export const setPickingListStatus = defineServiceFn({
     if (
       isPickingListLocked(current.data.status) &&
       !isPickingListLocked(status) &&
-      !ctx.can({ delete: "inventory" })
+      !ctx.can({ "inventory.pickingLists": "Full" })
     ) {
       return ctx.error(
         "forbidden",
@@ -4080,7 +4108,7 @@ export const createMaterialRequest = defineServiceFn({
     itemId: z.string().optional(),
     note: z.string().optional()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.pickingLists": "Create" },
   async run(ctx, { jobOperationId, itemId, note }) {
     const created = await materialRequests.createMaterialRequest(
       ctx.asCaller.supabase,
@@ -4115,7 +4143,7 @@ export const createMaterialRequest = defineServiceFn({
  */
 export const resolveMaterialRequest = defineServiceFn({
   input: z.object({ materialRequestId: z.string().min(1) }),
-  permission: { update: "inventory" },
+  permission: { "inventory.pickingLists": "Edit" },
   async run(ctx, { materialRequestId }) {
     const resolved = await materialRequests.resolveMaterialRequest(
       ctx.asCaller.supabase,
@@ -4161,7 +4189,7 @@ export const updatePickingList = defineServiceFn({
     notes: optionalTiptapDoc,
     customFields: z.record(z.string(), z.unknown()).optional()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.pickingLists": "Edit" },
 
   async run(ctx, { pickingListId, customFields, ...fields }) {
     const existing = await service.getPickingList(
@@ -4216,7 +4244,7 @@ export const pickPickingListLineChecked = defineServiceFn({
     quantity: z.number().min(0),
     markShort: z.boolean().optional()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.pickingLists": "Edit" },
 
   async run(ctx, { pickingListId, pickingListLineId, quantity, markShort }) {
     const owned = await refuseUnlessOwned(ctx, "pickingListLine", {
@@ -4264,7 +4292,7 @@ export const pickPickingListLineEntity = defineServiceFn({
     quantity: z.number().min(0),
     unpick: z.boolean().optional()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.pickingLists": "Edit" },
 
   async run(
     ctx,
@@ -4342,15 +4370,29 @@ export type KanbanScan =
  * collision. Buy: adds a line to the supplier's open Draft or Planned purchase
  * order, or a new Draft one, priced from the supplier part in the order's
  * currency. Transfer: releases a stock transfer to the kanban's storage unit
- * (`kanban-replenish`, as the scanner).
+ * (`kanban-replenish`, as the scanner). Any employee may scan a card. An API
+ * key needs Edit on inventory.kanbans; for a Make kanban, Create on
+ * production.jobs (Edit when it auto-releases); for a Buy kanban, Create on
+ * purchasing.purchaseOrders.
+ *
+ * @param kanbanId - The kanban's id (`id`, not the printed `kanbanId`); see
+ *   `inventory_getKanbans`.
+ * @returns What the scan made: `collision`, the `job` (with its first
+ *   operation when released), the `purchaseOrder` or the `stockTransfer`.
+ *
+ * @mcp
  */
 export const scanKanban = defineServiceFn({
   input: z.object({ kanbanId: z.string() }),
-  // Safe only unpublished (an employee-only route; Make creates jobs as the
-  // system): give it a real rule before it is ever tagged @mcp.
-  permission: {},
+  // The card's route admits every employee. A key's pages are checked in
+  // `run`, because they depend on the card: a Make card needs production.jobs
+  // and creates its job as the system, a Buy card purchasing.purchaseOrders.
+  permission: "employee",
 
   async run(ctx, { kanbanId }): Promise<KanbanScan | CarbonError> {
+    const keyRefused = refuseKeyWithout(ctx, { "inventory.kanbans": "Edit" });
+    if (keyRefused) return keyRefused;
+
     const client = ctx.asCaller.supabase;
     const serviceRole = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
@@ -4361,6 +4403,17 @@ export const scanKanban = defineServiceFn({
       return ctx.error("notFound", "Kanban is not active", kanban.error);
     }
     const card = kanban.data;
+
+    // A key needs the page the app's own route needs for what the card
+    // makes, before anything is read or written. A Make card creates its
+    // job, and with auto-release releases it, as the system. A Buy card
+    // writes as the key, but RLS refuses a new order only after its number
+    // is taken.
+    const cardPermission = service.kanbanKeyGate(card);
+    const cardRefused = cardPermission
+      ? refuseKeyWithout(ctx, cardPermission)
+      : null;
+    if (cardRefused) return cardRefused;
 
     // replenishKanban checks a Transfer card's units itself, for scans and
     // level checks alike.
@@ -4415,6 +4468,7 @@ export const scanKanban = defineServiceFn({
       const system = createServiceContext({
         actor: { type: "system", onBehalfOf: userId },
         company: ctx.company,
+        origin: ctx.origin,
         caller: serviceRole,
         system: () => serviceRole,
         pg: () => ctx.asSystem.pg,
@@ -4758,7 +4812,11 @@ export const scanKanban = defineServiceFn({
  */
 export const deleteBatchProperty = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "inventory" },
+  permission: itemRule("Full", {
+    id: "id",
+    from: "batchProperty",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     const owned = await refuseUnlessOwned(ctx, "batchProperty", {
       id: input.id
@@ -4781,7 +4839,7 @@ export const deleteBatchProperty = defineServiceFn({
  */
 export const deleteKanban = defineServiceFn({
   input: z.looseObject({ kanbanId: z.string() }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.kanbans": "Full" },
   async run(ctx, input) {
     const owned = await refuseUnlessOwned(ctx, "kanban", {
       id: input.kanbanId
@@ -4804,7 +4862,7 @@ export const deleteKanban = defineServiceFn({
  */
 export const deleteReceipt = defineServiceFn({
   input: z.looseObject({ receiptId: z.string() }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.receipts": "Full" },
   async run(ctx, input) {
     const receipt = await ctx.asCaller.supabase
       .from("receipt")
@@ -4839,7 +4897,7 @@ export const deleteReceipt = defineServiceFn({
  */
 export const deleteReceiptLine = defineServiceFn({
   input: z.looseObject({ receiptLineId: z.string() }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.receipts": "Full" },
   async run(ctx, input) {
     const line = await ctx.asCaller.supabase
       .from("receiptLine")
@@ -4876,7 +4934,7 @@ export const deleteReceiptLine = defineServiceFn({
  */
 export const deleteShipment = defineServiceFn({
   input: z.looseObject({ shipmentId: z.string() }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.shipments": "Full" },
   async run(ctx, input) {
     const shipment = await ctx.asCaller.supabase
       .from("shipment")
@@ -4915,7 +4973,7 @@ export const deleteShipment = defineServiceFn({
  */
 export const deleteShipmentLine = defineServiceFn({
   input: z.looseObject({ shipmentLineId: z.string() }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.shipments": "Full" },
   async run(ctx, input) {
     const line = await ctx.asCaller.supabase
       .from("shipmentLine")
@@ -4954,7 +5012,7 @@ export const deleteShipmentLine = defineServiceFn({
  */
 export const deleteShippingMethod = defineServiceFn({
   input: z.looseObject({ shippingMethodId: z.string() }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.shippingMethods": "Full" },
   async run(ctx, input) {
     const owned = await refuseUnlessOwned(ctx, "shippingMethod", {
       id: input.shippingMethodId
@@ -4980,7 +5038,7 @@ export const deleteShippingMethod = defineServiceFn({
  */
 export const deleteStockTransfer = defineServiceFn({
   input: z.looseObject({ stockTransferId: z.string() }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.stockTransfers": "Full" },
   async run(ctx, input) {
     const transfer = await service.unlockedStockTransfer(
       ctx,
@@ -5007,7 +5065,7 @@ export const deleteStockTransfer = defineServiceFn({
  */
 export const deleteStockTransferLine = defineServiceFn({
   input: z.looseObject({ stockTransferLineId: z.string() }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.stockTransfers": "Full" },
   async run(ctx, input) {
     const line = await ctx.asCaller.supabase
       .from("stockTransferLine")
@@ -5047,7 +5105,7 @@ export const deleteStockTransferLine = defineServiceFn({
  */
 export const deleteWarehouseTransfer = defineServiceFn({
   input: z.looseObject({ transferId: z.string() }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.warehouseTransfers": "Full" },
   async run(ctx, input) {
     const owned = await refuseUnlessOwned(ctx, "warehouseTransfer", {
       id: input.transferId
@@ -5080,7 +5138,7 @@ export const getItemLedgerActivity = defineServiceFn({
     direction: z.enum(["older", "newer"]).optional(),
     inclusive: z.boolean().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.quantities": "View" },
   async run(ctx, input) {
     const page = await utils.getItemLedgerActivity(
       ctx.asCaller.supabase,
@@ -5105,7 +5163,7 @@ export const getItemLedgerBalance = defineServiceFn({
     locationId: z.string(),
     entryNumber: z.number().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.quantities": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5124,7 +5182,7 @@ export const getItemLedgerBalance = defineServiceFn({
  */
 export const getBatchProperties = defineServiceFn({
   input: z.looseObject({ itemIds: z.array(z.string()) }),
-  permission: { view: "inventory" },
+  permission: { "inventory.receipts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5153,7 +5211,7 @@ export const getInventoryItems = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.quantities": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -5178,7 +5236,7 @@ export const getInventoryValuation = defineServiceFn({
     locationId: z.string().nullable().optional()
   }),
   // A valuation is the accounting report's: inventory rights alone see no cost.
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5198,7 +5256,7 @@ export const getInventoryValuation = defineServiceFn({
  */
 export const getInventoryValuationTieOut = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string().nullable().optional() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5218,7 +5276,7 @@ export const getInventoryValuationTieOut = defineServiceFn({
  */
 export const createInventoryReconciliationJournal = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
-  permission: { create: "accounting" },
+  permission: { "accounting.journalEntries": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5248,7 +5306,7 @@ export const getKanbans = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.kanbans": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -5269,7 +5327,7 @@ export const getKanbans = defineServiceFn({
  */
 export const getKanban = defineServiceFn({
   input: z.looseObject({ kanbanId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.kanbans": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5289,7 +5347,7 @@ export const getKanban = defineServiceFn({
  */
 export const getKanbanProjectedQuantities = defineServiceFn({
   input: z.looseObject({ kanbanIds: z.array(z.string()) }),
-  permission: { view: "inventory" },
+  permission: { "inventory.kanbans": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5309,7 +5367,7 @@ export const getKanbanProjectedQuantities = defineServiceFn({
  */
 export const getStockTransfer = defineServiceFn({
   input: z.looseObject({ stockTransferId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.stockTransfers": "View" },
   async run(ctx, input) {
     const transfer = await service.getStockTransfer(
       ctx.asCaller.supabase,
@@ -5329,7 +5387,7 @@ export const getStockTransfer = defineServiceFn({
  */
 export const getStockTransferLines = defineServiceFn({
   input: z.looseObject({ stockTransferId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.stockTransfers": "View" },
   async run(ctx, input) {
     const lines = await service.getStockTransferLines(
       ctx.asCaller.supabase,
@@ -5358,7 +5416,7 @@ export const getStockTransfers = defineServiceFn({
     search: z.string().nullable().optional(),
     locationId: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.stockTransfers": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -5386,7 +5444,7 @@ export const getReceipts = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.receipts": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -5406,7 +5464,7 @@ export const getReceipts = defineServiceFn({
  */
 export const getReceipt = defineServiceFn({
   input: z.looseObject({ receiptId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.receipts": "View" },
   async run(ctx, input) {
     const receipt = await service.getReceipt(
       ctx.asCaller.supabase,
@@ -5426,7 +5484,7 @@ export const getReceipt = defineServiceFn({
  */
 export const getReceiptLines = defineServiceFn({
   input: z.looseObject({ receiptId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.receipts": "View" },
   async run(ctx, input) {
     const lines = await service.getReceiptLines(
       ctx.asCaller.supabase,
@@ -5451,7 +5509,7 @@ export const getReceiptRelatedItems = defineServiceFn({
     supplierInteractionId: z.string().nullable(),
     salesReturnOrderId: z.string().nullable()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.receipts": "View" },
   async run(ctx, input) {
     return await service.getReceiptRelatedItems(
       ctx.asCaller.supabase,
@@ -5469,7 +5527,7 @@ export const getReceiptRelatedItems = defineServiceFn({
  */
 export const getReceiptTracking = defineServiceFn({
   input: z.looseObject({ receiptId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.receipts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5494,7 +5552,7 @@ export const getReceiptTracking = defineServiceFn({
 export const getReceiptFiles = defineServiceFn({
   // One storage listing per line.
   input: z.looseObject({ lineIds: z.array(z.string()).max(200) }),
-  permission: { view: "inventory" },
+  permission: { "inventory.receipts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5514,7 +5572,7 @@ export const getReceiptFiles = defineServiceFn({
  */
 export const getSerialNumbersForItem = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5541,7 +5599,7 @@ export const getAvailableTrackedEntities = defineServiceFn({
     excludeLineId: z.string().nullable().optional(),
     inStorageUnit: z.looseObject({ id: z.string().nullable() }).optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.trackedEntities": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5560,7 +5618,7 @@ export const getAvailableTrackedEntities = defineServiceFn({
  */
 export const getPickOrder = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.pickingLists": "View" },
   async run(ctx, input) {
     return await service.getPickOrder(
       ctx.asCaller.supabase,
@@ -5579,7 +5637,7 @@ export const getBatchNumbersForItem = defineServiceFn({
     itemId: z.string(),
     isReadOnly: z.boolean().optional()
   }),
-  permission: { view: "inventory" },
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5598,7 +5656,7 @@ export const getBatchNumbersForItem = defineServiceFn({
  */
 export const getStorageUnitsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "inventory" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -5614,7 +5672,7 @@ export const getStorageUnitsList = defineServiceFn({
  */
 export const getStorageUnitsListForLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5634,7 +5692,7 @@ export const getStorageUnitsListForLocation = defineServiceFn({
  */
 export const getStorageUnitsTreeForLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.storageUnits": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5654,7 +5712,7 @@ export const getStorageUnitsTreeForLocation = defineServiceFn({
  */
 export const getStorageUnit = defineServiceFn({
   input: z.looseObject({ storageUnitId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.storageUnits": "View" },
   async run(ctx, input) {
     const unit = await service.getStorageUnit(
       ctx.asCaller.supabase,
@@ -5674,7 +5732,7 @@ export const getStorageUnit = defineServiceFn({
  */
 export const getEffectiveWorkCenterId = defineServiceFn({
   input: z.looseObject({ storageUnitId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.storageUnits": "View" },
   async run(ctx, input) {
     const owned = await refuseUnlessOwned(ctx, "storageUnit", {
       id: input.storageUnitId
@@ -5706,7 +5764,7 @@ export const getStorageUnitRoots = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.storageUnits": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -5727,7 +5785,7 @@ export const getStorageUnitRoots = defineServiceFn({
  */
 export const getStorageUnitChildren = defineServiceFn({
   input: z.looseObject({ parentId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.storageUnits": "View" },
   async run(ctx, input) {
     const children = await service.getStorageUnitChildren(
       ctx.asCaller.supabase,
@@ -5751,7 +5809,7 @@ export const getStorageUnitSubtrees = defineServiceFn({
     rootIds: z.array(z.string()),
     maxDepth: z.number()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.storageUnits": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5773,7 +5831,7 @@ export const getStorageUnitSubtrees = defineServiceFn({
  */
 export const getStorageUnitParentIdsWithChildren = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.storageUnits": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5793,7 +5851,7 @@ export const getStorageUnitParentIdsWithChildren = defineServiceFn({
  */
 export const searchStorageUnitsWithAncestors = defineServiceFn({
   input: z.looseObject({ locationId: z.string(), search: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.storageUnits": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5822,7 +5880,7 @@ export const getStockMovements = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.movements": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -5850,7 +5908,7 @@ export const getShipments = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.shipments": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -5870,7 +5928,7 @@ export const getShipments = defineServiceFn({
  */
 export const getShipment = defineServiceFn({
   input: z.looseObject({ shipmentId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.shipments": "View" },
   async run(ctx, input) {
     const shipment = await service.getShipment(
       ctx.asCaller.supabase,
@@ -5890,7 +5948,7 @@ export const getShipment = defineServiceFn({
  */
 export const getShipmentLines = defineServiceFn({
   input: z.looseObject({ shipmentId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.shipments": "View" },
   async run(ctx, input) {
     const lines = await service.getShipmentLines(
       ctx.asCaller.supabase,
@@ -5913,7 +5971,7 @@ export const getShipmentRelatedItems = defineServiceFn({
     shipmentId: z.string(),
     sourceDocumentId: z.string()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.shipments": "View" },
   async run(ctx, input) {
     // The reads below run by these ids alone: both must be this company's
     // shipment and its own source document.
@@ -5940,7 +5998,7 @@ export const getShipmentRelatedItems = defineServiceFn({
  */
 export const getShipmentTracking = defineServiceFn({
   input: z.looseObject({ shipmentId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.shipments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5960,7 +6018,7 @@ export const getShipmentTracking = defineServiceFn({
  */
 export const getRentalShipmentLines = defineServiceFn({
   input: z.looseObject({ shipmentId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.shipments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5980,7 +6038,7 @@ export const getRentalShipmentLines = defineServiceFn({
  */
 export const getRentalReceiptLines = defineServiceFn({
   input: z.looseObject({ receiptId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.receipts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6000,7 +6058,7 @@ export const getRentalReceiptLines = defineServiceFn({
  */
 export const getShippingMethod = defineServiceFn({
   input: z.looseObject({ shippingMethodId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.shippingMethods": "View" },
   async run(ctx, input) {
     const method = await service.getShippingMethod(
       ctx.asCaller.supabase,
@@ -6028,7 +6086,7 @@ export const getShippingMethods = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.shippingMethods": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -6048,7 +6106,7 @@ export const getShippingMethods = defineServiceFn({
  */
 export const getShippingMethodsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "inventory" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -6067,7 +6125,7 @@ export const getShippingMethodsList = defineServiceFn({
  */
 export const getShippingTermsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "inventory" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -6091,7 +6149,7 @@ export const getTrackedEntities = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.trackedEntities": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -6111,7 +6169,7 @@ export const getTrackedEntities = defineServiceFn({
  */
 export const getTrackedEntitiesByMakeMethodId = defineServiceFn({
   input: z.looseObject({ jobMakeMethodId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6127,11 +6185,13 @@ export const getTrackedEntitiesByMakeMethodId = defineServiceFn({
 /**
  * Get tracked entity
  *
+ * @param trackedEntityId - The id of the serial or lot, sent as `trackedEntityId`: this read takes no `id` field.
+ *
  * @mcp read
  */
 export const getTrackedEntity = defineServiceFn({
   input: z.looseObject({ trackedEntityId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "employee",
   async run(ctx, input) {
     const entity = await service.getTrackedEntity(
       ctx.asCaller.supabase,
@@ -6163,7 +6223,7 @@ export const updateTrackedEntityExpiry = defineServiceFn({
       .max(500),
     source: z.string().optional()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.trackedEntities": "Edit" },
   async run(ctx, input) {
     const owned = await refuseUnlessOwned(ctx, "trackedEntity", {
       id: input.trackedEntityId
@@ -6198,7 +6258,7 @@ export const mergeTrackedEntities = defineServiceFn({
     trackedEntityIds: z.array(z.string()).min(2),
     readableId: z.string().nullable().optional()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.trackedEntities": "Edit" },
   async run(ctx, { trackedEntityIds, readableId }) {
     // As the system: the gate above is the `issue` posting's own rule for a
     // merge, and the posting reads the lots by this company.
@@ -6233,7 +6293,7 @@ export const getWarehouseTransfers = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.warehouseTransfers": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -6253,7 +6313,7 @@ export const getWarehouseTransfers = defineServiceFn({
  */
 export const getWarehouseTransfer = defineServiceFn({
   input: z.looseObject({ transferId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.warehouseTransfers": "View" },
   async run(ctx, input) {
     const transfer = await service.getWarehouseTransfer(
       ctx.asCaller.supabase,
@@ -6273,7 +6333,7 @@ export const getWarehouseTransfer = defineServiceFn({
  */
 export const getWarehouseTransferRelatedItems = defineServiceFn({
   input: z.looseObject({ transferId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.warehouseTransfers": "View" },
   async run(ctx, input) {
     return await service.getWarehouseTransferRelatedItems(
       ctx.asCaller.supabase,
@@ -6290,7 +6350,7 @@ export const getWarehouseTransferRelatedItems = defineServiceFn({
  */
 export const getWarehouseTransferLine = defineServiceFn({
   input: z.looseObject({ transferId: z.string(), lineId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.warehouseTransfers": "View" },
   async run(ctx, input) {
     const line = await service.getWarehouseTransferLine(
       ctx.asCaller.supabase,
@@ -6311,7 +6371,7 @@ export const getWarehouseTransferLine = defineServiceFn({
  */
 export const getWarehouseTransferLines = defineServiceFn({
   input: z.looseObject({ transferId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.warehouseTransfers": "View" },
   async run(ctx, input) {
     const lines = await service.getWarehouseTransferLines(
       ctx.asCaller.supabase,
@@ -6331,7 +6391,7 @@ export const getWarehouseTransferLines = defineServiceFn({
  */
 export const getStockMovementEffectiveQuantity = defineServiceFn({
   input: z.looseObject({ itemLedgerId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.movements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6380,7 +6440,7 @@ export const getInventoryCounts = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.inventoryCount": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -6400,7 +6460,7 @@ export const getInventoryCounts = defineServiceFn({
  */
 export const getInventoryCount = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.inventoryCount": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6429,7 +6489,7 @@ export const getInventoryCountLines = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.inventoryCount": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -6465,7 +6525,7 @@ export const getInventoryCountGroups = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.inventoryCount": "View" },
   async run(ctx, input) {
     const header = await service.getInventoryCount(
       ctx.asCaller.supabase,
@@ -6516,7 +6576,7 @@ export const getInventoryCountGroups = defineServiceFn({
  */
 export const getInventoryCountLineSummary = defineServiceFn({
   input: z.looseObject({ inventoryCountId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.inventoryCount": "View" },
   async run(ctx, input) {
     return await service.getInventoryCountLineSummary(
       ctx.asCaller.supabase,
@@ -6533,7 +6593,7 @@ export const getInventoryCountLineSummary = defineServiceFn({
  */
 export const getInventoryCountMovements = defineServiceFn({
   input: z.looseObject({ inventoryCountId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.inventoryCount": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6553,7 +6613,7 @@ export const getInventoryCountMovements = defineServiceFn({
  */
 export const deleteInventoryCount = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.inventoryCount": "Full" },
   async run(ctx, input) {
     const count = await service.getInventoryCount(
       ctx.asCaller.supabase,
@@ -6599,7 +6659,7 @@ export const updateInventoryCountLine = defineServiceFn({
     id: z.string().min(1),
     countedQuantity: z.number().min(0).optional()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.inventoryCount": "Edit" },
   async run(ctx, { id, countedQuantity }) {
     const updated = await service.updateInventoryCountLine(ctx.asSystem.pg, {
       id,
@@ -6645,7 +6705,7 @@ export const recordInventoryCountScan = defineServiceFn({
     itemId: z.string().optional(),
     quantity: z.number().min(0).optional()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.inventoryCount": "Edit" },
   async run(ctx, input) {
     const result = await service.recordInventoryCountUnit(ctx.asSystem.pg, {
       inventoryCountId: input.inventoryCountId,
@@ -6683,7 +6743,7 @@ export const addInventoryCountUnit = defineServiceFn({
     itemId: z.string().min(1),
     quantity: z.number().min(0).optional()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.inventoryCount": "Edit" },
   async run(ctx, input) {
     const result = await service.recordInventoryCountUnit(ctx.asSystem.pg, {
       inventoryCountId: input.inventoryCountId,
@@ -6723,7 +6783,7 @@ export const setInventoryCountUnnumberedQuantity = defineServiceFn({
     storageUnitId: z.string().nullable().optional(),
     quantity: z.number().int().min(0)
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.inventoryCount": "Edit" },
   async run(ctx, input) {
     const result = await service.setInventoryCountUnnumberedQuantity(
       ctx.asSystem.pg,
@@ -6767,7 +6827,7 @@ export const assignInventoryCountSerial = defineServiceFn({
     lineId: z.string().min(1),
     readableId: z.string().trim().min(1)
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.inventoryCount": "Edit" },
   async run(ctx, input) {
     const result = await service.assignInventoryCountSerial(ctx.asSystem.pg, {
       lineId: input.lineId,
@@ -6828,7 +6888,7 @@ export const importInventoryCountResults = defineServiceFn({
       )
       .max(20000)
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.inventoryCount": "Edit" },
   async run(ctx, input) {
     const result = await service.importInventoryCountRows(ctx.asSystem.pg, {
       inventoryCountId: input.inventoryCountId,
@@ -6857,7 +6917,7 @@ export const importInventoryCountResults = defineServiceFn({
  */
 export const removeInventoryCountUnit = defineServiceFn({
   input: z.object({ lineId: z.string().min(1) }),
-  permission: { update: "inventory" },
+  permission: { "inventory.inventoryCount": "Edit" },
   async run(ctx, { lineId }) {
     const removed = await service.removeInventoryCountUnit(ctx.asSystem.pg, {
       lineId,
@@ -6888,7 +6948,7 @@ export const updateInventoryCountStatus = defineServiceFn({
     id: z.string(),
     status: z.enum(["Draft", "Pending"])
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.inventoryCount": "Edit" },
   async run(ctx, { id, status }) {
     const from = inventoryCountStatusFrom(status);
     const count = await service.getInventoryCount(
@@ -6939,7 +6999,11 @@ export const updateBatchPropertyOrder = defineServiceFn({
     sortOrder: z.number().min(0),
     batchPropertyGroupId: z.string().nullable().optional()
   }),
-  permission: { update: "inventory" },
+  permission: itemRule("Edit", {
+    id: "id",
+    from: "batchProperty",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     // The update matches by id alone: it must be this company's property.
     const owned = await refuseUnlessOwned(ctx, "batchProperty", {
@@ -6978,7 +7042,7 @@ export const upsertBatchProperty = defineServiceFn({
       message: "List options are required",
       path: ["listOptions"]
     }),
-  permission: { update: "inventory" },
+  permission: itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     if (input.id) {
       // The update matches by id alone: it must be this company's property.
@@ -7070,7 +7134,7 @@ const kanbanInput = z
  */
 export const createKanban = defineServiceFn({
   input: kanbanInput,
-  permission: { create: "inventory" },
+  permission: { "inventory.kanbans": "Create" },
   async run(ctx, { id: _id, ...input }) {
     const refused = await service.refuseNonNettableKanbanUnits(ctx, [
       input.storageUnitId,
@@ -7109,7 +7173,7 @@ export const updateKanban = defineServiceFn({
   input: kanbanInput.extend({
     id: z.string().describe("The kanban to update.")
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.kanbans": "Edit" },
   async run(ctx, input) {
     // Only a unit the update sets: a kanban whose unit became non-nettable
     // later stays editable; scanKanban and replenishKanban refuse its scans.
@@ -7171,7 +7235,7 @@ export const createStorageUnit = defineServiceFn({
       .optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.storageUnits": "Create" },
   async run(ctx, { id: _id, ...input }) {
     const refused = await service.refuseLinesideKitRack(ctx, input);
     if (refused) return refused;
@@ -7218,7 +7282,7 @@ export const updateStorageUnit = defineServiceFn({
       id: z.string().describe("The storage unit to update.").optional()
     })
     .required({ id: true }),
-  permission: { update: "inventory" },
+  permission: { "inventory.storageUnits": "Edit" },
   async run(ctx, input) {
     // The update matches by id alone: it must be this company's unit. The
     // same read gives the fields the update may leave as they are.
@@ -7262,7 +7326,7 @@ export const createShippingMethod = defineServiceFn({
     trackingUrl: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.shippingMethods": "Create" },
   async run(ctx, { id: _id, ...input }) {
     return unwrap(
       ctx,
@@ -7293,7 +7357,7 @@ export const updateShippingMethod = defineServiceFn({
       id: z.string().describe("The shipping method to update.").optional()
     })
     .required({ id: true }),
-  permission: { update: "inventory" },
+  permission: { "inventory.shippingMethods": "Edit" },
   async run(ctx, input) {
     // The update matches by id alone: it must be this company's method.
     const owned = await refuseUnlessOwned(ctx, "shippingMethod", {
@@ -7329,7 +7393,7 @@ export const createStockTransferLine = defineServiceFn({
     requiresBatchTracking: booleanField(),
     requiresSerialTracking: booleanField()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.stockTransfers": "Create" },
   async run(ctx, input) {
     if (isSameStorageUnit(input.fromStorageUnitId, input.toStorageUnitId)) {
       return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
@@ -7371,7 +7435,7 @@ export const updateStockTransferLine = defineServiceFn({
       id: z.string().describe("The line to update.").optional()
     })
     .required({ id: true }),
-  permission: { create: "inventory", update: "inventory" },
+  permission: { "inventory.stockTransfers": "Edit" },
   async run(ctx, input) {
     if (isSameStorageUnit(input.fromStorageUnitId, input.toStorageUnitId)) {
       return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
@@ -7435,7 +7499,7 @@ export const updateStockTransferLine = defineServiceFn({
  */
 export const getStorageUnitDescendants = defineServiceFn({
   input: z.looseObject({ storageUnitId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.storageUnits": "View" },
   async run(ctx, input) {
     const descendants = await service.getStorageUnitDescendants(
       ctx.asCaller.supabase,
@@ -7457,7 +7521,7 @@ export const getStorageUnitDescendants = defineServiceFn({
  */
 export const expandStorageUnitIdsWithDescendants = defineServiceFn({
   input: z.looseObject({ storageUnitIds: z.array(z.string()) }),
-  permission: { view: "inventory" },
+  permission: "employee",
   async run(ctx, input) {
     return await service.expandStorageUnitIdsWithDescendants(
       ctx.asCaller.supabase,
@@ -7473,7 +7537,7 @@ export const expandStorageUnitIdsWithDescendants = defineServiceFn({
  */
 export const getStorageTypeUsage = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "parts" },
+  permission: { anyOf: storageTypesGate("View") },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7497,7 +7561,7 @@ export const getStorageTypeUsage = defineServiceFn({
  */
 export const deleteStorageTypeWithCascade = defineServiceFn({
   input: z.looseObject({ id: z.string(), cascade: z.boolean().optional() }),
-  permission: { delete: "parts" },
+  permission: { anyOf: storageTypesGate("Full") },
   async run(ctx, { id, cascade }) {
     const usage = await service.getStorageTypeUsage(
       ctx.asCaller.supabase,
@@ -7519,7 +7583,17 @@ export const deleteStorageTypeWithCascade = defineServiceFn({
         );
       }
       // The cascade edits those storage units.
-      if (!ctx.can({ update: "parts" })) {
+      if (
+        !ctx.can({
+          anyOf: anyOf(
+            [
+              "inventory.storageUnits",
+              ...(writersOf("storageUnit") as PageId[])
+            ],
+            "Edit"
+          )
+        })
+      ) {
         return ctx.error("forbidden", "You do not have permission to do this");
       }
     }
@@ -7547,7 +7621,7 @@ export const getStorageTypes = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "parts" },
+  permission: { anyOf: storageTypesGate("View") },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7567,7 +7641,7 @@ export const getStorageTypes = defineServiceFn({
  */
 export const getStorageType = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "parts" },
+  permission: { anyOf: storageTypesGate("View") },
   async run(ctx, input) {
     const storageType = await service.getStorageType(
       ctx.asCaller.supabase,
@@ -7587,7 +7661,7 @@ export const getStorageType = defineServiceFn({
  */
 export const getStorageTypesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "inventory" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -7613,7 +7687,7 @@ export const createStorageType = defineServiceFn({
       .optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "parts" },
+  permission: { anyOf: storageTypesGate("Create") },
   async run(ctx, { id: _id, ...input }) {
     return unwrap(
       ctx,
@@ -7645,7 +7719,7 @@ export const updateStorageType = defineServiceFn({
       id: z.string().describe("The storage type to update.").optional()
     })
     .required({ id: true }),
-  permission: { update: "parts" },
+  permission: { anyOf: storageTypesGate("Edit") },
   async run(ctx, input) {
     // The update matches by id alone: it must be this company's type.
     const owned = await refuseUnlessOwned(ctx, "storageType", {
@@ -7669,7 +7743,7 @@ export const updateStorageType = defineServiceFn({
  */
 export const getShelfLifeForItems = defineServiceFn({
   input: z.looseObject({ itemIds: z.array(z.string()) }),
-  permission: { view: "inventory" },
+  permission: { "inventory.receipts": "View" },
   async run(ctx, { itemIds }) {
     if (itemIds.length === 0) return [];
     return unwrap(
@@ -7690,7 +7764,7 @@ export const getShelfLifeForItems = defineServiceFn({
  */
 export const getTrackedEntityExpirations = defineServiceFn({
   input: z.looseObject({ trackedEntityIds: z.array(z.string()) }),
-  permission: { view: "inventory" },
+  permission: { "inventory.trackedEntities": "View" },
   async run(ctx, { trackedEntityIds }) {
     if (trackedEntityIds.length === 0) {
       return {} as Record<string, string | null>;
@@ -7731,7 +7805,7 @@ export const getPickingLists = defineServiceFn({
     assignee: z.string().nullable().optional(),
     locationId: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.pickingLists": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7751,7 +7825,7 @@ export const getPickingLists = defineServiceFn({
  */
 export const getPickingList = defineServiceFn({
   input: z.looseObject({ pickingListId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.pickingLists": "View" },
   async run(ctx, input) {
     const list = await service.getPickingList(
       ctx.asCaller.supabase,
@@ -7771,7 +7845,7 @@ export const getPickingList = defineServiceFn({
  */
 export const getPicksByJobMaterial = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.pickingLists": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7791,7 +7865,7 @@ export const getPicksByJobMaterial = defineServiceFn({
  */
 export const getPickingListLines = defineServiceFn({
   input: z.looseObject({ pickingListId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.pickingLists": "View" },
   async run(ctx, input) {
     const lines = await service.getPickingListLines(
       ctx.asCaller.supabase,
@@ -7811,7 +7885,7 @@ export const getPickingListLines = defineServiceFn({
  */
 export const getPickingListRelatedItems = defineServiceFn({
   input: z.looseObject({ pickingListId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.pickingLists": "View" },
   async run(ctx, input) {
     return await service.getPickingListRelatedItems(
       ctx.asCaller.supabase,
@@ -7829,7 +7903,7 @@ export const getPickingListRelatedItems = defineServiceFn({
  */
 export const getPickingListAvailability = defineServiceFn({
   input: z.looseObject({ pickingListId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.pickingLists": "View" },
   async run(ctx, input) {
     const owned = await refuseUnlessOwned(ctx, "pickingList", {
       id: input.pickingListId
@@ -7849,7 +7923,7 @@ export const getPickingListAvailability = defineServiceFn({
  */
 export const getPickingListRecommendations = defineServiceFn({
   input: z.looseObject({ pickingListId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.pickingLists": "View" },
   async run(ctx, input) {
     const owned = await refuseUnlessOwned(ctx, "pickingList", {
       id: input.pickingListId
@@ -7869,7 +7943,7 @@ export const getPickingListRecommendations = defineServiceFn({
  */
 export const getPickingListLine = defineServiceFn({
   input: z.looseObject({ lineId: z.string() }),
-  permission: { view: "inventory" },
+  permission: { "inventory.pickingLists": "View" },
   async run(ctx, input) {
     const line = await service.getPickingListLine(
       ctx.asCaller.supabase,
@@ -7889,7 +7963,7 @@ export const getPickingListLine = defineServiceFn({
  */
 export const deletePickingList = defineServiceFn({
   input: z.looseObject({ pickingListId: z.string() }),
-  permission: { delete: "inventory" },
+  permission: { "inventory.pickingLists": "Full" },
   async run(ctx, input) {
     const owned = await refuseUnlessOwned(ctx, "pickingList", {
       id: input.pickingListId
@@ -7915,7 +7989,7 @@ export const getPickingSchedule = defineServiceFn({
     locationId: z.string(),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { "inventory.pickingLists": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7939,7 +8013,7 @@ export const generatePickingList = defineServiceFn({
     assignee: z.string().nullable().optional(),
     dueDate: z.string().nullable().optional()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.pickingLists": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7972,7 +8046,7 @@ export const insertWarehouseTransfer = defineServiceFn({
     reference: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "inventory" },
+  permission: { "inventory.warehouseTransfers": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8005,7 +8079,7 @@ export const updateWarehouseTransfer = defineServiceFn({
     reference: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { update: "inventory" },
+  permission: { "inventory.warehouseTransfers": "Edit" },
   async run(ctx, input) {
     const transfer = await service.unlockedWarehouseTransfer(ctx, input.id);
     if (transfer instanceof Error) return transfer;

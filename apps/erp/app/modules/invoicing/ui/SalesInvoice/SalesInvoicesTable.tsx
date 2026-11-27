@@ -370,7 +370,7 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
       <>
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.edit}
-          disabled={!permissions.can("view", "invoicing")}
+          disabled={!permissions.has({ "invoicing.salesInvoices": "View" })}
           onClick={() => navigate(path.to.salesInvoice(row.id!))}
         >
           <MenuIcon icon={<LuPencil />} />
@@ -379,7 +379,8 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           disabled={
-            row.status !== "Draft" || !permissions.can("delete", "invoicing")
+            row.status !== "Draft" ||
+            !permissions.has({ "invoicing.salesInvoices": "Full" })
           }
           destructive
           onClick={() => {
@@ -426,7 +427,7 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
           updatedBy: false
         }}
         primaryAction={
-          permissions.can("create", "invoicing") && (
+          permissions.has({ "invoicing.salesInvoices": "Create" }) && (
             <New label={t`Sales Invoice`} to={path.to.newSalesInvoice} />
           )
         }

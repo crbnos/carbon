@@ -862,7 +862,7 @@ function SubAssemblyRow({
   const name = title || t`Sub-Assembly`;
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
     <div
       ref={sortable.setNodeRef}
       style={sortable.style}
@@ -958,7 +958,10 @@ function SubAssemblyRow({
           <DropdownMenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={isDisabled || !permissions.can("delete", "production")}
+            disabled={
+              isDisabled ||
+              !permissions.has({ "production.assemblies": "Full" })
+            }
             onClick={onDelete}
           >
             <DropdownMenuIcon icon={<LuTrash />} />
@@ -1012,7 +1015,7 @@ function StepRow({
   const displayTitle = title || t`Untitled step`;
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
     <div
       ref={sortable.setNodeRef}
       style={sortable.style}
@@ -1154,7 +1157,7 @@ function StepRow({
             <DropdownMenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "production")}
+              disabled={!permissions.has({ "production.assemblies": "Full" })}
               onClick={onDelete}
             >
               <DropdownMenuIcon icon={<LuTrash />} />

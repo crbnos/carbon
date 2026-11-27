@@ -36,13 +36,18 @@ vi.mock("@carbon/jobs", () => ({ trigger }));
 vi.mock("@carbon/kv", () => ({ redis: { del: vi.fn() } }));
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 // Load the service first: shared.service imports it, and a module first loaded
 // while shared.service's mock is being built binds the unmocked one.
 await import("../app/modules/resources/resources.service");
 const {
+  createAbility,
+  createMaintenanceDispatchComment,
+  createMaintenanceDispatchItem,
   createMaintenanceEvent,
   createProcess,
+  deleteMaintenanceDispatch,
   createTrainingAssignment,
   completeTrainingAssignment,
   issueMaintenancePart,
@@ -71,8 +76,14 @@ type Answer = { data: unknown; error: unknown };
  * answers from `<table>:read` when the test names one. Each write is recorded
  * with its payload; nothing else is checked.
  */
-function client(answers: Record<string, unknown>) {
+function client(
+  answers: Record<string, unknown>,
+  /** Tables RLS refuses this client's writes on: they land nowhere. */
+  refused: readonly string[] = []
+) {
   const writes: { op: string; table: string; payload?: unknown }[] = [];
+  /** The `.eq()` filters of each write, in call order. */
+  const writeFilters: { table: string; column: string; value: unknown }[] = [];
   const answer = (key: string): Answer => {
     const value = answers[key];
     return value && typeof value === "object" && "error" in value
@@ -82,46 +93,63 @@ function client(answers: Record<string, unknown>) {
   const from = (table: string) => {
     const chain: Record<string, unknown> = {};
     let wrote = false;
+    let denied = false;
     for (const method of [
       "select",
       "eq",
       "neq",
       "in",
+      "not",
       "match",
       "limit",
       "order"
     ]) {
       chain[method] = () => chain;
     }
+    chain.eq = (column: string, value: unknown) => {
+      if (wrote && !denied) writeFilters.push({ table, column, value });
+      return chain;
+    };
     for (const op of ["insert", "update", "upsert", "delete"]) {
       chain[op] = (payload?: unknown) => {
         wrote = true;
-        writes.push({ op, table, payload });
+        if (refused.includes(table)) denied = true;
+        else writes.push({ op, table, payload });
         return chain;
       };
     }
-    const result = () =>
-      answer(!wrote && `${table}:read` in answers ? `${table}:read` : table);
+    const result = (): Answer =>
+      denied
+        ? { data: null, error: { message: "violates row-level security" } }
+        : answer(!wrote && `${table}:read` in answers ? `${table}:read` : table);
     chain.single = chain.maybeSingle = () => Promise.resolve(result());
     chain.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve(result()).then(resolve);
     return chain;
   };
   const rpc = (name: string) => Promise.resolve(answer(`rpc:${name}`));
-  return { from, rpc, writes };
+  return { from, rpc, writes, writeFilters };
 }
 
-function contextWith(answers: Record<string, unknown> = {}) {
+function contextWith(
+  answers: Record<string, unknown> = {},
+  grants: typeof permissions = permissions
+) {
   const db = client(answers);
   const ctx = createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions },
+    actor: {
+      type: "user",
+      role: "employee",
+      userId: "user-1",
+      permissions: pageClaims(grants)
+    },
     company: { id: "company-1", groupId: "group-1" },
     caller: db as never,
     system: () => db as never,
     pg: () => ({}) as never,
     kv: () => ({}) as never
   });
-  return { ctx, writes: db.writes };
+  return { ctx, writes: db.writes, writeFilters: db.writeFilters };
 }
 
 const scheduleNotices = () =>
@@ -194,6 +222,19 @@ describe("issuing a spare part to a dispatch", () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
+  // The stock has moved: a refusal would invite a retry that issues it again.
+  it("answers the issue when the posting reports no part id", async () => {
+    invoke.mockResolvedValue({ data: { success: true }, error: null });
+    const { ctx } = contextWith(open);
+
+    const result = await issueMaintenancePart(ctx, { ...part, quantity: 2 });
+
+    expect(result).toEqual({
+      data: { dispatchId: "md-1", itemId: "item-1" },
+      error: null
+    });
+  });
+
   it("issues tracked entities as themselves, and anything else by quantity", async () => {
     const { ctx } = contextWith(open);
     const children = [
@@ -218,6 +259,130 @@ describe("issuing a spare part to a dispatch", () => {
         itemId: "item-1",
         unitOfMeasureCode: "EA",
         quantity: 3
+      }
+    ]);
+  });
+});
+
+describe("adding a spare part by quantity", () => {
+  it("answers the new part's id", async () => {
+    invoke.mockResolvedValue({
+      data: { success: true, maintenanceDispatchItemId: "mdi-1" },
+      error: null
+    });
+    const { ctx } = contextWith({
+      maintenanceDispatch: { id: "md-1", status: "Open" },
+      item: { id: "item-1" }
+    });
+
+    const result = await createMaintenanceDispatchItem(ctx, {
+      maintenanceDispatchId: "md-1",
+      itemId: "item-1",
+      quantity: 2,
+      unitOfMeasureCode: "EA"
+    });
+
+    expect(result).toEqual({ data: { id: "mdi-1" }, error: null });
+  });
+});
+
+describe("deleting a maintenance dispatch", () => {
+  it.each(["Completed", "Cancelled"])(
+    "refuses a %s dispatch, and deletes nothing",
+    async (status) => {
+      const { ctx, writes } = contextWith({
+        maintenanceDispatch: { id: "md-1", status }
+      });
+
+      const result = await deleteMaintenanceDispatch(ctx, { dispatchId: "md-1" });
+
+      expect(result.error?.category).toBe("rule");
+      expect(writes).toEqual([]);
+    }
+  );
+
+  it("deletes an open dispatch", async () => {
+    const { ctx, writes } = contextWith({
+      "maintenanceDispatch:read": { id: "md-1", status: "Open" },
+      maintenanceDispatch: [{ id: "md-1" }]
+    });
+
+    const result = await deleteMaintenanceDispatch(ctx, { dispatchId: "md-1" });
+
+    expect(result).toEqual({ data: [{ id: "md-1" }], error: null });
+    expect(writes.map((w) => `${w.op}:${w.table}`)).toEqual([
+      "delete:maintenanceDispatch"
+    ]);
+  });
+
+  // The delete's own status predicate matched no row: the dispatch was
+  // completed, cancelled or deleted after it was read.
+  it("refuses a dispatch the delete no longer reaches", async () => {
+    const { ctx } = contextWith({
+      "maintenanceDispatch:read": { id: "md-1", status: "Open" },
+      maintenanceDispatch: []
+    });
+
+    const result = await deleteMaintenanceDispatch(ctx, { dispatchId: "md-1" });
+
+    expect(result.error).toMatchObject({
+      category: "conflict",
+      message:
+        "The dispatch was completed, cancelled or deleted since it was read"
+    });
+  });
+});
+
+describe("commenting on a maintenance dispatch", () => {
+  const comment = { maintenanceDispatchId: "md-1", comment: "Belt replaced" };
+
+  it.each(["Completed", "Cancelled"])(
+    "refuses a %s dispatch, and writes nothing",
+    async (status) => {
+      const { ctx, writes } = contextWith({
+        maintenanceDispatch: { id: "md-1", status }
+      });
+
+      const result = await createMaintenanceDispatchComment(ctx, comment);
+
+      expect(result.error?.category).toBe("rule");
+      expect(writes).toEqual([]);
+    }
+  );
+
+  it("refuses a caller with Create on dispatches but not Edit", async () => {
+    const { ctx, writes } = contextWith(
+      { maintenanceDispatch: { id: "md-1", status: "Open" } },
+      {
+        "resources.dispatches": {
+          view: ["company-1"],
+          create: ["company-1"],
+          update: [],
+          delete: []
+        }
+      }
+    );
+
+    const result = await createMaintenanceDispatchComment(ctx, comment);
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
+  });
+
+  it("adds the comment to an open dispatch", async () => {
+    const { ctx, writes } = contextWith({
+      maintenanceDispatch: { id: "md-1", status: "Open" },
+      maintenanceDispatchComment: { id: "mdc-1" }
+    });
+
+    const result = await createMaintenanceDispatchComment(ctx, comment);
+
+    expect(result).toEqual({ data: { id: "mdc-1" }, error: null });
+    expect(writes).toEqual([
+      {
+        op: "insert",
+        table: "maintenanceDispatchComment",
+        payload: [{ ...comment, companyId: "company-1", createdBy: "user-1" }]
       }
     ]);
   });
@@ -301,6 +466,125 @@ describe("creating a process that requires an ability", () => {
       "process",
       { requiresAbility: false }
     ]);
+  });
+});
+
+// Abilities, processes and work centers are separate pages: an operation
+// writes its sibling page's rows as the system, after its own permission.
+// The caller's client refuses writes on a sibling page's tables, as RLS does.
+describe("sibling page writes", () => {
+  const SIBLINGS: Record<string, string[]> = {
+    "resources.abilities": ["process", "workCenterProcess"],
+    "resources.processes": ["ability", "workCenterProcess"]
+  };
+  function pageOnly(page: string, answers: Record<string, unknown>) {
+    const caller = client(answers, SIBLINGS[page]);
+    const system = client(answers);
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: {
+          [page]: { view: ["company-1"], create: ["company-1"], update: [], delete: [] }
+        }
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => system as never,
+      pg: () => ({}) as never,
+      kv: () => ({}) as never
+    });
+    const tables = (writes: typeof caller.writes) =>
+      writes.map((w) => `${w.op}:${w.table}`);
+    /** Every write that landed, through either client. */
+    const landed = () =>
+      [...caller.writes, ...system.writes].map((w) => [
+        `${w.op}:${w.table}`,
+        w.payload
+      ]);
+    return { ctx, landed, system: () => tables(system.writes) };
+  }
+
+  it("creating an ability turns its process's gate on", async () => {
+    const { ctx, landed } = pageOnly("resources.abilities", {
+      process: [{ id: "proc-1" }],
+      "ability:read": null,
+      ability: { id: "ability-1" }
+    });
+
+    const result = await createAbility(ctx, { processId: "proc-1" });
+
+    expect(result.error).toBeNull();
+    expect(landed()).toEqual(
+      expect.arrayContaining([
+        [
+          "insert:ability",
+          [expect.objectContaining({ processId: "proc-1", companyId: "company-1" })]
+        ],
+        ["update:process", { requiresAbility: true, updatedBy: "user-1" }]
+      ])
+    );
+  });
+
+  it("creating a process links its work centers and makes its ability", async () => {
+    const { ctx, landed } = pageOnly("resources.processes", {
+      "process:read": null,
+      process: { id: "proc-1" },
+      workCenter: [{ id: "wc-1" }],
+      "ability:read": null,
+      ability: { id: "ability-1" }
+    });
+
+    const result = await createProcess(ctx, {
+      name: "Welding",
+      processType: "Process",
+      requiresAbility: true,
+      workCenters: ["wc-1"]
+    });
+
+    expect(result.error).toBeNull();
+    expect(landed()).toEqual(
+      expect.arrayContaining([
+        [
+          "insert:process",
+          [expect.objectContaining({ name: "Welding", requiresAbility: true })]
+        ],
+        [
+          "insert:workCenterProcess",
+          [
+            {
+              workCenterId: "wc-1",
+              processId: "proc-1",
+              companyId: "company-1",
+              createdBy: "user-1"
+            }
+          ]
+        ],
+        [
+          "insert:ability",
+          [expect.objectContaining({ processId: "proc-1", companyId: "company-1" })]
+        ]
+      ])
+    );
+  });
+
+  it("refuses to link a work center that is not the company's", async () => {
+    const { ctx, system } = pageOnly("resources.processes", {
+      "process:read": null,
+      process: { id: "proc-1" },
+      workCenter: []
+    });
+
+    const result = await createProcess(ctx, {
+      name: "Welding",
+      processType: "Process",
+      requiresAbility: false,
+      workCenters: ["wc-9"]
+    });
+
+    expect(result.error?.category).toBe("internal");
+    expect(system()).toEqual([]);
   });
 });
 
@@ -480,6 +764,81 @@ describe("a location's timezone", () => {
 
     await updateLocation(ctx, location);
 
+    expect(scheduleNotices()).toEqual([]);
+  });
+});
+
+describe("a location's planning time fence", () => {
+  const location = {
+    id: "loc-1",
+    name: "Plant",
+    addressLine1: "1 Main St",
+    city: "Chicago",
+    postalCode: "60601",
+    countryCode: "US",
+    timezone: "America/New_York"
+  };
+  const updated = (writes: { op: string; table: string; payload?: unknown }[]) =>
+    writes.find((write) => write.op === "update" && write.table === "location")
+      ?.payload as Record<string, unknown>;
+
+  // An API or MCP caller that never heard of the fence must not wipe it.
+  it("leaves the fence alone when an update does not send it", async () => {
+    const { ctx, writes } = contextWith({
+      location: { timezone: "America/New_York" }
+    });
+
+    await updateLocation(ctx, location);
+
+    expect(updated(writes)).not.toHaveProperty("planningTimeFenceDays");
+  });
+
+  it("writes the fence an update sends, 0 included", async () => {
+    const { ctx, writes } = contextWith({
+      location: { timezone: "America/New_York" }
+    });
+
+    await updateLocation(ctx, { ...location, planningTimeFenceDays: 0 });
+
+    expect(updated(writes)).toMatchObject({ planningTimeFenceDays: 0 });
+  });
+});
+
+describe("updating a location", () => {
+  const location = {
+    id: "loc-1",
+    name: "Plant",
+    addressLine1: "1 Main St",
+    city: "Chicago",
+    postalCode: "60601",
+    countryCode: "US",
+    timezone: "America/New_York"
+  };
+
+  it("writes only the caller's company's location", async () => {
+    const { ctx, writeFilters } = contextWith({
+      location: [{ id: "loc-1" }]
+    });
+
+    const result = await updateLocation(ctx, location);
+
+    expect(result).toEqual({ data: { id: "loc-1" }, error: null });
+    expect(writeFilters).toEqual([
+      { table: "location", column: "id", value: "loc-1" },
+      { table: "location", column: "companyId", value: "company-1" }
+    ]);
+  });
+
+  // Another company's location, or one deleted since, matches no row.
+  it("answers not found when the update matched no location", async () => {
+    const { ctx } = contextWith({
+      "location:read": null,
+      location: []
+    });
+
+    const result = await updateLocation(ctx, location);
+
+    expect(result.error?.category).toBe("notFound");
     expect(scheduleNotices()).toEqual([]);
   });
 });

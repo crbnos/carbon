@@ -9,24 +9,52 @@
 // company that is deleted afterwards.
 
 import type { KyselyDatabase } from "@carbon/database/client";
-import { CONTRACT_HOLD_ADJUSTMENT, round } from "@carbon/utils";
+import {
+  CONTRACT_HOLD_ADJUSTMENT,
+  horizon,
+  planInvoiceSchedule,
+  round
+} from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import {
   buildProjectLedgerRow,
   insertProjectLedgerRows
 } from "../../../app/modules/projects/project-posting";
 import {
+  contractLineFormValues,
+  customerContractLineValidator,
+  mergeContractLineChanges
+} from "../../../app/modules/sales/sales.models";
+import {
+  CONTRACT_LINE_CHANGED,
   type ContractCancellationResult,
   createContractInvoices,
-  postCustomerContract
+  getContractLine,
+  postCustomerContract,
+  previewContractInvoiceTotals,
+  toLineTerms,
+  toTerms,
+  updateContractLine
 } from "../../../app/modules/sales/sales.service";
+import * as sales from "../../../app/modules/sales/sales.server";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import {
   connectLocalTestDatabase,
   databaseTest
 } from "../fixtures/local-database";
+import { operationContext, postgrestTest } from "../fixtures/local-supabase";
+
+// A posting run through the local service-role client is recognised as the
+// system only when the key matches the one @carbon/env holds.
+vi.mock("@carbon/env", async (importOriginal) => {
+  const { localServiceRoleKey } = await import("../fixtures/local-supabase");
+  return {
+    ...(await importOriginal<object>()),
+    SUPABASE_SERVICE_ROLE_KEY: localServiceRoleKey() ?? "test"
+  };
+});
 
 const USER = "system";
 
@@ -196,6 +224,7 @@ async function contractFixture() {
     db,
     ctx,
     companyId,
+    groupId,
     contractId,
     shipToId,
     oneTimeLineId,
@@ -975,6 +1004,250 @@ databaseTest(
           totalTax: 15,
           totalAmount: 115
         }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the contract page's planned invoice tax is the tax the drafted invoice bills: the code's dated rate, none for Reverse Charge",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "preview",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      // 10% throughout, plus 5% from February; the line's stored 2% is stale.
+      const taxCodeId = `${contractId}-taxcode`;
+      const reverseChargeId = `${contractId}-reverse`;
+      await db
+        .insertInto("taxCode")
+        .values([
+          { id: taxCodeId, name: "Service VAT", companyId, createdBy: USER },
+          {
+            id: reverseChargeId,
+            name: "EU reverse charge",
+            calculationType: "Reverse Charge",
+            companyId,
+            createdBy: USER
+          }
+        ])
+        .execute();
+      await db
+        .insertInto("taxCodeComponent")
+        .values([
+          {
+            taxCodeId,
+            name: "State",
+            taxPercent: 0.1,
+            sequence: 1,
+            companyId,
+            createdBy: USER
+          },
+          {
+            taxCodeId,
+            name: "City",
+            taxPercent: 0.05,
+            sequence: 2,
+            // Between February's and March's invoice dates, so February is
+            // 10% on its own date and 15% when drafted late on 1 March.
+            effectiveDate: "2026-02-15",
+            companyId,
+            createdBy: USER
+          },
+          {
+            taxCodeId: reverseChargeId,
+            name: "VAT",
+            taxPercent: 0.2,
+            sequence: 1,
+            companyId,
+            createdBy: USER
+          }
+        ])
+        .execute();
+      await db
+        .updateTable("customerContractLine")
+        .set({ taxCodeId, taxPercent: 0.02 })
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .execute();
+      const line = await db
+        .selectFrom("customerContractLine")
+        .select("itemId")
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirstOrThrow();
+      // A second line on a Reverse Charge code, stored at the code's 20%.
+      await db
+        .insertInto("customerContractLine")
+        .values({
+          id: `${contractId}-reverse-line`,
+          customerContractId: contractId,
+          revenueType: "Recurring",
+          itemId: line.itemId,
+          quantity: 1,
+          rate: 100,
+          rateUnit: "Month",
+          startDate: "2026-01-01",
+          taxCodeId: reverseChargeId,
+          taxPercent: 0.2,
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+
+      // What the contract page loader previews: the schedule planned live
+      // from the lines while the Draft is unedited, else the stored one.
+      const preview = async (today: string, live: boolean) => {
+        const [contract, lines, rows] = await Promise.all([
+          db
+            .selectFrom("customerContract")
+            .selectAll()
+            .where("id", "=", contractId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirstOrThrow(),
+          db
+            .selectFrom("customerContractLine")
+            .selectAll()
+            .where("customerContractId", "=", contractId)
+            .where("companyId", "=", companyId)
+            .orderBy("id")
+            .execute(),
+          db
+            .selectFrom("customerContractInvoice as i")
+            .innerJoin(
+              "customerContractInvoiceLine as r",
+              "r.customerContractInvoiceId",
+              "i.id"
+            )
+            .select([
+              "i.id",
+              "i.status",
+              sql<string>`i."invoiceDate"::text`.as("invoiceDate"),
+              "r.customerContractLineId",
+              "r.unitPrice",
+              "r.amount"
+            ])
+            .where("i.customerContractId", "=", contractId)
+            .where("i.companyId", "=", companyId)
+            .orderBy("i.invoiceDate")
+            .orderBy("r.periodStart")
+            .execute()
+        ]);
+        // The stored schedule in the shape the page reads it: each invoice
+        // with its rows, whatever its status.
+        const schedule = new Map<
+          string,
+          {
+            status: string;
+            invoiceDate: string;
+            customerContractInvoiceLine: {
+              customerContractLineId: string;
+              unitPrice: number | string;
+              amount: number | string;
+            }[];
+          }
+        >();
+        for (const row of rows) {
+          const invoice = schedule.get(row.id) ?? {
+            status: row.status,
+            invoiceDate: row.invoiceDate,
+            customerContractInvoiceLine: []
+          };
+          invoice.customerContractInvoiceLine.push({
+            customerContractLineId: row.customerContractLineId,
+            unitPrice: row.unitPrice,
+            amount: row.amount
+          });
+          schedule.set(row.id, invoice);
+        }
+        const terms = toTerms(contract);
+        const totals = await previewContractInvoiceTotals(db, {
+          companyId,
+          today,
+          lines,
+          schedule: [...schedule.values()],
+          computedSchedule: live
+            ? planInvoiceSchedule(
+                terms,
+                toLineTerms(lines),
+                horizon(terms, today)
+              )
+            : null
+        });
+        return totals.map(({ invoiceDate, net, tax }) => ({
+          invoiceDate,
+          net,
+          tax
+        }));
+      };
+
+      // On 1 January each invoice is taxed on its own date: January and
+      // February at 10%, March at 15%; the Reverse Charge line adds nothing.
+      const firstQuarter = [
+        { invoiceDate: "2026-01-01", net: 200, tax: 10 },
+        { invoiceDate: "2026-02-01", net: 200, tax: 10 },
+        { invoiceDate: "2026-03-01", net: 200, tax: 15 }
+      ];
+      // The unedited Draft has no stored schedule: the page plans it live.
+      expect(await preview("2026-01-01", true)).toEqual(firstQuarter);
+
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        { type: "confirm", customerContractId: contractId, asOf: "2026-01-01" },
+        postCustomerContract
+      );
+      expect(confirmed.error).toBeNull();
+      // Confirm stores the same schedule, so the preview does not move.
+      expect(await preview("2026-01-01", false)).toEqual(firstQuarter);
+
+      const drafted = async () =>
+        (
+          await db
+            .selectFrom("salesInvoice")
+            .select(["subtotal", "totalTax"])
+            .where("customerContractId", "=", contractId)
+            .where("companyId", "=", companyId)
+            .orderBy("createdAt")
+            .orderBy("invoiceId")
+            .execute()
+        ).map((invoice) => ({
+          net: Number(invoice.subtotal),
+          tax: Number(invoice.totalTax)
+        }));
+
+      const january = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        { asOf: "2026-01-01", customerContractId: contractId },
+        createContractInvoices
+      );
+      expect(january.error).toBeNull();
+      expect(await drafted()).toEqual([{ net: 200, tax: 10 }]);
+
+      // A run on 1 March drafts February too, on March's date and so at 15%:
+      // the preview on that day says so.
+      expect(await preview("2026-03-01", false)).toEqual([
+        { invoiceDate: "2026-02-01", net: 200, tax: 15 },
+        { invoiceDate: "2026-03-01", net: 200, tax: 15 }
+      ]);
+      const march = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        { asOf: "2026-03-01", customerContractId: contractId },
+        createContractInvoices
+      );
+      expect(march.error).toBeNull();
+      expect(await drafted()).toEqual([
+        { net: 200, tax: 10 },
+        { net: 200, tax: 15 },
+        { net: 200, tax: 15 }
       ]);
     } finally {
       await f.cleanup();
@@ -3322,3 +3595,453 @@ for (const basis of ["Schedule", "Project"] as const) {
     }
   );
 }
+
+postgrestTest(
+  "a schedule edit through a ref the schedule read returned changes that row, and a reset plans the lines again",
+  async (client) => {
+    const f = await contractFixture();
+    try {
+      const { contractId } = await f.addRecurringContract({
+        key: "read-ref",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      const ctx = operationContext(f, client, USER);
+      const read = () =>
+        sales.getContractInvoiceSchedule(ctx, {
+          customerContractId: contractId
+        });
+
+      const unedited = await read();
+      expect(unedited.error).toBeNull();
+      const planned = unedited.data!.planned!;
+      expect(planned.map((invoice) => invoice.invoiceDate)).toEqual([
+        "2026-01-01",
+        "2026-02-01",
+        "2026-03-01"
+      ]);
+
+      const split = await sales.editContractSchedule(ctx, {
+        customerContractId: contractId,
+        edit: {
+          intent: "split",
+          customerContractInvoiceLineId: planned[0]!.rows[0]!.ref,
+          installments: [
+            { invoiceDate: "2026-01-01", amount: 60 },
+            { invoiceDate: "2026-01-15", amount: 40 }
+          ]
+        }
+      });
+      expect(split).toEqual({
+        data: { customerContractId: contractId },
+        error: null
+      });
+      expect(
+        (await plannedInvoices(f.db, f.companyId, contractId)).map((i) => [
+          i.invoiceDate,
+          i.total
+        ])
+      ).toEqual([
+        ["2026-01-01", 60],
+        ["2026-01-15", 40],
+        ["2026-02-01", 100],
+        ["2026-03-01", 100]
+      ]);
+      // A stored schedule is read as stored: nothing is planned live.
+      expect((await read()).data!.planned).toBeNull();
+
+      const reset = await sales.resetContractSchedule(ctx, {
+        customerContractId: contractId
+      });
+      expect(reset.error).toBeNull();
+      expect(await plannedInvoices(f.db, f.companyId, contractId)).toEqual([]);
+      expect((await read()).data!.planned).toHaveLength(3);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a schedule edit keeps the posting's refusal: invalid for a contract that is not a Draft, notFound for no contract",
+  async (client) => {
+    const f = await contractFixture();
+    try {
+      const ctx = operationContext(f, client, USER);
+      await f.db
+        .updateTable("customerContract")
+        .set({ status: "Active" })
+        .where("id", "=", f.contractId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const edit = {
+        intent: "move",
+        customerContractInvoiceId: "planned:2026-11-01",
+        invoiceDate: "2026-11-15"
+      } as const;
+
+      const active = await sales.editContractSchedule(ctx, {
+        customerContractId: f.contractId,
+        edit
+      });
+      const missing = await sales.resetContractSchedule(ctx, {
+        customerContractId: `${f.contractId}-missing`
+      });
+
+      expect(active.error).toMatchObject({ category: "validation" });
+      expect(missing.error).toMatchObject({ category: "notFound" });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a schedule edit that would leave no invoice is refused, and one that leaves another goes through",
+  async (client) => {
+    const f = await contractFixture();
+    try {
+      const ctx = operationContext(f, client, USER);
+      const single = await f.addRecurringContract({
+        key: "one-invoice",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31"
+      });
+      const edit = (
+        customerContractId: string,
+        edit: Parameters<typeof sales.editContractSchedule>[1]["edit"]
+      ) => sales.editContractSchedule(ctx, { customerContractId, edit });
+
+      // Left with nothing stored, the Draft would read as unedited and plan
+      // the deleted invoice again.
+      for (const emptying of [
+        {
+          intent: "delete",
+          customerContractInvoiceId: "planned:2026-01-01"
+        },
+        {
+          intent: "setAmount",
+          customerContractInvoiceId: "planned:2026-01-01",
+          customerContractLineId: single.lineId,
+          amount: 0
+        }
+      ] as const) {
+        const refused = await edit(single.contractId, emptying);
+        expect(refused.error).toMatchObject({ category: "validation" });
+        expect(
+          await plannedInvoices(f.db, f.companyId, single.contractId)
+        ).toEqual([]);
+      }
+
+      const two = await f.addRecurringContract({
+        key: "two-invoices",
+        startDate: "2026-01-01",
+        endDate: "2026-02-28"
+      });
+      const deleted = await edit(two.contractId, {
+        intent: "delete",
+        customerContractInvoiceId: "planned:2026-01-01"
+      });
+      expect(deleted.error).toBeNull();
+      expect(
+        (await plannedInvoices(f.db, f.companyId, two.contractId)).map(
+          (invoice) => [invoice.invoiceDate, invoice.total]
+        )
+      ).toEqual([["2026-02-01", 100]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a contract line write that merged its other fields from a read is refused once another save changed the line",
+  async (client) => {
+    const f = await contractFixture();
+    try {
+      const rate = async () =>
+        Number(
+          (
+            await f.db
+              .selectFrom("customerContractLine")
+              .select("rate")
+              .where("id", "=", f.seatsLineId)
+              .where("companyId", "=", f.companyId)
+              .executeTakeFirstOrThrow()
+          ).rate
+        );
+      const read = await getContractLine(client, f.seatsLineId, f.companyId);
+      expect(read.error).toBeNull();
+
+      // Another save sets the rate after the read.
+      await f.db
+        .updateTable("customerContractLine")
+        .set({ rate: 55, updatedBy: USER, updatedAt: "2026-11-24T10:00:00Z" })
+        .where("id", "=", f.seatsLineId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const { id: _id, ...line } = customerContractLineValidator.parse(
+        mergeContractLineChanges(contractLineFormValues(read.data!), {
+          description: "Seats"
+        })
+      );
+      const stale = await updateContractLine(client, f.db, {
+        ...line,
+        taxCodeId: line.taxCodeId ?? null,
+        customerContractId: f.contractId,
+        id: f.seatsLineId,
+        updatedBy: USER,
+        expectedUpdatedAt: read.data!.updatedAt
+      });
+      expect(stale.error?.code).toBe(CONTRACT_LINE_CHANGED);
+      expect(await rate()).toBe(55);
+
+      // The operation reads the line it merges into, so it keeps that rate.
+      const saved = await sales.updateContractLine(
+        operationContext(f, client, USER),
+        {
+          id: f.seatsLineId,
+          customerContractId: f.contractId,
+          description: "Seats"
+        }
+      );
+      expect(saved.error).toBeNull();
+      expect(await rate()).toBe(55);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a contract line change that waits for a Confirm holding the contract is refused once the contract is Active",
+  async (client) => {
+    const f = await contractFixture();
+    const holder = await connectLocalTestDatabase();
+    try {
+      const { rows } = await sql<{
+        pid: number;
+      }>`SELECT pg_backend_pid() AS pid`.execute(holder);
+      let change: ReturnType<typeof sales.updateContractLine> | undefined;
+      let settled = false;
+      // Confirm locks the contract (`loadContractForUpdate`) and makes it
+      // Active before it commits; the change reads Draft first.
+      await holder.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("customerContract")
+          .select("id")
+          .where("id", "=", f.contractId)
+          .where("companyId", "=", f.companyId)
+          .forUpdate()
+          .execute();
+        await trx
+          .updateTable("customerContract")
+          .set({ status: "Active" })
+          .where("id", "=", f.contractId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        change = sales
+          .updateContractLine(operationContext(f, client, USER), {
+            id: f.seatsLineId,
+            customerContractId: f.contractId,
+            rate: 55
+          })
+          .finally(() => {
+            settled = true;
+          });
+        await waitForLockWait(trx, rows[0]!.pid, () => settled);
+      });
+
+      const notDraft = {
+        category: "rule",
+        message:
+          "Lines can only be added or changed on a Draft contract — use Amend"
+      };
+      const saved = await change!;
+      expect(saved.data).toBeNull();
+      expect(saved.error).toMatchObject(notDraft);
+      const line = await f.db
+        .selectFrom("customerContractLine")
+        .select(["rate", "itemId"])
+        .where("id", "=", f.seatsLineId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(line.rate)).toBe(40);
+
+      // Once Active, the read before the write refuses a change or a new
+      // line the same way.
+      const ctx = operationContext(f, client, USER);
+      const again = await sales.updateContractLine(ctx, {
+        id: f.seatsLineId,
+        customerContractId: f.contractId,
+        rate: 55
+      });
+      expect(again.error).toMatchObject(notDraft);
+      const added = await sales.createContractLine(ctx, {
+        customerContractId: f.contractId,
+        revenueType: "One-time",
+        itemId: line.itemId,
+        quantity: 1,
+        rate: 100,
+        discountPercent: 0,
+        taxPercent: 0,
+        startDate: "2026-11-01",
+        revenueMethod: "Daily"
+      });
+      expect(added.error).toMatchObject(notDraft);
+    } finally {
+      await holder.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a new contract line that waits for a Confirm holding the contract is refused once the contract is Active",
+  async (client) => {
+    const f = await contractFixture();
+    const holder = await connectLocalTestDatabase();
+    try {
+      const { rows } = await sql<{
+        pid: number;
+      }>`SELECT pg_backend_pid() AS pid`.execute(holder);
+      const { itemId } = await f.db
+        .selectFrom("customerContractLine")
+        .select("itemId")
+        .where("id", "=", f.seatsLineId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      const lineCount = async () =>
+        (
+          await f.db
+            .selectFrom("customerContractLine")
+            .select("id")
+            .where("customerContractId", "=", f.contractId)
+            .where("companyId", "=", f.companyId)
+            .execute()
+        ).length;
+      const before = await lineCount();
+      let add: ReturnType<typeof sales.createContractLine> | undefined;
+      let settled = false;
+      // Confirm locks the contract (`loadContractForUpdate`) and makes it
+      // Active before it commits; the insert reads Draft first.
+      await holder.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("customerContract")
+          .select("id")
+          .where("id", "=", f.contractId)
+          .where("companyId", "=", f.companyId)
+          .forUpdate()
+          .execute();
+        await trx
+          .updateTable("customerContract")
+          .set({ status: "Active" })
+          .where("id", "=", f.contractId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        add = sales
+          .createContractLine(operationContext(f, client, USER), {
+            customerContractId: f.contractId,
+            revenueType: "One-time",
+            itemId,
+            quantity: 1,
+            rate: 100,
+            discountPercent: 0,
+            taxPercent: 0,
+            startDate: "2026-11-01",
+            revenueMethod: "Daily"
+          })
+          .finally(() => {
+            settled = true;
+          });
+        await waitForLockWait(trx, rows[0]!.pid, () => settled);
+      });
+
+      const added = await add!;
+      expect(added.data).toBeNull();
+      expect(added.error).toMatchObject({
+        category: "rule",
+        message:
+          "Lines can only be added or changed on a Draft contract — use Amend"
+      });
+      expect(await lineCount()).toBe(before);
+    } finally {
+      await holder.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+/** Waits until another connection waits on a lock `holder` (backend `pid`)
+ *  holds. Throws, before the holder releases it, when `done` settles first
+ *  or no wait is seen: the run did not take the order the test is about. */
+async function waitForLockWait(
+  holder: Kysely<KyselyDatabase>,
+  pid: number,
+  done: () => boolean
+) {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    if (done()) {
+      throw new Error("The operation finished without waiting for the lock");
+    }
+    const { rows } = await sql<{ count: number }>`
+      SELECT count(*)::int AS count FROM pg_stat_activity
+      WHERE ${pid}::int = ANY(pg_blocking_pids(pid))`.execute(holder);
+    if (rows[0]!.count > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error("No connection waited for the lock");
+}
+
+postgrestTest(
+  "an unedited Draft's planned schedule reads every line past the API's row cap",
+  async (client) => {
+    const f = await contractFixture();
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "many-lines",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31"
+      });
+      const line = await f.db
+        .selectFrom("customerContractLine")
+        .selectAll()
+        .where("id", "=", lineId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      // 1,000 more one-month lines: 1,001 rows on the one January invoice.
+      await f.db
+        .insertInto("customerContractLine")
+        .values(
+          Array.from({ length: 1000 }, (_, index) => ({
+            id: `${lineId}-${index}`,
+            customerContractId: contractId,
+            revenueType: line.revenueType,
+            itemId: line.itemId,
+            quantity: 1,
+            rate: 100,
+            rateUnit: line.rateUnit,
+            startDate: "2026-01-01",
+            companyId: f.companyId,
+            createdBy: USER
+          }))
+        )
+        .execute();
+
+      const schedule = await sales.getContractInvoiceSchedule(
+        operationContext(f, client, USER),
+        { customerContractId: contractId }
+      );
+      expect(schedule.error).toBeNull();
+      expect(
+        schedule.data!.planned!.map((invoice) => [
+          invoice.invoiceDate,
+          invoice.rows.length
+        ])
+      ).toEqual([["2026-01-01", 1001]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

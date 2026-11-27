@@ -11,6 +11,7 @@ import type { Database } from "@carbon/database";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import { round } from "@carbon/database/precision";
 import { wholeRateUnits } from "@carbon/database/rental-periods";
+import { formatDate } from "./date";
 
 type Enums = Database["public"]["Enums"];
 
@@ -19,6 +20,10 @@ export type InvoiceAutomation =
 
 export const RENTAL_HOLD_CHARGES = "Charges are reviewed before posting";
 export const RENTAL_HOLD_EARLY_RETURN = "Includes an early-return credit";
+/** An invoice drafted ahead of its due dates (the Invoice dialog): a person
+ *  posts it, whatever the agreement's mode or who drafted it. */
+export const RENTAL_HOLD_EARLY_INVOICE =
+  "Created early: review and post it yourself";
 /** readableIds: distinct readable ids of the voided invoices, in first-seen order. */
 export const rentalHoldRebill = (readableIds: string[]) =>
   `Re-billing ${readableIds.join(", ")}, which ${
@@ -43,7 +48,7 @@ export type PlannedInvoice<T> = {
 
 /**
  * Splits one agreement's due lines into the invoices to draft.
- * - Draft Only → one combined invoice, no hold (nothing is automated).
+ * - Draft Only and Manual → one combined invoice, no hold (nothing is automated).
  * - Otherwise → a rent invoice, unheld, carrying the rent and every Charge
  *   (alone when no rent is due), and a charges invoice, always held, for
  *   the Charges marked `invoiceSeparately` and every Purchase Option — a
@@ -58,7 +63,7 @@ export function planRentalInvoices<T>(
 ): PlannedInvoice<T>[] {
   if (lines.length === 0) return [];
 
-  if (mode === "Draft Only") {
+  if (!invoiceAutomationPosts(mode)) {
     return [
       { lines: lines.map((l) => l.item), holdReason: null, role: "combined" }
     ];
@@ -106,6 +111,14 @@ export function effectiveInvoiceAutomation(
   return agreementMode ?? companyMode;
 }
 
+/** Whether invoices under this mode post (and send) on their own. Draft
+ *  Only and Manual leave every invoice a draft that a person posts. */
+export function invoiceAutomationPosts(
+  mode: InvoiceAutomation | null | undefined
+): boolean {
+  return !!mode && mode !== "Draft Only" && mode !== "Manual";
+}
+
 /** One rental invoice line as drafted: a Rent line per billing period, or a
  *  Charge / Purchase Option line per charge. `unitPrice` is base currency. */
 export type RentalInvoiceLineValues = {
@@ -148,7 +161,7 @@ export type RentalPlanCharge = {
   voidedSalesInvoiceId: string | null;
 };
 
-/** "2026-10-01 – 2026-10-28 · 28 days · 1 × Month rate — Skid Steer 4
+/** "Oct 1, 2026 – Oct 28, 2026 · 28 days · 1 × Month rate — Skid Steer 4
  *  SN-1001", "… · 31 days · Month rate — …" (a Monthly unit on a Calendar
  *  Month or Monthly agreement is its month rate prorated by days, so it names
  *  no unit count), or for an early-return credit "Early return credit — 3 days used". */
@@ -178,7 +191,7 @@ export function rentLineDescription(period: {
       : period.cycle !== "28 Days" && period.rateUnitApplied === "Month"
         ? " · Month rate"
         : ` · ${wholeRateUnits(period.days, period.rateUnitApplied)} × ${period.rateUnitApplied} rate`;
-  return `${period.periodStart} – ${period.periodEnd} · ${period.days} days${tier}${unit ? ` — ${unit}` : ""}`;
+  return `${formatDate(period.periodStart)} – ${formatDate(period.periodEnd)} · ${period.days} days${tier}${unit ? ` — ${unit}` : ""}`;
 }
 
 /**

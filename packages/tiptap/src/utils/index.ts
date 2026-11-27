@@ -29,7 +29,7 @@ export function getUrlFromString(str: string) {
 // Get the text before a given position in markdown format
 export const getPrevText = (editor: EditorInstance, position: number) => {
   const nodes: Node[] = [];
-  // biome-ignore lint/suspicious/useIterableCallbackReturn: suppressed due to migration
+  // oxlint-disable-next-line array-callback-return -- suppressed due to migration
   editor.state.doc.forEach((node, pos) => {
     if (pos >= position) return false;
     nodes.push(node);

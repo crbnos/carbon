@@ -12,8 +12,7 @@ import {
   Input,
   Loading,
   ScrollArea,
-  useDebounce,
-  useMount
+  useDebounce
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
@@ -35,58 +34,80 @@ type Message = {
   note: string;
 };
 
-export function OperationChat({
-  operation
-}: {
-  operation: OperationWithDetails;
-}) {
-  const { t } = useLingui();
+export type OperationNotes = ReturnType<typeof useOperationNotes>;
+
+/** The operation's notes, kept live; the tab reads its count before Notes opens. */
+export function useOperationNotes(operationId: string | undefined) {
   const user = useUser();
-
-  const [employees] = usePeople();
+  const { carbon } = useCarbon();
   const [messages, setMessages] = useState<Message[]>([]);
-
   const [isLoading, setIsLoading] = useState(false);
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { carbon, accessToken } = useCarbon();
+
+  // Only the newest read may land: switching operations mid-read would
+  // otherwise show the previous operation's notes.
+  const latestRead = useRef(0);
 
   const fetchChats = async () => {
-    if (!carbon) return;
-    flushSync(() => {
-      setIsLoading(true);
-    });
+    if (!carbon || !operationId) return;
+    const read = ++latestRead.current;
+    setIsLoading(true);
 
     const { data, error } = await carbon
-      ?.from("jobOperationNote")
+      .from("jobOperationNote")
       .select("*")
-      .eq("jobOperationId", operation.id)
+      .eq("companyId", user.company.id)
+      .eq("jobOperationId", operationId)
       .order("createdAt", { ascending: true });
 
+    if (read !== latestRead.current) return;
+    setIsLoading(false);
     if (error) {
       log.error("Failed to fetch job operation notes", { error });
       return;
     }
     setMessages(data);
-    setIsLoading(false);
   };
 
-  useMount(() => {
+  useEffect(() => {
+    setMessages([]);
     fetchChats();
-  });
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- fetchChats is recreated every render
+  }, [operationId, carbon]);
 
   useChangedRows<Message & { jobOperationId: string }>({
     companyId: user.company.id,
     table: "jobOperationNote",
+    // jobOperationId has no foreign key, so broadcasts carry no parent ids and
+    // this filter lets every note through; the row check below decides.
+    filter: `jobOperationId=eq.${operationId}`,
+    enabled: !!operationId,
     onResync: fetchChats,
     onChange: ({ op, rows }) => {
       if (op !== "INSERT") return;
-      const notes = rows.filter((row) => row.jobOperationId === operation.id);
+      const notes = rows.filter((row) => row.jobOperationId === operationId);
       setMessages((prev) => [
         ...prev,
         ...notes.filter((note) => !prev.some((p) => p.id === note.id))
       ]);
     }
   });
+
+  return { messages, setMessages, isLoading };
+}
+
+export function OperationChat({
+  operation,
+  notes
+}: {
+  operation: OperationWithDetails;
+  notes: OperationNotes;
+}) {
+  const { t } = useLingui();
+  const user = useUser();
+  const { carbon } = useCarbon();
+
+  const [employees] = usePeople();
+  const { messages, setMessages, isLoading } = notes;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

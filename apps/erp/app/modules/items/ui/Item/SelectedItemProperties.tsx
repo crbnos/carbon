@@ -48,12 +48,10 @@ export function SelectedItemProperties({
 
   const fetcher = useFetcher<typeof itemPropertiesLoader>();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   useEffect(() => {
     if (isTopLevel || !selectedItemId || !selectedItemType) return;
-    fetcher.load(
-      `${path.to.itemProperties(selectedItemId)}?type=${selectedItemType}`
-    );
+    fetcher.load(path.to.itemProperties(selectedItemId));
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
   }, [selectedItemId, selectedItemType, isTopLevel]);
 
   const filesPromise = useMemo(

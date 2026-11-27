@@ -101,7 +101,7 @@ export function useInfiniteRows<T>({
   const rowIdOf = getRowId ?? ((row: T) => readRowId(row, infinite?.idColumn));
 
   // A new page 1 is a load of the rows: edits made before it are in it.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a new page 1 takes a new tick
+  // oxlint-disable-next-line react/exhaustive-deps -- a new page 1 takes a new tick
   const baseTick = useMemo(() => tick(), [initialRows]);
 
   const [restored] = useState(() =>
@@ -230,7 +230,6 @@ export function useInfiniteRows<T>({
   // Accept the fetcher's data only for the request this hook started. The
   // router also reloads mounted fetchers on revalidation; those results land
   // while no request is pending and are ignored.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: renderCount re-runs the check after a request settles
   useEffect(() => {
     const request = requestRef.current;
     if (!request) return;

@@ -110,9 +110,9 @@ msgstr "Экран техобслуживания — {0}"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} из {1}"
 
@@ -254,7 +254,10 @@ msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} производственных заказов"
 
 msgid "{scrapped} scrapped"
-msgstr ""
+msgstr "{scrapped} в брак"
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} приостановлена"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} на складе, без ячейки"
@@ -703,9 +706,6 @@ msgstr "Диаграмма"
 
 msgid "Chart of {series}"
 msgstr "Диаграмма: {series}"
-
-msgid "Chat"
-msgstr "Чат"
 
 msgid "Check your email"
 msgstr "Проверьте вашу электронную почту"
@@ -1332,7 +1332,7 @@ msgid "Flag issue"
 msgstr "Отметить проблему"
 
 msgid "Flow chart view"
-msgstr ""
+msgstr "Вид блок-схемы"
 
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить окончание работы?"
@@ -1725,7 +1725,7 @@ msgid "Log completed for {0}"
 msgstr "Записать готовые для {0}"
 
 msgid "Log completed for {trackedEntityReadableId}"
-msgstr ""
+msgstr "Запись о завершении для {trackedEntityReadableId}"
 
 msgid "Log Rework"
 msgstr "Записать доработку"
@@ -2145,7 +2145,7 @@ msgid "No unit"
 msgstr "Нет единицы"
 
 msgid "No unit selected"
-msgstr ""
+msgstr "Единица не выбрана"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его подобрать — количество в наличии станет отрицательным до тех пор, пока инвентаризация не будет согласована."
@@ -2248,6 +2248,9 @@ msgstr "Самые старые первыми"
 msgid "On Hold"
 msgstr "Приостановлено"
 
+msgid "On hold · {issueNumbers}"
+msgstr "Приостановлена · {issueNumbers}"
+
 msgid "On its way"
 msgstr "В пути"
 
@@ -2306,7 +2309,7 @@ msgid "Open sub-assembly {0}: {1}"
 msgstr "Открыть под-узел {0}: {1}"
 
 msgid "Open the operation to pick the unit"
-msgstr ""
+msgstr "Откройте операцию, чтобы выбрать единицу"
 
 msgid "Operation"
 msgstr "Операция"
@@ -2466,10 +2469,10 @@ msgid "Pick a style, a color and a face."
 msgstr "Выберите стиль, цвет и сторону."
 
 msgid "Pick an open unit to issue parts."
-msgstr ""
+msgstr "Выберите открытую единицу, чтобы списать детали в производство."
 
 msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
-msgstr ""
+msgstr "Выберите открытую единицу, чтобы списать детали в производство. Детали, уже находящиеся в этой единице, еще можно вернуть из расхода."
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "Выберите производственный заказ. Он отображается без часов, пока вы не добавите некоторые."
@@ -2630,6 +2633,9 @@ msgstr "Проблема качества"
 
 msgid "Quality issue created"
 msgstr "Проблема качества создана"
+
+msgid "Quality rejected this unit for production."
+msgstr "Отдел качества отклонил это изделие для использования в производстве."
 
 msgid "Quantity"
 msgstr "Количество"
@@ -3060,10 +3066,10 @@ msgid "Select a serial number to continue with this operation"
 msgstr "Выберите серийный номер для продолжения операции"
 
 msgid "Select a unit"
-msgstr ""
+msgstr "Выберите единицу"
 
 msgid "Select a unit first"
-msgstr ""
+msgstr "Сначала выберите единицу"
 
 msgid "Select an issue type"
 msgstr "Выберите тип проблемы"
@@ -3545,7 +3551,7 @@ msgid "This job has no bill rate. Ask the office to set it before the time is bi
 msgstr "У этого производственного заказа нет ставки расчетов. Попросите офис установить её перед тем, как время будет рассчитано."
 
 msgid "This job has no operations"
-msgstr ""
+msgstr "У этого производственного заказа нет операций"
 
 msgid "This label does not belong to a unit in this company"
 msgstr "Эта метка не относится к единице этой организации"
@@ -3575,10 +3581,13 @@ msgid "This unit has used this correction its limit number of times. Scrap it or
 msgstr "Эта единица уже использовала эту доработку максимально допустимое число раз. Отправьте её в брак или создайте несоответствие по качеству."
 
 msgid "This unit is complete here"
-msgstr ""
+msgstr "Эта единица здесь завершена"
 
 msgid "This unit is not part of this operation"
-msgstr ""
+msgstr "Эта единица не относится к этой операции"
+
+msgid "This unit is on hold"
+msgstr "Эта единица приостановлена"
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Эта единица будет окончательно списана, и будет создана единица на замену."
@@ -3779,7 +3788,7 @@ msgid "Until <0/>"
 msgstr "До <0/>"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Без названия"
 
 msgid "Up next"
 msgstr "Следующее"
@@ -3898,6 +3907,9 @@ msgstr "Дисплеи рабочего центра"
 
 msgid "Work instructions"
 msgstr "Рабочие инструкции"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "Работа над этой единицей ждёт, пока служба качества не закроет все проблемы ниже. Остальные единицы не затрагиваются."
 
 msgid "Work Site"
 msgstr "Объект"

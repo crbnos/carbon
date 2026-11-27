@@ -2,13 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { originOf } from "~/modules/users/users.service";
 
 const text = zfd.text(z.string().optional());
 
@@ -41,8 +40,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(acknowledgeForm).request(args);
   if ("invalid" in input) return input.invalid;
   const form = input.data;
-  const { ip, userAgent } = originOf(args.request);
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
 
   switch (form.intent) {
     case "itar-entity":
@@ -51,18 +49,14 @@ export async function action(args: ActionFunctionArgs) {
         acceptRider: form.acceptRider,
         fullLegalName: form.fullLegalName ?? "",
         title: form.title ?? "",
-        complianceContact: form.complianceContact ?? "",
-        ipAddress: ip,
-        userAgent
+        complianceContact: form.complianceContact ?? ""
       });
     case "itar-user":
       return api.users.certifyItarUser({
         certifyUsPerson: form.certifyUsPerson,
         agreeNotify: form.agreeNotify,
         understandPenalty: form.understandPenalty,
-        fullLegalName: form.fullLegalName ?? "",
-        ipAddress: ip,
-        userAgent
+        fullLegalName: form.fullLegalName ?? ""
       });
     case "flag": {
       const result = await api.users.setOwnFlag({

@@ -28,13 +28,19 @@ export function useWorkUnit<
   serial,
   isFirstOperation,
   units,
-  isOpen
+  isOpen: isIncomplete,
+  isOnHold
 }: {
   serial: boolean;
   isFirstOperation: boolean;
   units: T[];
+  /** Still to do at this operation. */
   isOpen: (unit: T) => boolean;
+  /** On hold for an open quality issue (`serialUnitSelection`). */
+  isOnHold?: (unit: T) => boolean;
 }) {
+  // A pick of a unit on hold is a look at it, like a pick of a finished one.
+  const isOpen = (unit: T) => isIncomplete(unit) && !isOnHold?.(unit);
   const { t } = useLingui();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlUnitId = searchParams.get("trackedEntityId");
@@ -51,7 +57,8 @@ export function useWorkUnit<
     units,
     urlUnitId,
     state,
-    isOpen
+    isOpen: isIncomplete,
+    isOnHold
   });
 
   const target = serial ? selection.unit?.id : undefined;

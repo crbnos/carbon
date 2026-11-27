@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import {
@@ -27,13 +27,14 @@ import {
   PRODUCTION_PLANNING_PAGING
 } from "~/modules/production/production.service";
 import type { ProductionPlanningItem } from "~/modules/production/types";
+import { withPlanningActions } from "~/modules/production/ui/Planning/planning-action-scope";
 import { PlanningOverdueBorrows } from "~/modules/production/ui/Planning/PlanningOverdueBorrows";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
-import { withPlanningActions } from "~/modules/production/ui/Planning/planning-action-scope";
 import { getProjectBorrows } from "~/modules/projects/projects.service";
 import {
   getLocationTimeZone,
   getOrCreatePeriods,
+  PLANNING_WEEKS,
   resolveLocationId
 } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -42,8 +43,6 @@ import type { Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/list-error";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
-
-const WEEKS_TO_PLAN = 12 * 4;
 
 const logger = getLogger("erp", "production", "planning");
 
@@ -55,10 +54,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "production",
-    bypassRls: true
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    { "production.materialPlanning": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -81,7 +81,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const periods = await getOrCreatePeriods(
     getDatabaseClient(),
     locationToday,
-    WEEKS_TO_PLAN
+    PLANNING_WEEKS
   );
 
   // The grid's Actions and Assignee filters are not RPC

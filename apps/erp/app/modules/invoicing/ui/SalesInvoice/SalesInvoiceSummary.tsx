@@ -138,7 +138,7 @@ const LineItems = ({
           )}
 
           <VStack spacing={0} className="flex-1 min-w-0">
-            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
+            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
             <div
               className="flex flex-col cursor-pointer w-full"
               onClick={(e) => {

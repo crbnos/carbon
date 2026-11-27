@@ -12,10 +12,6 @@ import {
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useResolved } from "~/hooks/useResolved";
-import {
-  getDocumentExtensions,
-  getDocumentLabels
-} from "~/modules/documents/documents.service";
 import type { Document } from "~/modules/documents/types";
 import { DocumentsTable } from "~/modules/documents/ui";
 import {
@@ -34,31 +30,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return loadListPage(request, list, {
     dataKey: "documents",
-    firstPage: async ({ client, companyId, userId }) => ({
-      labels: (await getDocumentLabels(client, userId)).data ?? [],
+    firstPage: async ({ api }) => ({
+      labels: (await api.documents.getDocumentLabels({})).data ?? [],
       // Only the file-type filter needs this, so it streams rather than
       // holding the page.
-      extensions: getDocumentExtensions(client, companyId).then(
-        (result) => result.data?.map(({ extension }) => extension) ?? []
-      )
+      extensions: api.documents
+        .getDocumentExtensions({})
+        .then((result) => result.data?.map(({ extension }) => extension) ?? [])
     }),
     // A signed download token per file-backed row. Signing is a server-only
     // HS256 op. Each page mints its own, so every loaded row carries one.
     mapRows: (documents, { companyId, userId }) =>
       Promise.all(
-        (documents as Document[]).map(
-          async (document): Promise<Document> => ({
-            ...document,
-            downloadToken:
-              document.id && document.path
-                ? await generateDownloadToken({
-                    userId,
-                    companyId,
-                    documentId: document.id
-                  })
-                : undefined
-          })
-        )
+        (documents as Document[]).map(async (document): Promise<Document> => ({
+          ...document,
+          downloadToken:
+            document.id && document.path
+              ? await generateDownloadToken({
+                  userId,
+                  companyId,
+                  documentId: document.id
+                })
+              : undefined
+        }))
       ),
     onError: {
       redirectTo: path.to.authenticatedRoot,
