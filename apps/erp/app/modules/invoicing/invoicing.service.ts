@@ -86,6 +86,7 @@ import {
   updateRows,
   updateRowsById
 } from "@carbon/database/rows";
+import { withSalesInvoiceSendLock } from "@carbon/database/sales-invoice-send";
 import type {
   SalesPostingAccount,
   SalesPostingJournalLine,
@@ -6847,17 +6848,38 @@ export async function preflightStripeSend(
  * a failure stamps `sendError` on the invoice (so it shows "Not sent" with a
  * Send retry, as invoice automation does) and is returned as the warning.
  */
+type SendPostedSalesInvoiceArgs = {
+  invoiceId: string;
+  notification: "Email" | "Stripe" | null;
+  customerContact?: string;
+  cc?: string[];
+  stripeSend: StripeSendContext | null;
+  stripeDueDate?: string;
+  locale: string;
+};
+
+/**
+ * Files the posted invoice's PDF and, when asked, emails it or sends it
+ * through Stripe. A send runs under the invoice's send lock, as the
+ * recurring-billing job's and invoice-automate's sends do, so a person's
+ * Post with Email and an automatic send never both reach the customer.
+ */
 export async function sendPostedSalesInvoice(
   ctx: ServiceContext,
-  args: {
-    invoiceId: string;
-    notification: "Email" | "Stripe" | null;
-    customerContact?: string;
-    cc?: string[];
-    stripeSend: StripeSendContext | null;
-    stripeDueDate?: string;
-    locale: string;
-  }
+  args: SendPostedSalesInvoiceArgs
+): Promise<string | null> {
+  if (!args.notification) return fileAndSendPostedSalesInvoice(ctx, args);
+  const sent = await withSalesInvoiceSendLock(
+    ctx.asSystem.pg,
+    { companyId: ctx.company.id, invoiceId: args.invoiceId },
+    () => fileAndSendPostedSalesInvoice(ctx, args)
+  );
+  return sent.locked ? sent.result : "This invoice is already being sent";
+}
+
+async function fileAndSendPostedSalesInvoice(
+  ctx: ServiceContext,
+  args: SendPostedSalesInvoiceArgs
 ): Promise<string | null> {
   const { invoiceId, notification, locale } = args;
   const serviceRole = ctx.asSystem.supabase;
@@ -6906,6 +6928,10 @@ export async function sendPostedSalesInvoice(
       error: salesInvoice.error
     });
     return "Failed to get sales invoice";
+  }
+  // Read under the send lock: another sender may have finished first.
+  if (notification && salesInvoice.data?.sentAt) {
+    return "This invoice has already been sent";
   }
 
   let filed: {
@@ -10000,6 +10026,97 @@ export const postSalesInvoicePermission = {
   "invoicing.salesInvoices": "Edit"
 } satisfies PermissionRule<z.output<typeof postSalesInvoiceInput>>;
 
+export const SALES_INVOICE_SETTLED_VOID_ERROR =
+  "Cannot void a sales invoice with payments or credits applied. Reverse them first.";
+export const PURCHASE_INVOICE_SETTLED_VOID_ERROR =
+  "Cannot void a purchase invoice with payments or credits applied. Reverse them first.";
+
+/** Whether a posted payment or memo settles the invoice: a settlement row
+ *  whose payment is Posted, or whose memo is Posted (and, applied through a
+ *  payment, that payment too) — the rows the invoice views sum. Any such row
+ *  counts, whatever its amount and whatever the invoice's status: the views
+ *  show Paid or Partially Paid only for a positive sum on an invoice not in
+ *  a base status such as Credit Note Issued, so a row netting to zero or a
+ *  Credit Note Issued invoice would pass a check on the view. */
+export async function invoiceHasPostedSettlement(
+  db: Kysely<KyselyDatabase>,
+  side: "sales" | "purchase",
+  companyId: string,
+  invoiceId: string
+): Promise<boolean> {
+  const settlement = await db
+    .selectFrom("invoiceSettlement as s")
+    .leftJoin("payment as p", (join) =>
+      join
+        .onRef("p.id", "=", "s.paymentId")
+        .onRef("p.companyId", "=", "s.companyId")
+    )
+    .leftJoin("memo as m", (join) =>
+      join
+        .onRef("m.id", "=", "s.memoId")
+        .onRef("m.companyId", "=", "s.companyId")
+    )
+    .leftJoin("payment as vp", (join) =>
+      join
+        .onRef("vp.id", "=", "s.appliedViaPaymentId")
+        .onRef("vp.companyId", "=", "s.companyId")
+    )
+    .select("s.id")
+    .where("s.companyId", "=", companyId)
+    .where(
+      side === "sales" ? "s.targetSalesInvoiceId" : "s.targetPurchaseInvoiceId",
+      "=",
+      invoiceId
+    )
+    .where((eb) =>
+      eb.or([
+        eb("p.status", "=", "Posted"),
+        eb.and([
+          eb("m.status", "=", "Posted"),
+          eb.or([
+            eb("s.appliedViaPaymentId", "is", null),
+            eb("vp.status", "=", "Posted")
+          ])
+        ])
+      ])
+    )
+    .limit(1)
+    .executeTakeFirst();
+  return settlement !== undefined;
+}
+
+/** A stored Paid or Partially Paid status. Payment posting never writes it,
+ *  but an accounting sync does (a Xero bill or invoice marked PAID there), so
+ *  it refuses a void as a posted settlement does. */
+export function isPaidStatus(status: string | null | undefined): boolean {
+  return status === "Paid" || status === "Partially Paid";
+}
+
+/** Refuses the void of an invoice that a posted payment or memo settles, or
+ *  whose stored status is Paid, so no settlement is left against a voided
+ *  invoice. Read under the invoice lock, which payment posting also takes. */
+async function refuseVoidOfSettledInvoice(
+  trx: Kysely<KyselyDatabase>,
+  side: "sales" | "purchase",
+  invoice: { companyId: string; invoiceId: string; status: string | undefined }
+): Promise<void> {
+  if (
+    isPaidStatus(invoice.status) ||
+    (await invoiceHasPostedSettlement(
+      trx,
+      side,
+      invoice.companyId,
+      invoice.invoiceId
+    ))
+  ) {
+    throw new InvalidInputError(
+      side === "sales"
+        ? SALES_INVOICE_SETTLED_VOID_ERROR
+        : PURCHASE_INVOICE_SETTLED_VOID_ERROR
+    );
+  }
+}
+
 /** Posts or voids a sales invoice: its ledger, cost and journal rows, atomically. */
 export async function postSalesInvoice(
   ctx: ServiceContext,
@@ -11652,6 +11769,22 @@ export async function postSalesInvoice(
             throw new InvalidInputError(RECOGNIZED_REVENUE_VOID_ERROR);
           }
         }
+        // Whether the void writes schedule rows or contract positions, and so
+        // needs the company's position lock: a contract, rental or service
+        // line (whose accruals it unbills), or a schedule row of a line. The
+        // rows an invoice owns are written when it posts, so this stays true.
+        const holdsSchedules =
+          contractInvoiceLines.length > 0 ||
+          rentalLineIds.length > 0 ||
+          salesInvoiceLines.data.some((line) => !!line.serviceJobId) ||
+          (invoiceLineIds.length > 0 &&
+            (await db
+              .selectFrom("revenueRecognitionSchedule")
+              .select("id")
+              .where("companyId", "=", companyId)
+              .where("salesInvoiceLineId", "in", invoiceLineIds)
+              .limit(1)
+              .executeTakeFirst()) !== undefined);
 
         // Create reversing item ledger entries
         const reversingItemLedgerEntries: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
@@ -11707,6 +11840,11 @@ export async function postSalesInvoice(
           if (locked?.status === "Voided") {
             throw new InvalidInputError("Sales invoice is already voided");
           }
+          await refuseVoidOfSettledInvoice(trx, "sales", {
+            companyId,
+            invoiceId,
+            status: locked?.status
+          });
           await lockOrderLinesAsRead(
             trx,
             "salesOrderLine",
@@ -11774,6 +11912,12 @@ export async function postSalesInvoice(
             journalLineReference: entry.journalLineReference,
             companyId
           }));
+
+          // The position lock before any schedule row, as a recognition
+          // proposal and a run's Recalculate, Post, Reverse and Delete take it
+          // before they touch the run or its schedule rows. Taken after them,
+          // a void holding a Draft run's row deadlocked with that run.
+          if (holdsSchedules) await lockContractPositions(trx, companyId);
 
           if (invoiceLineIds.length > 0) {
             // Re-checked under lock: a run may have posted since the check
@@ -12051,7 +12195,8 @@ export async function postSalesInvoice(
             "journalId"
           >[] = [];
           if (contractInvoiceLines.length > 0) {
-            await lockContractPositions(trx, companyId);
+            // The position lock is held (holdsSchedules): taken above, before
+            // the schedule rows.
             const invoiceEntries = await trx
               .selectFrom("customerContractLedgerEntry")
               .select([
@@ -18090,15 +18235,6 @@ export async function postPurchaseInvoice(
         PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR
       );
 
-      if (
-        invoice.data.status === "Paid" ||
-        invoice.data.status === "Partially Paid"
-      ) {
-        throw new Error(
-          "Cannot void a purchase invoice with payments applied. Reverse the payment first."
-        );
-      }
-
       const [originalItemLedger, postedJournalLines, originalCostLedger] =
         await inOrder([
           () => many(db, "itemLedger", { documentId: invoiceId, companyId }),
@@ -18484,6 +18620,11 @@ export async function postPurchaseInvoice(
         if (locked?.status === "Voided") {
           throw new InvalidInputError("Purchase invoice is already voided");
         }
+        await refuseVoidOfSettledInvoice(trx, "purchase", {
+          companyId,
+          invoiceId,
+          status: locked?.status
+        });
         // Every line of the orders: the order's status is set from them.
         await lockOrderLinesAsRead(
           trx,

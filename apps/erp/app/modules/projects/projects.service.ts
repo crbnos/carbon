@@ -266,6 +266,7 @@ import {
   wbsTemplateElementType,
   weekStartOf
 } from "./projects.models";
+import { timesheetCellLockKey } from "./projects.utils";
 import { paybackVariance, planBorrowMatching } from "./stock-transfer-plan";
 import {
   type DilutionPostedEntry,
@@ -5921,6 +5922,13 @@ async function save(
     await assertProjectTakesTime(trx, input);
     return addEntry(trx, input, settings, actorIsOwner);
   }
+
+  // The lock below takes nothing on an empty cell, so two saves of it at once
+  // (overlapping MES drags, ERP and MES) both inserted an entry. The cell is
+  // serialized first: the second save finds the first's entry.
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${timesheetCellLockKey(input)}, 0))`.execute(
+    trx
+  );
 
   let existingQuery = trx
     .selectFrom("timesheetEntry")

@@ -57,6 +57,41 @@
       ]
     },
     {
+      "file": "packages/database/src/sales-invoice-send.ts",
+      "functions": ["withSalesInvoiceSendLock", "waitForSalesInvoiceSendLock"],
+      "tests": ["apps/erp/test/database/sales-invoice-send-lock.test.ts"]
+    },
+    {
+      "file": "apps/erp/app/modules/accounting/accounting.service.ts",
+      "functions": [
+        "reverseJournalEntry",
+        "lockJournalsForReversal",
+        "writeJournalReversals"
+      ],
+      "tests": [
+        "apps/erp/test/database/reverse-journal-entry-concurrency.test.ts"
+      ]
+    },
+    {
+      "file": "apps/erp/app/modules/accounting/accounting.service.ts",
+      "functions": [
+        "recalculateRevenueRecognitionRun",
+        "postRevenueRecognitionRun",
+        "reverseRevenueRecognitionRun",
+        "deleteRevenueRecognitionRun"
+      ],
+      "tests": [
+        "apps/erp/test/database/post-sales-invoice/contract-posting.test.ts"
+      ]
+    },
+    {
+      "file": "apps/erp/app/modules/projects/projects.service.ts",
+      "functions": ["save"],
+      "tests": [
+        "apps/erp/test/database/save-timesheet-entry/save-timesheet-entry.test.ts"
+      ]
+    },
+    {
       "file": "apps/erp/app/modules/invoicing/invoicing.service.ts",
       "functions": [
         "changeSalesInvoiceCustomer",

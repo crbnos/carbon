@@ -65,6 +65,7 @@
     "./stock-transfer": "./src/stock-transfer.ts",
     "./travelers": "./src/travelers.ts",
     "./receipt-batch-numbers": "./src/receipt-batch-numbers.ts",
+    "./sales-invoice-send": "./src/sales-invoice-send.ts",
     "./receipt-serials": "./src/receipt-serials.ts",
     "./storage-objects": "./src/storage-objects.ts",
     "./seed-data": "./src/seed-data.ts",

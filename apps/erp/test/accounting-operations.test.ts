@@ -8,6 +8,7 @@ import {
   createFiscalYearPeriods,
   importChartOfAccounts,
   reopenPeriod,
+  reverseJournalEntry,
   saveJournalEntry
 } from "../app/modules/accounting/accounting.server";
 import { accountMoveRefusal } from "../app/modules/accounting/accounting.utils";
@@ -156,6 +157,44 @@ describe("reopenPeriod", () => {
       }
     });
     const result = await reopenPeriod(ctx, { periodId: "period-1" });
+    expect(result.error).toMatchObject({ category: "forbidden" });
+  });
+});
+
+describe("reverseJournalEntry", () => {
+  const journalEntries = (actions: Array<"view" | "create" | "update">) =>
+    context({
+      "accounting.journalEntries": {
+        view: actions.includes("view") ? ["company-1"] : [],
+        create: actions.includes("create") ? ["company-1"] : [],
+        update: actions.includes("update") ? ["company-1"] : [],
+        delete: []
+      }
+    });
+
+  // The reversal writes as the system, so RLS no longer asks for create on
+  // the journal and update on the original: the gate must.
+  it("refuses Create on Journal Entries, which cannot mark the original Reversed", async () => {
+    const result = await reverseJournalEntry(
+      journalEntries(["view", "create"]),
+      { id: "journal-1", data: {} }
+    );
+    expect(result.error).toMatchObject({ category: "forbidden" });
+  });
+
+  it("admits Edit on Journal Entries, which holds create and update", async () => {
+    const result = await reverseJournalEntry(
+      journalEntries(["view", "create", "update"]),
+      { id: "journal-1", data: {} }
+    );
+    expect(result.error?.category).not.toBe("forbidden");
+  });
+
+  it("refuses View on Journal Entries", async () => {
+    const result = await reverseJournalEntry(journalEntries(["view"]), {
+      id: "journal-1",
+      data: {}
+    });
     expect(result.error).toMatchObject({ category: "forbidden" });
   });
 });

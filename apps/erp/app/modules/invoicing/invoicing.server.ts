@@ -519,7 +519,8 @@ export const deleteDraftSalesInvoice = defineServiceFn({
  * Void a posted sales invoice.
  *
  * @remarks
- * Refused for an invoice that was never posted. The `post-sales-invoice`
+ * Refused for an invoice that was never posted, is already voided, or has a
+ * payment applied (reverse the payment first). The `post-sales-invoice`
  * server function reverses its journal, its stock and its order and shipment
  * updates; its refusal is returned as it is.
  *
@@ -546,6 +547,20 @@ export const voidSalesInvoice = defineServiceFn({
     if (!invoice.data) return ctx.error("notFound", "Sales invoice not found");
     if (!invoice.data.postingDate) {
       return ctx.error("rule", "Can only void posted invoices");
+    }
+    if (invoice.data.status === "Voided") {
+      return ctx.error("rule", "Sales invoice is already voided");
+    }
+    if (
+      service.isPaidStatus(invoice.data.status) ||
+      (await service.invoiceHasPostedSettlement(
+        ctx.asSystem.pg,
+        "sales",
+        ctx.company.id,
+        invoiceId
+      ))
+    ) {
+      return ctx.error("rule", service.SALES_INVOICE_SETTLED_VOID_ERROR);
     }
 
     const voided = await invokePosting(
@@ -1247,11 +1262,16 @@ export const voidPurchaseInvoice = defineServiceFn({
     if (status === "Voided") {
       return ctx.error("rule", "Purchase invoice is already voided");
     }
-    if (status === "Paid" || status === "Partially Paid") {
-      return ctx.error(
-        "rule",
-        "Cannot void a purchase invoice with payments applied. Reverse the payment first."
-      );
+    if (
+      service.isPaidStatus(status) ||
+      (await service.invoiceHasPostedSettlement(
+        ctx.asSystem.pg,
+        "purchase",
+        ctx.company.id,
+        invoiceId
+      ))
+    ) {
+      return ctx.error("rule", service.PURCHASE_INVOICE_SETTLED_VOID_ERROR);
     }
 
     const voided = await invokePosting(

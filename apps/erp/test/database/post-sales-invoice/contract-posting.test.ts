@@ -7,16 +7,24 @@
 // revenue plan, and a VOID negates and normalizes. The pure planner is pinned
 // first; the rest runs against the live database on `paymentFixture`'s company.
 
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { EMPTY_POSITION } from "@carbon/database/contract-position";
 import type { SalesPostingAccount } from "@carbon/database/sales-posting-amounts";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
 import { databaseTest } from "../fixtures/local-database";
 import { paymentFixture } from "../fixtures/payment";
-import { proposeRevenueRecognitionRun } from "../../../app/modules/accounting/accounting.service";
-import { dropRecognitionRuns } from "../fixtures/run";
+import {
+  deleteRevenueRecognitionRun,
+  proposeRevenueRecognitionRun,
+  recalculateRevenueRecognitionRun
+} from "../../../app/modules/accounting/accounting.service";
+import { dropRecognitionRuns, holdInDraftRun } from "../fixtures/run";
 import { planContractInvoiceLine, postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
+import {
+  invokePosting,
+  lockContractPositions
+} from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 
 const leaf = (id: string, accountClass: string): SalesPostingAccount => ({
@@ -586,6 +594,253 @@ databaseTest(
         (await c.ledger()).map((entry) => Number(entry.assetAmount))
       ).toEqual([1000, -1000]);
     } finally {
+      await dropRecognitionRuns(f.db, f.companyId);
+      await f.cleanup();
+    }
+  }
+);
+
+/** Waits until `count` connections are queued behind `blockerPid`, directly or
+ *  behind another waiter. */
+async function waitForBlockedConnections(
+  db: Kysely<KyselyDatabase>,
+  blockerPid: number,
+  count: number
+) {
+  const deadline = performance.now() + 15_000;
+  while (performance.now() < deadline) {
+    const { rows } = await sql<{ blocked: number }>`
+      WITH RECURSIVE waiting AS (
+        SELECT ${blockerPid}::int AS pid
+        UNION
+        SELECT a.pid FROM pg_stat_activity a, waiting w
+        WHERE w.pid = ANY(pg_blocking_pids(a.pid))
+      )
+      SELECT count(*)::int - 1 AS blocked FROM waiting
+    `.execute(db);
+    if ((rows[0]?.blocked ?? 0) >= count) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error(`Expected ${count} connections to wait for the held lock`);
+}
+
+databaseTest(
+  "voiding a contract invoice while a Draft run holding its deferral is recalculated does not deadlock",
+  async () => {
+    const f = await paymentFixture();
+    const blocker = await f.connect();
+    const recalculating = await f.connect();
+    const voiding = await f.connect();
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let holding: Promise<void> | undefined;
+    try {
+      const c = await contractFixture(f, {
+        revenue: [{ month: "2026-09", amount: 1000 }]
+      });
+      const invoiceId = await c.postInvoice(1000);
+      // A Draft run holds a deferral of the contract invoice and one of
+      // another invoice, so the void leaves the run standing.
+      const lines = await f.db
+        .selectFrom("salesInvoiceLine")
+        .select(["id", "invoiceId"])
+        .where("companyId", "=", f.companyId)
+        .where("invoiceId", "in", [invoiceId, f.invoiceId])
+        .execute();
+      const lineOf = (id: string) =>
+        lines.find((line) => line.invoiceId === id)!.id;
+      const scheduleIds = [
+        `${f.companyId}-voided-deferral`,
+        `${f.companyId}-other-deferral`
+      ];
+      await f.db
+        .insertInto("revenueRecognitionSchedule")
+        .values(
+          [lineOf(invoiceId), lineOf(f.invoiceId)].map(
+            (salesInvoiceLineId, index) => ({
+              id: scheduleIds[index]!,
+              type: "Deferral" as const,
+              status: "Planned" as const,
+              salesInvoiceLineId,
+              periodStart: "2026-09-01",
+              periodEnd: "2026-09-15",
+              scheduledDate: "2026-09-15",
+              amount: 100,
+              debitAccountId: f.account("control"),
+              creditAccountId: f.account("sales"),
+              companyId: f.companyId,
+              createdBy: "system"
+            })
+          )
+        )
+        .execute();
+      const runId = await holdInDraftRun(f.db, f.companyId, scheduleIds);
+      const {
+        rows: [blockerPid]
+      } = await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+        blocker
+      );
+
+      // A proposal in flight holds the position lock: the recalculation
+      // (holding its run) queues on it first, then the void.
+      let held!: () => void;
+      const isHeld = new Promise<void>((resolve) => {
+        held = resolve;
+      });
+      holding = blocker.transaction().execute(async (trx) => {
+        await lockContractPositions(trx, f.companyId);
+        held();
+        await released;
+      });
+      await isHeld;
+
+      const handles = (db: Kysely<KyselyDatabase>) =>
+        handlesOf({ db, companyId: f.companyId, userId: "system" });
+      const recalculation = invokePosting(
+        handles(recalculating),
+        "recalculate-revenue-recognition-run",
+        { runId },
+        recalculateRevenueRecognitionRun
+      );
+      await waitForBlockedConnections(f.db, blockerPid!.pid, 1);
+      const voided = invokePosting(
+        handles(voiding),
+        "post-sales-invoice",
+        { type: "void", invoiceId },
+        postSalesInvoice
+      );
+      await waitForBlockedConnections(f.db, blockerPid!.pid, 2);
+      release();
+      await holding;
+
+      const [recalculated, voidResult] = await Promise.all([
+        recalculation,
+        voided
+      ]);
+      expect([recalculated.error, voidResult.error]).toEqual([null, null]);
+      expect(
+        await f.db
+          .selectFrom("revenueRecognitionSchedule")
+          .select("id")
+          .where("id", "in", scheduleIds)
+          .execute()
+      ).toEqual([{ id: scheduleIds[1] }]);
+    } finally {
+      release();
+      await holding?.catch(() => {});
+      await blocker.destroy();
+      await recalculating.destroy();
+      await voiding.destroy();
+      await dropRecognitionRuns(f.db, f.companyId);
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "voiding a contract invoice while its Draft run is deleted does not deadlock",
+  async () => {
+    const f = await paymentFixture();
+    const blocker = await f.connect();
+    const deleting = await f.connect();
+    const voiding = await f.connect();
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let holding: Promise<void> | undefined;
+    try {
+      const c = await contractFixture(f, {
+        revenue: [{ month: "2026-09", amount: 1000 }]
+      });
+      const invoiceId = await c.postInvoice(1000);
+      const line = await f.db
+        .selectFrom("salesInvoiceLine")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("invoiceId", "=", invoiceId)
+        .executeTakeFirstOrThrow();
+      const scheduleId = `${f.companyId}-deleted-run-deferral`;
+      await f.db
+        .insertInto("revenueRecognitionSchedule")
+        .values({
+          id: scheduleId,
+          type: "Deferral",
+          status: "Planned",
+          salesInvoiceLineId: line.id,
+          periodStart: "2026-09-01",
+          periodEnd: "2026-09-15",
+          scheduledDate: "2026-09-15",
+          amount: 100,
+          debitAccountId: f.account("control"),
+          creditAccountId: f.account("sales"),
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+      const runId = await holdInDraftRun(f.db, f.companyId, [scheduleId]);
+      const {
+        rows: [blockerPid]
+      } = await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+        blocker
+      );
+
+      // The run row is held, so the delete queues on it first. Without the
+      // position lock first, the void then took the schedule row and queued
+      // behind the delete for the run: on release the delete waited for the
+      // void's schedule row and the void for the delete's run.
+      let held!: () => void;
+      const isHeld = new Promise<void>((resolve) => {
+        held = resolve;
+      });
+      holding = blocker.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("revenueRecognitionRun")
+          .select("id")
+          .where("id", "=", runId)
+          .forUpdate()
+          .execute();
+        held();
+        await released;
+      });
+      await isHeld;
+
+      const deleted = deleteRevenueRecognitionRun(deleting, {
+        runId,
+        companyId: f.companyId,
+        userId: "system"
+      }).then(
+        () => null,
+        (error: unknown) => error
+      );
+      await waitForBlockedConnections(f.db, blockerPid!.pid, 1);
+      const voided = invokePosting(
+        handlesOf({ db: voiding, companyId: f.companyId, userId: "system" }),
+        "post-sales-invoice",
+        { type: "void", invoiceId },
+        postSalesInvoice
+      );
+      await waitForBlockedConnections(f.db, blockerPid!.pid, 2);
+      release();
+      await holding;
+
+      const [deleteError, voidResult] = await Promise.all([deleted, voided]);
+      expect([deleteError, voidResult.error]).toEqual([null, null]);
+      expect(
+        await f.db
+          .selectFrom("revenueRecognitionSchedule")
+          .select("id")
+          .where("id", "=", scheduleId)
+          .execute()
+      ).toEqual([]);
+    } finally {
+      release();
+      await holding?.catch(() => {});
+      await blocker.destroy();
+      await deleting.destroy();
+      await voiding.destroy();
       await dropRecognitionRuns(f.db, f.companyId);
       await f.cleanup();
     }

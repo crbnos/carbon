@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261126091518",
+  "schemaVersion": "20261127084539",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-26T11:31:31.024Z",
+  "exportedAt": "2026-11-27T10:50:56.530Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -4023,8 +4023,8 @@
         "responsibleEmployee",
         "planningHorizonDays",
         "allowCommonSupplyForProjects",
-        "planningTimeFenceDays",
-        "deliveryDateControl"
+        "deliveryDateControl",
+        "planningTimeFenceDays"
       ]
     },
     {

@@ -12,6 +12,7 @@
 import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { waitForSalesInvoiceSendLock } from "@carbon/database/sales-invoice-send";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
 import {
@@ -691,9 +692,23 @@ export async function attachPostedInvoicePdf(args: {
  * the company's name at the platform address and Reply-To the receivables
  * mailbox (else the agreement's owner). Stamps `sentAt`/`sentTo` on success
  * and `sendError` on any failure, so a failed send shows in Needs Review.
- * Idempotent: an invoice with `sentAt` is never sent twice.
+ * Idempotent: an invoice with `sentAt` is never sent twice, and the send
+ * runs under the invoice's send lock (`waitForSalesInvoiceSendLock`), so of
+ * two callers at once the second waits, then finds the invoice sent.
  */
 export async function emailPostedInvoice(args: {
+  client: Client;
+  db: Kysely<KyselyDatabase>;
+  companyId: string;
+  invoiceId: string;
+}): Promise<EmailOutcome> {
+  return waitForSalesInvoiceSendLock(args.db, args, () =>
+    emailLockedInvoice(args)
+  );
+}
+
+/** `emailPostedInvoice` under the send lock: reads `sentAt` under it. */
+async function emailLockedInvoice(args: {
   client: Client;
   companyId: string;
   invoiceId: string;
@@ -821,8 +836,8 @@ export async function emailPostedInvoice(args: {
       .eq("companyId", companyId);
     if (stamped.error) {
       // The email went out, but without `sentAt` the invoice reads as unsent
-      // and a Send would email it again: say so on the invoice instead of
-      // reporting a clean send.
+      // and a Send would email it again: say so on the invoice (it shows in
+      // Needs Review) instead of reporting a clean send.
       logger.error("Invoice emailed but the sent stamp failed", {
         companyId,
         invoiceId,
@@ -857,10 +872,26 @@ export async function emailPostedInvoice(args: {
  * payment link. Stamps `sentAt`/`sentTo: "Stripe"` on success and
  * `sendError` on any failure, so a failed send shows in Needs Review.
  * Idempotent: an invoice with `sentAt`, or already linked to a Stripe
- * invoice, is never sent twice. An invoice totalling zero or less has nothing
- * to collect: it is left unsent with no send error.
+ * invoice, is never sent twice. The send runs under the invoice's send lock
+ * (`waitForSalesInvoiceSendLock`), so of two callers at once only one creates
+ * a Stripe invoice; the Stripe create also carries an idempotency key per
+ * invoice, so a retried step replays the first create. An invoice totalling
+ * zero or less has nothing to collect: it is left unsent with no send error.
  */
 export async function sendPostedInvoiceViaStripe(args: {
+  client: Client;
+  db: Kysely<KyselyDatabase>;
+  companyId: string;
+  invoiceId: string;
+}): Promise<EmailOutcome> {
+  return waitForSalesInvoiceSendLock(args.db, args, () =>
+    sendLockedInvoiceViaStripe(args)
+  );
+}
+
+/** `sendPostedInvoiceViaStripe` under the send lock: reads `sentAt` and the
+ *  Stripe invoice link under it. */
+async function sendLockedInvoiceViaStripe(args: {
   client: Client;
   db: Kysely<KyselyDatabase>;
   companyId: string;

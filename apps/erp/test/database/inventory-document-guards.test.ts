@@ -349,7 +349,10 @@ describeLocal("a posted receipt or shipment is a record", () => {
       });
     }
     expect(await receiptLineIds(postedReceipt.id)).toEqual(before);
-  });
+    // The first PostgREST read of a receipt line with its receipt embedded
+    // takes seconds on a busy database, though Postgres runs it in a
+    // millisecond: the default 5 s timed this test out.
+  }, 60_000);
 
   it("refuses to edit, split or delete a posted shipment's lines", async () => {
     const before = await shipmentLineIds(postedShipment.id);

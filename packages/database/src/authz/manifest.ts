@@ -933,9 +933,9 @@ export const manifest = {
   }),
   journalLine: policies({
     select: inCompany("companyId", "view"),
-    // Lines go into a Draft journal, or into the Posted reversal the ERP's
-    // reverseJournalEntry writes through the user's client. Never into a
-    // Provisional, Superseded or Reversed journal.
+    // Lines go into a Draft or a Posted journal, never into a Provisional,
+    // Superseded or Reversed one. The ERP's reverseJournalEntry does not come
+    // through here: it writes as the system, gated on Edit on Journal Entries.
     insert: and(
       inCompany("companyId", "create"),
       exists(

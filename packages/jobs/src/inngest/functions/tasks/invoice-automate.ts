@@ -80,7 +80,12 @@ export const invoiceAutomateFunction = inngest.createFunction(
     }
 
     const emailed = await step.run("email", () =>
-      emailPostedInvoice({ client, companyId, invoiceId })
+      emailPostedInvoice({
+        client,
+        db: getJobDatabaseClient(),
+        companyId,
+        invoiceId
+      })
     );
     return { mode, posted, emailed };
   }

@@ -720,6 +720,7 @@ export const recurringBillingFunction = inngest.createFunction(
               : await step.run(`email-${invoice.invoiceId}`, () =>
                   emailPostedInvoice({
                     client: serviceRole,
+                    db: getJobDatabaseClient(),
                     companyId: company.id,
                     invoiceId: invoice.invoiceId
                   })

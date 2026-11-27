@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // External boundaries only: SMTP, Stripe, the PDF renderer, the rule engine
 // and the party-contact policy (each reads its own tables), the Kysely mapping
-// write, Inngest, storage, env.
+// write, the Postgres send lock, Inngest, storage, env.
 const sendEmail = vi.fn();
 const stripeSend = vi.fn();
 const evaluateSalesRules = vi.fn();
@@ -41,6 +41,25 @@ vi.mock("@carbon/stripe/send-sales-invoice.server", async (importOriginal) => ({
   >()),
   sendPostedSalesInvoiceViaStripe: (...args: unknown[]) => stripeSend(...args)
 }));
+// The advisory lock, in memory: a second caller waits for the first (the
+// Postgres lock itself: sales-invoice-send-lock.test.ts).
+vi.mock("@carbon/database/sales-invoice-send", () => {
+  const queues = new Map<string, Promise<unknown>>();
+  const noop = () => undefined;
+  return {
+    waitForSalesInvoiceSendLock: (
+      _db: unknown,
+      lock: { companyId: string; invoiceId: string },
+      send: () => Promise<unknown>
+    ) => {
+      const key = `${lock.companyId}:${lock.invoiceId}`;
+      const turn = (queues.get(key) ?? Promise.resolve()).then(send);
+      // The next caller waits for this one to end, whether it sent or threw.
+      queues.set(key, turn.then(noop, noop));
+      return turn;
+    }
+  };
+});
 vi.mock("@carbon/ee/accounting", () => ({
   createMappingService: () => ({ link: async () => undefined })
 }));
@@ -137,6 +156,10 @@ function fakeClient(
       },
       not: (key: string) => {
         filters.push((row) => row[key] != null);
+        return query;
+      },
+      is: (key: string, value: null) => {
+        filters.push((row) => (row[key] ?? null) === value);
         return query;
       },
       update: (values: Row) => {
@@ -380,15 +403,34 @@ describe("emailPostedInvoice", () => {
     const { client } = fakeClient(
       baseTables(posted({ sentAt: "2026-10-01T05:00:00Z" }))
     );
-    expect(await emailPostedInvoice({ client, ...args })).toEqual({
+    expect(await emailPostedInvoice({ client, db, ...args })).toEqual({
       emailed: false
     });
     expect(sendEmail).not.toHaveBeenCalled();
   });
 
+  it("emails the invoice once when two sends run at once", async () => {
+    const { client, tables } = fakeClient(baseTables(posted()));
+    const results = await Promise.all([
+      emailPostedInvoice({ client, db, ...args }),
+      emailPostedInvoice({ client, db, ...args })
+    ]);
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    expect(results).toEqual(
+      expect.arrayContaining([
+        { emailed: true, sentTo: "ap@buyer.com, ops@acme.com, ar@acme.com" },
+        { emailed: false }
+      ])
+    );
+    expect(tables.salesInvoice![0]).toMatchObject({
+      sentTo: "ap@buyer.com, ops@acme.com, ar@acme.com",
+      sendError: null
+    });
+  });
+
   it("records why when the contact has no email", async () => {
     const { client, tables } = fakeClient(baseTables(posted(), null));
-    expect(await emailPostedInvoice({ client, ...args })).toEqual({
+    expect(await emailPostedInvoice({ client, db, ...args })).toEqual({
       emailed: false,
       sendError: INVOICE_SEND_NO_EMAIL
     });
@@ -398,7 +440,7 @@ describe("emailPostedInvoice", () => {
 
   it("sends from the company, replies to receivables, and stamps it sent", async () => {
     const { client, tables } = fakeClient(baseTables(posted()));
-    const result = await emailPostedInvoice({ client, ...args });
+    const result = await emailPostedInvoice({ client, db, ...args });
     expect(result).toEqual({
       emailed: true,
       sentTo: "ap@buyer.com, ops@acme.com, ar@acme.com"
@@ -419,12 +461,12 @@ describe("emailPostedInvoice", () => {
     expect(tables.document).toHaveLength(1);
   });
 
-  it("reports a send whose sent stamp failed as a send error, not a clean send", async () => {
+  it("reports a send whose sent stamp failed as a send error in Needs Review", async () => {
     const { client, tables } = fakeClient(
       baseTables(posted()),
       undefined,
       (table, values) =>
-        table === "salesInvoice" && "sentAt" in values
+        table === "salesInvoice" && "sentTo" in values
           ? "connection reset"
           : null
     );
@@ -432,11 +474,14 @@ describe("emailPostedInvoice", () => {
       "ap@buyer.com, ops@acme.com, ar@acme.com",
       "connection reset"
     );
-    expect(await emailPostedInvoice({ client, ...args })).toEqual({
+    expect(await emailPostedInvoice({ client, db, ...args })).toEqual({
       emailed: false,
       sendError
     });
+    // Not a clean send: the invoice shows "Not sent" with why, and a person
+    // decides whether to Send it again.
     expect(tables.salesInvoice![0]).toMatchObject({ sentAt: null, sendError });
+    expect(sendEmail).toHaveBeenCalledTimes(1);
   });
 
   it("stamps the send error and leaves it unsent when delivery fails", async () => {
@@ -445,7 +490,7 @@ describe("emailPostedInvoice", () => {
       error: new Error("550 mailbox unavailable")
     });
     const { client, tables } = fakeClient(baseTables(posted()));
-    expect(await emailPostedInvoice({ client, ...args })).toEqual({
+    expect(await emailPostedInvoice({ client, db, ...args })).toEqual({
       emailed: false,
       sendError: "550 mailbox unavailable"
     });
@@ -522,6 +567,27 @@ describe("sendPostedInvoiceViaStripe", () => {
       sendError: null
     });
     expect(tables.salesInvoice![0]!.sentAt).toEqual(expect.any(String));
+  });
+
+  it("sends through Stripe once when two sends run at once", async () => {
+    const { client, tables } = fakeClient(
+      stripeTables(posted(), [customerLink("cust-1")])
+    );
+    const results = await Promise.all([
+      sendPostedInvoiceViaStripe({ client, db, ...args }),
+      sendPostedInvoiceViaStripe({ client, db, ...args })
+    ]);
+    expect(stripeSend).toHaveBeenCalledTimes(1);
+    expect(results).toEqual(
+      expect.arrayContaining([
+        { emailed: true, sentTo: "Stripe" },
+        { emailed: false }
+      ])
+    );
+    expect(tables.salesInvoice![0]).toMatchObject({
+      sentTo: "Stripe",
+      sendError: null
+    });
   });
 
   it("never sends an invoice already linked to a Stripe invoice", async () => {
@@ -715,7 +781,7 @@ describe("attachPostedInvoicePdf", () => {
       salesInvoiceLine: []
     });
     await attachPostedInvoicePdf({ client, ...args });
-    await emailPostedInvoice({ client, ...args });
+    await emailPostedInvoice({ client, db, ...args });
     expect(rows.document).toHaveLength(1);
     expect(sendEmail.mock.calls[0]![0].attachments[0].filename).toBe(
       "Acme - INV-1.pdf"
