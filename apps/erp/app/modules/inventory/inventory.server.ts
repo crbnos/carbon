@@ -4653,6 +4653,7 @@ export const scanKanban = defineServiceFn({
       if (!purchaseOrderId) {
         const created = await insertPurchaseOrder(client, {
           supplierId: card.supplierId!,
+          defaultSupplierParty: true,
           status: "Draft",
           purchaseOrderType: "Purchase",
           companyId,

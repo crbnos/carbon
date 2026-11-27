@@ -1036,6 +1036,7 @@ msgstr "Fermo"
 msgid "Down for maintenance"
 msgstr "In manutenzione"
 
+#. placeholder {0}: block.dispatchReadableId
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Down for maintenance · {0}"
 msgstr "In manutenzione · {0}"

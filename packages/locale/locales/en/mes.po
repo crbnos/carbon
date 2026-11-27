@@ -1036,6 +1036,7 @@ msgstr "Down"
 msgid "Down for maintenance"
 msgstr "Down for maintenance"
 
+#. placeholder {0}: block.dispatchReadableId
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Down for maintenance · {0}"
 msgstr "Down for maintenance · {0}"

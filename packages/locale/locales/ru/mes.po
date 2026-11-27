@@ -1036,6 +1036,7 @@ msgstr "Простой"
 msgid "Down for maintenance"
 msgstr "На техобслуживание"
 
+#. placeholder {0}: block.dispatchReadableId
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Down for maintenance · {0}"
 msgstr "На техобслуживание · {0}"

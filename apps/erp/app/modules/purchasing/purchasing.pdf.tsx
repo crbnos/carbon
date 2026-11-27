@@ -47,7 +47,8 @@ import {
   getPurchasingTerms,
   getSupplier,
   getSupplierLocation,
-  getSupplierLocations
+  getSupplierLocations,
+  withSupplierPartyFallback
 } from "./purchasing.service";
 
 /**
@@ -156,6 +157,12 @@ export async function renderPurchaseOrderPdf(
     throw new Error("Failed to load purchase order");
   }
 
+  const printedLocations = await withSupplierPartyFallback(client, {
+    companyId,
+    order: purchaseOrder.data,
+    locations: purchaseOrderLocations.data
+  });
+
   const showThumbnails = templateShowsThumbnails(
     templateConfig,
     "purchaseOrder"
@@ -240,7 +247,7 @@ export async function renderPurchaseOrderPdf(
         paymentTerms={paymentTerms.data ?? []}
         purchaseOrder={purchaseOrder.data}
         purchaseOrderLines={purchaseOrderLines.data ?? []}
-        purchaseOrderLocations={purchaseOrderLocations.data}
+        purchaseOrderLocations={printedLocations}
         terms={(terms?.data?.purchasingTerms || {}) as JSONContent}
         thumbnails={thumbnails}
         template={templateConfig}

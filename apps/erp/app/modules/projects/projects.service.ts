@@ -14557,6 +14557,7 @@ export async function openProjectPurchaseOrder(
     const created = await insertPurchaseOrder(client, {
       status: "Draft",
       supplierId: supplier.id,
+      defaultSupplierParty: true,
       purchaseOrderType: "Purchase",
       currencyCode,
       locationId: args.locationId,

@@ -258,8 +258,10 @@ import {
   type PurchaseOrderLineDateField,
   type PurchaseOrderLineIdentity,
   type PurchaseOrderLineReceivingIntent,
+  type PurchaseOrderSupplierParty,
   type PurchaseOrderVersion,
   planningLineCurrencyCode,
+  readDefaultPurchaseOrderSupplierParties,
   planningQuantityChange,
   planPurchaseOrderRestore,
   planReceiptReversal,
@@ -283,7 +285,8 @@ import {
   shortClosePurchaseOrderLineRefusal,
   splitRfqFileAttachments,
   taxPairForQuantity,
-  toPurchaseQuantity
+  toPurchaseQuantity,
+  withDefaultSupplierPrintFields
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
 import type {
@@ -1390,6 +1393,126 @@ export async function getSupplierShipping(
     .select("*")
     .eq("supplierId", supplierId)
     .single();
+}
+
+// Every location of each supplier, paged: a dropped row would make a supplier look single-location.
+function supplierPartyReads(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  supplierIds: string[]
+) {
+  return {
+    suppliers: fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplier")
+        .select("id, purchasingContactId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id", { ascending: true })
+    ),
+    locations: fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplierLocation")
+        .select("id, supplierId")
+        .eq("companyId", companyId)
+        .in("supplierId", batch)
+        .order("id", { ascending: true })
+    )
+  };
+}
+
+/** Each supplier's default purchase order contact and location (`defaultPurchaseOrderSupplierParty`); none when the read fails. */
+export async function getDefaultPurchaseOrderSupplierParties(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  supplierIds: string[]
+): Promise<Map<string, PurchaseOrderSupplierParty>> {
+  const ids = [...new Set(supplierIds)];
+  if (ids.length === 0) return new Map();
+  return readDefaultPurchaseOrderSupplierParties(
+    {
+      ...supplierPartyReads(client, companyId, ids),
+      shippings: fetchAllByIds(ids, (batch) =>
+        client
+          .from("supplierShipping")
+          .select("supplierId, shippingSupplierLocationId")
+          .eq("companyId", companyId)
+          .in("supplierId", batch)
+          .order("supplierId", { ascending: true })
+      )
+    },
+    { companyId, supplierIds: ids }
+  );
+}
+
+// The PO PDF's supplier address and contact, else the supplier's defaults; display only.
+export async function withSupplierPartyFallback<
+  T extends Parameters<typeof withDefaultSupplierPrintFields>[0]
+>(
+  client: SupabaseClient<Database>,
+  {
+    companyId,
+    order,
+    locations
+  }: {
+    companyId: string;
+    order: {
+      supplierId: string | null;
+      supplierContactId: string | null;
+      supplierLocationId: string | null;
+    };
+    locations: T;
+  }
+): Promise<T> {
+  const { supplierId } = order;
+  if (!supplierId || (order.supplierContactId && order.supplierLocationId)) {
+    return locations;
+  }
+  const party = (
+    await getDefaultPurchaseOrderSupplierParties(client, companyId, [
+      supplierId
+    ])
+  ).get(supplierId);
+  const locationId = order.supplierLocationId
+    ? null
+    : party?.supplierLocationId;
+  const contactId = order.supplierContactId ? null : party?.supplierContactId;
+  if (!locationId && !contactId) return locations;
+
+  const [location, contact] = await Promise.all([
+    locationId ? getSupplierLocation(client, locationId) : null,
+    contactId ? getSupplierContact(client, contactId, companyId) : null
+  ]);
+  if (location?.error || contact?.error) {
+    logger.warning("Failed to load supplier default address for PO PDF", {
+      supplierId,
+      locationError: location?.error,
+      contactError: contact?.error
+    });
+  }
+  const address = location?.data?.address;
+  const person = contact?.data?.contact;
+  return withDefaultSupplierPrintFields(locations, order, {
+    address: address
+      ? {
+          addressLine1: address.addressLine1,
+          addressLine2: address.addressLine2,
+          city: address.city,
+          stateProvince: address.stateProvince,
+          postalCode: address.postalCode,
+          countryCode: address.country?.alpha2 ?? null,
+          countryName: address.country?.name ?? null
+        }
+      : null,
+    contact: person
+      ? {
+          fullName:
+            [person.firstName, person.lastName].filter(Boolean).join(" ") ||
+            null,
+          email: person.email
+        }
+      : null
+  });
 }
 
 // Batched report data for the Suppliers CSV export: the Purchasing/Invoice/Shipping
@@ -3398,6 +3521,8 @@ export async function insertPurchaseOrder(
     orderDate?: string;
     supplierContactId?: string;
     supplierLocationId?: string;
+    /** Fill a contact or location not sent from the supplier's defaults. */
+    defaultSupplierParty?: boolean;
     supplierQuoteId?: string;
     receiptRequestedDate?: string;
     supplierReference?: string;
@@ -3445,20 +3570,51 @@ export async function insertPurchaseOrder(
     exchangeRateUpdatedAt = new Date().toISOString();
   }
 
-  const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
+  const needsParty =
+    input.defaultSupplierParty &&
+    (input.supplierContactId === undefined ||
+      input.supplierLocationId === undefined);
+  const shippingRead = getSupplierShipping(client, input.supplierId);
+  const [supplierPayment, supplierShipping, purchaser, parties] =
     await Promise.all([
-      insertSupplierInteraction(client, input.companyId, input.supplierId),
       getSupplierPayment(client, input.supplierId),
-      getSupplierShipping(client, input.supplierId),
-      getEmployeeJob(client, input.createdBy, input.companyId)
+      shippingRead,
+      getEmployeeJob(client, input.createdBy, input.companyId),
+      needsParty
+        ? readDefaultPurchaseOrderSupplierParties(
+            {
+              ...supplierPartyReads(client, input.companyId, [
+                input.supplierId
+              ]),
+              shippings: shippingRead.then(({ data, error }) => ({
+                data: data ? [data] : null,
+                error
+              }))
+            },
+            { companyId: input.companyId, supplierId: input.supplierId }
+          )
+        : null
     ]);
 
-  if (supplierInteraction.error)
-    return { data: null, error: supplierInteraction.error };
   if (supplierPayment.error)
     return { data: null, error: supplierPayment.error };
   if (supplierShipping.error)
     return { data: null, error: supplierShipping.error };
+  const party = parties?.get(input.supplierId);
+  const orderDate =
+    input.orderDate ??
+    datetime
+      .today(await getCompanyTimeZone(client, input.companyId))
+      .toString();
+
+  // Inserted only after every read, so a failed read leaves no orphan row.
+  const supplierInteraction = await insertSupplierInteraction(
+    client,
+    input.companyId,
+    input.supplierId
+  );
+  if (supplierInteraction.error)
+    return { data: null, error: supplierInteraction.error };
 
   const {
     paymentTermId,
@@ -3478,15 +3634,13 @@ export async function insertPurchaseOrder(
       purchaseOrderId,
       purchaseOrderType: input.purchaseOrderType,
       supplierId: input.supplierId,
-      supplierContactId: input.supplierContactId,
-      supplierLocationId: input.supplierLocationId,
+      supplierContactId:
+        input.supplierContactId ?? party?.supplierContactId ?? undefined,
+      supplierLocationId:
+        input.supplierLocationId ?? party?.supplierLocationId ?? undefined,
       supplierInteractionId: supplierInteraction.data?.id,
       status: input.status ?? "Draft",
-      orderDate:
-        input.orderDate ??
-        datetime
-          .today(await getCompanyTimeZone(client, input.companyId))
-          .toString(),
+      orderDate,
       currencyCode: input.currencyCode,
       exchangeRate,
       exchangeRateUpdatedAt,
@@ -7449,6 +7603,7 @@ export async function createReplacementPurchaseOrder(
     locationId: order.data.locationId ?? undefined,
     supplierContactId: order.data.supplierContactId ?? undefined,
     supplierLocationId: order.data.supplierLocationId ?? undefined,
+    defaultSupplierParty: true,
     supplierReference: order.data.purchaseReturnOrderId
   });
   if (purchaseOrder.error || !purchaseOrder.data) {

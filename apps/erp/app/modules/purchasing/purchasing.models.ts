@@ -5,6 +5,7 @@
 import type { Database } from "@carbon/database";
 import type { PageGate } from "@carbon/database/access";
 import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
+import { getLogger } from "@carbon/logger";
 import {
   addDays,
   addMonths,
@@ -1695,6 +1696,172 @@ export function planningPurchaseOrderWeek(
 ): string {
   const due = requiredDate ? parseDate(requiredDate) : asOf;
   return startOfWeek(due.compare(asOf) < 0 ? asOf : due, "en-US").toString();
+}
+
+export type PurchaseOrderSupplierParty = {
+  supplierContactId: string | null;
+  supplierLocationId: string | null;
+};
+
+/**
+ * The supplier contact and location a purchase order raised without a form
+ * (planning's Order, a job's outside processing, a kanban, an API call)
+ * starts with, so it prints the supplier's address and contact; the PO PDF
+ * falls back to it for an order that has none. The contact is the supplier's
+ * purchasing contact, as the PO form fills it. The location is the supplier's
+ * shipping location when it is one of the supplier's own (the shipping card
+ * may name another supplier), else the supplier's only location, else none.
+ */
+export function defaultPurchaseOrderSupplierParty(supplier: {
+  purchasingContactId: string | null;
+  shippingSupplierLocationId: string | null;
+  locationIds: string[];
+}): PurchaseOrderSupplierParty {
+  const { shippingSupplierLocationId, locationIds } = supplier;
+  const supplierLocationId =
+    shippingSupplierLocationId &&
+    locationIds.includes(shippingSupplierLocationId)
+      ? shippingSupplierLocationId
+      : locationIds.length === 1
+        ? locationIds[0]!
+        : null;
+  return {
+    supplierContactId: supplier.purchasingContactId,
+    supplierLocationId
+  };
+}
+
+/** `defaultPurchaseOrderSupplierParty` for each supplier read; a supplier not read gets no entry. */
+export function defaultPurchaseOrderSupplierParties({
+  suppliers,
+  shippings,
+  locations
+}: {
+  suppliers: { id: string; purchasingContactId: string | null }[];
+  shippings: {
+    supplierId: string;
+    shippingSupplierLocationId: string | null;
+  }[];
+  locations: { id: string; supplierId: string }[];
+}): Map<string, PurchaseOrderSupplierParty> {
+  const shippingLocationBySupplier = new Map(
+    shippings.map((row) => [row.supplierId, row.shippingSupplierLocationId])
+  );
+  const locationIdsBySupplier = new Map<string, string[]>();
+  for (const row of locations) {
+    const list = locationIdsBySupplier.get(row.supplierId) ?? [];
+    list.push(row.id);
+    locationIdsBySupplier.set(row.supplierId, list);
+  }
+  return new Map(
+    suppliers.map((supplier) => [
+      supplier.id,
+      defaultPurchaseOrderSupplierParty({
+        purchasingContactId: supplier.purchasingContactId,
+        shippingSupplierLocationId:
+          shippingLocationBySupplier.get(supplier.id) ?? null,
+        locationIds: locationIdsBySupplier.get(supplier.id) ?? []
+      })
+    ])
+  );
+}
+
+type SupplierPartyRead<T> = PromiseLike<{ data: T[] | null; error: unknown }>;
+
+const supplierPartyLogger = getLogger("erp", "purchasing");
+
+/** `defaultPurchaseOrderSupplierParties` from these reads; the defaults are best-effort, so a read that returns an error logs and gives none. */
+export async function readDefaultPurchaseOrderSupplierParties(
+  reads: {
+    suppliers: SupplierPartyRead<{
+      id: string;
+      purchasingContactId: string | null;
+    }>;
+    shippings: SupplierPartyRead<{
+      supplierId: string;
+      shippingSupplierLocationId: string | null;
+    }>;
+    locations: SupplierPartyRead<{ id: string; supplierId: string }>;
+  },
+  context: Record<string, unknown>
+): Promise<Map<string, PurchaseOrderSupplierParty>> {
+  const [suppliers, shippings, locations] = await Promise.all([
+    reads.suppliers,
+    reads.shippings,
+    reads.locations
+  ]);
+  const error = suppliers.error ?? shippings.error ?? locations.error;
+  if (error || !suppliers.data || !shippings.data || !locations.data) {
+    supplierPartyLogger.warning(
+      "Failed to read supplier default contact and location; continuing without them",
+      { ...context, error }
+    );
+    return new Map();
+  }
+  return defaultPurchaseOrderSupplierParties({
+    suppliers: suppliers.data,
+    shippings: shippings.data,
+    locations: locations.data
+  });
+}
+
+type PurchaseOrderSupplierPrintFields = {
+  supplierAddressLine1: string | null;
+  supplierAddressLine2: string | null;
+  supplierCity: string | null;
+  supplierStateProvince: string | null;
+  supplierPostalCode: string | null;
+  supplierCountryCode: string | null;
+  supplierCountryName: string | null;
+  supplierContactName: string | null;
+  supplierContactEmail: string | null;
+};
+
+/**
+ * The PO PDF's supplier address and contact, filled from the supplier's
+ * default location and contact for an order that has none of its own (an
+ * order raised before those defaults were stored). Display only: the order
+ * keeps its empty columns, and a column the order does set is never replaced.
+ */
+export function withDefaultSupplierPrintFields<
+  T extends Partial<PurchaseOrderSupplierPrintFields>
+>(
+  locations: T,
+  order: {
+    supplierContactId: string | null;
+    supplierLocationId: string | null;
+  },
+  defaults: {
+    address?: {
+      addressLine1: string | null;
+      addressLine2: string | null;
+      city: string | null;
+      stateProvince: string | null;
+      postalCode: string | null;
+      countryCode: string | null;
+      countryName: string | null;
+    } | null;
+    contact?: { fullName: string | null; email: string | null } | null;
+  }
+): T {
+  const address = order.supplierLocationId ? null : defaults.address;
+  const contact = order.supplierContactId ? null : defaults.contact;
+  return {
+    ...locations,
+    ...(address && {
+      supplierAddressLine1: address.addressLine1,
+      supplierAddressLine2: address.addressLine2,
+      supplierCity: address.city,
+      supplierStateProvince: address.stateProvince,
+      supplierPostalCode: address.postalCode,
+      supplierCountryCode: address.countryCode,
+      supplierCountryName: address.countryName
+    }),
+    ...(contact && {
+      supplierContactName: contact.fullName,
+      supplierContactEmail: contact.email
+    })
+  };
 }
 
 /**

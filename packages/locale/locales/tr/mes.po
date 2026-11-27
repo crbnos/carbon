@@ -1036,6 +1036,7 @@ msgstr "Düşük"
 msgid "Down for maintenance"
 msgstr "Bakım için kapalı"
 
+#. placeholder {0}: block.dispatchReadableId
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Down for maintenance · {0}"
 msgstr "Bakım için kapalı · {0}"
