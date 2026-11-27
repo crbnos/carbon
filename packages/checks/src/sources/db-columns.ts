@@ -15,7 +15,7 @@ import { join } from "node:path";
  *
  * I/O lives here rather than in a check, so `scan` stays pure: the caller loads
  * the map once and closes a check over it (the same shape as
- * `noAuthzDdlInMigrations(loadManagedFunctions(root))`).
+ * `no-authz-ddl-in-migrations` reading `loadManagedFunctions`).
  */
 export function loadDbTableColumns(root: string): Map<string, Set<string>> {
   const contents = readFileSync(

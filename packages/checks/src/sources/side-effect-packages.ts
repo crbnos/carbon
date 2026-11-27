@@ -4,8 +4,18 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { SideEffectPackage } from "../conformance/modules";
+import type { SourceFile } from "../check";
 import { loadTypescriptFiles } from "./typescript";
+
+export type SideEffectPackage = {
+  /** Repo-relative package directory, e.g. `apps/erp`. */
+  dir: string;
+  /** The package.json `sideEffects` value: `false` or a list of files. */
+  sideEffects: false | string[];
+  /** Every file under the package that exists, repo-relative. */
+  paths: Set<string>;
+  files: SourceFile[];
+};
 
 const PACKAGE_ROOTS = ["apps", "packages"];
 
@@ -30,4 +40,29 @@ export function loadSideEffectPackages(root: string): SideEffectPackage[] {
     }
   }
   return packages;
+}
+
+const toRegExp = (glob: string) =>
+  new RegExp(
+    `^${glob
+      .replace(/^\.\//, "")
+      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*\*\/?/g, "\u0000")
+      .replace(/\*/g, "[^/]*")
+      .replace(/\u0000/g, ".*")}$`
+  );
+
+/** Whether a package-relative file is listed by `sideEffects` (webpack's rules). */
+export function declaresSideEffects(
+  sideEffects: false | string[],
+  file: string
+): boolean {
+  if (sideEffects === false) return false;
+  return sideEffects.some((pattern) =>
+    toRegExp(pattern).test(
+      pattern.replace(/^\.\//, "").includes("/")
+        ? file
+        : file.slice(file.lastIndexOf("/") + 1)
+    )
+  );
 }

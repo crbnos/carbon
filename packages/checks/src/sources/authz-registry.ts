@@ -4,9 +4,12 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { REGISTRY_HELPERS_DIR } from "@carbon/database/authz-registry-sql";
+import {
+  REGISTRY_HELPERS_DIR,
+  renderRegistryHelpers
+} from "@carbon/database/authz-registry-sql";
 
-/** The registry helper files `findStaleRegistryHelpers` compares; a missing one has no contents. */
+/** The registry helper files `registry-helpers-fresh` compares; a missing one has no contents. */
 export function loadRegistryHelperFiles(
   root: string,
   names: readonly string[]
@@ -19,4 +22,16 @@ export function loadRegistryHelperFiles(
       contents: existsSync(path) ? readFileSync(path, "utf-8") : undefined
     };
   });
+}
+
+/** What `renderRegistryHelpers()` renders, beside what the repo holds for each file. */
+export function loadRegistryHelpers(root: string) {
+  const rendered = renderRegistryHelpers();
+  return {
+    rendered,
+    files: loadRegistryHelperFiles(
+      root,
+      rendered.map((helper) => helper.name)
+    )
+  };
 }

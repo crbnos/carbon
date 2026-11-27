@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The inputs several checks share, each as a named loader a check declares.
+// The plain sets of files checks read, each as a named loader a check declares.
 // A loader that already takes only `root` (`loadServerFiles`, `loadDbTableColumns`,
 // `loadTestFiles`, …) is declared as it is and is not repeated here.
 
@@ -30,6 +30,38 @@ export const requestHandlingTypescript = (root: string) =>
 /** The route trees of every React Router app. */
 export const routeTypescript = (root: string) =>
   loadTypescriptFiles(root, ROUTE_ROOTS);
+
+/** The components and hooks of the ERP and of MES, which grew by copying each other. */
+export const sharedAppTypescript = (root: string) =>
+  loadTypescriptFiles(root, [
+    "apps/erp/app/components",
+    "apps/erp/app/hooks",
+    "apps/mes/app/components",
+    "apps/mes/app/hooks"
+  ]);
+
+/** Where module permission keys are looked for: every gate and client check, and the workflow engine. */
+export const moduleKeyTypescript = (root: string) =>
+  loadTypescriptFiles(root, [
+    "apps/erp/app/components",
+    "apps/erp/app/hooks",
+    "apps/erp/app/modules",
+    "apps/erp/app/routes",
+    "apps/mes/app",
+    "apps/academy/app",
+    "apps/starter/app",
+    "packages/database/src/authz",
+    "packages/ee/src/workflows",
+    "packages/jobs/src/workflows"
+  ]);
+
+/** The TypeScript of the ERP's modules. */
+export const erpModuleTypescript = (root: string) =>
+  loadTypescriptFiles(root, ["apps/erp/app/modules"]);
+
+/** The ERP's list registry: every list and the gate it loads under. */
+export const listRegistryTypescript = (root: string) =>
+  loadTypescriptFiles(root, ["apps/erp/app/utils/list-registry"]);
 
 /** The ERP's module folders. */
 export const erpModules = (root: string) => loadModules(modulesDir(root));

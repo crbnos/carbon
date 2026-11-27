@@ -19,8 +19,9 @@ export type Banned = { pattern: RegExp; message: string };
  * - `snippet: "match"`: the matched text as is.
  * - `snippet: "collapsed-match"`: the matched text, each run of whitespace one
  *   space.
- * - `snippet: "trimmed-line"`: the whole line, trimmed. A line gives one
- *   violation per pattern it matches, however often it matches it.
+ * - `snippet: "trimmed-line"`: the whole line, trimmed. Within a line, a line
+ *   gives one violation per pattern it matches, however often it matches it;
+ *   within a file, each match gives one, with the line it starts on.
  */
 export type Bans = {
   banned: readonly Banned[];
@@ -33,7 +34,10 @@ export type Bans = {
    */
   mayContain?: RegExp;
 } & (
-  | { within: "file"; snippet: "match" | "collapsed-match" }
+  | {
+      within: "file";
+      snippet: "match" | "collapsed-match" | "trimmed-line";
+    }
   | { within: "line"; snippet: "match" | "collapsed-match" | "trimmed-line" }
 );
 
@@ -53,9 +57,24 @@ export function findBanned(
   }
   if (mayContain && !mayContain.test(contents)) return [];
   if (bans.within === "file") {
+    const snippet = bans.snippet;
+    if (snippet === "trimmed-line") {
+      const lines = contents.split("\n");
+      return banned.flatMap(({ pattern, message }) =>
+        [...contents.matchAll(pattern)].map((match) => {
+          const line = lineOf(contents, match.index);
+          return {
+            file,
+            line,
+            snippet: lines[line - 1]?.trim() ?? "",
+            message
+          };
+        })
+      );
+    }
     return banned.flatMap(({ pattern, message }) =>
       matchViolations(file, contents, pattern, (match) => ({
-        snippet: snippetOf(match[0], bans.snippet),
+        snippet: snippetOf(match[0], snippet),
         message
       }))
     );

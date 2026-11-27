@@ -2,8 +2,8 @@
 paths:
   - "packages/database/src/precision.ts"
   - "packages/utils/src/format.ts"
-  - "packages/checks/src/conformance/migrations.ts"
-  - "packages/checks/src/conformance/numbers.ts"
+  - "packages/checks/src/conformance/migrations/**"
+  - "packages/checks/src/conformance/numbers/**"
   - "packages/checks/src/sources/typescript.ts"
   - "packages/form/src/components/Number.tsx"
   - "packages/ee/src/accounting/providers/xero/serialize.ts"

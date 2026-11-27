@@ -12,38 +12,42 @@ fails on any violation the committed baseline does not list.
 - **Fix the code, not the baseline.** A new violation is fixed where it is. The
   baseline (`src/conformance/baseline.json`) grandfathers only the sites that
   existed before a check did.
-- **Read a check in its subject's file, or its own.** `src/conformance/` has
-  one file per subject (`migrations.ts`, `authz.ts`, `data-access.ts`, `ui.ts`,
-  …), or one per check named by its id (`no-zero-concurrency.ts`, with
-  `no-zero-concurrency.test.ts`). Each check's rule, its exemptions and the
-  incident that prompted it are in the comments above it. This guide does not
-  repeat them.
-- **Add a check as one `defineCheck` and one line.** Write it
-  (`src/check.ts`: `id`, `description`, `provenance`, the inputs it reads and
-  its rule) in its subject's file and add it to the `checks` list at the end of
-  that file. `src/checks.ts` joins those lists into `CHECKS`. Nothing else
-  registers it. A check declares every input it reads, and its rule gets them
-  loaded and never sees the repo. A check in a file of its own is that file's
-  only export, and `src/checks.ts` lists it by name. There are three shapes;
-  copy the closest:
-  - It bans patterns in each file: give them as data, `defineCheck({ …,
-    files: loader, within, snippet, banned, except?, mayContain? })`
-    (`Bans` in `src/sources/matches.ts`), or `bans()` that returns them when
-    they are computed. Example: `noZeroConcurrency`. A check with logic beyond
-    that gives `rule()`, which builds its `scan` on first use: `noLocalTimezone`.
-  - It reads one file at a time: `defineCheck({ …, files: loader, scan })`.
-    Tests call `check.scan(file, contents)` with a fixture string. Example:
-    `noNumericPrecision` in `migrations.ts`.
-  - It reads several inputs: `defineCheck({ …, reads: { name: loader, … },
-    find })`, and `find({ name, … })` gets each one loaded. Tests call
-    `check.find({ … })` with their own values, or the pure `find*` function the
-    check calls. Example: `providerRoleBackfilled` in `drift.ts`. A per-file
-    scan that needs data from the repo (the generated columns, the managed
-    functions) is this shape too: keep a factory that takes the data, so tests
-    pass their own, and let `find` run its `scan` over the files. Example:
-    `noAuthzDdlInMigrationsCheck` in `authz.ts`. A per-file scan over several
-    inputs is an exported function the tests call:
-    `scanJournalStatusFilter` in `accounting.ts`.
+- **One check, one file.** `src/conformance/<subject>/<check-id>.ts` holds one
+  check and nothing else: its imports, the comment that says why it exists
+  (the rule, its exemptions, the incident), and one
+  `export const <camelCaseId> = defineCheck({ … })`. Its tests are beside it in
+  `<check-id>.test.ts`. A check file has no constants, helpers or types at
+  module level. This guide does not repeat what the comments say.
+- **Add a check as one file and one line.** Write the file, then import the
+  check in `src/checks.ts` and add it to `CHECKS`. Nothing else registers it.
+  A check declares every input it reads (`files`, or `reads`), and its rule
+  gets them loaded and never sees the repo. Choose the first form that fits
+  (`src/check.ts`):
+  - **Data.** The rule bans patterns in each file: `files`, `within`,
+    `snippet`, `banned`, and `except` / `mayContain` when needed (`Bans` in
+    `src/sources/matches.ts`). Example: `server/no-zero-concurrency.ts`.
+  - **`bans()`.** The same data, computed on first use. Example:
+    `server/no-integration-id-branching.ts`.
+  - **`rule()` with `files`.** Logic over one file at a time. `rule()` declares
+    what the rule needs and returns the `scan`; it runs the first time the
+    check runs, so importing a check builds nothing. Tests call
+    `check.scan(file, contents)`. Example: `migrations/no-numeric-precision.ts`.
+  - **`rule()` with `reads`.** Logic over several inputs:
+    `reads: { name: loader, … }`, and `rule()` returns `find({ name, … })`.
+    Tests call `check.find({ … })` with their own values. Examples:
+    `drift/provider-role-backfilled.ts`, and `accounting/account-fk-classified.ts`
+    for a per-file scan that needs data from the repo.
+- **Put shared logic in `src/sources/`.** A function moves to a named file
+  there, with its own test, when two checks use it, when it is generic (text,
+  SQL, syntax tree), or when a test must call it with a stand-in (a fake
+  registry, a pinned hash). The check that uses it is then a short `find` that
+  calls it: `drift/offline-page-cache-bumped.ts`. Look in `src/sources/` before
+  you write a helper. A file there does not import a check.
+- **A list a developer edits has one home.** A list that a check's message
+  tells you to edit is inside that check's `rule()` (`UNPAGED_ROUTES` in
+  `authz/route-maps-to-page.ts`), or in `src/sources/` when a loader needs it
+  too (`LIST_TABLES` in `sources/list-tables.ts`, `OFFLINE_PAGE` in
+  `sources/offline-page.ts`). The message names the file.
 - **Keep a check self-contained.** The gate runs the checks on worker threads,
   each taking the next check when it finishes one, so two checks may run in
   different threads in any order. A check shares nothing with another check but
@@ -51,13 +55,11 @@ fails on any violation the committed baseline does not list.
   groups checks by the first loader each declares, so a check that also reads
   the migrations declares them first and shares the worker that parsed them.
 - **Name every input as a loader.** A loader is a function `(root) => T`. The
-  repo runs each loader once and shares the result, so declare the same
-  function every time:
-  - An input several checks share is a named loader in `src/sources/inputs.ts`
-    (`migrations`, `typescript`, `routeTypescript`, …) or a loader in
-    `src/sources/`.
-  - A loader that exists for one check lives in that check's file, beside the
-    constants it reads. A file in `src/sources/` does not import a check.
+  repo runs each loader once and shares the result, and the gate groups checks
+  by it, so a loader is one module-level function in `src/sources/`, never
+  inside a check: `src/sources/inputs.ts` for a plain set of files
+  (`migrations`, `typescript`, `routeTypescript`, …), or the `sources/` file
+  of the thing it reads.
 - **A rule about what SQL does reads parsed SQL, not a regex.**
   `src/sources/sql.ts` gives the statements Postgres's own parser returns
   (`libpg-query`, the version `@carbon/database` uses). Its header explains the
@@ -75,7 +77,7 @@ fails on any violation the committed baseline does not list.
 - **A rule about TypeScript syntax is an oxlint plugin rule, not a regex.**
   Add a rule to the `carbon` plugin in `oxlint-plugins/carbon.mjs` (ESLint's
   `create(context)` API; the rule name is the check id) and a `Check` that
-  reads its findings (`routeActionShape` in `routes.ts` is the example). Then:
+  reads its findings (`routes/route-action-shape.ts` is the example). Then:
   - Enable it for its folders with an `overrides` entry in the root
     `oxlint.config.ts` (`"carbon/<check-id>": "warn"`).
   - Keep it at `warn`, so the editor shows it and `oxlint` still passes. The
@@ -93,8 +95,7 @@ fails on any violation the committed baseline does not list.
   each sha in a case that replays the code from before the fix
   (`git show <sha>^:<file>`) and expects a finding, beside a case where the fix
   passes. `src/provenance.test.ts` enforces this for every `Check` a
-  `conformance/` module exports, and fails one that is not in `CHECKS`. The
-  checks of one module share its test file. Checks older than this rule are
+  `conformance/` file exports, and fails one that is not in `CHECKS`. Checks older than this rule are
   listed in `UNPROVEN_CHECKS` there; the list only shrinks.
 - **Test a check by value.** A fixture string in, the literal violations out.
   Add the case that must not match as well, and make sure it could fail: break
@@ -146,11 +147,11 @@ The gate runs in four places with the same command
 | Path | Holds |
 |---|---|
 | `src/check.ts` | The types (`Check`, `Loader`, `Repo`, `Violation`, `Provenance`) and `defineCheck`, `eachFile` |
-| `src/checks.ts` | `CHECKS`: the subject files' `checks` lists and the one-check files' checks, joined |
+| `src/checks.ts` | `CHECKS`: every check, by name, subject by subject |
 | `src/run.ts`, `src/run.worker.ts` | `collectFindings` (runs `CHECKS` on up to 4 worker threads, each with its own `repo`), `runChecks` (one `repo`, in process) and `newViolations` (minus the baseline) |
 | `src/repo.ts` | `openRepo`: reads each input once |
-| `src/conformance/` | One file per subject or per check, with its tests in `<subject>.test.ts` / `<id>.test.ts` |
-| `src/sources/` | Loaders several checks share; `sql.ts` (parsed SQL), `syntax.ts` (parsed TypeScript) and `oxlint.ts` (plugin findings) |
+| `src/conformance/<subject>/` | One file per check, `<check-id>.ts`, with its tests in `<check-id>.test.ts` |
+| `src/sources/` | The loaders, and the logic checks share: `matches.ts` (banned patterns), `sql.ts` (parsed SQL), `syntax.ts` (parsed TypeScript), `oxlint.ts` (plugin findings), and a file per thing read (`rls-policies.ts`, `route-pages.ts`, `row-writes.ts`, …) |
 | `oxlint-plugins/carbon.mjs` | The oxlint plugin rules |
 | `src/baseline.ts`, `src/conformance/baseline.json` | The grandfathered violations |
 | `src/provenance.ts` | The rule that a check replays its past fix |

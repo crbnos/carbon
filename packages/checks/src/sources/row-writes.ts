@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { blankComments } from "./comments";
 import { IDENT_PART, IDENT_START } from "./text";
 /**
  * The row writes and row locks a TypeScript file makes, read from its text,
@@ -813,4 +814,24 @@ export function namesColumn(
   return new RegExp(
     `["'\`](?:(?:${qualifiers})\\.)?${name}["'\`]|\\b${name}\\.(?:eq|neq|in|is|not)\\.|[{,]\\s*${name}\\s*[:,}]`
   ).test(text);
+}
+
+/** What the two concurrency checks read in a file; no writes when it makes no UPDATE. */
+export function readRowWrites(contents: string): {
+  text: string;
+  regions: Region[];
+  locks: RowLock[];
+  writes: RowWrite[];
+} {
+  if (!/\.updateTable|\.update\s*\(|updateRows/.test(contents)) {
+    return { text: contents, regions: [], locks: [], writes: [] };
+  }
+  const text = blankComments(contents);
+  const regions = topLevelRegions(text);
+  return {
+    text,
+    regions,
+    locks: rowLocks(text),
+    writes: rowWrites(text, regions)
+  };
 }

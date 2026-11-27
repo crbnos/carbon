@@ -6,7 +6,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { noLocalTimezone } from "../conformance/no-local-timezone";
+import { noLocalTimezone } from "../conformance/server/no-local-timezone";
 import { loadServerFiles, maskClientCode } from "./server-files";
 
 /** A temp checkout holding the given repo-relative files. */

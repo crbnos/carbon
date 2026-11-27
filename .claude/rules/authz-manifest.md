@@ -5,7 +5,12 @@ paths:
   - "packages/database/supabase/migrations/**"
   - "packages/database/supabase/tests/authz-*.test.sql"
   - "packages/database/supabase/tests/item-child-write-policies.test.sql"
-  - "packages/checks/src/conformance/authz.ts"
+  - "packages/checks/src/conformance/authz/**"
+  - "packages/checks/src/sources/managed-functions.ts"
+  - "packages/checks/src/sources/rls-policies.ts"
+  - "packages/checks/src/sources/moved-tables.ts"
+  - "packages/checks/src/sources/route-pages.ts"
+  - "packages/checks/src/sources/page-gates.ts"
   - "packages/dev/src/services/migrations.ts"
 ---
 

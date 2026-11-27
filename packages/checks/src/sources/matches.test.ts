@@ -26,6 +26,20 @@ describe("findBanned", () => {
     ]);
   });
 
+  it("within a file, a trimmed-line snippet is the line each match starts on", () => {
+    expect(
+      findBanned("f.ts", "  x a\n  b y\n a b a b", {
+        within: "file",
+        snippet: "trimmed-line",
+        banned: [{ pattern: /a\s+b/g, message: "no a b" }]
+      })
+    ).toEqual([
+      { file: "f.ts", line: 1, snippet: "x a", message: "no a b" },
+      { file: "f.ts", line: 3, snippet: "a b a b", message: "no a b" },
+      { file: "f.ts", line: 3, snippet: "a b a b", message: "no a b" }
+    ]);
+  });
+
   it("collapses the whitespace of a collapsed-match snippet", () => {
     expect(
       findBanned("f.ts", "a\n  b", {
