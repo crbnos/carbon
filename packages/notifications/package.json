@@ -1,7 +1,7 @@
 {
   "devDependencies": {
     "@carbon/config": "workspace:*",
-    "@types/node": "20.19.39",
+    "@types/node": "catalog:",
     "sst": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

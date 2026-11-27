@@ -109,7 +109,7 @@ Fumadocs/Next versions to current stable at scaffold time.
     "@tailwindcss/postcss": "^4",          // Next uses the PostCSS plugin, NOT @tailwindcss/vite
     "@tailwindcss/typography": "catalog:", // theme.css @plugins these four — must be installed
     "@types/mdx": "^2",                    // REQUIRED — mdx-components.tsx imports `mdx/types`
-    "@types/node": "^22",
+    "@types/node": "catalog:",
     "@types/react": "^19",                 // React 19 types — NOT catalog (catalog is 18)
     "@types/react-dom": "^19",
     "tailwindcss": "catalog:",

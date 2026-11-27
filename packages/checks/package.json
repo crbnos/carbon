@@ -23,7 +23,7 @@
     "@carbon/database": "workspace:*",
     "@carbon/ee": "workspace:*",
     "@carbon/env": "workspace:*",
-    "@types/node": "^22",
+    "@types/node": "catalog:",
     "@types/pg": "8.15.6",
     "libpg-query": "18.1.5",
     "oxc-parser": "0.159.0",

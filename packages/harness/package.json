@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
-    "@types/node": "^22",
+    "@types/node": "catalog:",
     "rimraf": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",

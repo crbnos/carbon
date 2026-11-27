@@ -40,7 +40,7 @@
     "@lingui/conf": "catalog:",
     "@lingui/vite-plugin": "catalog:",
     "@react-aria/optimize-locales-plugin": "catalog:",
-    "@types/node": "20.19.39",
+    "@types/node": "catalog:",
     "@types/pg": "^8.11.6",
     "rimraf": "5.0.10",
     "tsx": "4.21.0",

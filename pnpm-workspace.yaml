@@ -15,6 +15,8 @@ overrides:
   react-dom: 18.3.1
   "@types/react": 18.3.28
   "@types/react-dom": 18.3.7
+  # One Node types version everywhere, so vite/vitest and third-party @types never load a second copy.
+  "@types/node": "catalog:"
   semver: 7.7.4
   # --- Security pins for transitive/leaf deps (Dependabot critical/high) ---
   # Major-qualified selectors where multiple majors coexist in the tree.
