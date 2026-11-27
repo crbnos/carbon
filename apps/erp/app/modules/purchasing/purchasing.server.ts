@@ -6729,6 +6729,7 @@ export const assignSupplierTaxCode = defineServiceFn({
  *
  * @remarks
  * Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier. LLM can create a PO with just supplierId.
+ * A supplier contact or location left out is filled from the supplier's defaults: its purchasing contact, and its shipping location when that is one of the supplier's own, else its only location.
  * The order starts as Draft (or Planned): finalize it to release it, through approval when a rule applies.
  *
  * @mcp

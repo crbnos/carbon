@@ -522,7 +522,10 @@ Markdown markers.
   `ctx.actor.userId`, never from an input: `run` starts with
   `if (ctx.actor.type !== "user") return ctx.error("forbidden", …)`. The MES
   timer Start and End (`production_startOperationTimer`,
-  `production_endOperationTimer`) are the precedent.
+  `production_endOperationTimer`) are the precedent. A workflow runs as its
+  owner (a user actor), so a workflow step that called them would record time
+  against the owner; no workflow step can call them today, so refuse workflow
+  callers before adding one.
 - A write that runs as a job answers before its effect lands:
   `users_deactivateUsers` and `users_resendInvites` queue a job for several
   users (`queued: true`).
