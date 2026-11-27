@@ -2180,6 +2180,9 @@ msgstr "Фотография или PDF, которые оператор вид�
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Физический сигнал вытягивания — печатная карточка или QR-код, находящийся рядом с запасом — который создает заказ поставщику или производственный заказ в момент сканирования для пополнения ячейки."
 
+msgid "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP."
+msgstr "Запланированный заказ, который пользователь заблокировал: MRP больше не меняет его количество и даты, по-прежнему учитывает его в обеспечении и создаёт действие, если возникает расхождение. Изменение количества или срока выполнения запланированного заказа его фиксирует; «Снять фиксацию» возвращает его в MRP."
+
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Точка в одном из потоков Carbon, которую может отслеживать рабочий процесс — например, запуск производственного заказа, принятие коммерческого предложения, проведение отгрузки — в отличие от простого изменения поля; она передает рабочему процессу вовлеченные записи по идентификатору."
 
@@ -2564,8 +2567,8 @@ msgstr "Сохраненное бронирование рабочего цен�
 msgid "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 msgstr "SubCLIN: 4 цифры его родительского CLIN по одному и тому же контракту, плюс 2 буквы или цифры, такие как 0001AA."
 
-msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
-msgstr "Предложение, которое MRP создает после каждого запуска: заказать или начать производство нового обеспечения, или ускорить, отсрочить, увеличить, уменьшить или отменить строку открытого заказа поставщику или производственный заказ. Примените его со страницы планирования, отклоните его или назначьте его."
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
+msgstr "Предложение, которое MRP формирует после каждого запуска: заказать или произвести новое обеспечение либо ускорить, отложить, увеличить, уменьшить или отменить строку открытого заказа поставщику, производственный заказ или плановый заказ. Примените его на странице планирования, отклоните или назначьте."
 
 msgid "A supplier contact and location are optional"
 msgstr "Контактное лицо и площадка поставщика опциональны"
@@ -6673,6 +6676,9 @@ msgstr "Отменить заказ"
 msgid "Cancel Picking List"
 msgstr "Отменить лист отбора"
 
+msgid "Cancel planned order"
+msgstr "Отмена планового заказа"
+
 msgid "Cancel Purchase Order"
 msgstr "Отмена Заказа поставщику"
 
@@ -9006,6 +9012,9 @@ msgstr "Не удалось подготовить изображение рег
 msgid "Could not read the document: {0}"
 msgstr "Не удалось прочитать документ: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "Не удалось прочитать плановые заказы. Вместо этого заказы рассчитаны по действиям планирования."
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
@@ -10239,6 +10248,9 @@ msgstr "Уменьшить {fieldLabel}"
 msgid "Decrease job {target} to {amount}"
 msgstr "Уменьшить производственный заказ {target} до {amount}"
 
+msgid "Decrease planned order to {amount}"
+msgstr "Уменьшить плановый заказ до {amount}"
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "Уменьшить заказ поставщику {target} до {amount}"
 
@@ -10403,6 +10415,9 @@ msgstr "Отложить"
 
 msgid "Defer job {target} to {date}"
 msgstr "Отложить производственный заказ {target} на {date}"
+
+msgid "Defer planned order to {date}"
+msgstr "Отложить плановый заказ до {date}"
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "Отложить заказ поставщику {target} на {date}"
@@ -13352,6 +13367,9 @@ msgstr "Ускорить"
 msgid "Expedite job {target} to {date}"
 msgstr "Ускорить производственный заказ {target} к {date}"
 
+msgid "Expedite planned order to {date}"
+msgstr "Ускорить плановый заказ до {date}"
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "Ускорить заказ поставщику {target} к {date}"
 
@@ -13454,6 +13472,9 @@ msgstr "Срок годности начинается при запуске в�
 
 msgid "Expiry trace"
 msgstr "Трассировка срока годности"
+
+msgid "explode {explode}"
+msgstr "развернуть {explode}"
 
 msgid "Export"
 msgstr "Экспортировать"
@@ -13815,6 +13836,9 @@ msgstr "Не удалось загрузить возвраты поставщи
 msgid "Failed to load the rental rates"
 msgstr "Не удалось загрузить ставки аренды"
 
+msgid "Failed to load the suppliers"
+msgstr "Не удалось загрузить поставщиков"
+
 msgid "Failed to load tracked entities"
 msgstr "Не удалось загрузить отслеживаемые сущности"
 
@@ -13938,6 +13962,9 @@ msgstr "Не удалось обновить строку предложения
 msgid "Failed to update the items"
 msgstr "Не удалось обновить номенклатуры"
 
+msgid "Failed to update the planned order"
+msgstr "Не удалось обновить плановый заказ"
+
 msgid "Failed to update the setting"
 msgstr "Не удалось обновить параметр"
 
@@ -14039,6 +14066,9 @@ msgstr "Сборы"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (первым истекает - первым отпускается)"
+
+msgid "Fence"
+msgstr "Временной барьер"
 
 msgid "Fetch"
 msgstr "Получить"
@@ -14218,6 +14248,9 @@ msgstr "Завершение отклоняется до тех пор, пока
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Срабатывает на строках предложения, строках заказа покупателя и строках счета-фактуры выданной."
+
+msgid "Firm"
+msgstr "Зафиксировать"
 
 msgid "First {count}"
 msgstr "Первые {count}"
@@ -15437,6 +15470,12 @@ msgstr "Сколько дней после даты расчета скидка 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Сколько дней после даты расчета полная сумма становится подлежащей уплате."
 
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "На сколько дней вперёд MRP не трогает свои плановые заказы. Плановый заказ, который запускается в пределах границы, сохраняет количество и даты; MRP только предлагает изменения. Новая потребность внутри границы планируется на запуск по окончании границы, с возможностью применить действие «Ускорить», чтобы запустить раньше. Введите 0, чтобы границы не было."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "На сколько дней вперёд MRP не трогает плановые заказы этой номенклатуры. Плановый заказ, который запускается в пределах границы, сохраняет количество и даты; MRP только предлагает изменения. Новая потребность внутри границы планируется на запуск по окончании границы, с возможностью применить действие «Ускорить», чтобы запустить раньше. Оставьте поле пустым, чтобы использовать границу площадки, или введите 0, чтобы для этой номенклатуры границы не было."
+
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "Количество дней, на которое открытый заказ может отклониться от требуемой даты до того, как MRP предложит его перенести. Установить в Настройки → Планирование; по умолчанию 7 дней."
 
@@ -15958,6 +15997,9 @@ msgstr "Увеличить {fieldLabel}"
 
 msgid "Increase job {target} to {amount}"
 msgstr "Увеличить производственный заказ {target} до {amount}"
+
+msgid "Increase planned order to {amount}"
+msgstr "Увеличить плановый заказ до {amount}"
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "Увеличить заказ поставщику {target} до {amount}"
@@ -17053,6 +17095,9 @@ msgstr "Сохранить соответствующие элементы"
 msgid "Keep mine"
 msgstr "Оставить мою версию"
 
+msgid "Keep my numbers"
+msgstr "Сохранять мои значения"
+
 msgid "Keep navigation open"
 msgstr "Не сворачивать навигацию"
 
@@ -17070,6 +17115,9 @@ msgstr "Оставить открытым"
 
 msgid "Keep picking"
 msgstr "Сохранить отбор"
+
+msgid "Keep your numbers through plan updates?"
+msgstr "Сохранять ваши значения при обновлении плана?"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Требует дополнительную проверку для заказов, коммерческих предложений и настроек"
@@ -17959,6 +18007,15 @@ msgstr "Местоположение / Товар"
 
 msgid "Location code"
 msgstr "Код площадки"
+
+msgid "Location default"
+msgstr "Площадка по умолчанию"
+
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "По площадке: {locationTimeFenceDays, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
+
+msgid "Location default: no fence"
+msgstr "По площадке: без границы"
 
 msgid "Location Name"
 msgstr "Название местоположения"
@@ -23506,6 +23563,15 @@ msgstr "Плановый заказ"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "Запланированный заказ = предложение MRP для покрытия прогнозируемой потребности на основе политики переоформления номенклатуры (или добавленный вручную)."
 
+msgid "Planned order firmed"
+msgstr "Плановый заказ зафиксирован"
+
+msgid "Planned order returned to MRP"
+msgstr "Плановый заказ возвращен в MRP"
+
+msgid "Planned Orders"
+msgstr "Плановые заказы"
+
 msgid "Planned purchase order"
 msgstr "Запланированный заказ поставщику"
 
@@ -23577,6 +23643,15 @@ msgstr "Циклы планирования предложили пополне�
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "Планирование показывает только действия и рекомендуемые заказы, выполняемые в течение этого количества дней. Оставьте пусто, чтобы использовать значение по умолчанию организации, или введите 0, чтобы показать все для этой номенклатуры."
+
+msgid "Planning time fence"
+msgstr "Временная граница планирования"
+
+msgid "Planning time fence (days)"
+msgstr "Временная граница планирования (дни)"
+
+msgid "Planning time fence days"
+msgstr "Временная граница планирования (дни)"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Нижняя граница планирования предлагаемого количества пополнения; отличается от минимального количества заказа поставщика, которое находится в карточке поставщик-номенклатура."
@@ -24289,6 +24364,9 @@ msgstr "Прогнозируемый остаток по неделям"
 
 msgid "Projected stock"
 msgstr "Прогнозируемый запас"
+
+msgid "Projected stock {stock}"
+msgstr "Прогнозируемый запас {stock}"
 
 msgid "Projected stock by week"
 msgstr "Прогнозируемый запас по неделям"
@@ -25711,6 +25789,9 @@ msgstr "Параметр контроля запуска в работу обн�
 msgid "Release date"
 msgstr "Дата освобождения"
 
+msgid "Release Date"
+msgstr "Дата запуска в работу"
+
 msgid "Release Items"
 msgstr "Запустить в работу номенклатуру"
 
@@ -25734,6 +25815,9 @@ msgstr "Выпущено"
 
 msgid "Released date"
 msgstr "Дата выпуска"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr "Запущено внутри временной границы планирования: MRP сохраняет его количество и даты."
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "Запущенная номенклатура выставляется счетом при следующем запуске счетов в пределах финансирования строки."
@@ -27547,6 +27631,9 @@ msgstr "Сохранение {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "Сохранение копии текущих данных"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr "Сохранение этого изменения фиксирует плановый заказ. MRP затем сохраняет его количество и даты и создает действие по планированию, если они расходятся. Снятие фиксации возвращает заказ в MRP."
+
 msgid "Saving..."
 msgstr "Сохранение..."
 
@@ -27682,6 +27769,9 @@ msgstr "Брак {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "Брак / Себестоимость качества"
+
+msgid "scrap +{scrap}"
+msgstr "брак +{scrap}"
 
 msgid "Scrap Percent"
 msgstr "Процент брака"
@@ -30640,6 +30730,9 @@ msgstr "График обеспечения и потребности за {week
 
 msgid "Supply and demand chart: no data."
 msgstr "График обеспечения и потребности: нет данных."
+
+msgid "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
+msgstr "Обеспечение, которое MRP предлагает для одной номенклатуры на одной площадке и за одну неделю: производственный заказ на изготовление или закупка, рассчитанные по политике пополнения номенклатуры. MRP может изменить или удалить его при каждом запуске, пока пользователь не утвердит или не преобразует его. Это не Запланированный производственный заказ и не Запланированный заказ поставщику, которые являются документами."
 
 msgid "Support"
 msgstr "Поддержка"
@@ -34147,6 +34240,9 @@ msgstr "Включите встроенные компоненты"
 msgid "Turn on to create one picking list for each job when it is released."
 msgstr "Включите, чтобы создавать один лист отбора для каждого производственного заказа при его запуске в работу."
 
+msgid "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
+msgstr "Преобразование запланированных заказов в документы: оформление предложения «Заказ» или «Производство» за неделю создаёт запланированные производственные заказы или строки заказов поставщику и помечает запланированные заказы этой недели как «Преобразовано», по одному на каждый созданный производственный заказ или строку. Это не то же самое, что «Запустить в работу», которое переводит запланированный производственный заказ или заказ поставщику на следующий статус."
+
 msgid "Turned off sync"
 msgstr "Синхронизация отключена"
 
@@ -34336,6 +34432,9 @@ msgstr "Недисконтированные платежи, которые ещ
 
 msgid "Undo"
 msgstr "Отменить"
+
+msgid "Unfirm"
+msgstr "Снять фиксацию"
 
 msgid "Unfurl Links"
 msgstr "Развернуть ссылки"

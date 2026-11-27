@@ -12,7 +12,7 @@ import type { EditableTableCellComponent } from "./types";
  * call returns a NEW component. Rebuilding them (because a save callback
  * changed when the previous save revalidated) remounts the open editor and
  * drops the value the user is typing — see `OpenOrdersGrid` in
- * `modules/production/ui/Planning/PlanningOrderGrids.tsx`. So `build` runs
+ * `modules/production/ui/Planning/OpenOrdersGrid.tsx`. So `build` runs
  * once, and the editors read the latest `callbacks` through `latest.current`.
  *
  * ```tsx

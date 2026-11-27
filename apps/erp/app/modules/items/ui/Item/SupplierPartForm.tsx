@@ -128,6 +128,9 @@ type SupplierPartFormProps = {
   // Items the picker leaves out: those the supplier already has a supplier part for.
   excludeItemIds?: string[];
   open?: boolean;
+  /** Runs once a save succeeds, before `onClose`. `onClose` also runs on
+   *  Cancel, so it cannot tell a new supplier part from none. */
+  onSaved?: () => void;
   onClose: () => void;
 };
 
@@ -140,6 +143,7 @@ const SupplierPartForm = ({
   selectItem = false,
   excludeItemIds,
   open = true,
+  onSaved,
   onClose
 }: SupplierPartFormProps) => {
   const permissions = usePermissions();
@@ -228,6 +232,7 @@ const SupplierPartForm = ({
       toast.success(
         isEditing ? t`Supplier part updated` : createdMessage[itemType]
       );
+      onSaved?.();
       onClose();
     }
   });

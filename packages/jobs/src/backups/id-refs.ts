@@ -94,6 +94,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   notification: ["documentId"],
   notificationDelivery: ["documentId"],
   periodCloseTask: ["evidenceJournalId"],
+  plannedOrder: ["planningSegmentId"],
   planningAction: [
     "fromProjectId",
     "planningSegmentId",

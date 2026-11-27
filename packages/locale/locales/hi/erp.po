@@ -2180,6 +2180,9 @@ msgstr "एक फ़ोटो या PDF जो ऑपरेटर इस च�
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "एक भौतिक खींचने का संकेत — एक मुद्रित कार्ड या QR कोड जो स्टॉक के साथ रहता है — जो क्रय आदेश या जॉब बढ़ाता है जिस क्षण इसे बिन को भरने के लिए स्कैन किया जाता है।"
 
+msgid "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP."
+msgstr "व्यक्ति द्वारा लॉक किया गया योजनाबद्ध ऑर्डर: MRP इसकी मात्रा या तिथियाँ नहीं बदलता, इसे अब भी आपूर्ति में गिनता है, और असहमति होने पर कार्रवाई बनाता है। योजनाबद्ध ऑर्डर की मात्रा या नियत तिथि संपादित करने पर वह पक्का हो जाता है; अनफ़र्म करने पर वह वापस MRP के पास चला जाता है।"
+
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "कार्बन के अपने प्रवाह में एक बिंदु जिसे एक वर्कफ़्लो देख सकता है — एक नौकरी जारी की गई, एक उद्धरण स्वीकार किया गया, एक शिपमेंट पोस्ट किया गया — एक कच्चे क्षेत्र परिवर्तन के विपरीत; यह वर्कफ़्लो को आईडी द्वारा शामिल रिकॉर्ड देता है।"
 
@@ -2564,8 +2567,8 @@ msgstr "एक वर्क सेंटर या ऑपरेटर की ए
 msgid "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 msgstr "एक SubCLIN: एक ही अनुबंध पर इसके मूल CLIN के 4 अंक, प्लस 2 अक्षर या अंक, जैसे 0001AA।"
 
-msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
-msgstr "एक सुझाव जो MRP प्रत्येक रन के बाद लिखता है: नई आपूर्ति के लिए ऑर्डर करें या निर्माण करें, या किसी खुली क्रय आदेश पंक्ति या जॉब को तेज़ करें, स्थगित करें, बढ़ाएं, घटाएं या रद्द करें। इसे योजना पृष्ठ से लागू करें, इसे खारिज करें, या इसे असाइन करें।"
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
+msgstr "हर रन के बाद MRP एक सुझाव लिखता है: नई आपूर्ति का ऑर्डर दें या निर्माण करें, या किसी खुली क्रय आदेश पंक्ति, जॉब या योजनाबद्ध ऑर्डर को जल्दी करें, स्थगित करें, बढ़ाएँ, घटाएँ या रद्द करें। इसे योजना पेज से लागू करें, खारिज करें, या असाइन करें।"
 
 msgid "A supplier contact and location are optional"
 msgstr "आपूर्तिकर्ता संपर्क और स्थान वैकल्पिक हैं"
@@ -6673,6 +6676,9 @@ msgstr "ऑर्डर रद्द करें"
 msgid "Cancel Picking List"
 msgstr "पिकिंग सूची रद्द करें"
 
+msgid "Cancel planned order"
+msgstr "योजनाबद्ध ऑर्डर रद्द करें"
+
 msgid "Cancel Purchase Order"
 msgstr "क्रय आदेश रद्द करें"
 
@@ -9006,6 +9012,9 @@ msgstr "विश्लेषण के लिए क्षेत्र छव�
 msgid "Could not read the document: {0}"
 msgstr "दस्तावेज़ नहीं पढ़ा जा सका: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "योजनाबद्ध ऑर्डर पढ़े नहीं जा सके। इसके बजाय ऑर्डर की मात्रा योजना कार्रवाइयों से तय की गई।"
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
@@ -10239,6 +10248,9 @@ msgstr "{fieldLabel} घटाएँ"
 msgid "Decrease job {target} to {amount}"
 msgstr "जॉब {target} को {amount} तक घटाएं"
 
+msgid "Decrease planned order to {amount}"
+msgstr "योजनाबद्ध ऑर्डर को {amount} तक घटाएँ"
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "क्रय आदेश {target} को {amount} तक घटाएं"
 
@@ -10403,6 +10415,9 @@ msgstr "स्थगित करें"
 
 msgid "Defer job {target} to {date}"
 msgstr "जॉब {target} को {date} तक स्थगित करें"
+
+msgid "Defer planned order to {date}"
+msgstr "योजनाबद्ध ऑर्डर को {date} तक स्थगित करें"
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "क्रय आदेश {target} को {date} तक स्थगित करें"
@@ -13352,6 +13367,9 @@ msgstr "तेज़ी से करें"
 msgid "Expedite job {target} to {date}"
 msgstr "जॉब {target} को {date} तक तेज़ करें"
 
+msgid "Expedite planned order to {date}"
+msgstr "योजनाबद्ध ऑर्डर को {date} तक जल्दी करें"
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "क्रय आदेश {target} को {date} तक तेज़ करें"
 
@@ -13454,6 +13472,9 @@ msgstr "समाप्ति तब शुरू होती है जब च
 
 msgid "Expiry trace"
 msgstr "समाप्ति ट्रेस"
+
+msgid "explode {explode}"
+msgstr "एक्सप्लोड {explode}"
 
 msgid "Export"
 msgstr "निर्यात करें"
@@ -13815,6 +13836,9 @@ msgstr "आपूर्तिकर्ता रिटर्न लोड कर
 msgid "Failed to load the rental rates"
 msgstr "किराया दरें लोड करने में विफल"
 
+msgid "Failed to load the suppliers"
+msgstr "आपूर्तिकर्ताओं को लोड करने में विफल"
+
 msgid "Failed to load tracked entities"
 msgstr "ट्रैक किए गए इकाइयों को लोड करने में विफल"
 
@@ -13938,6 +13962,9 @@ msgstr "आपूर्तिकर्ता कोटेशन पंक्त�
 msgid "Failed to update the items"
 msgstr "आइटम को अपडेट करने में विफल"
 
+msgid "Failed to update the planned order"
+msgstr "योजनाबद्ध ऑर्डर अपडेट करने में विफल"
+
 msgid "Failed to update the setting"
 msgstr "सेटिंग अपडेट करने में विफल"
 
@@ -14039,6 +14066,9 @@ msgstr "शुल्क"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (प्रथम समाप्ति प्रथम निकली)"
+
+msgid "Fence"
+msgstr "फ़ेंस"
 
 msgid "Fetch"
 msgstr "लाएं"
@@ -14218,6 +14248,9 @@ msgstr "जब तक हर पंक्ति को चुना नहीं
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "कोटेशन पंक्तियों, विक्रय आदेश पंक्तियों और विक्रय चालान पंक्तियों पर सक्रिय होता है।"
+
+msgid "Firm"
+msgstr "पक्का करें"
 
 msgid "First {count}"
 msgstr "पहले {count}"
@@ -15437,6 +15470,12 @@ msgstr "गणना की तारीख के बाद कितने द
 msgid "How many days after the calculation date the full amount is due."
 msgstr "गणना की तारीख के बाद कितने दिनों में पूरी राशि देय है।"
 
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "MRP कितने दिन आगे तक अपने योजनाबद्ध ऑर्डर को अछूता छोड़ता है। योजना टाइम फ़ेंस के भीतर जारी होने वाला योजनाबद्ध ऑर्डर अपनी मात्रा और तिथियाँ बनाए रखता है; MRP उसमें केवल बदलाव सुझाता है। फ़ेंस के भीतर की नई आवश्यकता को फ़ेंस समाप्त होने पर जारी होने के लिए योजनाबद्ध किया जाता है, जिसे आगे लाने के लिए तेज़ी से करें लागू किया जा सकता है। कोई फ़ेंस न रखने के लिए 0 दर्ज करें।"
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "MRP कितने दिन आगे तक इस आइटम के योजनाबद्ध ऑर्डर को अछूता छोड़ता है। योजना टाइम फ़ेंस के भीतर जारी होने वाला योजनाबद्ध ऑर्डर अपनी मात्रा और तिथियाँ बनाए रखता है; MRP उसमें केवल बदलाव सुझाता है। फ़ेंस के भीतर की नई आवश्यकता को फ़ेंस समाप्त होने पर जारी होने के लिए योजनाबद्ध किया जाता है, जिसे आगे लाने के लिए तेज़ी से करें लागू किया जा सकता है। खाली छोड़ने पर स्थान की योजना टाइम फ़ेंस उपयोग होगी, या इस आइटम के लिए कोई फ़ेंस न रखने के लिए 0 दर्ज करें।"
+
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "एक खुला ऑर्डर आवश्यक तारीख से कितने दिन आगे आ सकता है, इससे पहले कि MRP इसे स्थानांतरित करने का सुझाव दे। सेटिंग्स → योजना में सेट करें; डिफ़ॉल्ट 7 दिन है।"
 
@@ -15958,6 +15997,9 @@ msgstr "{fieldLabel} बढ़ाएँ"
 
 msgid "Increase job {target} to {amount}"
 msgstr "जॉब {target} को {amount} तक बढ़ाएं"
+
+msgid "Increase planned order to {amount}"
+msgstr "योजनाबद्ध ऑर्डर को {amount} तक बढ़ाएँ"
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "क्रय आदेश {target} को {amount} तक बढ़ाएं"
@@ -17053,6 +17095,9 @@ msgstr "मेल खाने वाले आइटम रखें"
 msgid "Keep mine"
 msgstr "मेरे बदलाव रखें"
 
+msgid "Keep my numbers"
+msgstr "मेरे आंकड़े रखें"
+
 msgid "Keep navigation open"
 msgstr "नेविगेशन खुला रखें"
 
@@ -17070,6 +17115,9 @@ msgstr "खुला रखें"
 
 msgid "Keep picking"
 msgstr "पिकिंग जारी रखें"
+
+msgid "Keep your numbers through plan updates?"
+msgstr "योजना अपडेट होने पर भी आपके आंकड़े रखे जाएँ?"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "ऑर्डर, कोट्स और सेटिंग्स को एक दूसरी जांच के पीछे रखता है"
@@ -17959,6 +18007,15 @@ msgstr "स्थान / आइटम"
 
 msgid "Location code"
 msgstr "स्थान कोड"
+
+msgid "Location default"
+msgstr "डिफ़ॉल्ट स्थान"
+
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "स्थान का डिफ़ॉल्ट मान: {locationTimeFenceDays, plural, one {# दिन} other {# दिन}}"
+
+msgid "Location default: no fence"
+msgstr "स्थान का डिफ़ॉल्ट मान: कोई फ़ेंस नहीं"
 
 msgid "Location Name"
 msgstr "स्थान का नाम"
@@ -23506,6 +23563,15 @@ msgstr "नियोजित आदेश"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "नियोजित आदेश = अनुमानित मांग को कवर करने के लिए MRP सुझाव आइटम की पुनः आदेश नीति के आधार पर (या मैन्युअल रूप से जोड़ा गया)।"
 
+msgid "Planned order firmed"
+msgstr "योजनाबद्ध ऑर्डर पक्का किया गया"
+
+msgid "Planned order returned to MRP"
+msgstr "योजनाबद्ध ऑर्डर MRP को लौटाया गया"
+
+msgid "Planned Orders"
+msgstr "योजनाबद्ध ऑर्डर"
+
 msgid "Planned purchase order"
 msgstr "योजनाबद्ध क्रय आदेश"
 
@@ -23577,6 +23643,15 @@ msgstr "योजना राउंड इस संख्या के पू�
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "योजना केवल इतने दिनों के भीतर देय कार्रवाई और सुझाए गए आदेश दिखाती है। कंपनी डिफ़ॉल्ट का उपयोग करने के लिए खाली छोड़ें, या इस आइटम के लिए सब कुछ दिखाने के लिए 0 दर्ज करें।"
+
+msgid "Planning time fence"
+msgstr "योजना टाइम फ़ेंस"
+
+msgid "Planning time fence (days)"
+msgstr "योजना टाइम फ़ेंस (दिन)"
+
+msgid "Planning time fence days"
+msgstr "योजना टाइम फ़ेंस (दिन)"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "सुझाए गए पुनः भरण मात्रा पर योजना की निचली सीमा; एक आपूर्तिकर्ता के MOQ से अलग, जो आपूर्तिकर्ता-भाग रिकॉर्ड पर रहता है।"
@@ -24289,6 +24364,9 @@ msgstr "सप्ताह के अनुसार अनुमानित �
 
 msgid "Projected stock"
 msgstr "अनुमानित स्टॉक"
+
+msgid "Projected stock {stock}"
+msgstr "अनुमानित स्टॉक {stock}"
 
 msgid "Projected stock by week"
 msgstr "सप्ताह के अनुसार प्रक्षेपित स्टॉक"
@@ -25711,6 +25789,9 @@ msgstr "रिलीज नियंत्रण सेटिंग अपडे
 msgid "Release date"
 msgstr "जारी करने की तारीख"
 
+msgid "Release Date"
+msgstr "जारी करने की तिथि"
+
 msgid "Release Items"
 msgstr "आइटम को जारी करें"
 
@@ -25734,6 +25815,9 @@ msgstr "जारी किया गया"
 
 msgid "Released date"
 msgstr "जारी की गई तारीख"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr "योजना टाइम फ़ेंस के भीतर जारी किया गया: MRP उसकी मात्रा और तिथियाँ बनाए रखता है।"
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "जारी किए गए आइटम अगले चालान रन पर बिल करते हैं, पंक्ति के वित्तपोषण के भीतर।"
@@ -27547,6 +27631,9 @@ msgstr "सहेजा जा रहा है {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "आपके वर्तमान डेटा की प्रति सहेज रहे हैं"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr "इस बदलाव को सहेजने पर योजनाबद्ध ऑर्डर पक्का हो जाता है। इसके बाद MRP उसकी मात्रा और तिथियाँ बनाए रखता है, और असहमति होने पर योजना कार्रवाई उठाता है। अनफ़र्म करने पर ऑर्डर वापस MRP के पास चला जाता है।"
+
 msgid "Saving..."
 msgstr "सहेज रहे हैं..."
 
@@ -27682,6 +27769,9 @@ msgstr "स्क्रैप {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "स्क्रैप / गुणवत्ता की लागत"
+
+msgid "scrap +{scrap}"
+msgstr "स्क्रैप +{scrap}"
 
 msgid "Scrap Percent"
 msgstr "स्क्रैप प्रतिशत"
@@ -30640,6 +30730,9 @@ msgstr "{weeks} सप्ताहों पर आपूर्ति और म
 
 msgid "Supply and demand chart: no data."
 msgstr "आपूर्ति और मांग चार्ट: कोई डेटा नहीं।"
+
+msgid "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
+msgstr "MRP द्वारा किसी एक स्थान और एक सप्ताह के लिए एक आइटम हेतु सुझाई गई आपूर्ति: निर्माण के लिए एक जॉब या खरीद के लिए एक क्रय आदेश, जिसका आकार आइटम की पुनःक्रम नीति से तय होता है। जब तक कोई व्यक्ति इसे पक्का या परिवर्तित न करे, MRP हर रन पर इसे बदल या हटा सकता है। यह कोई योजनाबद्ध जॉब या योजनाबद्ध क्रय आदेश नहीं है, जो दस्तावेज़ होते हैं।"
 
 msgid "Support"
 msgstr "समर्थन"
@@ -34147,6 +34240,9 @@ msgstr "बिल्ट-इन पीसेस को चालू करें"
 msgid "Turn on to create one picking list for each job when it is released."
 msgstr "जारी होने पर हर जॉब के लिए एक पिकिंग सूची बनाने हेतु चालू करें।"
 
+msgid "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
+msgstr "योजनाबद्ध ऑर्डरों को दस्तावेज़ों में बदलें: किसी सप्ताह के ऑर्डर या निर्माण सुझाव का ऑर्डर देने पर योजनाबद्ध जॉब या योजनाबद्ध क्रय आदेश पंक्तियाँ बनती हैं, और उस सप्ताह के योजनाबद्ध ऑर्डर “परिवर्तित” चिह्नित हो जाते हैं, बनाए गए प्रत्येक जॉब या पंक्ति के लिए एक। यह जारी करें से अलग है, जो योजनाबद्ध जॉब या क्रय आदेश को उसकी अगली स्थिति में ले जाता है।"
+
 msgid "Turned off sync"
 msgstr "सिंक बंद किया"
 
@@ -34336,6 +34432,9 @@ msgstr "अभी भी आने वाले बिना छूट के �
 
 msgid "Undo"
 msgstr "पूर्ववत करें"
+
+msgid "Unfirm"
+msgstr "पक्का स्थिति हटाएँ"
 
 msgid "Unfurl Links"
 msgstr "लिंक्स को विस्तृत करें"

@@ -248,6 +248,7 @@ export async function provisionOnboardingCompany(
       upsertLocation(serviceRole, {
         ...location,
         ...addressData,
+        companyId: company.id!,
         timezone: companyData.timezone || getLocalTimeZone(),
         updatedBy: userId
       })

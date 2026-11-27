@@ -5238,6 +5238,27 @@ root is `moduleIndexLoader`.
 
 **Applies to:** `pnpm db:seed:dev`, and any `tsx` script that calls `SUPABASE_URL` on a portless stack.
 
+## A lock held across a whole run hangs on a one-connection pool
+
+- **Context:** An MRP run held a transaction advisory lock for its whole length, on one connection, so two runs of a company could not overlap.
+- **Problem:** The run did its reads and writes on other connections while that one stayed checked out. On a pool of one connection (a database test), the run waited for a connection that its own lock held, and hung.
+- **Rule:** Do not hold a lock across work that runs on other connections. Take the lock in the transaction that writes. Read a snapshot first, check it under the lock before the first write, and on a change roll back and try again (a bounded number of attempts, with a short random pause).
+- **Applies to:** `runMrp` (`loadPlanAndWrite`, `retryOnPlannedOrderChange`), `lockCompanyPlanning`, and any job that coordinates through `pg_advisory_xact_lock`.
+
+## A period list must come back sorted
+
+- **Context:** MRP and the planning pages read the weekly `period` rows for the window and create the missing ones.
+- **Problem:** The read had no ORDER BY, and the weeks created were appended after the weeks read. Callers take week 1 by position, so a gap in the period table put a later week first.
+- **Rule:** A function that returns a period list returns it sorted by start date, after any create. Never rely on the order a read or an insert happens to give.
+- **Applies to:** `getOrCreatePeriods` (`shared.service.ts`), `getOrCreateDemandPeriods` (`packages/planning/src/mrp/mrp.ts`), any list a caller indexes by position.
+
+## An update must omit a NOT NULL field it was not sent
+
+- **Context:** `upsertLocation` updates a location through `sanitize(...)`. `updateLocation` from the API or MCP may not send `planningTimeFenceDays`, which is NOT NULL.
+- **Problem:** `sanitize` turns a field that is present but `undefined` into null. Sent as null, the UPDATE fails on the NOT NULL column.
+- **Rule:** In an update path, leave an omitted NOT NULL field out of the payload, so the stored value stays. Give the default only on insert.
+- **Applies to:** `upsertLocation` (`resources.service.ts`), any `upsert*` that passes an optional field of a NOT NULL column through `sanitize`.
+
 ## Measure completed typechecks before claiming a speedup
 
 **Context:** The ERP typecheck speed investigation first produced an incremental
@@ -5374,6 +5395,16 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** A trigger that fills a default for a new row skips only `app.backup_load`: a restore brings its own values. Let it run during a dataset apply: the tiers insert parents before children, so it gives seeded rows the values it gives any row. Use `app.sync_in_progress` only to skip side effects an external sync must not cause (events, webhooks, contact cleanup).
 
 **Applies to:** Every new BEFORE/AFTER row trigger or interceptor that fills or derives a value on insert.
+
+## A component reads its data through an `api+` route, not from an effect
+
+**Context:** The MRP planning drawer read its planned orders, open jobs and open PO lines with the browser's Supabase client, from an async function started inside `useEffect`.
+
+**Problem:** A rejected read was never caught, so the drawer could spin for ever. The code also needed a read counter so an old answer could not land last, a version number bumped after each change, and a flag to skip the second read the revalidation caused. Every new way to change the data needed another trigger. The query ran in the browser, so it could not log a failure or answer with a status.
+
+**Rule:** Put a component's read in an `api+` route and read it with `useLoaderQuery`. Follow `.claude/rules/clientAction-patterns.md` → "A component that loads its own data"; copy `api+/production.planned-orders.ts` and `DrawerPlannedOrders`. An async call in an effect stays acceptable only for a third-party API or a load started by an event (a search box, a click).
+
+**Applies to:** Every drawer, panel or card in `apps/erp` and `apps/mes` that loads its own data. Before you write `useEffect(() => { (async () => …)() })` or `.then(` on a client read, write the route.
 
 ## `pg_temp.allows` cannot see a policy's role list
 

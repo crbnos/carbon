@@ -2180,6 +2180,9 @@ msgstr "Operatörün bu adımda gördüğü bir fotoğraf veya PDF"
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Stoğun yanında yaşayan basılı kart veya QR kodu olan, göz doldurmak için taranması anında satın alma siparişi veya iş emri oluşturan fiziksel çekme sinyali."
 
+msgid "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP."
+msgstr "Bir kullanıcının kilitlediği planlanan sipariş: MRP artık miktarını veya tarihlerini değiştirmez, yine de arz olarak sayar ve farklılık olduğunda bir eylem oluşturur. Planlanan siparişin miktarını veya son tarihini düzenlemek onu kesinleştirir; Kesinleştirmeyi geri al ise onu MRP'ye geri verir."
+
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Carbon'un kendi akışlarından birinde, bir iş akışı tarafından izlenebilir — bir iş serbest bırakıldı, bir teklif kabul edildi, bir sevkiyat nakledildi — ham alan değişimine karşın; iş akışına söz konusu kayıtları id'ye göre teslim eder."
 
@@ -2564,8 +2567,8 @@ msgstr "Bir operasyon'un yerleştirilmiş zaman aralığı için iş merkezi vey
 msgid "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 msgstr "Bir AltCLIN: aynı sözleşmede ana CLIN'inin 4 hanesi, artı 0001AA gibi 2 harf veya hane."
 
-msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
-msgstr "MRP'nin her çalışmasından sonra yazdığı bir öneri: Yeni arz sipariş ver veya üret, ya da açık bir satın alma siparişi satırını veya iş emrini hızlandır, ertele, artır, azalt veya iptal et. Planlama sayfasından uygula, kapat veya bir kişiye ata."
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
+msgstr "Her çalıştırmadan sonra MRP'nin oluşturduğu bir öneri: yeni arz için Sipariş ver veya Üret ya da açık bir satın alma siparişi satırını, iş emrini veya planlanan siparişi Öne al, Ertele, Artır, Azalt veya İptal et. Planlama sayfasından uygula, kapat veya ata."
 
 msgid "A supplier contact and location are optional"
 msgstr "Bir tedarikçi ilgili kişisi ve lokasyonu isteğe bağlıdır"
@@ -6673,6 +6676,9 @@ msgstr "Siparişi İptal Et"
 msgid "Cancel Picking List"
 msgstr "Toplama Listesini İptal Et"
 
+msgid "Cancel planned order"
+msgstr "Planlanan siparişi iptal et"
+
 msgid "Cancel Purchase Order"
 msgstr "Satın Alma Siparişini İptal Et"
 
@@ -9006,6 +9012,9 @@ msgstr "Bölge görüntüsü analiz için hazırlanamadı"
 msgid "Could not read the document: {0}"
 msgstr "Belge okunamadı: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "Planlanan siparişler okunamadı. Siparişler bunun yerine planlama aksiyonlarına göre boyutlandırıldı."
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
@@ -10239,6 +10248,9 @@ msgstr "{fieldLabel} alanını azalt"
 msgid "Decrease job {target} to {amount}"
 msgstr "{target} iş emrini {amount}'ye azalt"
 
+msgid "Decrease planned order to {amount}"
+msgstr "Planlanan siparişi {amount} değerine azalt"
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "{target} satın alma siparişini {amount}'ye azalt"
 
@@ -10403,6 +10415,9 @@ msgstr "Ertele"
 
 msgid "Defer job {target} to {date}"
 msgstr "{target} iş emrini {date}'ye ertel"
+
+msgid "Defer planned order to {date}"
+msgstr "Planlanan siparişi {date} tarihine ertele"
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "{target} satın alma siparişini {date}'ye ertel"
@@ -13352,6 +13367,9 @@ msgstr "Hızlandır"
 msgid "Expedite job {target} to {date}"
 msgstr "{target} iş emrini {date}'ye hızlandır"
 
+msgid "Expedite planned order to {date}"
+msgstr "Planlanan siparişi {date} tarihine öne al"
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "{target} satın alma siparişini {date}'ye hızlandır"
 
@@ -13454,6 +13472,9 @@ msgstr "Son kullanma tarihi seçilen işlem başladığında başlar."
 
 msgid "Expiry trace"
 msgstr "Son kullanma tarihi izi"
+
+msgid "explode {explode}"
+msgstr "ürün ağacı patlatma {explode}"
 
 msgid "Export"
 msgstr "Dışa Aktar"
@@ -13815,6 +13836,9 @@ msgstr "Tedarikçi iadeleri yüklenemedi"
 msgid "Failed to load the rental rates"
 msgstr "Kiralama oranları yüklenemedi"
 
+msgid "Failed to load the suppliers"
+msgstr "Tedarikçiler yüklenemedi"
+
 msgid "Failed to load tracked entities"
 msgstr "Takip edilen varlıklar yüklenemedi"
 
@@ -13938,6 +13962,9 @@ msgstr "Tedarikçi teklif satırı güncellenemedi"
 msgid "Failed to update the items"
 msgstr "Stok kartları güncellemesi başarısız"
 
+msgid "Failed to update the planned order"
+msgstr "Planlanan sipariş güncellenemedi"
+
 msgid "Failed to update the setting"
 msgstr "Ayar güncellenemedi"
 
@@ -14039,6 +14066,9 @@ msgstr "Ücretler"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (süresi en kısa olanı ilk çıkart)"
+
+msgid "Fence"
+msgstr "Sınır"
 
 msgid "Fetch"
 msgstr "Al\\\\'ındır"
@@ -14218,6 +14248,9 @@ msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar redd
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Teklif satırlarında, satış siparişi satırlarında ve satış faturası satırlarında etkinleşir."
+
+msgid "Firm"
+msgstr "Kesinleştir"
 
 msgid "First {count}"
 msgstr "İlk {count}"
@@ -15437,6 +15470,12 @@ msgstr "Hesaplama tarihinden sonra erken ödeme iskontosunun kaç gün daha kull
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Hesaplama tarihinden sonra kaç gün tam tutar ödenmesi gerekir."
 
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "MRP, planlanan siparişlerine kaç gün önceden dokunmaz. Zaman sınırı içinde serbest bırakılacak bir planlanan sipariş, miktarını ve tarihlerini korur; MRP ona yalnızca değişiklik önerir. Sınır içindeki yeni bir ihtiyaç, sınır bittiğinde serbest bırakılacak şekilde planlanır ve bunu öne çekmek için uygulayabileceğiniz bir Hızlandır seçeneği olur. Zaman sınırı olmaması için 0 girin."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "MRP, bu stok kartının planlanan siparişlerine kaç gün önceden dokunmaz. Zaman sınırı içinde serbest bırakılacak bir planlanan sipariş, miktarını ve tarihlerini korur; MRP ona yalnızca değişiklik önerir. Sınır içindeki yeni bir ihtiyaç, sınır bittiğinde serbest bırakılacak şekilde planlanır ve bunu öne çekmek için uygulayabileceğiniz bir Hızlandır seçeneği olur. Lokasyonun zaman sınırını kullanmak için boş bırakın, ya da bu stok kartında zaman sınırı olmaması için 0 girin."
+
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "Açık bir siparişin ihtiyaç duyulan tarihten ne kadar gün sonra gelebileceği, MRP bunu hareket ettirmeyi önerilmeden önce. Ayarlar → Planlama'da ayarlanır; varsayılan değer 7 gündür."
 
@@ -15958,6 +15997,9 @@ msgstr "{fieldLabel} alanını artır"
 
 msgid "Increase job {target} to {amount}"
 msgstr "{target} iş emrini {amount}'ye artır"
+
+msgid "Increase planned order to {amount}"
+msgstr "Planlanan siparişi {amount} değerine artır"
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "{target} satın alma siparişini {amount}'ye artır"
@@ -17053,6 +17095,9 @@ msgstr "Eşleşen öğeleri sakla"
 msgid "Keep mine"
 msgstr "Benimkini koru"
 
+msgid "Keep my numbers"
+msgstr "Numaralarımı koru"
+
 msgid "Keep navigation open"
 msgstr "Gezinmeyi açık tut"
 
@@ -17070,6 +17115,9 @@ msgstr "Açık Tut"
 
 msgid "Keep picking"
 msgstr "Toplamaya devam et"
+
+msgid "Keep your numbers through plan updates?"
+msgstr "Plan güncellemelerinde numaralarınız korunsun mu?"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Siparişleri, teklifleri ve ayarları ikinci bir kontrolün arkasında tutar"
@@ -17959,6 +18007,15 @@ msgstr "Konum / Ürün"
 
 msgid "Location code"
 msgstr "Lokasyon kodu"
+
+msgid "Location default"
+msgstr "Varsayılan lokasyon"
+
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "Lokasyon varsayılanı: {locationTimeFenceDays, plural, one {# gün} other {# gün}}"
+
+msgid "Location default: no fence"
+msgstr "Lokasyon varsayılanı: zaman sınırı yok"
 
 msgid "Location Name"
 msgstr "Konum Adı"
@@ -22249,7 +22306,7 @@ msgid "operation"
 msgstr "operasyon"
 
 msgid "Operation"
-msgstr "Operasyon"
+msgstr "İşlem"
 
 msgctxt "workflow data step"
 msgid "Operation"
@@ -23506,6 +23563,15 @@ msgstr "Planlanmış Sipariş"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "Planlanan sipariş = Ürünün yeniden sipariş politikasına göre öngörülen talebi karşılamak için MRP önerisi (veya manuel olarak eklenmiştir)."
 
+msgid "Planned order firmed"
+msgstr "Planlanan sipariş kesinleştirildi"
+
+msgid "Planned order returned to MRP"
+msgstr "Planlanan sipariş MRP'ye geri döndürüldü"
+
+msgid "Planned Orders"
+msgstr "Planlanan Siparişler"
+
 msgid "Planned purchase order"
 msgstr "Planlanan satın alma siparişi"
 
@@ -23577,6 +23643,15 @@ msgstr "Planlama turları, bu sayının tam katı kadar yenileme önermiştir."
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "Planlama yalnızca bu kadar gün içinde gerçekleşmesi gereken eylemleri ve önerilen siparişleri gösterir. Şirket varsayılanını kullanmak için boş bırakın, veya bu stok kartının tümünü görmek için 0 girin."
+
+msgid "Planning time fence"
+msgstr "Planlama zaman sınırı"
+
+msgid "Planning time fence (days)"
+msgstr "Planlama zaman sınırı (gün)"
+
+msgid "Planning time fence days"
+msgstr "Planlama zaman sınırı (gün)"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Önerilen yenileme miktarı üzerinde planlamanın alt sınırı; bir tedarikçinin MOQ'sından farklı olan, tedarikçi parçası kaydında bulunan."
@@ -24289,6 +24364,9 @@ msgstr "Haftaya göre tahmini stok"
 
 msgid "Projected stock"
 msgstr "Tahmini stok"
+
+msgid "Projected stock {stock}"
+msgstr "Öngörülen stok {stock}"
 
 msgid "Projected stock by week"
 msgstr "Haftalara göre projekte edilen stok"
@@ -25711,6 +25789,9 @@ msgstr "Serbest bırakma kontrol ayarı güncellendi"
 msgid "Release date"
 msgstr "Serbest Bırakma Tarihi"
 
+msgid "Release Date"
+msgstr "Serbest Bırakma Tarihi"
+
 msgid "Release Items"
 msgstr "Stok Kartlarını Serbest Bırak"
 
@@ -25734,6 +25815,9 @@ msgstr "Yayınlandı"
 
 msgid "Released date"
 msgstr "Yayın tarihi"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr "Planlama zaman sınırı içinde serbest bırakıldı: MRP miktarını ve tarihlerini korur."
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "Serbest bırakılan stok kartları bir sonraki fatura çalışması ile satırın fonlaması içinde faturalanır."
@@ -27547,6 +27631,9 @@ msgstr "Kaydediliyor {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "Mevcut verilerinizin bir kopyası kaydediliyor"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr "Bu değişikliği kaydetmek planlanan siparişi kesinleştirir. Bundan sonra MRP miktarını ve tarihleri korur ve bunlarla uyuşmadığında bir planlama aksiyonu oluşturur. Kesinleştirmeyi kaldırmak siparişi MRP'ye geri verir."
+
 msgid "Saving..."
 msgstr "Kaydediliyor..."
 
@@ -27682,6 +27769,9 @@ msgstr "Fire {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "Fire / Kalite Maliyeti"
+
+msgid "scrap +{scrap}"
+msgstr "fire +{scrap}"
 
 msgid "Scrap Percent"
 msgstr "Fire Oranı"
@@ -30640,6 +30730,9 @@ msgstr "{weeks} haftalık arz ve talep grafiği: öngörülen stok {start} ile b
 
 msgid "Supply and demand chart: no data."
 msgstr "Arz ve talep grafiği: veri yok."
+
+msgid "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
+msgstr "Bir lokasyonda ve bir haftada MRP'nin stok kartı için önerdiği arz: stok kartının yeniden sipariş politikasına göre boyutlandırılmış bir üretim iş emri ya da bir satın alma. Bir planlamacı kesinleştirene ya da dönüştürene kadar MRP her çalıştırmada bunu değiştirebilir ya da silebilir. Planlanmış iş emri veya planlanmış satın alma siparişi değildir; bunlar belgelerdir."
 
 msgid "Support"
 msgstr "Destek"
@@ -34147,6 +34240,9 @@ msgstr "Yerleşik parçaları açın"
 msgid "Turn on to create one picking list for each job when it is released."
 msgstr "Serbest bırakıldığında her iş emri için bir toplama listesi oluşturmak üzere açın."
 
+msgid "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
+msgstr "Serbest bırakıldığında her iş emri için bir toplama listesi oluşturmak üzere açın."
+
 msgid "Turned off sync"
 msgstr "Senkronizasyon kapatıldı"
 
@@ -34336,6 +34432,9 @@ msgstr "Mali yılına göre henüz gelecek iskonto uygulanmamış ödemeler, kal
 
 msgid "Undo"
 msgstr "Geri Al"
+
+msgid "Unfirm"
+msgstr "Kesinleştirmeyi geri al"
 
 msgid "Unfurl Links"
 msgstr "Bağlantıları Aç"

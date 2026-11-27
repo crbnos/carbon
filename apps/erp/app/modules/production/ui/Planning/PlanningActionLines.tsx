@@ -331,6 +331,11 @@ export type PlanningActionHandlers = {
    *  Finalize modal; production: the job release). Absent, the button links
    *  to the order instead. */
   onRelease?: (action: PlanningAction) => void;
+  /** Whether this person may Apply this action (or create its transfer),
+   *  when that is decided per action — purchasing: a PO line needs Edit on
+   *  Purchase Orders, a planned order Edit on Material Planning. Absent,
+   *  `canUpdate` decides. */
+  canApply?: (action: PlanningAction) => boolean;
 };
 
 /** The trailing controls of one action, wherever it is listed: ONE button
@@ -348,6 +353,7 @@ export function PlanningActionRowActions({
   onOrder,
   purchaseOrderMenuItems,
   onRelease,
+  canApply,
   purchaseOrder
 }: PlanningActionHandlers & {
   action: PlanningAction;
@@ -366,6 +372,7 @@ export function PlanningActionRowActions({
   const orderMenuItems =
     order && purchaseOrderMenuItems ? purchaseOrderMenuItems(order) : null;
   const isMine = action.assignee === currentUserId;
+  const mayApply = canApply ? canApply(action) : canUpdate;
 
   return (
     <div className="flex items-center justify-end gap-1">
@@ -406,7 +413,7 @@ export function PlanningActionRowActions({
         <Button
           size="sm"
           variant="secondary"
-          isDisabled={!canUpdate || isBusy}
+          isDisabled={!mayApply || isBusy}
           onClick={() => onApply([action.id])}
         >
           <Trans>Create transfer</Trans>
@@ -426,7 +433,7 @@ export function PlanningActionRowActions({
         <Button
           size="sm"
           variant="secondary"
-          isDisabled={!canUpdate || isBusy}
+          isDisabled={!mayApply || isBusy}
           onClick={() => onApply([action.id])}
         >
           <Trans>Apply</Trans>
@@ -527,8 +534,17 @@ type PlanningActionLinesProps = PlanningActionHandlers & {
 };
 
 /** The order an action changes, as it reads in a sentence: its status icon
- *  (why the row is Review rather than Apply, named on hover) and its number. */
+ *  (why the row is Review rather than Apply, named on hover) and its number,
+ *  or "Planned order" for a planned order. */
 function PlanningActionTarget({ action }: { action: PlanningAction }) {
+  // a planned order has no number and no page: it lives in the order drawer
+  if (action.plannedOrderId) {
+    return (
+      <span className="align-middle">
+        <Trans>Planned order</Trans>
+      </span>
+    );
+  }
   const documentId =
     action.purchaseOrderReadableId ?? action.jobReadableId ?? null;
   const documentPath = reviewPathFor(action);
@@ -569,6 +585,8 @@ function PlanningActionSentence({
     </span>
   );
   const target = <PlanningActionTarget action={action} />;
+  // A planned order has no number to link: its sentence names it in words.
+  const isPlannedOrder = Boolean(action.plannedOrderId);
   const isJob = action.jobId !== null;
 
   let sentence: ReactNode;
@@ -588,7 +606,9 @@ function PlanningActionSentence({
       );
       break;
     case "Expedite":
-      sentence = isJob ? (
+      sentence = isPlannedOrder ? (
+        <Trans>Expedite planned order to {date}</Trans>
+      ) : isJob ? (
         <Trans>
           Expedite job {target} to {date}
         </Trans>
@@ -599,7 +619,9 @@ function PlanningActionSentence({
       );
       break;
     case "Defer":
-      sentence = isJob ? (
+      sentence = isPlannedOrder ? (
+        <Trans>Defer planned order to {date}</Trans>
+      ) : isJob ? (
         <Trans>
           Defer job {target} to {date}
         </Trans>
@@ -610,7 +632,9 @@ function PlanningActionSentence({
       );
       break;
     case "Increase":
-      sentence = isJob ? (
+      sentence = isPlannedOrder ? (
+        <Trans>Increase planned order to {amount}</Trans>
+      ) : isJob ? (
         <Trans>
           Increase job {target} to {amount}
         </Trans>
@@ -621,7 +645,9 @@ function PlanningActionSentence({
       );
       break;
     case "Decrease":
-      sentence = isJob ? (
+      sentence = isPlannedOrder ? (
+        <Trans>Decrease planned order to {amount}</Trans>
+      ) : isJob ? (
         <Trans>
           Decrease job {target} to {amount}
         </Trans>
@@ -632,7 +658,9 @@ function PlanningActionSentence({
       );
       break;
     case "Cancel":
-      sentence = isJob ? (
+      sentence = isPlannedOrder ? (
+        <Trans>Cancel planned order</Trans>
+      ) : isJob ? (
         <Trans>Cancel job {target}</Trans>
       ) : (
         <Trans>Cancel purchase order {target}</Trans>

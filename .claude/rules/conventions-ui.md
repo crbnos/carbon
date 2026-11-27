@@ -414,6 +414,7 @@ Tailwind v4 utilities (NOT `text-wrap-*`):
 | Tiny hit areas | Extend to ~40×40px |
 | Hard borders | Use layered shadows |
 | Dropdown inside a Drawer won't scroll (shows ~6 items) | `stopPropagation` on `PopoverContent` `onWheel`/`onTouchMove` |
+| A component loads its data with an async call in `useEffect` (`(async () => …)()`, `.then(`) | An `api+` route read with `useLoaderQuery` (`clientAction-patterns.md` → "A component that loads its own data") |
 
 ## Review Checklist
 

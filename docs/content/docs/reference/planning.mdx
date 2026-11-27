@@ -76,6 +76,42 @@ The drawer shows the item's suggested orders — the same Order or Make suggesti
 
 A suggested order's **Start By** (**Order By** for a purchase) and **Due Date** stay one lead time apart: change either one and the other follows. A Start By that has already passed is red and has a **Reschedule from today** button, which moves the order to start today and be due a lead time later. A rescheduled job stays **ASAP**, so late work keeps its place at the front of the queue; typing a date yourself makes it a **Soft Deadline**. **Make** and **Order** never create an order that starts in the past: they create the others and leave the late ones in the drawer, as you edited them, with a message to reschedule them. The grid's bulk **Create Jobs** and **Order Items** do the same. When you order only part of a week's suggestion (you removed or lowered a row, or a late one was refused), the rest stays a suggestion for that week.
 
+## Planned orders
+
+A <Term id="planned-order">planned order</Term> is new supply that MRP keeps from one run to the next: one job to make or one purchase to buy, for one item at one location and week. It is not a document. A week's **Order** or **Make** action is the sum of its planned orders, and the drawer offers one suggested order for each of them. A Make planned order also explodes to its components in the same run, so its lot size and scrap reach the parts before any job exists.
+
+MRP makes planned orders only for common stock, for an item with planning settings at the location. A project's own row, a superseded item and an item that a bill of materials builds as Make to Order keep the plain suggestions described above.
+
+| Status | Meaning |
+| --- | --- |
+| **"Planned"** | MRP's own. Each run can change its quantity and dates, or delete it. |
+| **"Firm"** | A person holds it. MRP keeps its quantity and dates, still counts it as supply, and raises an action (Expedite, Defer, Increase, Decrease, Cancel) when it disagrees. |
+| **"Converted"** | A job or PO line now stands for it. Make changes on that document. |
+
+### Firm, Unfirm and edit
+
+The drawer's **Planned Orders** section, above the suggested orders, lists the item's Planned and Firm orders with their release date, due date and quantity. **Firm** holds an order and **Unfirm** gives it back to MRP. Editing the **Quantity** or **Due Date** also firms the order, so on a Planned order the drawer asks first: "Keep your numbers through plan updates?".
+
+A new due date moves the release date by the same number of days, and it must fall inside the planning weeks. MRP runs again after every change, so the week's Order or Make follows at once. A Make planned order needs Edit on **Production → Material Planning**, a Buy one Edit on **Purchasing → Material Planning**. An action on a planned order always offers **Apply**: it changes the planned order, and a **Cancel** deletes it.
+
+### The planning time fence
+
+The <Term id="planning-time-fence">planning time fence</Term> is a number of calendar days from today. Set **Planning time fence (days)** on the location, and override it on the item's planning tab in the **Planning and Sales** section. An empty item field uses the location's value; 0 means no fence. A Planned order released on or before today plus the fence is held like a Firm one, and the drawer marks it **Fence**.
+
+A new need that would start inside the fence is planned to start at the fence end instead, with its due date moved by the same days. MRP adds an **Expedite** on that planned order to the date it is really needed, never before today, so you decide whether to pull it in. On the next run that order is held, and it covers the need from its due date, so MRP does not plan another one for the same shortfall. A held order that nothing needs any more gets a **Cancel**; MRP never deletes it by itself.
+
+<Callout type="info" title="The time fence is not the planning horizon">
+The [planning horizon](#planning-horizon) only filters what the planning pages show. The time fence changes what MRP does: inside it, MRP holds planned orders still and plans new needs at its end.
+</Callout>
+
+### Ordering converts planned orders
+
+**Make** or **Order** converts the planned orders of the week it orders: each job or PO line created marks the planned order it stands for **"Converted"**. A smaller job or line only reduces its planned order, and the rest stays planned. A larger one also takes the excess off the week's next Planned orders.
+
+A Firm order converts only from its own suggested order, or from a job or line of exactly its quantity. The grid's bulk **Create Jobs** and **Order Items** convert the same way.
+
+<Screenshot label="Production order drawer, Planned Orders section with a Firm order and a Planned order marked Fence" caption="Firm, Unfirm and edit planned orders above the suggested jobs." ratio="wide" />
+
 ## Planning horizon
 
 The **Planning Horizon** column is a date per row: today plus the item's horizon in days. A row shows only the actions and suggested orders due on or before that date, so a long planning window does not bury next week's work. Set the company default in **Settings → Planning → Planning Horizon**, and override it per item on the item's planning tab (**Planning Horizon (Days)**). An item set to 0 shows everything MRP plans, whatever the company default.

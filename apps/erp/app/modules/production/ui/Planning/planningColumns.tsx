@@ -38,8 +38,8 @@ import {
 } from "~/modules/production/ui/Planning/LatestOrderDate";
 import {
   FirstNegativeDateCell,
-  TimeFenceCell,
-  type useTimeFenceOverrides
+  PlanningHorizonCell,
+  type usePlanningHorizonOverrides
 } from "~/modules/production/ui/Planning/PlanningFence";
 import {
   PlanningWeekStrip,
@@ -62,7 +62,7 @@ const LABELS = {
   onHand: msg`On Hand`,
   firstNegativeDate: msg`1st Negative On Hand`,
   latestOrderDate: msg`Latest Order Date`,
-  timeFence: msg`Planning Horizon`,
+  planningHorizon: msg`Planning Horizon`,
   type: msg`Type`,
   segment: msg`Segment`,
   common: msg`Common`
@@ -97,8 +97,8 @@ export function planningColumns<T extends PlanningRow>(ctx: {
   formatQuantity: (quantity: number) => string;
   unitOfMeasures: Option[];
   itemPostingGroups: Option[];
-  timeFence: ReturnType<typeof useTimeFenceOverrides>;
-  onFenceChange: (itemId: string, date: string | null) => void;
+  horizon: ReturnType<typeof usePlanningHorizonOverrides>;
+  onHorizonChange: (itemId: string, date: string | null) => void;
   segmentProjects: PlanningSegmentProject[];
 }) {
   const {
@@ -109,8 +109,8 @@ export function planningColumns<T extends PlanningRow>(ctx: {
     formatQuantity,
     unitOfMeasures,
     itemPostingGroups,
-    timeFence,
-    onFenceChange,
+    horizon,
+    onHorizonChange,
     segmentProjects
   } = ctx;
 
@@ -265,24 +265,24 @@ export function planningColumns<T extends PlanningRow>(ctx: {
         exportValue: latestOrderDateExportValue
       }
     } as ColumnDef<PlanningRow>,
-    timeFence: {
+    planningHorizon: {
       accessorKey: "timeFenceDate",
-      header: i18n._(LABELS.timeFence),
+      header: i18n._(LABELS.planningHorizon),
       cell: ({ row }) => (
         // The row toggles its expanded actions on click. React events bubble
         // through the calendar's portal, so every click in the picker would
         // reach the row without this.
         <div role="presentation" onClick={(event) => event.stopPropagation()}>
-          <TimeFenceCell
-            fenceDate={timeFence.fenceDateFor(row.original)}
-            isOverridden={timeFence.isOverridden(row.original)}
-            onChange={(date) => onFenceChange(row.original.id, date)}
+          <PlanningHorizonCell
+            horizonDate={horizon.horizonDateFor(row.original)}
+            isOverridden={horizon.isOverridden(row.original)}
+            onChange={(date) => onHorizonChange(row.original.id, date)}
           />
         </div>
       ),
       meta: {
         icon: <LuCalendarRange />,
-        exportValue: (row: PlanningRow) => timeFence.fenceDateFor(row)
+        exportValue: (row: PlanningRow) => horizon.horizonDateFor(row)
       }
     } as ColumnDef<PlanningRow>,
     // The netting segment of the row: Common, or a project with project

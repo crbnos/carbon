@@ -2180,6 +2180,9 @@ msgstr "Zdjęcie lub PDF, które operator widzi na tym kroku"
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Fizyczny sygnał wciągnięcia — wydrukowana karta lub kod QR umieszczony ze zapasem — który tworzy zamówienie zakupu lub zadanie w momencie jego skanowania w celu uzupełnienia pojemnika."
 
+msgid "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP."
+msgstr "Zlecenie planowane zablokowane przez użytkownika: MRP nie zmienia już jego ilości ani terminów, nadal uwzględnia je jako pokrycie i zgłasza działanie, gdy dane są niezgodne. Edycja ilości lub terminu zlecenia planowanego je ustala; Cofnij ustalenie oddaje je MRP."
+
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Punkt w jednym z własnych przepływów Carbon, który przepływ pracy może śledzić — zlecenie zwolnione, oferta zaakceptowana, wysyłka zaksięgowana — w przeciwieństwie do surowej zmiany pola; przekazuje przepływowi pracy zaangażowane rekordy według id."
 
@@ -2564,8 +2567,8 @@ msgstr "Zapisana rezerwacja stanowiska roboczego lub operatora dla przedziału c
 msgid "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 msgstr "SubCLIN: 4 cyfry jego macierzystego CLIN na tej samej umowie, plus 2 litery lub cyfry, takie jak 0001AA."
 
-msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
-msgstr "Propozycja, którą MRP generuje po każdym uruchomieniu: Zamów lub Produkuj nowe pokrycie, albo Przyspiesz, Odłóż, Zwiększ, Zmniejsz lub Anuluj otwartą pozycję zamówienia zakupu bądź zlecenie produkcyjne. Zastosuj ją na stronie planowania, odrzuć lub przypisz ją."
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
+msgstr "Propozycja, którą MRP zapisuje po każdym przebiegu: Zamów lub uruchom produkcję nowego pokrycia albo Przyspiesz, Przesuń, Zwiększ, Zmniejsz lub Anuluj otwartą pozycję zamówienia zakupu, zlecenie produkcyjne lub zlecenie planowane. Zastosuj ją na stronie planowania, odrzuć lub przypisz."
 
 msgid "A supplier contact and location are optional"
 msgstr "Kontakt dostawcy i lokalizacja są opcjonalne"
@@ -6673,6 +6676,9 @@ msgstr "Anuluj zamówienie"
 msgid "Cancel Picking List"
 msgstr "Anuluj listę kompletacyjną"
 
+msgid "Cancel planned order"
+msgstr "Anuluj zlecenie planowane"
+
 msgid "Cancel Purchase Order"
 msgstr "Anuluj zamówienie zakupu"
 
@@ -9006,6 +9012,9 @@ msgstr "Nie można przygotować obrazu regionu do analizy"
 msgid "Could not read the document: {0}"
 msgstr "Nie można odczytać dokumentu: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "Nie udało się odczytać zleceń planowanych. Zamiast tego zlecenia wyliczono na podstawie akcji planowania."
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
@@ -10239,6 +10248,9 @@ msgstr "Zmniejsz: {fieldLabel}"
 msgid "Decrease job {target} to {amount}"
 msgstr "Zmniejsz zlecenie produkcyjne {target} do {amount}"
 
+msgid "Decrease planned order to {amount}"
+msgstr "Zmniejsz zlecenie planowane do {amount}"
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "Zmniejsz zamówienie zakupu {target} do {amount}"
 
@@ -10403,6 +10415,9 @@ msgstr "Przełóż"
 
 msgid "Defer job {target} to {date}"
 msgstr "Przełóż zlecenie produkcyjne {target} na {date}"
+
+msgid "Defer planned order to {date}"
+msgstr "Przesuń zlecenie planowane na {date}"
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "Przełóż zamówienie zakupu {target} na {date}"
@@ -13352,6 +13367,9 @@ msgstr "Przyspiesz"
 msgid "Expedite job {target} to {date}"
 msgstr "Przyspiesz zlecenie produkcyjne {target} na {date}"
 
+msgid "Expedite planned order to {date}"
+msgstr "Przyspiesz zlecenie planowane do {date}"
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "Przyspiesz zamówienie zakupu {target} na {date}"
 
@@ -13454,6 +13472,9 @@ msgstr "Termin ważności rozpoczyna się, gdy wybrany proces się uruchamia."
 
 msgid "Expiry trace"
 msgstr "Śledzenie terminu ważności"
+
+msgid "explode {explode}"
+msgstr "rozwiń {explode}"
 
 msgid "Export"
 msgstr "Eksportuj"
@@ -13815,6 +13836,9 @@ msgstr "Nie udało się załadować zwrotów dostawcy"
 msgid "Failed to load the rental rates"
 msgstr "Nie udało się załadować stawek wynajmu"
 
+msgid "Failed to load the suppliers"
+msgstr "Nie udało się wczytać dostawców"
+
 msgid "Failed to load tracked entities"
 msgstr "Nie udało się załadować śledzonych jednostek"
 
@@ -13938,6 +13962,9 @@ msgstr "Nie udało się zaktualizować linii oferty dostawcy"
 msgid "Failed to update the items"
 msgstr "Nie udało się aktualizować artykułów"
 
+msgid "Failed to update the planned order"
+msgstr "Nie udało się zaktualizować zlecenia planowanego"
+
 msgid "Failed to update the setting"
 msgstr "Nie udało się zaktualizować ustawienia"
 
@@ -14039,6 +14066,9 @@ msgstr "Opłaty"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (pierwszy ważny – pierwszy wychodzący)"
+
+msgid "Fence"
+msgstr "Horyzont zamrożenia"
 
 msgid "Fetch"
 msgstr "Pobierz"
@@ -14218,6 +14248,9 @@ msgstr "Kończenie jest odrzucane, dopóki każda linia nie będzie pobrana lub 
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Uruchamia się na pozycjach oferty, pozycjach zamówienia sprzedaży i pozycjach faktury sprzedaży."
+
+msgid "Firm"
+msgstr "Ustal"
 
 msgid "First {count}"
 msgstr "Pierwsze {count}"
@@ -15437,6 +15470,12 @@ msgstr "Ile dni po dacie obliczenia rabat za wcześniejszą płatność jest jes
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Ile dni po dacie obliczenia pełna kwota jest należna."
 
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "Na ile dni wcześniej MRP pozostawia swoje zlecenia planowane bez zmian. Zlecenie planowane, którego zwolnienie przypada w horyzoncie zamrożenia planowania, zachowuje swoją ilość i daty; MRP może jedynie zasugerować zmiany. Nowe zapotrzebowanie w horyzoncie zamrożenia planowania zostanie zaplanowane na zwolnienie po jego zakończeniu, z opcją „Przyspiesz”, którą można zastosować, aby je przyspieszyć. Wpisz 0, aby nie stosować horyzontu zamrożenia planowania."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "Na ile dni wcześniej MRP pozostawia zlecenia planowane tego artykułu bez zmian. Zlecenie planowane, którego zwolnienie przypada w horyzoncie zamrożenia planowania, zachowuje swoją ilość i daty; MRP może jedynie zasugerować zmiany. Nowe zapotrzebowanie w horyzoncie zamrożenia planowania zostanie zaplanowane na zwolnienie po jego zakończeniu, z opcją „Przyspiesz”, którą można zastosować, aby je przyspieszyć. Pozostaw puste, aby użyć horyzontu zamrożenia planowania lokalizacji, lub wpisz 0, aby nie stosować horyzontu zamrożenia planowania dla tego artykułu."
+
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "Ile dni otwarte zamówienie może przybyć od daty, w której jest potrzebne, zanim MRP zasugeruje jego przesunięcie. Ustaw w Ustawienia → Planowanie; domyślnie 7 dni."
 
@@ -15958,6 +15997,9 @@ msgstr "Zwiększ: {fieldLabel}"
 
 msgid "Increase job {target} to {amount}"
 msgstr "Zwiększ zlecenie produkcyjne {target} do {amount}"
+
+msgid "Increase planned order to {amount}"
+msgstr "Zwiększ zlecenie planowane do {amount}"
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "Zwiększ zamówienie zakupu {target} do {amount}"
@@ -17053,6 +17095,9 @@ msgstr "Zachowaj pasujące elementy"
 msgid "Keep mine"
 msgstr "Zachowaj moje"
 
+msgid "Keep my numbers"
+msgstr "Zachowaj wartości"
+
 msgid "Keep navigation open"
 msgstr "Pozostaw nawigację otwartą"
 
@@ -17070,6 +17115,9 @@ msgstr "Utrzymaj otwarte"
 
 msgid "Keep picking"
 msgstr "Zachowaj kompletację"
+
+msgid "Keep your numbers through plan updates?"
+msgstr "Zachować wartości przy aktualizacjach planu?"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Utrzymuje zamówienia, oferty i ustawienia za drugą weryfikacją"
@@ -17959,6 +18007,15 @@ msgstr "Lokalizacja / Pozycja"
 
 msgid "Location code"
 msgstr "Kod lokalizacji"
+
+msgid "Location default"
+msgstr "Domyślne dla lokalizacji"
+
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "Domyślnie z lokalizacji: {locationTimeFenceDays, plural, one {# dzień} other {# dni}}"
+
+msgid "Location default: no fence"
+msgstr "Domyślnie z lokalizacji: brak horyzontu zamrożenia planowania"
 
 msgid "Location Name"
 msgstr "Nazwa lokalizacji"
@@ -23506,6 +23563,15 @@ msgstr "Zaplanowane Zamówienie"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "Zaplanowane zamówienie = Propozycja MRP na pokrycie przewidywanego zapotrzebowania na podstawie polityki ponownego zamówienia artykułu (lub dodanego ręcznie)."
 
+msgid "Planned order firmed"
+msgstr "Zlecenie planowane zamrożone"
+
+msgid "Planned order returned to MRP"
+msgstr "Zlecenie planowane zwrócone do MRP"
+
+msgid "Planned Orders"
+msgstr "Zlecenia planowane"
+
 msgid "Planned purchase order"
 msgstr "Zaplanowane zamówienie zakupu"
 
@@ -23577,6 +23643,15 @@ msgstr "Rundy planowania zasugerowały uzupełnienie do całkowitej wielokrotno�
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "Planowanie pokazuje tylko działania i sugerowane zamówienia należne w ciągu tylu dni. Pozostaw puste, aby użyć ustawienia domyślnego firmy, lub wpisz 0, aby pokazać wszystko dla tego artykułu."
+
+msgid "Planning time fence"
+msgstr "Horyzont zamrożenia planowania"
+
+msgid "Planning time fence (days)"
+msgstr "Horyzont zamrożenia planowania (dni)"
+
+msgid "Planning time fence days"
+msgstr "Horyzont zamrożenia planowania (dni)"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Dolna granica planowania dla sugerowanej ilości uzupełnienia; różni się od MOQ dostawcy, która znajduje się w rekordie części dostawcy."
@@ -24289,6 +24364,9 @@ msgstr "Prognozowany stan magazynowy wg tygodnia"
 
 msgid "Projected stock"
 msgstr "Prognozowany zapas"
+
+msgid "Projected stock {stock}"
+msgstr "Prognozowany zapas {stock}"
 
 msgid "Projected stock by week"
 msgstr "Prognozowany Zapas wg Tygodnia"
@@ -25711,6 +25789,9 @@ msgstr "Ustawienie kontroli zwolnienia zaktualizowane"
 msgid "Release date"
 msgstr "Data zwolnienia"
 
+msgid "Release Date"
+msgstr "Data zwolnienia"
+
 msgid "Release Items"
 msgstr "Zwolnij artykuły"
 
@@ -25734,6 +25815,9 @@ msgstr "Wydane"
 
 msgid "Released date"
 msgstr "Data wydania"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr "Zwolniono w horyzoncie zamrożenia planowania: MRP zachowuje ilość i terminy."
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "Zwolnione artykuły są fakturowane w następnym uruchomieniu faktury w ramach finansowania pozycji."
@@ -27547,6 +27631,9 @@ msgstr "Zapisywanie {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "Zapisywanie kopii twoich bieżących danych"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr "Zapisanie tej zmiany zamraża zlecenie planowane. MRP zachowuje wtedy jego ilość i terminy i zgłasza działanie planistyczne, gdy się z nimi nie zgadza. Odmrożenie przekazuje zlecenie z powrotem do MRP."
+
 msgid "Saving..."
 msgstr "Zapisywanie..."
 
@@ -27682,6 +27769,9 @@ msgstr "Braki {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "Braki / Koszt jakości"
+
+msgid "scrap +{scrap}"
+msgstr "braki +{scrap}"
 
 msgid "Scrap Percent"
 msgstr "Procent braków"
@@ -30640,6 +30730,9 @@ msgstr "Wykres pokrycia i zapotrzebowania w ciągu {weeks} tygodni: prognozowany
 
 msgid "Supply and demand chart: no data."
 msgstr "Wykres pokrycia i zapotrzebowania: brak danych."
+
+msgid "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
+msgstr "Pokrycie, które MRP proponuje dla jednego artykułu w jednej lokalizacji i tygodniu: zlecenie produkcyjne do wykonania lub zakup do zrealizowania, o wielkości wyznaczonej przez politykę uzupełniania artykułu. MRP może je zmienić lub usunąć przy każdym uruchomieniu, dopóki osoba go nie zatwierdzi lub nie przekształci. To nie jest zaplanowane zlecenie produkcyjne ani zaplanowane zamówienie zakupu, które są dokumentami."
 
 msgid "Support"
 msgstr "Wsparcie"
@@ -34147,6 +34240,9 @@ msgstr "Włącz wbudowane komponenty"
 msgid "Turn on to create one picking list for each job when it is released."
 msgstr "Włącz, aby przy zwolnieniu utworzyć jedną listę kompletacyjną dla każdego zlecenia produkcyjnego."
 
+msgid "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
+msgstr "Włącz, aby przy zwolnieniu utworzyć jedną listę kompletacyjną dla każdego zlecenia produkcyjnego."
+
 msgid "Turned off sync"
 msgstr "Wyłączono synchronizację"
 
@@ -34336,6 +34432,9 @@ msgstr "Płatności bez dyskonta, które jeszcze przyjdą, wg roku obrachunkoweg
 
 msgid "Undo"
 msgstr "Cofnij"
+
+msgid "Unfirm"
+msgstr "Cofnij zatwierdzenie"
 
 msgid "Unfurl Links"
 msgstr "Rozwiń linki"

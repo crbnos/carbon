@@ -1981,27 +1981,77 @@ export async function upsertFailureMode(
 }
 
 /** The bare write under `createLocation` / `updateLocation`; the update also drops the cached timezone. */
-export async function upsertLocation(
+type LocationInsert = Omit<z.infer<typeof locationValidator>, "id"> & {
+  companyId: string;
+  createdBy: string;
+  customFields?: Json;
+};
+
+type LocationUpdate = Omit<z.infer<typeof locationValidator>, "id"> & {
+  id: string;
+  companyId: string;
+  updatedBy: string;
+  customFields?: Json;
+};
+
+function insertLocation(
   client: SupabaseClient<Database>,
-  location:
-    | (Omit<z.infer<typeof locationValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof locationValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
+  location: LocationInsert
 ) {
-  if ("id" in location) {
-    return client
+  return client
+    .from("location")
+    .insert([
+      {
+        ...location,
+        // a new location with no fence has none (0)
+        planningTimeFenceDays: location.planningTimeFenceDays ?? 0
+      }
+    ])
+    .select("*")
+    .single();
+}
+
+function updateLocationRow(
+  client: SupabaseClient<Database>,
+  location: LocationUpdate
+) {
+  // The time fence is NOT NULL, and `sanitize` turns a missing field into
+  // null: an update that sends no fence leaves the stored one alone.
+  const { planningTimeFenceDays, companyId, ...rest } = location;
+  // A location of another company, or one deleted since, matches no row:
+  // an error, not a silent success.
+  return requireAffected(
+    client
       .from("location")
-      .update(sanitize(location))
-      .eq("id", location.id);
-  }
-  return client.from("location").insert([location]).select("*").single();
+      .update({
+        ...sanitize(rest),
+        ...(planningTimeFenceDays === undefined
+          ? {}
+          : { planningTimeFenceDays })
+      })
+      .eq("id", location.id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
+}
+
+/** Insert a location (answers the new row), or update one by id and company
+ *  (answers the ids it changed; none is an error). */
+export function upsertLocation(
+  client: SupabaseClient<Database>,
+  location: LocationInsert
+): ReturnType<typeof insertLocation>;
+export function upsertLocation(
+  client: SupabaseClient<Database>,
+  location: LocationUpdate
+): ReturnType<typeof updateLocationRow>;
+export function upsertLocation(
+  client: SupabaseClient<Database>,
+  location: LocationInsert | LocationUpdate
+) {
+  return "id" in location
+    ? updateLocationRow(client, location)
+    : insertLocation(client, location);
 }
 
 /** The bare insert under `resources.maintenanceDispatch.create`, which also tells the scheduler. */

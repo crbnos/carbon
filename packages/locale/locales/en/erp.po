@@ -2180,6 +2180,9 @@ msgstr "A photo or PDF the operator sees on this step"
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 
+msgid "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP."
+msgstr "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP."
+
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 
@@ -2564,8 +2567,8 @@ msgstr "A stored booking of a work center or operator for one operation's placed
 msgid "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 msgstr "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 
-msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
-msgstr "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
+msgstr "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
 
 msgid "A supplier contact and location are optional"
 msgstr "A supplier contact and location are optional"
@@ -6673,6 +6676,9 @@ msgstr "Cancel Order"
 msgid "Cancel Picking List"
 msgstr "Cancel Picking List"
 
+msgid "Cancel planned order"
+msgstr "Cancel planned order"
+
 msgid "Cancel Purchase Order"
 msgstr "Cancel Purchase Order"
 
@@ -9006,6 +9012,9 @@ msgstr "Could not prepare region image for analysis"
 msgid "Could not read the document: {0}"
 msgstr "Could not read the document: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "Could not read the planned orders. The orders were sized from the planning actions instead."
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
@@ -10239,6 +10248,9 @@ msgstr "Decrease {fieldLabel}"
 msgid "Decrease job {target} to {amount}"
 msgstr "Decrease job {target} to {amount}"
 
+msgid "Decrease planned order to {amount}"
+msgstr "Decrease planned order to {amount}"
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "Decrease purchase order {target} to {amount}"
 
@@ -10403,6 +10415,9 @@ msgstr "Defer"
 
 msgid "Defer job {target} to {date}"
 msgstr "Defer job {target} to {date}"
+
+msgid "Defer planned order to {date}"
+msgstr "Defer planned order to {date}"
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "Defer purchase order {target} to {date}"
@@ -13352,6 +13367,9 @@ msgstr "Expedite"
 msgid "Expedite job {target} to {date}"
 msgstr "Expedite job {target} to {date}"
 
+msgid "Expedite planned order to {date}"
+msgstr "Expedite planned order to {date}"
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "Expedite purchase order {target} to {date}"
 
@@ -13454,6 +13472,9 @@ msgstr "Expiry begins when the selected process starts."
 
 msgid "Expiry trace"
 msgstr "Expiry trace"
+
+msgid "explode {explode}"
+msgstr "explode {explode}"
 
 msgid "Export"
 msgstr "Export"
@@ -13815,6 +13836,9 @@ msgstr "Failed to load supplier returns"
 msgid "Failed to load the rental rates"
 msgstr "Failed to load the rental rates"
 
+msgid "Failed to load the suppliers"
+msgstr "Failed to load the suppliers"
+
 msgid "Failed to load tracked entities"
 msgstr "Failed to load tracked entities"
 
@@ -13938,6 +13962,9 @@ msgstr "Failed to update supplier quote line"
 msgid "Failed to update the items"
 msgstr "Failed to update the items"
 
+msgid "Failed to update the planned order"
+msgstr "Failed to update the planned order"
+
 msgid "Failed to update the setting"
 msgstr "Failed to update the setting"
 
@@ -14039,6 +14066,9 @@ msgstr "Fees"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (first-expiry-first-out)"
+
+msgid "Fence"
+msgstr "Fence"
 
 msgid "Fetch"
 msgstr "Fetch"
@@ -14218,6 +14248,9 @@ msgstr "Finishing is refused until every line is picked or marked Short."
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Fire on quote lines, sales order lines and sales invoice lines."
+
+msgid "Firm"
+msgstr "Firm"
 
 msgid "First {count}"
 msgstr "First {count}"
@@ -15437,6 +15470,12 @@ msgstr "How many days after the calculation date the early-payment discount is s
 msgid "How many days after the calculation date the full amount is due."
 msgstr "How many days after the calculation date the full amount is due."
 
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 
@@ -15958,6 +15997,9 @@ msgstr "Increase {fieldLabel}"
 
 msgid "Increase job {target} to {amount}"
 msgstr "Increase job {target} to {amount}"
+
+msgid "Increase planned order to {amount}"
+msgstr "Increase planned order to {amount}"
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "Increase purchase order {target} to {amount}"
@@ -17053,6 +17095,9 @@ msgstr "Keep matching items"
 msgid "Keep mine"
 msgstr "Keep mine"
 
+msgid "Keep my numbers"
+msgstr "Keep my numbers"
+
 msgid "Keep navigation open"
 msgstr "Keep navigation open"
 
@@ -17070,6 +17115,9 @@ msgstr "Keep Open"
 
 msgid "Keep picking"
 msgstr "Keep picking"
+
+msgid "Keep your numbers through plan updates?"
+msgstr "Keep your numbers through plan updates?"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Keeps orders, quotes, and settings behind a second check"
@@ -17959,6 +18007,15 @@ msgstr "Location / Item"
 
 msgid "Location code"
 msgstr "Location code"
+
+msgid "Location default"
+msgstr "Location default"
+
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+
+msgid "Location default: no fence"
+msgstr "Location default: no fence"
 
 msgid "Location Name"
 msgstr "Location Name"
@@ -23506,6 +23563,15 @@ msgstr "Planned Order"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 
+msgid "Planned order firmed"
+msgstr "Planned order firmed"
+
+msgid "Planned order returned to MRP"
+msgstr "Planned order returned to MRP"
+
+msgid "Planned Orders"
+msgstr "Planned Orders"
+
 msgid "Planned purchase order"
 msgstr "Planned purchase order"
 
@@ -23577,6 +23643,15 @@ msgstr "Planning rounds suggested replenishment up to a whole multiple of this n
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
+
+msgid "Planning time fence"
+msgstr "Planning time fence"
+
+msgid "Planning time fence (days)"
+msgstr "Planning time fence (days)"
+
+msgid "Planning time fence days"
+msgstr "Planning time fence days"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
@@ -24289,6 +24364,9 @@ msgstr "Projected on hand by week"
 
 msgid "Projected stock"
 msgstr "Projected stock"
+
+msgid "Projected stock {stock}"
+msgstr "Projected stock {stock}"
 
 msgid "Projected stock by week"
 msgstr "Projected stock by week"
@@ -25711,6 +25789,9 @@ msgstr "Release control setting updated"
 msgid "Release date"
 msgstr "Release date"
 
+msgid "Release Date"
+msgstr "Release Date"
+
 msgid "Release Items"
 msgstr "Release Items"
 
@@ -25734,6 +25815,9 @@ msgstr "Released"
 
 msgid "Released date"
 msgstr "Released date"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr "Released inside the planning time fence: MRP keeps its quantity and dates."
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "Released items bill on the next invoice run, within the line's funding."
@@ -27547,6 +27631,9 @@ msgstr "Saving {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "Saving a copy of your current data"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+
 msgid "Saving..."
 msgstr "Saving..."
 
@@ -27682,6 +27769,9 @@ msgstr "Scrap {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "Scrap / Cost of Quality"
+
+msgid "scrap +{scrap}"
+msgstr "scrap +{scrap}"
 
 msgid "Scrap Percent"
 msgstr "Scrap Percent"
@@ -30640,6 +30730,9 @@ msgstr "Supply and demand chart over {weeks} weeks: projected on hand starts at 
 
 msgid "Supply and demand chart: no data."
 msgstr "Supply and demand chart: no data."
+
+msgid "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
+msgstr "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
 
 msgid "Support"
 msgstr "Support"
@@ -34147,6 +34240,9 @@ msgstr "Turn on the built-in pieces"
 msgid "Turn on to create one picking list for each job when it is released."
 msgstr "Turn on to create one picking list for each job when it is released."
 
+msgid "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
+msgstr "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
+
 msgid "Turned off sync"
 msgstr "Turned off sync"
 
@@ -34336,6 +34432,9 @@ msgstr "Undiscounted payments still to come, by fiscal year, less the interest t
 
 msgid "Undo"
 msgstr "Undo"
+
+msgid "Unfirm"
+msgstr "Unfirm"
 
 msgid "Unfurl Links"
 msgstr "Unfurl Links"

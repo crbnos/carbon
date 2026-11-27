@@ -61,7 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let toolPlanning = await api.items.getItemPlanning({ itemId, locationId });
+  const toolPlanning = await api.items.getItemPlanning({ itemId, locationId });
 
   if (toolPlanning.error || !toolPlanning.data) {
     throw redirect(
@@ -73,8 +73,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const { locationPlanningTimeFenceDays, ...planning } = toolPlanning.data;
   return {
-    toolPlanning: toolPlanning.data,
+    toolPlanning: planning,
+    // the placeholder of the item's empty fence; a failed read shows none
+    locationTimeFenceDays: locationPlanningTimeFenceDays ?? undefined,
     locationId
   };
 }
@@ -88,6 +91,8 @@ export async function action(args: ActionFunctionArgs) {
   const { api } = await authorize(args.request);
   const result = await api.items.updateItemPlanning({
     ...input.data,
+    // the form always posts the fence: an emptied field inherits
+    planningTimeFenceDays: input.data.planningTimeFenceDays ?? null,
     itemId,
     customFields: input.formData && setCustomFields(input.formData)
   });
@@ -107,7 +112,8 @@ export default function ToolPlanningRoute() {
     locations: ListItem[];
   }>(path.to.toolRoot);
 
-  const { toolPlanning, locationId } = useLoaderData<typeof loader>();
+  const { toolPlanning, locationTimeFenceDays, locationId } =
+    useLoaderData<typeof loader>();
 
   if (!sharedToolsData) throw new Error("Could not load shared tools data");
 
@@ -119,10 +125,19 @@ export default function ToolPlanningRoute() {
           ...toolPlanning,
           ...getCustomFields(toolPlanning.customFields)
         }}
+        locationTimeFenceDays={locationTimeFenceDays}
         locations={sharedToolsData.locations ?? []}
         type="Tool"
       />
-      <ItemPlanningChart itemId={toolPlanning.itemId} locationId={locationId} />
+      <ItemPlanningChart
+        itemId={toolPlanning.itemId}
+        locationId={locationId}
+        safetyStock={
+          toolPlanning.reorderingPolicy === "Demand-Based Reorder"
+            ? (toolPlanning.demandAccumulationSafetyStock ?? 0)
+            : undefined
+        }
+      />
     </VStack>
   );
 }

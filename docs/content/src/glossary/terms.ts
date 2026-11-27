@@ -1404,7 +1404,33 @@ export const terms = {
   },
   "item-planning-horizon": {
     term: msg`Planning Horizon (Days)`,
-    definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`
+    definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`,
+    href: "/docs/reference/planning#planning-horizon"
+  },
+  "planning-time-fence": {
+    term: msg`Planning time fence`,
+    definition: msg`How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence.`,
+    href: "/docs/reference/planning#the-planning-time-fence"
+  },
+  "item-planning-time-fence": {
+    term: msg`Planning time fence (days)`,
+    definition: msg`How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item.`,
+    href: "/docs/reference/planning#the-planning-time-fence"
+  },
+  "planned-order": {
+    term: msg`Planned Order`,
+    definition: msg`Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents.`,
+    href: "/docs/reference/planning#planned-orders"
+  },
+  "firm-planned-order": {
+    term: msg`Firm`,
+    definition: msg`A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP.`,
+    href: "/docs/reference/planning#firm-unfirm-and-edit"
+  },
+  "convert-planned-order": {
+    term: msg`Convert`,
+    definition: msg`Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status.`,
+    href: "/docs/reference/planning#ordering-converts-planned-orders"
   },
   "delivery-date-check": {
     term: msg`Delivery Date Check`,
@@ -1413,7 +1439,7 @@ export const terms = {
   },
   "planning-action": {
     term: msg`Planning action`,
-    definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it.`,
+    definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it.`,
     href: "/docs/reference/planning#planning-actions"
   },
   "reschedule-tolerance": {

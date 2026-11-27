@@ -105,7 +105,11 @@ export const locationValidator = z
       .min(1, { message: "Timezone is required" })
       .refine(isValidTimeZone, { message: "Invalid timezone" }),
     latitude: zfd.numeric(z.number().optional()),
-    longitude: zfd.numeric(z.number().optional())
+    longitude: zfd.numeric(z.number().optional()),
+    // The planning time fence in calendar days from today; an item at this
+    // location inherits it unless it sets its own. A new location without
+    // it has none (0); an update without it keeps the stored fence.
+    planningTimeFenceDays: zfd.numeric(z.number().int().min(0).optional())
   })
   .superRefine(({ latitude, longitude }, ctx) => {
     if ((latitude && !longitude) || (!latitude && longitude)) {

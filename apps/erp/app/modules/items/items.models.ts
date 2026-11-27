@@ -740,11 +740,19 @@ export const itemPlanningValidator = z
     minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
     maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
     orderMultiple: zfd.numeric(z.number().min(1)).optional(),
-    // The planning horizon (time fence) in days from today: the planning grids
+    // The planning horizon in days from today: the planning grids
     // surface only the actions and suggested orders that fall inside it. Empty
     // = inherit the company default, else no fence; 0 = no fence for this item
     // even when the company has a default.
     planningHorizonDays: zfd.numeric(z.number().int().min(0).optional()),
+    // The planning time fence in calendar days from today: MRP holds planned
+    // orders inside it still. null = inherit the location's fence; 0 = no
+    // fence for this item even when the location has one; left out = keep
+    // the stored value. A form posts an empty field as left out, so the
+    // planning routes send it as null.
+    planningTimeFenceDays: zfd.numeric(
+      z.number().int().min(0).nullable().optional()
+    ),
     // The delivery date check level of this item at this location. Empty =
     // the company's level (Settings → Sales).
     deliveryDateControl: zfd.text(z.enum(deliveryDateControlTypes).optional()),
