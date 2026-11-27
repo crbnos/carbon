@@ -186,7 +186,8 @@ Interaction belongs in a browser playbook.
 - Run: `SUPABASE_DB_URL=… pnpm --filter erp exec vitest run test/database/<file>`.
 - CI: the Database tests workflow (`.github/workflows/database-tests.yml`)
   runs the whole suite on every pull request that changes `apps/erp` or a
-  package. It migrates an empty database (`crbn migrate`), starts PostgREST
+  package, half the files on each of two runners (`vitest --shard`). Each
+  migrates an empty database (`crbn migrate`), starts PostgREST
   (`crbn up --no-apps --no-migrate`), and fails when a test fails or when the
   database or PostgREST is missing, so the suite cannot skip unseen.
 
