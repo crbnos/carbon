@@ -116,9 +116,12 @@ export const attachments = {
   gauge: { after: ["sync_advance_document_sequence"], events: true },
   gaugeCalibrationRecord: { events: true },
   group: { before: ["check_group_system_flags"] },
+  implementationAssignment: { statement: ["broadcast_table_changes"] },
   implementationCheckState: { statement: ["broadcast_table_changes"] },
   implementationFieldValue: { statement: ["broadcast_table_changes"] },
+  implementationFile: { statement: ["broadcast_table_changes"] },
   implementationHub: { statement: ["broadcast_table_changes"] },
+  implementationMember: { statement: ["broadcast_table_changes"] },
   implementationRow: { statement: ["broadcast_table_changes"] },
   inspection: {
     before: ["check_inspection_lot_release"],

@@ -18,6 +18,11 @@ import type { I18n } from "@lingui/core";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuRocket } from "react-icons/lu";
+import {
+  type ImplementationHubVersion,
+  implementationHub2Name,
+  usesImplementationHub2
+} from "~/modules/shared/shared.models";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
 import { useResolved } from "./useResolved";
@@ -36,9 +41,22 @@ type ImplementationProgress = {
 };
 
 export type ImplementationHubData = {
-  implementationHub: { tier: Tier; status: HubStatus } | null;
+  implementationHub: {
+    tier: Tier;
+    status: HubStatus;
+    hubVersion?: ImplementationHubVersion;
+  } | null;
   implementationCheckStates: CheckStateRow[];
   implementationSignals: Signals | null;
+  // The company gets Implementation Hub 2.0 (`usesImplementationHub2`): the
+  // flag is on for it and its hub's version is 2.0.
+  implementationHub2: boolean;
+  // The `implementation-hub-2` flag is on for the company, enrolled or not:
+  // the home card enrols Carbon staff straight onto Implementation Hub 2.0.
+  implementationHub2Enabled: boolean;
+  // The signed-in person opens Implementation Hub 2.0: Carbon staff, or a
+  // person with a page there. In a company on 2.0, no one else sees it.
+  implementationHub2Opens: boolean;
   // False until the streamed progress lands. Until then the counts are not
   // known: show the item and the card, leave the numbers out.
   ready: boolean;
@@ -47,11 +65,18 @@ export type ImplementationHubData = {
 const isFinished = (status: HubStatus) =>
   status === "complete" || status === "archived";
 
+// A company on Implementation Hub 2.0 has its own address; every other company
+// keeps Implementation Hub 1.0 at its usual address.
+const hubPath = (implementationHub2: boolean) =>
+  implementationHub2 ? path.to.implementation : path.to.getStarted;
+
 // Shared reader. The hub row (null until the company enrols) is awaited by the
 // layout loader; progress is streamed and fills in after.
 function useImplementation(): ImplementationHubData | undefined {
   const data = useRouteData<{
     implementationHub?: ImplementationHubData["implementationHub"];
+    implementationHub2Enabled?: boolean;
+    implementationHub2Opens?: boolean;
     implementationProgress?: Promise<ImplementationProgress>;
   }>(path.to.authenticatedRoot);
   const progress = useResolved(data?.implementationProgress, null);
@@ -60,8 +85,22 @@ function useImplementation(): ImplementationHubData | undefined {
     implementationHub: data.implementationHub ?? null,
     implementationCheckStates: progress?.checkStates ?? [],
     implementationSignals: progress?.signals ?? null,
+    implementationHub2: usesImplementationHub2(
+      data.implementationHub,
+      data.implementationHub2Enabled ?? false
+    ),
+    implementationHub2Enabled: data.implementationHub2Enabled ?? false,
+    implementationHub2Opens: data.implementationHub2Opens ?? false,
     ready: progress !== null
   };
+}
+
+// Whether the company gets Implementation Hub 2.0 and the signed-in person
+// opens it, for a component outside the nav and the home card
+// (Implementation Hub 1.0's notice).
+export function useOpensImplementationHub2(): boolean {
+  const data = useImplementation();
+  return Boolean(data?.implementationHub2 && data.implementationHub2Opens);
 }
 
 // Whether the item and the card exist is known at first paint, so neither
@@ -75,10 +114,6 @@ export function ImplementationData({
   return data ? <>{children(data)}</> : null;
 }
 
-function useHub() {
-  return useImplementation()?.implementationHub;
-}
-
 // The pinned "Get Started" primary-nav entry with a remaining-gates badge. Shown
 // while a hub is still in progress; gone once it's finished (see reopen entry).
 export function getImplementationNavItem(
@@ -87,6 +122,17 @@ export function getImplementationNavItem(
 ): Authenticated<NavItem> | null {
   const hub = data.implementationHub;
   if (!hub || isFinished(hub.status)) return null;
+
+  // Implementation Hub 2.0 has no gates to count: one name, no badge. It
+  // shows only to Carbon staff and the people with a page.
+  if (data.implementationHub2) {
+    if (!data.implementationHub2Opens) return null;
+    return {
+      name: i18n._(implementationHub2Name),
+      to: path.to.implementation,
+      icon: LuRocket
+    };
+  }
 
   const spine = spineForTier(SPINE, hub.tier);
   const done = gatesDone(
@@ -109,12 +155,14 @@ export function getImplementationNavItem(
 // Null for unenrolled or still-in-progress hubs.
 export function useImplementationReopenItem(): Authenticated<NavItem> | null {
   const { i18n } = useLingui();
-  const hub = useHub();
-  if (!hub || !isFinished(hub.status)) return null;
+  const data = useImplementation();
+  const hub = data?.implementationHub;
+  if (!data || !hub || !isFinished(hub.status)) return null;
+  if (data.implementationHub2 && !data.implementationHub2Opens) return null;
 
   return {
     name: i18n._(labelForTier(hub.tier)),
-    to: path.to.getStarted,
+    to: hubPath(data.implementationHub2),
     icon: LuRocket
   };
 }

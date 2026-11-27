@@ -67,7 +67,7 @@ import {
 } from "./Card";
 import { Checkbox } from "./Checkbox";
 import type { ChoiceCardOption } from "./ChoiceCard";
-import { ChoiceCardGroup } from "./ChoiceCard";
+import { ChoiceCardGroup, MultiChoiceCardGroup } from "./ChoiceCard";
 import type { ChoiceSelectOption } from "./ChoiceSelect";
 import { ChoiceSelect } from "./ChoiceSelect";
 import { ClientOnly } from "./ClientOnly";
@@ -697,6 +697,7 @@ export {
   ModalPortal,
   ModalTitle,
   ModalTrigger,
+  MultiChoiceCardGroup,
   MultiSelect,
   multiSelectTriggerVariants,
   NavRail,

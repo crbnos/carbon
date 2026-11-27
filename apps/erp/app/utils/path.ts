@@ -1559,6 +1559,12 @@ export const path = {
     groups: `${x}/users/groups`,
     holiday: (id: string) => generatePath(`${x}/people/holidays/${id}`),
     holidays: `${x}/people/holidays`,
+    implementation: `${x}/implementation`,
+    implementationEnroll: `${x}/implementation/enroll`,
+    implementationPrioritySet: `${x}/implementation/priority-set`,
+    implementationSettings: `${x}/implementation/settings`,
+    implementationState: `${x}/implementation/state`,
+    implementationVersion: `${x}/implementation/version`,
     import: (tableId: string) => generatePath(`${x}/shared/import/${tableId}`),
     incomeStatement: `${x}/reports/income-statement`,
     incomeStatementLedger: (id: string) =>

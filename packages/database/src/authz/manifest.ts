@@ -676,6 +676,12 @@ export const manifest = {
   gaugeType: company({ read: "employee" }),
   group: company({ read: "employee" }),
   holiday: company({ read: "employee" }),
+  implementationAssignment: company({
+    read: "employee",
+    create: "employee",
+    update: "employee",
+    delete: "employee"
+  }),
   implementationCheckState: company({
     read: "employee",
     create: "employee",
@@ -686,10 +692,22 @@ export const manifest = {
     create: "employee",
     update: "employee"
   }),
+  implementationFile: company({
+    read: "employee",
+    create: "employee",
+    update: "employee",
+    delete: "employee"
+  }),
   implementationHub: company({
     read: "employee",
     update: "employee",
     column: "id"
+  }),
+  implementationMember: company({
+    read: "employee",
+    create: "employee",
+    update: "employee",
+    delete: "employee"
   }),
   implementationRow: policies({ all: inCompany("companyId", "employee") }),
   // Government contracting Phase 5b. The rate run writes the statement, the

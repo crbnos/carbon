@@ -17,7 +17,8 @@ import {
   optionalPlainTextDoc,
   optionalTiptapDoc,
   requiredTiptapDoc,
-  toTiptapDoc
+  toTiptapDoc,
+  usesImplementationHub2
 } from "./shared.models";
 
 // Rich-text columns are `json` and must hold a tiptap document OBJECT. A JSON
@@ -405,5 +406,24 @@ describe("force delete", () => {
     expect(forceDeleteNotificationId("receipt", "r1", "fdr1")).toBe(
       "receipt:r1:fdr1"
     );
+  });
+});
+
+// Which Implementation Hub a company gets. Taking a company out of the flag
+// must put it back on Implementation Hub 1.0, whatever version was chosen.
+describe("usesImplementationHub2", () => {
+  const hub2 = { hubVersion: "2.0" };
+  const hub1 = { hubVersion: "1.0" };
+
+  it("gives 2.0 only with the flag on and 2.0 chosen", () => {
+    expect(usesImplementationHub2(hub2, true)).toBe(true);
+  });
+
+  it.each([
+    ["flag off, 2.0 chosen", hub2, false],
+    ["flag on, 1.0 chosen", hub1, true],
+    ["flag on, not enrolled", null, true]
+  ])("gives 1.0 when %s", (_case, hub, enabled) => {
+    expect(usesImplementationHub2(hub, enabled)).toBe(false);
   });
 });

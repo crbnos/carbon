@@ -11,4 +11,5 @@ export function useImplementationRealtime(companyId: string) {
   useRealtimeTable({ companyId, table: "implementationCheckState" });
   useRealtimeTable({ companyId, table: "implementationFieldValue" });
   useRealtimeTable({ companyId, table: "implementationRow" });
+  useRealtimeTable({ companyId, table: "implementationFile" });
 }

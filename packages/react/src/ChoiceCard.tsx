@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type ReactNode, useEffect, useId, useRef } from "react";
+import { Checkbox } from "./Checkbox";
 import { RadioGroup, RadioGroupItem } from "./Radio";
 import { cn } from "./utils/cn";
 
@@ -149,6 +150,93 @@ export function ChoiceCardGroup<V extends string = string>({
           );
         })}
       </RadioGroup>
+    </div>
+  );
+}
+
+type MultiChoiceCardGroupProps<V extends string = string> = {
+  /** Optional small label rendered above the stack of cards. */
+  label?: string;
+  /** The selected values, in any order. */
+  value: V[];
+  /** Called with the new selection when the user ticks or unticks a card. */
+  onChange: (value: V[]) => void;
+  /** Choices to render. */
+  options: ChoiceCardOption<V>[];
+  /** Extra classes for the wrapping `<div>`. */
+  className?: string;
+};
+
+/**
+ * {@link ChoiceCardGroup} for questions that take several answers: the same
+ * cards, with a checkbox on the right edge in place of the radio. Each card is
+ * its own tab stop and Space toggles it, as a checkbox list does. Pure
+ * controlled component — callers own the state.
+ */
+export function MultiChoiceCardGroup<V extends string = string>({
+  label,
+  value,
+  onChange,
+  options,
+  className
+}: MultiChoiceCardGroupProps<V>) {
+  const groupId = useId();
+
+  const toggle = (option: V, checked: boolean) =>
+    onChange(
+      checked
+        ? [...value.filter((v) => v !== option), option]
+        : value.filter((v) => v !== option)
+    );
+
+  return (
+    <div className={cn("space-y-2 w-full", className)}>
+      {label && (
+        <span className="text-xs font-medium text-muted-foreground">
+          {label}
+        </span>
+      )}
+      <div role="group" aria-label={label} className="flex flex-col gap-2">
+        {options.map((opt) => {
+          const inputId = `${groupId}-${opt.value}`;
+          return (
+            <label
+              key={opt.value}
+              htmlFor={inputId}
+              className={cn(
+                "flex cursor-pointer items-start gap-3 rounded-md border border-border bg-accent-40 p-3 transition-colors",
+                "hover:bg-card",
+                "has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-card",
+                "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+                opt.disabled && "cursor-not-allowed opacity-50"
+              )}
+            >
+              {opt.icon && (
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground mt-0.5">
+                  {opt.icon}
+                </span>
+              )}
+              <div className="flex flex-1 flex-col gap-0.5">
+                <span className="text-sm font-medium">{opt.title}</span>
+                {opt.description && (
+                  <span className="text-xs text-muted-foreground leading-snug">
+                    {opt.description}
+                  </span>
+                )}
+              </div>
+              <Checkbox
+                id={inputId}
+                checked={value.includes(opt.value)}
+                disabled={opt.disabled}
+                onCheckedChange={(checked) =>
+                  toggle(opt.value, checked === true)
+                }
+                className="mt-1 flex-shrink-0"
+              />
+            </label>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -156,6 +156,7 @@ import {
   SESSION_SECRET,
   SUPABASE_SERVICE_ROLE_KEY
 } from "@carbon/env";
+import { flags } from "@carbon/env/flags.server";
 import {
   getContentType,
   getFileExtension,
@@ -164,6 +165,7 @@ import {
 } from "@carbon/files";
 import { parseCsv } from "@carbon/files/csv";
 import { TiptapText } from "@carbon/files/markdown";
+import { getSetupCounts } from "@carbon/implementation-hub/server";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -186,6 +188,7 @@ import {
   getReadableIdWithRevision,
   groupBy,
   indexByMapped,
+  isInternalEmail,
   type LeasePaymentRowInput,
   pluckUnique,
   redirect,
@@ -274,6 +277,8 @@ import { importJournalEntries } from "./journal-entry-import";
 import { importPayrollTotals } from "./payroll-total-import";
 import {
   type assignableTables,
+  IMPLEMENTATION_HUB_2_FLAG,
+  type ImplementationHubVersion,
   methodItemType,
   type NoteField,
   type NoteTable,
@@ -1729,6 +1734,29 @@ const implementationSignalsKey = (companyId: string) =>
   `implementation:signals:${companyId}`;
 
 /**
+ * Whether the caller is Carbon staff: the email of the user it acts as (a
+ * signed-in user, or an API key's creator) is internal. The system actor is
+ * not.
+ */
+export async function isInternalCaller(ctx: ServiceContext): Promise<boolean> {
+  if (ctx.actor.type === "system") return false;
+  const { data, error } = await ctx.asSystem.supabase
+    .from("user")
+    .select("email")
+    .eq("id", ctx.auditUserId)
+    .maybeSingle();
+  // An unreadable email is never staff.
+  if (error) {
+    logger.warning("Could not read the caller's email to tell Carbon staff", {
+      userId: ctx.auditUserId,
+      error
+    });
+    return false;
+  }
+  return isInternalEmail(data?.email ?? "");
+}
+
+/**
  * The hub's product signals, probing only the ones not already seen true.
  *
  * The app shell loads these on every page for an enrolled company — five
@@ -1851,6 +1879,60 @@ export async function projectElementLinkRefusal(
     .eq("companyId", companyId)
     .maybeSingle();
   return project.data?.status === "Closed" ? "The project is closed" : null;
+}
+
+// Short on purpose: the counts are evidence a person reads right after doing
+// the work, so a minute-old "0" would read as the step not having happened.
+const IMPLEMENTATION_COUNTS_TTL_SECONDS = 30;
+
+const implementationCountsKey = (companyId: string) =>
+  `implementation:counts:${companyId}`;
+
+/**
+ * The hub's setup counts, cached for a few seconds per company.
+ *
+ * Both Implementation Hub versions load these on every page and on every realtime
+ * revalidation — two dozen head counts each time. Several revalidations
+ * arrive together when someone ticks a batch of rows, so a short cache turns
+ * that burst into one round of queries. A failed count stays null and is not
+ * cached as zero.
+ */
+export async function getImplementationCounts(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<Awaited<ReturnType<typeof getSetupCounts>>["counts"]> {
+  try {
+    const cached = await redis.get(implementationCountsKey(companyId));
+    if (cached) {
+      return JSON.parse(cached) as Awaited<
+        ReturnType<typeof getSetupCounts>
+      >["counts"];
+    }
+  } catch (error) {
+    signalsLogger.warning("Could not read cached implementation counts", {
+      companyId,
+      error
+    });
+  }
+
+  const { counts, unavailable } = await getSetupCounts(client, companyId);
+  // Never cache a failed read: the next load retries it.
+  if (unavailable.length === 0) {
+    try {
+      await redis.set(
+        implementationCountsKey(companyId),
+        JSON.stringify(counts),
+        "EX",
+        IMPLEMENTATION_COUNTS_TTL_SECONDS
+      );
+    } catch (error) {
+      signalsLogger.warning("Could not cache implementation counts", {
+        companyId,
+        error
+      });
+    }
+  }
+  return counts;
 }
 
 export type ActionTaskWithParent = {
@@ -2029,6 +2111,39 @@ export function assignmentEvent(table: string): NotificationEvent | null {
 
 export const normalizeLookupName = (value: string) =>
   value.toLowerCase().trim();
+
+/**
+ * Whether Implementation Hub 2.0 is turned on for the company (the
+ * `implementation-hub-2` flag). Read with the company alone, so everyone in a
+ * company gets the same Implementation Hub.
+ */
+export function implementationHub2Enabled(companyId: string): Promise<boolean> {
+  return flags.bool(IMPLEMENTATION_HUB_2_FLAG, { companyId });
+}
+
+/**
+ * Set the company's Implementation Hub version. Null data when the company is
+ * not enrolled: the version belongs to the hub row.
+ */
+export async function setImplementationHubVersion(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    hubVersion: ImplementationHubVersion;
+    userId: string;
+  }
+) {
+  return client
+    .from("implementationHub")
+    .update({
+      hubVersion: args.hubVersion,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.companyId)
+    .select("id, hubVersion")
+    .maybeSingle();
+}
 
 /** Email the company's active admins that their hub is ready. Never throws. */
 export async function notifyImplementationHubAdmins(ctx: ServiceContext) {

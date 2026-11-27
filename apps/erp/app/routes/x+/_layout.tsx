@@ -27,6 +27,8 @@ import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
 import { evaluateBrowserFlags } from "@carbon/env/flags.server";
 import { getVapidDetails } from "@carbon/env/push.server";
+import { hubAccess, opensImplementationHub2 } from "@carbon/implementation-hub";
+import { getImplementationMember } from "@carbon/implementation-hub/server";
 import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { getImplementationCheckStates } from "@carbon/onboarding/server";
@@ -53,6 +55,7 @@ import {
   deferRootActionPost,
   Edition,
   formatDate,
+  isInternalEmail,
   redirect,
   redirectExternal,
   requiresItarEntityCertification,
@@ -97,10 +100,12 @@ import {
   employeeCompaniesOf,
   getEmployeeCompanies
 } from "~/modules/settings/settings.service";
+import { usesImplementationHub2 } from "~/modules/shared/shared.models";
 import {
   getAppShell,
   getCustomFieldsSchemas,
-  getImplementationSignals
+  getImplementationSignals,
+  implementationHub2Enabled
 } from "~/modules/shared/shared.service";
 import AccountSettings from "~/modules/users/ui/AccountSettings";
 import {
@@ -133,6 +138,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = deferRootActionPost(
       currentUrl.pathname.startsWith("/refresh-session") ||
       currentUrl.pathname.startsWith("/x/acknowledge") ||
       currentUrl.pathname.startsWith("/x/get-started") ||
+      currentUrl.pathname.startsWith("/x/implementation") ||
       currentUrl.pathname.startsWith("/x/shared/views")
     ) {
       return true;
@@ -168,13 +174,42 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // The user's and the company's rows, in one round trip. Started here so the
   // hub's signal probes can chain off it and overlap the fan-out below.
   const shellPromise = getAppShell(client, companyId, userId);
+  // Whether Implementation Hub 2.0 is on for the company: with the hub row, it
+  // decides which version the nav item and the home card point to.
+  const implementationHub2Promise = implementationHub2Enabled(companyId);
+  // Whether the signed-in person has a page in the company's Implementation
+  // Hub 2.0: in a company on 2.0, only they and Carbon staff see it. Read only
+  // while the flag is on for the company, and never for staff.
+  const isStaff = isInternalEmail(email);
+  const implementationPagePromise = implementationHub2Promise.then(
+    async (on) => {
+      if (!on || isStaff) return false;
+      const { data, error } = await getImplementationMember(client, {
+        companyId,
+        memberId: userId
+      });
+      if (error) {
+        log.warning("Failed to read the person's Implementation Hub page", {
+          error
+        });
+      }
+      return Boolean(data);
+    }
+  );
 
   // Only probe product signals when the company is actually enrolled, so the
   // home card + nav badge count gates the same way the hub page does.
-  const implementationSignalsPromise = shellPromise.then(({ data }) => {
+  const implementationSignalsPromise = Promise.all([
+    shellPromise,
+    implementationHub2Promise
+  ]).then(([{ data }, hub2Enabled]) => {
     const hub = data?.implementationHub;
-    // A finished hub shows no badge and no card, so it needs no signals.
-    return hub && hub.status !== "complete" && hub.status !== "archived"
+    // A finished hub shows no badge and no card, so it needs no signals; nor
+    // does Implementation Hub 2.0, which shows neither.
+    return hub &&
+      hub.status !== "complete" &&
+      hub.status !== "archived" &&
+      !usesImplementationHub2(hub, hub2Enabled)
       ? getImplementationSignals(client, companyId)
       : null;
   });
@@ -223,15 +258,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   // Parallelize all requests
-  const [shell, stripeCustomer, plan, customFields, claims, itarCertification] =
-    await Promise.all([
-      shellPromise,
-      getStripeCustomerByCompanyId(companyId, userId),
-      getPlan(client, companyId),
-      getCustomFieldsSchemas(client, { companyId }),
-      getUserClaims(userId, companyId),
-      itarCertificationPromise
-    ]);
+  const [
+    shell,
+    stripeCustomer,
+    plan,
+    customFields,
+    claims,
+    itarCertification,
+    implementationHub2Flag,
+    implementationPage
+  ] = await Promise.all([
+    shellPromise,
+    getStripeCustomerByCompanyId(companyId, userId),
+    getPlan(client, companyId),
+    getCustomFieldsSchemas(client, { companyId }),
+    getUserClaims(userId, companyId),
+    itarCertificationPromise,
+    implementationHub2Promise,
+    implementationPagePromise
+  ]);
 
   // The same shapes the nine separate reads returned, so what follows reads as
   // it did. A failed shell read fails each of them, as each could before.
@@ -386,6 +431,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     savedViews: savedViews.data ?? [],
     printerRoutes: printerRoutes.data ?? [],
     implementationHub: shell.data?.implementationHub ?? null,
+    // The `implementation-hub-2` flag for the company, read with the hub row
+    // by `useImplementationNavItem` (`usesImplementationHub2`).
+    implementationHub2Enabled: implementationHub2Flag,
+    // Whether this person opens Implementation Hub 2.0 (`hubAccess`, as its
+    // layout): in a company on 2.0, its entries show to them only.
+    implementationHub2Opens: opensImplementationHub2(
+      hubAccess({
+        isInternal: isStaff,
+        enrolled: Boolean(shell.data?.implementationHub),
+        usesHub2: usesImplementationHub2(
+          shell.data?.implementationHub,
+          implementationHub2Flag
+        ),
+        hasPage: implementationPage
+      })
+    ),
     implementationProgress,
     changelog,
     itarCertification: {

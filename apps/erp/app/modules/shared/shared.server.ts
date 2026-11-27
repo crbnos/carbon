@@ -64,9 +64,16 @@ import {
   importPermissions,
   importSchemas
 } from "./imports.models";
-import { assignableTables, noteFields, noteTables } from "./shared.models";
+import {
+  assignableTables,
+  implementationHubVersionValidator,
+  noteFields,
+  noteTables
+} from "./shared.models";
 import * as service from "./shared.service";
-import { invokeCreate } from "./shared.service";
+// The implementation-hub-2 flag is a helper read by loaders too, not an
+// operation of its own.
+import { implementationHub2Enabled, invokeCreate } from "./shared.service";
 import type { MethodRowsAdded } from "./types";
 
 const logger = getLogger("erp", "shared");
@@ -444,6 +451,124 @@ export const enrollImplementationHub = defineServiceFn({
 
     await service.notifyImplementationHubAdmins(ctx);
     return { enrolled: true };
+  }
+});
+
+/**
+ * Enroll the company in the Implementation Hub as Carbon staff.
+ *
+ * @remarks
+ * What `enrollImplementationHub` does, for Carbon staff (an internal email):
+ * they may enroll any company they belong to, settings permission or not,
+ * since they open an unenrolled hub to set it up. Anyone else is refused.
+ * The company starts on Implementation Hub 2.0 when the flag is on for it,
+ * and its admins are not emailed: on 2.0 a person sees the Implementation Hub
+ * only once staff load their page. On 1.0 the admins are emailed, as
+ * self-serve enrolment does.
+ */
+export const enrollImplementationHubAsStaff = defineServiceFn({
+  input: z.object({}),
+  // Who is staff is not a permission: any employee passes the gate, `run`
+  // decides.
+  permission: "employee",
+
+  async run(ctx) {
+    if (!(await service.isInternalCaller(ctx))) {
+      return ctx.error(
+        "forbidden",
+        "Only Carbon staff can enroll a company from Implementation Hub 2.0"
+      );
+    }
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+
+    const existing = await getImplementationHub(serviceRole, companyId);
+    if (existing.data) return { enrolled: false };
+
+    const enrolled = await enrollImplementation(serviceRole, {
+      companyId,
+      userId: ctx.auditUserId,
+      tier: "self_serve"
+    });
+    if (enrolled.error) {
+      return ctx.error("internal", "Failed to enroll company", enrolled.error);
+    }
+
+    // A company the implementation-hub-2 flag is on for starts on
+    // Implementation Hub 2.0. Any other company starts on Implementation Hub
+    // 1.0 and its admins are emailed, as self-serve enrolment does.
+    if (!(await implementationHub2Enabled(companyId))) {
+      await service.notifyImplementationHubAdmins(ctx);
+      return { enrolled: true };
+    }
+    const version = await service.setImplementationHubVersion(serviceRole, {
+      companyId,
+      hubVersion: "2.0",
+      userId: ctx.auditUserId
+    });
+    if (version.error) {
+      return ctx.error(
+        "internal",
+        "Failed to set the Implementation Hub version",
+        version.error
+      );
+    }
+
+    return { enrolled: true };
+  }
+});
+
+/**
+ * Choose the company's Implementation Hub version.
+ *
+ * @remarks
+ * Implementation Hub 1.0 is the hub's pages and sidebar; Implementation Hub
+ * 2.0 is one page per person. Both versions read the same hub records, so a
+ * switch moves and loses nothing. Only Carbon staff (an internal email) who
+ * can update settings choose it, and only for an enrolled company.
+ */
+export const setImplementationHubVersion = defineServiceFn({
+  input: implementationHubVersionValidator,
+  permission: { "settings.company": "Edit" },
+
+  async run(ctx, input) {
+    if (!(await service.isInternalCaller(ctx))) {
+      return ctx.error(
+        "forbidden",
+        "Only Carbon staff can change the Implementation Hub version"
+      );
+    }
+    if (
+      input.hubVersion === "2.0" &&
+      !(await implementationHub2Enabled(ctx.company.id))
+    ) {
+      return ctx.error(
+        "forbidden",
+        "Implementation Hub 2.0 is off for this company. Add the company to the implementation-hub-2 flag first."
+      );
+    }
+    const result = await service.setImplementationHubVersion(
+      ctx.asSystem.supabase,
+      {
+        companyId: ctx.company.id,
+        hubVersion: input.hubVersion,
+        userId: ctx.auditUserId
+      }
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to change the Implementation Hub version",
+        result.error
+      );
+    }
+    if (!result.data) {
+      return ctx.error(
+        "notFound",
+        "Enroll the company in the Implementation Hub before choosing its version"
+      );
+    }
+    return { hubVersion: result.data.hubVersion };
   }
 });
 /**
