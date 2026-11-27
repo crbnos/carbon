@@ -81,6 +81,8 @@ const hasLocalStack = (() => {
   }
 })();
 
+type Consolidation = typeof import("./accounting-consolidation");
+
 const realFetch = globalThis.fetch;
 /** When set and it returns true for a request, the ledger client's request fails as a 500. */
 let failLedgerRequest: ((url: string, init: RequestInit) => boolean) | null =
@@ -336,7 +338,7 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
   const companies: string[] = [];
   let fake: FakeXero;
   let quickBooks: FakeQuickBooks;
-  let consolidateIntegration: typeof import("./accounting-consolidation")["consolidateIntegration"];
+  let consolidateIntegration: Consolidation["consolidateIntegration"];
 
   beforeAll(async () => {
     client = createClient<Database>(
