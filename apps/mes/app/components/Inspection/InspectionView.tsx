@@ -58,6 +58,7 @@ import { MaintenanceBlockWarning } from "~/components/MaintenanceBlockWarning";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
+import { useUser } from "~/hooks";
 import { useWorkTypeElapsed } from "~/hooks/useEventTotals";
 import type { AbilityShortfall } from "~/services/operations.service";
 import type {
@@ -1172,6 +1173,7 @@ function TimerControl({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
+  const user = useUser();
   const workTypeLabel = {
     Setup: t`Setup`,
     Labor: t`Labor`,
@@ -1202,11 +1204,12 @@ function TimerControl({
     }
   }, [isTimerBusy]);
 
-  // Freeze the clock while a stop is in flight; otherwise tick live.
+  // Freeze the clock while a stop is in flight; otherwise tick live. The button shows this operator's own time.
   const elapsed = useWorkTypeElapsed({
     events,
     workType,
     openEvent,
+    employeeId: user.id,
     frozen: pendingAction === "End"
   });
 

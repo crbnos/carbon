@@ -3273,6 +3273,7 @@ function TimerControl({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
+  const user = useUser();
   const workTypeLabels = {
     Setup: t`Setup`,
     Labor: t`Labor`,
@@ -3305,11 +3306,12 @@ function TimerControl({
     }
   }, [isTimerBusy]);
 
-  // Freeze the clock while a stop is in flight; otherwise tick live.
+  // Freeze the clock while a stop is in flight; otherwise tick live. The button shows this operator's own time.
   const elapsed = useWorkTypeElapsed({
     events,
     workType,
     openEvent,
+    employeeId: user.id,
     frozen: pendingAction === "End"
   });
 

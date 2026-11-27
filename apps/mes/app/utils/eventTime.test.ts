@@ -45,6 +45,30 @@ describe("getEventTotals", () => {
     expect(totals).toEqual({ setup: 60_000, labor: 2_440_000, machine: 0 });
   });
 
+  it("counts only the given operator's logged and running time", () => {
+    const events = [
+      event({ id: "a", employeeId: "me", endTime: "x", duration: 600 }),
+      event({
+        id: "b",
+        employeeId: "me",
+        startTime: "2026-08-04T11:59:30.000Z"
+      }),
+      event({ id: "c", employeeId: "other", endTime: "x", duration: 1200 }),
+      event({
+        id: "d",
+        employeeId: "other",
+        startTime: "2026-08-04T11:59:00.000Z"
+      })
+    ];
+    expect(getEventTotals(events, NOW, "me")).toEqual({
+      setup: 0,
+      labor: 630_000,
+      machine: 0
+    });
+    // Without an operator the team total stays: 600s + 30s + 1200s + 60s.
+    expect(getEventTotals(events, NOW).labor).toBe(1_890_000);
+  });
+
   it("counts a start ahead of the clock as zero and skips untyped events", () => {
     const totals = getEventTotals(
       [

@@ -12,15 +12,18 @@ export type TimedEvent = {
   startTime: string;
   endTime?: string | null;
   duration?: number | null;
+  employeeId?: string | null;
 };
 
-// Milliseconds per work type across every operator: ended events by stored duration, open ones live to `now`.
+// Milliseconds per work type, every operator or only `employeeId`'s: ended events by stored duration, open ones live to `now`.
 export function getEventTotals(
   events: TimedEvent[],
-  now: ZonedDateTime
+  now: ZonedDateTime,
+  employeeId?: string
 ): EventTotals {
   const totals: EventTotals = { setup: 0, labor: 0, machine: 0 };
   for (const event of events) {
+    if (employeeId && event.employeeId !== employeeId) continue;
     const key = event.type?.toLowerCase();
     if (key !== "setup" && key !== "labor" && key !== "machine") continue;
     if (event.endTime) {

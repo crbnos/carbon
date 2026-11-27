@@ -927,9 +927,11 @@ while its serial or batch materials are not scanned in.
 - `NeedMaterialModal` (Need material, see above).
 - **Hooks:** `hooks/useTravelerScan.ts` (see Traveler scan), `hooks/useWorkUnit.ts` (see Serial unit selection), `hooks/useOperation.tsx` (modal disclosures, live progress via
   `useInterval` + realtime (`@carbon/query`, see `realtime-system.md`), active-event detection;
-  its totals come from `getEventTotals` (`~/utils/eventTime`), the same sum the assembly and
-  inspection timer buttons show through `useWorkTypeElapsed` (`~/hooks/useEventTotals`): logged
-  time for the work type, every operator, plus the running time),
+  its totals come from `getEventTotals` (`~/utils/eventTime`): logged time for the work type,
+  every operator, plus the running time. The assembly and inspection timer buttons use the same
+  sum through `useWorkTypeElapsed` (`~/hooks/useEventTotals`), filtered by `employeeId` to the
+  signed-in operator's own logged and running time; the Progress panel and the status bar
+  meters still show the whole team's),
   `hooks/useFiles.tsx` (`downloadFile`/`downloadModel` via `path.to.file.previewFile`).
 
 ## Tabs
