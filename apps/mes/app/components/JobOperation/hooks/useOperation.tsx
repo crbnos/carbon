@@ -8,10 +8,8 @@ import { toast, useDisclosure, useInterval, useViewport } from "@carbon/react";
 import {
   getLocalTimeZone,
   now,
-  parseAbsolute,
   parseDate,
-  today,
-  toZoned
+  today
 } from "@internationalized/date";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRealtime, useUser } from "~/hooks";
@@ -22,6 +20,7 @@ import type {
   OperationWithDetails,
   ProductionEvent
 } from "~/services/types";
+import { getEventTotals } from "~/utils/eventTime";
 import { path } from "~/utils/path";
 
 export function useOperation({
@@ -166,34 +165,10 @@ export function useOperation({
     }
   });
 
-  const getProgress = useCallback(() => {
-    const timeNow = now(getLocalTimeZone());
-    return eventState.reduce(
-      (acc, event) => {
-        if (event.endTime && event.type) {
-          acc[event.type.toLowerCase() as keyof typeof acc] +=
-            (event.duration ?? 0) * 1000;
-        } else if (event.startTime && event.type) {
-          const startTime = toZoned(
-            parseAbsolute(event.startTime, getLocalTimeZone()),
-            getLocalTimeZone()
-          );
-
-          const difference = timeNow.compare(startTime);
-
-          if (difference > 0) {
-            acc[event.type.toLowerCase() as keyof typeof acc] += difference;
-          }
-        }
-        return acc;
-      },
-      {
-        setup: 0,
-        labor: 0,
-        machine: 0
-      }
-    );
-  }, [eventState]);
+  const getProgress = useCallback(
+    () => getEventTotals(eventState, now(getLocalTimeZone())),
+    [eventState]
+  );
 
   const [progress, setProgress] = useState<{
     setup: number;

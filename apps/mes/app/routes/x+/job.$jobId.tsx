@@ -31,6 +31,8 @@ import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  erpLink: ({ params }) =>
+    params.jobId ? path.to.jobDetail(params.jobId) : undefined,
   realtime: [
     { table: "job", column: "id", param: "jobId" },
     { table: "jobOperation", column: "jobId", param: "jobId" }

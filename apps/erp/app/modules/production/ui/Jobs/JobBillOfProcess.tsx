@@ -1493,6 +1493,17 @@ function StepsForm({
     // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
+  const onCancelAddStep = () => {
+    setType("Task");
+    setDescription({});
+    setNumericControls([]);
+    setDraftSlides([]);
+    setDraftParts([]);
+    setDraftPartQuantities({});
+    setDraftTools([]);
+    disclosure.onClose();
+  };
+
   if (isDisabled && temporaryItems[operationId]) {
     return (
       <Alert className="max-w-[420px] mx-auto my-8">
@@ -1542,6 +1553,7 @@ function StepsForm({
               setDescription({});
               setNumericControls([]);
               toast.success(t`Step added`);
+              disclosure.onClose();
             }}
             className="w-full"
           >
@@ -1724,20 +1736,25 @@ function StepsForm({
                 }
               />
 
-              <Submit
-                leftIcon={<LuCirclePlus />}
-                isDisabled={isDisabled || fetcher.state !== "idle"}
-                isLoading={fetcher.state !== "idle"}
-              >
-                Save Step
-              </Submit>
+              <HStack className="w-full justify-end" spacing={2}>
+                <Button variant="secondary" onClick={onCancelAddStep}>
+                  <Trans>Cancel</Trans>
+                </Button>
+                <Submit
+                  leftIcon={<LuCirclePlus />}
+                  isDisabled={isDisabled || fetcher.state !== "idle"}
+                  isLoading={fetcher.state !== "idle"}
+                >
+                  Save Step
+                </Submit>
+              </HStack>
             </VStack>
           </ValidatedForm>
         </div>
       ) : (
         <div className="flex justify-end mb-4">
           <Button onClick={disclosure.onOpen} leftIcon={<LuCirclePlus />}>
-            Add Step
+            <Trans>Add Step</Trans>
           </Button>
         </div>
       )}

@@ -6,6 +6,8 @@ import { describe, expect, it } from "vitest";
 import type { ReceiptReceivedStock } from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
+  defaultPurchaseOrderSupplierParties,
+  defaultPurchaseOrderSupplierParty,
   isPurchaseOrderBulkDeletable,
   isPurchaseOrderForceDeleteConfirmed,
   isPurchaseOrderLocked,
@@ -43,7 +45,8 @@ import {
   splitRfqFileAttachments,
   supplierContactEmailRequiredValidator,
   supplierContactValidator,
-  supplierQuoteValidator
+  supplierQuoteValidator,
+  withDefaultSupplierPrintFields
 } from "./purchasing.models";
 
 const ORDER_DATE = "2026-06-01";
@@ -1176,5 +1179,166 @@ describe("purchaseOrderPartNumberRefusal", () => {
       )
     ).toEqual(["Draft", "Planned", "To Review", "Rejected"]);
     expect(purchaseOrderPartNumberRefusal(null)).toBeNull();
+  });
+});
+
+describe("defaultPurchaseOrderSupplierParty", () => {
+  const supplier = (overrides: {
+    purchasingContactId?: string | null;
+    shippingSupplierLocationId?: string | null;
+    locationIds?: string[];
+  }) => ({
+    purchasingContactId: "contact-1",
+    shippingSupplierLocationId: null,
+    locationIds: [],
+    ...overrides
+  });
+
+  it("takes the purchasing contact and the shipping location", () => {
+    expect(
+      defaultPurchaseOrderSupplierParty(
+        supplier({
+          shippingSupplierLocationId: "loc-2",
+          locationIds: ["loc-1", "loc-2"]
+        })
+      )
+    ).toEqual({ supplierContactId: "contact-1", supplierLocationId: "loc-2" });
+  });
+
+  it("takes the only location when no shipping location is set", () => {
+    expect(
+      defaultPurchaseOrderSupplierParty(supplier({ locationIds: ["loc-1"] }))
+    ).toEqual({ supplierContactId: "contact-1", supplierLocationId: "loc-1" });
+  });
+
+  it("ignores a shipping location of another supplier", () => {
+    expect(
+      defaultPurchaseOrderSupplierParty(
+        supplier({
+          shippingSupplierLocationId: "other-supplier-loc",
+          locationIds: ["loc-1"]
+        })
+      )
+    ).toEqual({ supplierContactId: "contact-1", supplierLocationId: "loc-1" });
+  });
+
+  it("leaves the location empty when several locations could be meant", () => {
+    expect(
+      defaultPurchaseOrderSupplierParty(
+        supplier({ purchasingContactId: null, locationIds: ["loc-1", "loc-2"] })
+      )
+    ).toEqual({ supplierContactId: null, supplierLocationId: null });
+  });
+});
+
+describe("defaultPurchaseOrderSupplierParties", () => {
+  // Rows as the batch reads return them: each supplier's own rows, in any order.
+  it("gives each supplier read its own contact and location", () => {
+    const parties = defaultPurchaseOrderSupplierParties({
+      suppliers: [
+        { id: "sup-1", purchasingContactId: "contact-1" },
+        { id: "sup-2", purchasingContactId: null },
+        { id: "sup-3", purchasingContactId: "contact-3" }
+      ],
+      shippings: [
+        { supplierId: "sup-1", shippingSupplierLocationId: "loc-1b" },
+        { supplierId: "sup-3", shippingSupplierLocationId: "loc-1a" }
+      ],
+      locations: [
+        { id: "loc-1a", supplierId: "sup-1" },
+        { id: "loc-2a", supplierId: "sup-2" },
+        { id: "loc-1b", supplierId: "sup-1" },
+        { id: "loc-3a", supplierId: "sup-3" },
+        { id: "loc-3b", supplierId: "sup-3" }
+      ]
+    });
+
+    expect([...parties]).toEqual([
+      [
+        "sup-1",
+        { supplierContactId: "contact-1", supplierLocationId: "loc-1b" }
+      ],
+      ["sup-2", { supplierContactId: null, supplierLocationId: "loc-2a" }],
+      ["sup-3", { supplierContactId: "contact-3", supplierLocationId: null }]
+    ]);
+  });
+});
+
+describe("withDefaultSupplierPrintFields", () => {
+  const printed = {
+    supplierName: "Acme",
+    supplierAddressLine1: null,
+    supplierCity: null,
+    supplierCountryCode: null,
+    supplierCountryName: null,
+    supplierContactName: null,
+    supplierContactEmail: null
+  };
+  const defaults = {
+    address: {
+      addressLine1: "1 Main St",
+      addressLine2: null,
+      city: "Springfield",
+      stateProvince: "IL",
+      postalCode: "62701",
+      countryCode: "US",
+      countryName: "United States"
+    },
+    contact: { fullName: "Pat Buyer", email: "pat@example.com" }
+  };
+
+  it("prints the supplier's default address and contact on an order with neither", () => {
+    expect(
+      withDefaultSupplierPrintFields(
+        printed,
+        { supplierContactId: null, supplierLocationId: null },
+        defaults
+      )
+    ).toEqual({
+      supplierName: "Acme",
+      supplierAddressLine1: "1 Main St",
+      supplierAddressLine2: null,
+      supplierCity: "Springfield",
+      supplierStateProvince: "IL",
+      supplierPostalCode: "62701",
+      supplierCountryCode: "US",
+      supplierCountryName: "United States",
+      supplierContactName: "Pat Buyer",
+      supplierContactEmail: "pat@example.com"
+    });
+  });
+
+  it("keeps what the order sets and fills only the missing part", () => {
+    const ordered = {
+      ...printed,
+      supplierContactName: "Order Contact",
+      supplierContactEmail: "order@example.com"
+    };
+    expect(
+      withDefaultSupplierPrintFields(
+        ordered,
+        { supplierContactId: "contact-1", supplierLocationId: null },
+        defaults
+      )
+    ).toEqual({
+      ...ordered,
+      supplierAddressLine1: "1 Main St",
+      supplierAddressLine2: null,
+      supplierCity: "Springfield",
+      supplierStateProvince: "IL",
+      supplierPostalCode: "62701",
+      supplierCountryCode: "US",
+      supplierCountryName: "United States"
+    });
+  });
+
+  it("prints the order unchanged when the supplier has no defaults", () => {
+    expect(
+      withDefaultSupplierPrintFields(
+        printed,
+        { supplierContactId: null, supplierLocationId: null },
+        { address: null, contact: null }
+      )
+    ).toEqual(printed);
   });
 });

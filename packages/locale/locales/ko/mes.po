@@ -1036,6 +1036,7 @@ msgstr "가동중단"
 msgid "Down for maintenance"
 msgstr "유지보수 중단됨"
 
+#. placeholder {0}: block.dispatchReadableId
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Down for maintenance · {0}"
 msgstr "유지보수 중단됨 · {0}"

@@ -59,6 +59,7 @@ import {
   MotionMoney
 } from "~/components";
 import { Confirm } from "~/components/Modals";
+import { SummaryHeaderTotal } from "~/components/SummaryHeaderTotal";
 import { SummaryLineList, SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyDecimals,
@@ -218,6 +219,15 @@ const SalesOrderSummary = ({
                   />
                 </span>
               )}
+              <SummaryHeaderTotal
+                value={
+                  <MotionMoney
+                    value={total}
+                    currency={routeData?.salesOrder?.currencyCode ?? "USD"}
+                    decimalPlaces={currencyDecimals}
+                  />
+                }
+              />
               {routeData?.quote?.digitalQuoteAcceptedBy && (
                 <span className="text-xs text-muted-foreground tracking-tight flex flex-row items-center gap-x-1">
                   <Trans>via Digital Quote</Trans>

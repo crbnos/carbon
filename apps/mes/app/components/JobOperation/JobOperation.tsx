@@ -6,6 +6,8 @@ import type { Result } from "@carbon/auth";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { convertKbToString } from "@carbon/files";
+import type { MaintenanceBlock } from "@carbon/lib/production/floor";
+import { isSerialEntityIncompleteForOperation } from "@carbon/lib/production/shop-floor";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -81,7 +83,6 @@ import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import {
   Suspense,
   useCallback,
@@ -129,6 +130,7 @@ import {
 } from "~/components";
 import { AbilityWarning } from "~/components/AbilityWarning";
 import { MethodItemTypeIcon } from "~/components/Icons";
+import { MaintenanceBlockWarning } from "~/components/MaintenanceBlockWarning";
 import { ReworkBadge } from "~/components/ReworkBadge";
 import { UnitHoldBanner } from "~/components/UnitHoldBanner";
 import { useDateFormatter, useUrlParams, useUser } from "~/hooks";
@@ -139,10 +141,7 @@ import type {
   BatchWorkInstructions,
   JobOperationBatch
 } from "~/services/operations.service";
-import {
-  getFileType,
-  isSerialEntityIncompleteForOperation
-} from "~/services/operations.service";
+import { getFileType } from "~/services/operations.service";
 import type {
   Job,
   JobMakeMethod,
@@ -207,6 +206,8 @@ const log = getLogger("mes", "job-operation");
 
 type JobOperationProps = {
   abilityWarning?: AbilityShortfall | null;
+  /** The maintenance block on the work center; Start is disabled while it holds. */
+  maintenanceBlock?: MaintenanceBlock | null;
   // Present only when the op belongs to an Active/Completing batch; the loader
   // resolves it and swaps in the batch's events. In batch mode the timers and
   // completion act on the whole batch.
@@ -249,15 +250,13 @@ type JobOperationProps = {
   isFirstOperation: boolean;
   isFirstOpenOperation?: boolean;
   requireTrackedMaterialsIssued?: boolean;
-  workCenter: Promise<
-    PostgrestSingleResponse<{
-      name: string;
-      id: string;
-      isBlocked: boolean | null;
-      blockingDispatchId: string | null;
-      blockingDispatchReadableId: string | null;
-    }>
-  >;
+  workCenter: {
+    name: string;
+    id: string;
+    isBlocked: boolean | null;
+    blockingDispatchId: string | null;
+    blockingDispatchReadableId: string | null;
+  } | null;
 };
 
 /**
@@ -267,6 +266,7 @@ type JobOperationProps = {
  */
 export const JobOperation = ({
   abilityWarning,
+  maintenanceBlock,
   batch,
   batchMaterialTotals,
   batchWorkInstructions,
@@ -1421,6 +1421,11 @@ export const JobOperation = ({
             {abilityWarning && (
               <div className="px-4 pt-4 lg:px-6">
                 <AbilityWarning warning={abilityWarning} />
+              </div>
+            )}
+            {maintenanceBlock && (
+              <div className="px-4 pt-4 lg:px-6">
+                <MaintenanceBlockWarning block={maintenanceBlock} />
               </div>
             )}
             {shownUnitHolds.length > 0 && (
@@ -2823,20 +2828,11 @@ export const JobOperation = ({
                     <Trans>Work Center</Trans>
                   </dt>
                   <dd>
-                    <Suspense
-                      fallback={<span className="text-sm">...</span>}
-                      key={`work-center-${operationId}`}
-                    >
-                      <Await resolve={workCenter}>
-                        {(resolvedWorkCenter) =>
-                          resolvedWorkCenter.data && (
-                            <span className="text-sm break-words font-medium">
-                              {resolvedWorkCenter.data?.name}
-                            </span>
-                          )
-                        }
-                      </Await>
-                    </Suspense>
+                    {workCenter && (
+                      <span className="text-sm break-words font-medium">
+                        {workCenter.name}
+                      </span>
+                    )}
                   </dd>
                 </div>
                 <div className="min-w-0">
@@ -2876,8 +2872,7 @@ export const JobOperation = ({
                       method?.requiresBatchTracking === true)
                   }
                   trackedEntityId={trackedEntityId}
-                  batchId={batch?.id}
-                  startDisabled={abilityBlocked}
+                  startDisabled={abilityBlocked || !!maintenanceBlock}
                 />
                 {/* What is running, for assistive tech at every width: the
                     caption below is hidden on tablets and in the collapsed
@@ -3095,28 +3090,21 @@ export const JobOperation = ({
                   </button>
                 </>
               )}
-              <Suspense>
-                <Await resolve={workCenter}>
-                  {(resolvedWorkCenter) =>
-                    resolvedWorkCenter.data &&
-                    !resolvedWorkCenter.data.isBlocked ? (
-                      <button
-                        type="button"
-                        className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
-                        onClick={() => {
-                          actionsSheet.onClose();
-                          maintenanceModal.onOpen();
-                        }}
-                      >
-                        <LuWrench className="size-4 shrink-0 stroke-muted-foreground" />
-                        <span className="text-base/6 font-medium">
-                          <Trans>Maintenance</Trans>
-                        </span>
-                      </button>
-                    ) : null
-                  }
-                </Await>
-              </Suspense>
+              {workCenter && !maintenanceBlock ? (
+                <button
+                  type="button"
+                  className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
+                  onClick={() => {
+                    actionsSheet.onClose();
+                    maintenanceModal.onOpen();
+                  }}
+                >
+                  <LuWrench className="size-4 shrink-0 stroke-muted-foreground" />
+                  <span className="text-base/6 font-medium">
+                    <Trans>Maintenance</Trans>
+                  </span>
+                </button>
+              ) : null}
               <button
                 type="button"
                 disabled={abilityBlocked}
@@ -3315,19 +3303,13 @@ export const JobOperation = ({
         onClose={needMaterialModal.onClose}
       />
 
-      <Suspense key={`maintenance-modal-${operationId}`}>
-        <Await resolve={workCenter}>
-          {(resolvedWorkCenter) =>
-            resolvedWorkCenter.data && (
-              <MaintenanceDispatch
-                workCenter={resolvedWorkCenter.data}
-                isOpen={maintenanceModal.isOpen}
-                onClose={maintenanceModal.onClose}
-              />
-            )
-          }
-        </Await>
-      </Suspense>
+      {workCenter && (
+        <MaintenanceDispatch
+          workCenter={workCenter}
+          isOpen={maintenanceModal.isOpen}
+          onClose={maintenanceModal.onClose}
+        />
+      )}
     </>
   );
 };

@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
+import { isSerialEntityIncompleteForOperation } from "@carbon/lib/production/shop-floor";
 import { getLogger } from "@carbon/logger";
 import { PrintButton } from "@carbon/printing/ui";
 import {
@@ -121,15 +122,14 @@ import { SerialSelectorModal } from "~/components/JobOperation/components/Serial
 import { RecordModal } from "~/components/JobOperation/components/Step";
 import { useTravelerScan } from "~/components/JobOperation/hooks/useTravelerScan";
 import { useWorkUnit } from "~/components/JobOperation/hooks/useWorkUnit";
+import { MaintenanceBlockWarning } from "~/components/MaintenanceBlockWarning";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
 import { UnitHoldBanner } from "~/components/UnitHoldBanner";
 import { useRealtime, useUser } from "~/hooks";
-import {
-  type AbilityShortfall,
-  isSerialEntityIncompleteForOperation
-} from "~/services/operations.service";
+import { useEventTotals, useWorkTypeElapsed } from "~/hooks/useEventTotals";
+import type { AbilityShortfall } from "~/services/operations.service";
 import { ownsLooseMaterial } from "~/services/step-backflush";
 import type {
   JobMaterial,
@@ -137,6 +137,7 @@ import type {
   OperationWithDetails,
   ProductionEvent as ProductionEventType
 } from "~/services/types";
+import { formatClock } from "~/utils/eventTime";
 import { parseItemCode } from "~/utils/itemScan";
 import {
   isKanbanCompleteScan,
@@ -412,30 +413,6 @@ function richTextToPlainText(doc: unknown): string {
   };
   walk(doc);
   return parts.join(" ").replace(/\s+/g, " ").trim();
-}
-
-function formatElapsed(s: number) {
-  const h = Math.floor(s / 3600)
-    .toString()
-    .padStart(2, "0");
-  const m = Math.floor((s % 3600) / 60)
-    .toString()
-    .padStart(2, "0");
-  const sec = (s % 60).toString().padStart(2, "0");
-  return `${h}:${m}:${sec}`;
-}
-
-// Live elapsed seconds from an open production event's startTime (survives reload).
-function useElapsed(openEvent: { startTime: string } | null) {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (!openEvent) return;
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [openEvent]);
-  if (!openEvent) return 0;
-  const start = new Date(openEvent.startTime).getTime();
-  return Math.max(0, Math.floor((Date.now() - start) / 1000));
 }
 
 // Numbered pins overlaid on a reference image for the operator. Absolutely positioned by
@@ -1419,6 +1396,11 @@ export function AssemblyView({
     step && currentStepRecord
       ? recordedStepValue(step, currentStepRecord)
       : null;
+  // The timer Start refuses a work center blocked for maintenance: no
+  // automatic start, and Start is disabled. Pausing still works.
+  const maintenanceBlock = workCenter?.isBlocked
+    ? { dispatchReadableId: workCenter.blockingDispatchReadableId }
+    : null;
   const stepDoneRef = useRef({ step: currentStep, done: currentStepDone });
   useEffect(() => {
     const prev = stepDoneRef.current;
@@ -1434,6 +1416,7 @@ export function AssemblyView({
       operation &&
       !openLaborEvent &&
       !allStepsRecorded &&
+      !maintenanceBlock &&
       laborFetcher.state === "idle"
     ) {
       const fd = new FormData();
@@ -2013,11 +1996,12 @@ export function AssemblyView({
             <TimerControl
               key={wt}
               operation={operation}
+              events={events}
               openEvent={openEventForWorkType(wt)}
               workType={wt}
               trackedEntityId={isTracked ? workEntity?.id : undefined}
               unitIndex={activeIndex}
-              startDisabled={abilityBlocked}
+              startDisabled={abilityBlocked || !!maintenanceBlock}
             />
           ))
         : null}
@@ -2102,6 +2086,11 @@ export function AssemblyView({
       {abilityWarning && (
         <div className="shrink-0 px-4 pt-3">
           <AbilityWarning warning={abilityWarning} />
+        </div>
+      )}
+      {maintenanceBlock && (
+        <div className="shrink-0 px-4 pt-3">
+          <MaintenanceBlockWarning block={maintenanceBlock} />
         </div>
       )}
       {shownUnitHolds.length > 0 && (
@@ -3173,21 +3162,21 @@ export function AssemblyView({
 
       {/* Only auto-start when the operation actually has a timer to track (a configured
           Setup/Labor/Machine duration). With no work types there's nothing to time, so we
-          don't start a stray Labor event. */}
-      {operation &&
-        autoStartOperationTimer &&
-        !abilityBlocked &&
-        workTypes.length > 0 && (
-          <AutoTimer
-            operationId={operationId}
-            enabled={autoStartOperationTimer}
-            workType={headerWorkTypes[0]}
-            workCenterId={operation.workCenterId ?? undefined}
-            openEvent={openEventForWorkType(headerWorkTypes[0])}
-            trackedEntityId={isTracked ? workEntity?.id : undefined}
-            unitIndex={activeIndex}
-          />
-        )}
+          don't start a stray Labor event. Mounted whatever the blocks, so a block that
+          clears later never starts a timer. */}
+      {operation && workTypes.length > 0 && (
+        <AutoTimer
+          operationId={operationId}
+          enabled={
+            autoStartOperationTimer && !abilityBlocked && !maintenanceBlock
+          }
+          workType={headerWorkTypes[0]}
+          workCenterId={operation.workCenterId ?? undefined}
+          openEvent={openEventForWorkType(headerWorkTypes[0])}
+          trackedEntityId={isTracked ? workEntity?.id : undefined}
+          unitIndex={activeIndex}
+        />
+      )}
     </div>
   );
 }
@@ -3219,11 +3208,11 @@ function AutoTimer({
   const busy = fetcher.state !== "idle";
   const running = !!openEvent;
 
-  // Auto-start once when the view opens and nothing is running yet.
+  // Decided once, when the view opens: a later change of `enabled` never starts it.
   useEffect(() => {
-    if (!enabled || startedRef.current) return;
+    if (startedRef.current) return;
     startedRef.current = true;
-    if (running || busy) return;
+    if (!enabled || running || busy) return;
     const fd = new FormData();
     fd.set("jobOperationId", operationId);
     fd.set("type", workType);
@@ -3234,7 +3223,7 @@ function AutoTimer({
     if (typeof unitIndex === "number") fd.set("unitIndex", String(unitIndex));
     fetcher.submit(fd, { method: "post", action: path.to.productionEvent });
     // oxlint-disable-next-line react/exhaustive-deps -- one-shot on open
-  }, [enabled]);
+  }, []);
 
   return null;
 }
@@ -3265,6 +3254,7 @@ function ActionSheetButton({
 
 function TimerControl({
   operation,
+  events,
   openEvent,
   workType,
   trackedEntityId,
@@ -3272,6 +3262,7 @@ function TimerControl({
   startDisabled = false
 }: {
   operation: Operation;
+  events: ProductionEvent[];
   openEvent: { id: string; startTime: string } | null;
   workType: "Setup" | "Labor" | "Machine";
   trackedEntityId?: string;
@@ -3282,6 +3273,7 @@ function TimerControl({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
+  const user = useUser();
   const workTypeLabels = {
     Setup: t`Setup`,
     Labor: t`Labor`,
@@ -3314,9 +3306,14 @@ function TimerControl({
     }
   }, [isTimerBusy]);
 
-  // Freeze the clock while a stop is in flight; otherwise tick live.
-  const liveElapsed = useElapsed(pendingAction === "End" ? null : openEvent);
-  const elapsed = pendingAction === "End" ? 0 : liveElapsed;
+  // Freeze the clock while a stop is in flight; otherwise tick live. The button shows this operator's own time.
+  const elapsed = useWorkTypeElapsed({
+    events,
+    workType,
+    openEvent,
+    employeeId: user.id,
+    frozen: pendingAction === "End"
+  });
 
   return (
     // The entire time display is the start/stop trigger — a big, obvious tap
@@ -3370,8 +3367,8 @@ function TimerControl({
           <span id={elapsedId} className="text-sm font-medium tabular-nums">
             {/* The clock moves between the server render and hydration, so the
                 elapsed time is only rendered in the browser. */}
-            <ClientOnly fallback={formatElapsed(0)}>
-              {() => formatElapsed(elapsed)}
+            <ClientOnly fallback={formatClock(0)}>
+              {() => formatClock(elapsed)}
             </ClientOnly>
             {/* The running state, read with the elapsed time. */}
             <span className="sr-only">
@@ -4042,40 +4039,8 @@ function StatusRow({
 
 // ── Cumulative production event timer ───────────────────────────────────────
 
-function useCumulativeProgress(events: ProductionEvent[]) {
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
-    const hasOpen = events.some((e) => !e.endTime);
-    if (!hasOpen) return;
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [events]);
-
-  const totals = { setup: 0, labor: 0, machine: 0 };
-  const now = Date.now();
-
-  for (const ev of events) {
-    const rawKey = (ev.type ?? "labor").toLowerCase();
-    const key = rawKey as keyof typeof totals;
-    if (!(key in totals)) continue;
-    if (ev.endTime) {
-      // Completed event — use stored duration (ms) if present, else calculate
-      totals[key] +=
-        ev.duration != null
-          ? ev.duration * 1000
-          : new Date(ev.endTime).getTime() - new Date(ev.startTime).getTime();
-    } else {
-      // Open event — live elapsed
-      totals[key] += Math.max(0, now - new Date(ev.startTime).getTime());
-    }
-  }
-
-  return totals;
-}
-
 // The Setup/Labor/Machine timer rows. Isolated into its own component so the
-// per-second `useCumulativeProgress` tick re-renders ONLY these rows — not the
+// per-second `useEventTotals` tick re-renders ONLY these rows — not the
 // entire AssemblyView. A whole-view re-render every second was resetting an open
 // RecordModal's react-aria number input back to its default while the operator
 // was mid-edit (the "measurement keeps going to 0" bug).
@@ -4090,7 +4055,7 @@ function TimeRows({
   laborDuration: number;
   machineDuration: number;
 }) {
-  const progress = useCumulativeProgress(events);
+  const progress = useEventTotals(events);
   // A work type is "running" when it has an open (un-ended) event. Control lives
   // in the header clock buttons now; these rows are a live read-out.
   const isRunning = (type: "Setup" | "Labor" | "Machine") =>

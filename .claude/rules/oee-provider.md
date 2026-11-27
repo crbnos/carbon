@@ -5,6 +5,7 @@ paths:
   - packages/jobs/src/inngest/functions/integrations/oee-*.ts
   - apps/erp/app/routes/api+/webhook.sense.$companyId.ts
   - packages/database/src/machine-time.ts
+  - packages/lib/src/production/event-writes.ts
 ---
 
 # OEE Providers (machine monitoring)
@@ -49,7 +50,8 @@ checks it first ("Work center not found"). `machineStateChange` and
 | `packages/jobs/src/inngest/functions/integrations/oee-sync.ts` | Two functions on one device loop (`syncDevices`). `oee-sync` (`carbon/oee-sync`, from the sweep): every device of the integration in ONE `step.run`, `singleton` (skip) per company and integration. `oee-device-sync` (`carbon/oee-device-sync`, from the webhook and from rechecks): one device, with no `debounce`, which the local Inngest dev server cannot run (`.ai/lessons.md`); a repeated delivery costs one read of what the device's cursor has not seen. Both share an env-scoped concurrency key (`"oee:" + companyId`, limit 1), so a webhook run and a sweep run never overlap for one company |
 | `packages/jobs/src/inngest/functions/integrations/oee-sync-device.ts` | `syncOeeDevice`: read, store, then plan and apply under the device lock. Pinned by `oee-sync-device.database.test.ts` (needs `SUPABASE_DB_URL`) |
 | `packages/database/src/machine-time.ts` | `lockWorkCenterDevice` (`FOR UPDATE` on the device row), `lockMachinePress` (the device lock, then a transaction advisory lock per work center), `recordManualMachinePress` and `endSensorMachineTime` (both return the ended event ids for the caller to post after commit). Shared by the sync, the MES, the device mapping writes and the Sense uninstall hook. Pinned by `machine-time.test.ts` (needs `SUPABASE_DB_URL`) |
-| `apps/mes/app/services/operations.service.ts` | `startMachineProductionEvent` (press, event and tracked activity in one Kysely transaction), `endMachineProductionEvent` (press locks, then the open event's row lock), `postEndedProductionEvents` (posts the events a press ended), `endProductionEvent` (ends an open event, scoped by `companyId`) |
+| `packages/lib/src/production/event-writes.ts` | `startMachineProductionEvent` (press, event and tracked activity in one Kysely transaction), `endMachineProductionEvent` (press locks, then the open event's row lock), `endProductionEvent` (ends an open event, scoped by `companyId`). Called by `startOperationTimer` / `endOperationTimer` (`packages/lib/src/production/timer.ts`, which the MES `event.tsx` and the ERP's `production_startOperationTimer` / `production_endOperationTimer` run) and by the MES kanban Start |
+| `apps/mes/app/services/operations.service.ts` | `postEndedProductionEvents` (posts the events a press ended) |
 | `packages/database/src/event-system/handlers/sync_load_work_center_operation.sql` | `productionEvent` AFTER INSERT: writes a load into `workCenterLoad` (see "The loaded operation") |
 | `packages/database/src/event-system/handlers/sync_unload_work_center_operation.sql` | `jobOperation` AFTER UPDATE / DELETE: ends the operation's open `workCenterLoad` row when it becomes Done or Canceled, is deleted, or moves to another work center |
 
@@ -75,9 +77,10 @@ UI:
   and `modules/production/ui/MachineTime/`. The nav item appears only while an
   `oee` integration is active (`useProductionSubmodules`, through
   `getIntegrationIdsByRole("oee")` and `useIntegrations`).
-- **MES press rules** — `apps/mes/app/routes/x+/event.tsx` (its body is
-  `productionEventAction` in `services/production-event.server.ts`) and
-  `x+/start.$operationId.tsx`.
+- **MES press rules** — `apps/mes/app/routes/x+/event.tsx` (its form is
+  parsed by `productionEventAction` in `services/production-event.server.ts`;
+  the checks are `startOperationTimer` / `endOperationTimer`,
+  `packages/lib/src/production/timer.ts`) and `x+/start.$operationId.tsx`.
 - **MES machine state** — the work center display
   (`display+/$workCenterId.work.tsx`) shows `DeviceStateBadge`
   (`components/Display/`) and "Loaded: …". `getDisplayWorkCenter`
@@ -315,12 +318,13 @@ transaction:
    backwards, and `unplannedPressAt` to `LEAST(unplannedPressAt, pressedAt)`,
    the earliest press since the last sync. The sync clears `unplannedPressAt`.
 
-**Start.** `startMachineProductionEvent` (MES `operations.service.ts`) runs the
+**Start.** `startMachineProductionEvent` (`@carbon/lib/production/event-writes`) runs the
 press, inserts the operator's Machine event with `startTime` = `pressedAt`
 (the insert loads the operation), and writes the tracked activity and its
 output when a tracked entity is given, in ONE transaction. If any part fails,
-nothing was ended. `event.tsx` and the QR start `start.$operationId.tsx` use
-it for a Machine start on an operation with a work center.
+nothing was ended. `startOperationTimer` (the MES `event.tsx` and the ERP's
+`production_startOperationTimer`) and the QR start `start.$operationId.tsx`
+use it for a Machine start on an operation with a work center.
 
 **End.** `event.tsx` reads the event's own work center, type and `endTime`
 (scoped by `companyId`), not the form's. An event that has already ended is

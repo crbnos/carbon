@@ -8,14 +8,8 @@ import {
   fetchAllByIds,
   getCompanyTimeZone
 } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { fetchAll } from "@carbon/database/fetch-all";
-import { toJson } from "@carbon/database/json";
-import {
-  lockMachinePress,
-  recordManualMachinePress
-} from "@carbon/database/machine-time";
 import { storage } from "@carbon/files";
+import { notFoundResponse } from "@carbon/lib/production/event-writes";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
@@ -32,7 +26,6 @@ import {
   type TrackedActivityAttributes
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { erpPosting } from "~/services/erp";
 import { materialStockShortages } from "~/utils/materialStock";
@@ -45,13 +38,11 @@ import {
   requiredScanMessage,
   requiredScanShortfall
 } from "~/utils/trackedMaterials";
-import { completedAtOperation } from "~/utils/workUnit";
 import { getPickedQuantitiesByJobMaterial } from "./inventory.service";
 import type {
   batchStepRecordsValidator,
   documentTypes,
   nonScrapQuantityValidator,
-  productionEventValidator,
   scrapQuantityValidator,
   stepRecordValidator
 } from "./models";
@@ -66,6 +57,20 @@ import type {
 
 const log = getLogger("mes", "operations");
 
+// The ability gate and the unit reads live in @carbon/lib, so the ERP's API
+// Start and End run them too (`startOperationTimer`).
+export {
+  type AbilityShortfall,
+  abilityBlockRefusal,
+  getAbilityShortfall,
+  type ProcessAbilityPolicy
+} from "@carbon/lib/production/ability";
+export type { SerialEntityForSelection } from "@carbon/lib/production/shop-floor";
+export {
+  getOperationUnitAxis,
+  getTrackedEntitiesForOperation
+} from "@carbon/lib/production/work-unit-resolve";
+
 // The jobMaterialStep `quantity` column ships with a migration that only runs
 // on main — previews (and the prod window between app deploy and migration) run
 // this code against the pre-migration schema. PostgREST fails the whole select
@@ -75,71 +80,6 @@ function isMissingQuantityColumn(
   error: { code?: string; message?: string } | null
 ) {
   return error?.code === "42703" || error?.code === "PGRST204";
-}
-
-/**
- * A `{ data, error }` failure shaped like a PostgREST response, for when a
- * caller-supplied record id does not belong to the caller's company. Callers
- * of these services pass service-role clients, so the companyId check is the
- * only tenant boundary — a miss must stop the write, not no-op past it.
- */
-function notFoundResponse(message: string) {
-  return {
-    data: null,
-    error: {
-      name: "PostgrestError",
-      message,
-      details: "",
-      hint: "",
-      code: "PGRST116"
-    } as PostgrestError,
-    count: null,
-    status: 404,
-    statusText: "Not Found"
-  };
-}
-
-const UNIQUE_VIOLATION = "23505";
-
-function conflictResponse(message: string) {
-  return {
-    data: null,
-    error: {
-      name: "PostgrestError",
-      message,
-      details: "",
-      hint: "",
-      code: "PGRST409"
-    } as PostgrestError,
-    count: null,
-    status: 409,
-    statusText: "Conflict"
-  };
-}
-
-/** Whether a production event already records this serial (its tracked activity output). */
-async function timerRecordsEntity(
-  client: SupabaseClient<Database>,
-  productionEventId: string,
-  trackedEntityId: string,
-  companyId: string
-) {
-  const activities = await client
-    .from("trackedActivity")
-    .select("id")
-    .eq("sourceDocument", "Production Event")
-    .eq("sourceDocumentId", productionEventId)
-    .eq("companyId", companyId);
-  const activityIds = activities.data?.map((activity) => activity.id) ?? [];
-  if (activityIds.length === 0) return false;
-  const output = await client
-    .from("trackedActivityOutput")
-    .select("trackedActivityId")
-    .in("trackedActivityId", activityIds)
-    .eq("trackedEntityId", trackedEntityId)
-    .eq("companyId", companyId)
-    .limit(1);
-  return (output.data?.length ?? 0) > 0;
 }
 
 export async function getOpenJobs(
@@ -1229,40 +1169,6 @@ export async function getJobAttributesByOperationId(
 }
 
 /**
- * Why an operation is not on the floor, or null when it is. The operation,
- * assembly and inspection views share it: a batched operation follows its
- * batch (a Planned batch is off the floor), any other follows its job, which
- * must be released (Ready, In Progress or Paused).
- */
-export async function floorRefusal(
-  client: SupabaseClient<Database>,
-  args: {
-    jobStatus: string | null | undefined;
-    jobOperationBatchId: string | null | undefined;
-    companyId: string;
-  }
-): Promise<string | null> {
-  if (args.jobOperationBatchId) {
-    const batch = await client
-      .from("jobOperationBatch")
-      .select("status")
-      .eq("id", args.jobOperationBatchId)
-      .eq("companyId", args.companyId)
-      .maybeSingle();
-    if (batch.error || !batch.data) {
-      return "This operation's batch could not be checked";
-    }
-    return batch.data.status === "Planned"
-      ? "This operation is part of a batch that has not been released to the floor"
-      : null;
-  }
-  return args.jobStatus &&
-    (activeJobStatuses as readonly string[]).includes(args.jobStatus)
-    ? null
-    : "This operation's job has not been released to the floor";
-}
-
-/**
  * Tenant check for a caller-supplied job operation id. Routes read operations
  * with a service-role client (operators often lack RLS rights), so this scoped
  * lookup is the boundary: null data means the id is not in the company.
@@ -2216,114 +2122,6 @@ export async function getNonConformanceActions(
   }[];
 }
 
-export type ProcessAbilityPolicy =
-  Database["public"]["Enums"]["processAbilityPolicy"];
-
-// What an operator lacks to work on an operation whose process requires an
-// ability. getAbilityShortfall returns null when nothing is missing.
-export type AbilityShortfall = {
-  policy: ProcessAbilityPolicy;
-  processName: string;
-  // the qualification's expiry date; null when the operator never held it
-  expiredOn: string | null;
-  // an Active training that grants the ability, when one exists
-  trainingName: string | null;
-};
-
-export async function getAbilityShortfall(
-  client: SupabaseClient<Database>,
-  args: { operationId: string; employeeId: string; companyId: string }
-): Promise<AbilityShortfall | null> {
-  const { operationId, employeeId, companyId } = args;
-
-  // NOTE: query failures here FAIL OPEN (no shortfall). An RLS/database
-  // error must not brick the shop floor — the scheduler is the primary
-  // enforcement of ability requirements; this gate is a best-effort backstop.
-  // The requirement comes from the operation's PROCESS: process.requiresAbility
-  // gates, and the ability linked 1:1 to the process (ability.processId) is
-  // what the employee must be qualified for.
-  const operation = await client
-    .from("jobOperation")
-    .select(
-      "process!jobOperation_processId_fkey(name, requiresAbility, abilityPolicy, ability!ability_processId_fkey(id, active))"
-    )
-    .eq("id", operationId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  const process = operation.data?.process;
-  if (operation.error || !process?.requiresAbility) return null;
-
-  // requiresAbility is on but no active linked ability exists — data anomaly,
-  // don't block the floor
-  const ability = process.ability.find((a) => a.active);
-  if (!ability) return null;
-
-  const [employeeAbility, training] = await Promise.all([
-    client
-      .from("employeeAbility")
-      .select("expiresAt")
-      .eq("employeeId", employeeId)
-      .eq("abilityId", ability.id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    // Read alongside, so a refusal can name what to complete; a failed read
-    // only drops the name.
-    client
-      .from("training")
-      .select("name")
-      .eq("grantsAbilityId", ability.id)
-      .eq("companyId", companyId)
-      .eq("status", "Active")
-      .limit(1)
-      .maybeSingle()
-  ]);
-  if (employeeAbility.error) return null;
-
-  // Qualification is presence-based: the row existing means qualified,
-  // subject only to expiry.
-  const expiresAt = employeeAbility.data?.expiresAt ?? null;
-  if (employeeAbility.data) {
-    if (expiresAt === null) return null;
-    const today = datetime
-      .today(await getCompanyTimeZone(client, companyId))
-      .toString();
-    if (expiresAt > today) return null;
-  }
-
-  return {
-    policy: process.abilityPolicy,
-    // The ability's name IS the process's name (abilities no longer store one).
-    processName: process.name,
-    expiredOn: expiresAt,
-    trainingName: training.data?.name ?? null
-  };
-}
-
-// English text for the server flash when work is refused. MES routes have no
-// server-side translation; the page banner carries the translated text.
-function abilityRefusalMessage(shortfall: AbilityShortfall): string {
-  const how = shortfall.trainingName
-    ? `Complete the ${shortfall.trainingName} training to get it.`
-    : "Ask a supervisor to add it to your profile.";
-  const expired = shortfall.expiredOn
-    ? ` Your qualification expired on ${shortfall.expiredOn}.`
-    : "";
-  return `You need the ${shortfall.processName} ability to work on this operation.${expired} ${how}`;
-}
-
-// The refusal text when the operator may not do production work on this
-// operation (the process's policy is 'Block'); null when the work may go ahead.
-export async function abilityBlockRefusal(
-  client: SupabaseClient<Database>,
-  args: { operationId: string; employeeId: string; companyId: string }
-): Promise<string | null> {
-  const shortfall = await getAbilityShortfall(client, args);
-  return shortfall?.policy === "Block"
-    ? abilityRefusalMessage(shortfall)
-    : null;
-}
-
 export async function getProcessesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2516,157 +2314,6 @@ export async function getTrackedEntitiesByMakeMethodId(
     .order("createdAt", { ascending: true })
     .order("readableId", { ascending: true })
     .order("id", { ascending: true });
-}
-
-export type SerialEntityForSelection = Pick<
-  Database["public"]["Tables"]["trackedEntity"]["Row"],
-  "attributes" | "status"
-> & {
-  /**
-   * False when the operation applies to other units only (a rework copy
-   * scoped to the units sent into it). Set by `getTrackedEntitiesForOperation`;
-   * absent means the operation applies to every unit.
-   */
-  inOperationScope?: boolean;
-  completedOperationId?: string;
-};
-
-/**
- * A serial tracked entity is still "incomplete" for a job operation when its
- * attributes and production genealogy carry no completion here and it has
- * not been consumed. Shared by the serial auto-selection (routes) and the manual
- * serial picker (`useOperation`) so both agree on "done for this operation".
- */
-export function isSerialEntityIncompleteForOperation(
-  entity: SerialEntityForSelection,
-  jobOperationId: string
-): boolean {
-  // Scrapped is terminal like Consumed — a scrapped unit is never a work
-  // candidate; its replacement is the spawned Reserved entity.
-  return (
-    entity.inOperationScope !== false &&
-    !completedAtOperation(entity, jobOperationId) &&
-    entity.status !== "Consumed" &&
-    entity.status !== "Scrapped"
-  );
-}
-
-type TrackedEntityRow = Database["public"]["Tables"]["trackedEntity"]["Row"];
-
-type OperationUnitRead = {
-  jobId: string;
-  operationId: string;
-  jobMakeMethodId: string;
-  companyId: string;
-  includeSerialOutputs: boolean;
-};
-
-/**
- * The units of an operation's make method, in unit-axis order, each flagged
- * with whether the operation applies to it. A rework copy applies only to the
- * units sent into it (`jobOperationTrackedEntity`); every other operation has
- * no scope rows and applies to every unit.
- *
- * The list is never narrowed: step records are keyed by a unit's position in
- * the full axis, so a filtered list would shift every position after a skipped
- * unit. Consumers read `inOperationScope` (via
- * `isSerialEntityIncompleteForOperation`) instead. Paged past PostgREST's
- * 1000-row cap, like `getOperationUnitAxis`, so the screens and the server
- * see the same units.
- */
-export async function getTrackedEntitiesForOperation(
-  client: SupabaseClient<Database>,
-  args: OperationUnitRead
-) {
-  return readOperationUnits<TrackedEntityRow>(client, args, "*");
-}
-
-/**
- * `getTrackedEntitiesForOperation` for the unit-write gate: only the columns
- * the rule reads.
- */
-export async function getOperationUnitAxis(
-  client: SupabaseClient<Database>,
-  args: OperationUnitRead
-) {
-  return readOperationUnits<
-    Pick<TrackedEntityRow, "id" | "status" | "attributes">
-  >(client, args, "id, status, attributes");
-}
-
-/** The one paged read of an operation's units, in unit-axis order. */
-async function readOperationUnits<T extends { id: string }>(
-  client: SupabaseClient<Database>,
-  args: OperationUnitRead,
-  columns: string
-) {
-  const [entities, scope, outputs, receipts] = await Promise.all([
-    fetchAll<T>(() =>
-      client
-        .from("trackedEntity")
-        .select(columns)
-        .eq("attributes->>Job Make Method", args.jobMakeMethodId)
-        .eq("companyId", args.companyId)
-        .order("createdAt", { ascending: true })
-        .order("readableId", { ascending: true })
-        .order("id", { ascending: true })
-    ),
-    fetchAll<{ trackedEntityId: string }>(() =>
-      client
-        .from("jobOperationTrackedEntity")
-        .select("trackedEntityId")
-        .eq("jobOperationId", args.operationId)
-        .eq("companyId", args.companyId)
-        .order("trackedEntityId", { ascending: true })
-    ),
-    // Older serial production can have an activity output without a unit
-    // attribute. Posting treats either as completion at this operation.
-    args.includeSerialOutputs
-      ? fetchAll<{ trackedEntityId: string }>(() =>
-          client
-            .from("trackedActivityOutput")
-            .select("trackedEntityId, trackedActivity!inner(id)")
-            .eq("companyId", args.companyId)
-            .eq("trackedActivity.companyId", args.companyId)
-            .eq("trackedActivity.sourceDocument", "Job Operation")
-            .eq("trackedActivity.sourceDocumentId", args.operationId)
-            .in("trackedActivity.type", ["Complete", "Produce"])
-            .order("trackedActivityId")
-            .order("trackedEntityId")
-        )
-      : { data: [], error: null },
-    args.includeSerialOutputs
-      ? fetchAll<{ trackedEntityId: string }>(() =>
-          client
-            .from("jobReceivedSerial")
-            .select("trackedEntityId")
-            .eq("companyId", args.companyId)
-            .eq("jobId", args.jobId)
-            .order("trackedEntityId")
-        )
-      : { data: [], error: null }
-  ]);
-
-  if (entities.error) return { data: null, error: entities.error };
-  if (scope.error) return { data: null, error: scope.error };
-
-  if (outputs.error) return { data: null, error: outputs.error };
-  if (receipts.error) return { data: null, error: receipts.error };
-  const scopedIds = new Set(scope.data?.map((row) => row.trackedEntityId));
-  const completedIds = new Set(outputs.data?.map((row) => row.trackedEntityId));
-  for (const receipt of receipts.data ?? []) {
-    completedIds.add(receipt.trackedEntityId);
-  }
-  return {
-    data: (entities.data ?? []).map((entity) => ({
-      ...entity,
-      inOperationScope: scopedIds.size === 0 || scopedIds.has(entity.id),
-      completedOperationId: completedIds.has(entity.id)
-        ? args.operationId
-        : undefined
-    })),
-    error: null
-  };
 }
 
 /**
@@ -3026,7 +2673,8 @@ export async function getThumbnailPathByItemId(
 
 export async function getWorkCenter(
   client: SupabaseClient<Database>,
-  workCenterId: string
+  workCenterId: string,
+  companyId: string
 ) {
   return client
     .from("workCentersWithBlockingStatus")
@@ -3034,6 +2682,7 @@ export async function getWorkCenter(
       "id, name, isBlocked, blockingDispatchId, blockingDispatchReadableId"
     )
     .eq("id", workCenterId)
+    .eq("companyId", companyId)
     .single();
 }
 
@@ -3385,63 +3034,6 @@ export async function insertScrapQuantity(
     .select("*");
 }
 
-export async function endProductionEvent(
-  client: SupabaseClient<Database>,
-  data: {
-    id: string;
-    endTime: string;
-    employeeId: string;
-    companyId: string;
-  }
-) {
-  // Only an open event ends: a repeated End must not move its end time.
-  return client
-    .from("productionEvent")
-    .update({ endTime: data.endTime, updatedBy: data.employeeId })
-    .eq("id", data.id)
-    .eq("companyId", data.companyId)
-    .is("endTime", null)
-    .select("*");
-}
-
-/** A Machine press refused to end an event (already ended, or started later). */
-class MachineEventNotEnded extends Error {}
-
-/**
- * Ends an operator's open Machine event with a press: the press ends every
- * open Machine event on the work center, this one included, in one
- * transaction. Null when the event is no longer open, or the press could not
- * end it (it starts after the press), and then nothing was ended. Skips RLS:
- * the caller checks that the user may update production events first.
- */
-export async function endMachineProductionEvent(
-  db: Kysely<KyselyDatabase>,
-  args: { id: string; workCenterId: string; companyId: string; userId: string }
-) {
-  try {
-    return await db.transaction().execute(async (trx) => {
-      await lockMachinePress(trx, args);
-      const open = await trx
-        .selectFrom("productionEvent")
-        .select("id")
-        .where("id", "=", args.id)
-        .where("companyId", "=", args.companyId)
-        .where("endTime", "is", null)
-        .forUpdate()
-        .executeTakeFirst();
-      if (!open) throw new MachineEventNotEnded();
-      const press = await recordManualMachinePress(trx, args);
-      if (!press.endedEventIds.includes(args.id)) {
-        throw new MachineEventNotEnded();
-      }
-      return press;
-    });
-  } catch (error) {
-    if (error instanceof MachineEventNotEnded) return null;
-    throw error;
-  }
-}
-
 /**
  * Posts the events a press ended (machine cost to WIP), as an operator's own
  * End posts theirs. Batch timers post at batch completion, so they are left.
@@ -3544,419 +3136,6 @@ export async function endProductionEventsByWorkCenter(
     .eq("workCenterId", args.workCenterId)
     .eq("companyId", args.companyId)
     .select("id");
-}
-
-// Phase 3 (auto-start): when an operator starts a production event, flip a not-yet-started
-// job + operation to "In Progress" so the shop floor doesn't have to mark it manually. Status
-// guards make re-starts and already-running jobs no-ops. Best-effort — a failure here must not
-// block the production event that already succeeded.
-async function autoStartJobAndOperation(
-  client: SupabaseClient<Database>,
-  args: { jobOperationId: string; userId: string; companyId: string }
-) {
-  const op = await client
-    .from("jobOperation")
-    .select("jobId, status")
-    .eq("id", args.jobOperationId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (op.error || !op.data) return;
-
-  const updates: PromiseLike<unknown>[] = [];
-  if (["Todo", "Ready", "Waiting"].includes(op.data.status ?? "")) {
-    updates.push(
-      client
-        .from("jobOperation")
-        .update({ status: "In Progress", updatedBy: args.userId })
-        .eq("id", args.jobOperationId)
-        .eq("companyId", args.companyId)
-        .in("status", ["Todo", "Ready", "Waiting"])
-    );
-  }
-  if (op.data.jobId) {
-    updates.push(
-      client
-        .from("job")
-        .update({ status: "In Progress", updatedBy: args.userId })
-        .eq("id", op.data.jobId)
-        .eq("companyId", args.companyId)
-        .in("status", ["Draft", "Planned", "Ready"])
-    );
-  }
-  await Promise.all(updates);
-}
-
-/**
- * Every record id a production event references must belong to the event's
- * company. `startProductionEvent` is called with a service-role client (the
- * QR start route) as well as the user client, and a foreign id here would
- * attach another tenant's operation, work center, batch or serial to this
- * company's timer and genealogy. One scoped query per id type.
- */
-async function verifyProductionEventRefs(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    jobOperationId: string;
-    workCenterId?: string;
-    jobOperationBatchId?: string;
-    trackedEntityId?: string;
-  }
-): Promise<{ ok: true } | { ok: false; message: string }> {
-  const { companyId } = args;
-  const [operation, workCenter, batch, entity] = await Promise.all([
-    client
-      .from("jobOperation")
-      .select("id")
-      .eq("id", args.jobOperationId)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    args.workCenterId
-      ? client
-          .from("workCenter")
-          .select("id")
-          .eq("id", args.workCenterId)
-          .eq("companyId", companyId)
-          .maybeSingle()
-      : null,
-    args.jobOperationBatchId
-      ? client
-          .from("jobOperationBatch")
-          .select("id")
-          .eq("id", args.jobOperationBatchId)
-          .eq("companyId", companyId)
-          .maybeSingle()
-      : null,
-    args.trackedEntityId
-      ? client
-          .from("trackedEntity")
-          .select("id")
-          .eq("id", args.trackedEntityId)
-          .eq("companyId", companyId)
-          .maybeSingle()
-      : null
-  ]);
-
-  const missing = [
-    !operation.data && "Job operation",
-    workCenter && !workCenter.data && "Work center",
-    batch && !batch.data && "Operation batch",
-    entity && !entity.data && "Tracked entity"
-  ].filter(Boolean) as string[];
-
-  if (missing.length > 0) {
-    log.warning(
-      "startProductionEvent: referenced record not found in company",
-      {
-        companyId,
-        missing,
-        jobOperationId: args.jobOperationId,
-        workCenterId: args.workCenterId,
-        jobOperationBatchId: args.jobOperationBatchId,
-        trackedEntityId: args.trackedEntityId,
-        error:
-          operation.error ?? workCenter?.error ?? batch?.error ?? entity?.error
-      }
-    );
-    return { ok: false, message: `${missing[0]} not found` };
-  }
-
-  return { ok: true };
-}
-
-export async function startProductionEvent(
-  client: SupabaseClient<Database>,
-  data: Omit<
-    z.infer<typeof productionEventValidator>,
-    "id" | "action" | "hasActiveEvents" | "unitIndex" | "exclusive"
-  > & {
-    startTime: string;
-    employeeId: string;
-    companyId: string;
-    createdBy: string;
-    // Tags the event as part of an operation batch (sliced per-member at completion).
-    jobOperationBatchId?: string;
-  },
-  trackedEntityId: string | undefined,
-  unitIndex?: number,
-  /** `mes_qr` when the operator scanned a traveller rather than tapping a station. */
-  source: WorkSource = "mes"
-) {
-  const refs = await verifyProductionEventRefs(client, {
-    companyId: data.companyId,
-    jobOperationId: data.jobOperationId,
-    workCenterId: data.workCenterId,
-    jobOperationBatchId: data.jobOperationBatchId,
-    trackedEntityId
-  });
-  if (!refs.ok) return notFoundResponse(refs.message);
-
-  // A Setup or Labor timer the operator already has running on this operation
-  // is returned, not started again: a double-tap, or a second device, would
-  // otherwise count the labor twice. The partial unique index on open events
-  // refuses an insert that races past this read; that start returns the
-  // running timer too.
-  const isTimer = data.type === "Setup" || data.type === "Labor";
-  const runningTimer = async () => {
-    const running = await client
-      .from("productionEvent")
-      .select("*")
-      .eq("jobOperationId", data.jobOperationId)
-      .eq("type", data.type)
-      .eq("employeeId", data.employeeId)
-      .eq("companyId", data.companyId)
-      .is("endTime", null)
-      .limit(1);
-    if (running.error) return { data: null, error: running.error };
-    const row = running.data[0];
-    if (!row) return null;
-    if (!trackedEntityId) return { data: [row], error: null };
-    // A serial start must record that serial; a timer running for another
-    // unit is refused rather than reported as this unit's start.
-    return (await timerRecordsEntity(
-      client,
-      row.id,
-      trackedEntityId,
-      data.companyId
-    ))
-      ? { data: { id: row.id }, error: null }
-      : conflictResponse(
-          `A ${data.type.toLowerCase()} timer is already running on this operation for another unit. Stop it before starting this one.`
-        );
-  };
-  const raced = (error: PostgrestError | null) =>
-    isTimer && error?.code === UNIQUE_VIOLATION;
-
-  if (isTimer) {
-    const running = await runningTimer();
-    if (running) return running;
-  }
-
-  // The tracked entity is the separate argument; productionEvent has no column for it.
-  const { trackedEntityId: _trackedEntityId, ...event } = data;
-
-  if (trackedEntityId) {
-    const activityId = nanoid();
-
-    const [eventInsert, operation] = await Promise.all([
-      client.from("productionEvent").insert(event).select("id").single(),
-      client
-        .from("jobOperation")
-        .select("*")
-        .eq("id", data.jobOperationId)
-        .eq("companyId", data.companyId)
-        .single()
-    ]);
-
-    if (eventInsert.error) {
-      if (raced(eventInsert.error))
-        return (await runningTimer()) ?? eventInsert;
-      return eventInsert;
-    }
-    if (operation.error) return operation;
-
-    const trackedActivityInsert = await client
-      .from("trackedActivity")
-      .insert({
-        id: activityId,
-        type: `${operation.data?.description} (${data.type})`,
-        sourceDocument: "Production Event",
-        sourceDocumentId: eventInsert.data?.id,
-        attributes: {
-          Job: operation.data?.jobId,
-          "Job Operation": data.jobOperationId,
-          "Production Event": eventInsert.data?.id,
-          "Work Center": data.workCenterId,
-          Employee: data.employeeId,
-          // The unit this event built, so traceability can scope this activity's
-          // step records to just this unit (see get_job_operation_step_records).
-          ...(typeof unitIndex === "number" ? { Unit: unitIndex } : {})
-        },
-        companyId: data.companyId,
-        createdBy: data.createdBy
-      })
-      .select("id")
-      .single();
-
-    if (trackedActivityInsert.error) {
-      log.error("Failed to insert tracked activity", {
-        error: trackedActivityInsert.error
-      });
-      return trackedActivityInsert;
-    }
-
-    const trackedActivityOutputInsert = await client
-      .from("trackedActivityOutput")
-      .insert({
-        trackedActivityId: activityId,
-        trackedEntityId,
-        quantity: 1,
-        companyId: data.companyId,
-        createdBy: data.createdBy
-      });
-
-    if (trackedActivityOutputInsert.error) {
-      log.error("Failed to insert tracked activity output", {
-        error: trackedActivityOutputInsert.error
-      });
-      return trackedActivityOutputInsert;
-    }
-
-    await autoStartJobAndOperation(client, {
-      jobOperationId: data.jobOperationId,
-      userId: data.createdBy,
-      companyId: data.companyId
-    });
-
-    trackWorkEvent("job_operation_started", {
-      companyId: data.companyId,
-      userId: data.createdBy,
-      productionEventId: eventInsert.data.id,
-      jobOperationId: data.jobOperationId,
-      eventType: data.type,
-      source
-    });
-
-    return eventInsert;
-  }
-
-  const eventInsert = await client
-    .from("productionEvent")
-    .insert(event)
-    .select("*");
-
-  if (raced(eventInsert.error)) return (await runningTimer()) ?? eventInsert;
-
-  if (!eventInsert.error) {
-    await autoStartJobAndOperation(client, {
-      jobOperationId: data.jobOperationId,
-      userId: data.createdBy,
-      companyId: data.companyId
-    });
-
-    const inserted = eventInsert.data?.[0];
-    if (inserted) {
-      trackWorkEvent("job_operation_started", {
-        companyId: data.companyId,
-        userId: data.createdBy,
-        productionEventId: inserted.id,
-        jobOperationId: data.jobOperationId,
-        eventType: data.type,
-        source
-      });
-    }
-  }
-
-  return eventInsert;
-}
-
-/**
- * A Machine start on a work center: the press, which ends the work center's
- * open machine time, the new event and its tracked activity commit in one
- * transaction, at the press time read under the press locks. If any of it
- * fails, nothing was ended. Skips RLS: the caller checks that the user may
- * create production events first.
- */
-export async function startMachineProductionEvent(
-  db: Kysely<KyselyDatabase>,
-  client: SupabaseClient<Database>,
-  data: Parameters<typeof startProductionEvent>[1] & { workCenterId: string },
-  trackedEntityId: string | undefined,
-  unitIndex?: number,
-  source: WorkSource = "mes"
-): Promise<{
-  data: { id: string; endedEventIds: string[] } | null;
-  error: unknown;
-}> {
-  const refs = await verifyProductionEventRefs(client, {
-    companyId: data.companyId,
-    jobOperationId: data.jobOperationId,
-    workCenterId: data.workCenterId,
-    jobOperationBatchId: data.jobOperationBatchId,
-    trackedEntityId
-  });
-  if (!refs.ok) return notFoundResponse(refs.message);
-
-  // The tracked entity is the separate argument; productionEvent has no column for it.
-  const { trackedEntityId: _trackedEntityId, ...event } = data;
-
-  try {
-    const started = await db.transaction().execute(async (trx) => {
-      const press = await recordManualMachinePress(trx, {
-        workCenterId: data.workCenterId,
-        companyId: data.companyId,
-        userId: data.createdBy
-      });
-      const inserted = await trx
-        .insertInto("productionEvent")
-        .values({ ...event, startTime: press.pressedAt })
-        .returning("id")
-        .executeTakeFirstOrThrow();
-
-      if (trackedEntityId) {
-        const operation = await trx
-          .selectFrom("jobOperation")
-          .select(["description", "jobId"])
-          .where("id", "=", data.jobOperationId)
-          .where("companyId", "=", data.companyId)
-          .executeTakeFirstOrThrow();
-        const activityId = nanoid();
-        await trx
-          .insertInto("trackedActivity")
-          .values({
-            id: activityId,
-            type: `${operation.description} (${data.type})`,
-            sourceDocument: "Production Event",
-            sourceDocumentId: inserted.id,
-            attributes: toJson({
-              Job: operation.jobId,
-              "Job Operation": data.jobOperationId,
-              "Production Event": inserted.id,
-              "Work Center": data.workCenterId,
-              Employee: data.employeeId,
-              ...(typeof unitIndex === "number" ? { Unit: unitIndex } : {})
-            }),
-            companyId: data.companyId,
-            createdBy: data.createdBy
-          })
-          .execute();
-        await trx
-          .insertInto("trackedActivityOutput")
-          .values({
-            trackedActivityId: activityId,
-            trackedEntityId,
-            quantity: 1,
-            companyId: data.companyId,
-            createdBy: data.createdBy
-          })
-          .execute();
-      }
-
-      return { id: inserted.id, endedEventIds: press.endedEventIds };
-    });
-
-    await autoStartJobAndOperation(client, {
-      jobOperationId: data.jobOperationId,
-      userId: data.createdBy,
-      companyId: data.companyId
-    });
-    trackWorkEvent("job_operation_started", {
-      companyId: data.companyId,
-      userId: data.createdBy,
-      productionEventId: started.id,
-      jobOperationId: data.jobOperationId,
-      eventType: data.type,
-      source
-    });
-    return { data: started, error: null };
-  } catch (error) {
-    log.error("Failed to start the Machine event", {
-      companyId: data.companyId,
-      workCenterId: data.workCenterId,
-      error
-    });
-    return { data: null, error };
-  }
 }
 
 type JobMethod = {

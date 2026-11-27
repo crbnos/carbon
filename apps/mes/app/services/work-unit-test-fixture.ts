@@ -37,6 +37,8 @@ export function fakeClient(
     calls.push(call);
     let rows = [...(tables[table] ?? [])];
     let shape: "many" | "maybe" | "one" = "many";
+    // An update returns the rows its filters match, with the new values.
+    let patch: Row | null = null;
     let projection = "";
     let window: [number, number] = [0, MAX_ROWS - 1];
     const keep = (column: string, test: (value: unknown) => boolean) => {
@@ -65,10 +67,12 @@ export function fakeClient(
     const write = (op: Call["op"]) => (values?: unknown) => {
       call.op = op;
       call.values = values;
-      rows =
-        op === "insert" || op === "upsert"
-          ? ([] as Row[]).concat((values as Row) ?? [])
-          : [];
+      if (op === "update") patch = (values as Row) ?? {};
+      else
+        rows =
+          op === "insert" || op === "upsert"
+            ? ([] as Row[]).concat((values as Row) ?? [])
+            : [];
       return builder;
     };
     builder.select = (columns = "*") => {
@@ -116,6 +120,7 @@ export function fakeClient(
       return builder;
     };
     builder.then = (resolve: (value: unknown) => void) => {
+      if (patch) rows = rows.map((row) => ({ ...row, ...patch }));
       if (shape === "many") {
         const page = rows.slice(window[0], window[1] + 1);
         return resolve({ data: page, error: null, count: rows.length });

@@ -353,11 +353,37 @@ describe("computePlanningOrders", () => {
         todayDate: TODAY,
         params: params({
           reorderPoint: 5,
-          reorderQuantity: 1,
           maximumInventoryQuantity: 20
         })
       });
       expect(orders.map((o) => o.quantity)).toEqual([18]);
+    });
+
+    // The item planning form hides Reorder Quantity for this policy, so it is blank.
+    it("fills up to the maximum when the reorder quantity is blank", () => {
+      const orders = computePlanningOrders({
+        reorderingPolicy: "Maximum Quantity",
+        periods: weeklyPeriods(["2026-10-05"]),
+        projections: [2],
+        todayDate: TODAY,
+        params: params({ reorderPoint: 5, maximumInventoryQuantity: 20 })
+      });
+      expect(orders.map((o) => o.quantity)).toEqual([18]);
+    });
+
+    it("raises a fill below the minimum order quantity to the minimum", () => {
+      const orders = computePlanningOrders({
+        reorderingPolicy: "Maximum Quantity",
+        periods: weeklyPeriods(["2026-10-05"]),
+        projections: [4],
+        todayDate: TODAY,
+        params: params({
+          reorderPoint: 5,
+          maximumInventoryQuantity: 10,
+          minimumOrderQuantity: 25
+        })
+      });
+      expect(orders.map((o) => o.quantity)).toEqual([25]);
     });
 
     it("applies order multiple and max OQ clamps", () => {
@@ -368,7 +394,6 @@ describe("computePlanningOrders", () => {
         todayDate: TODAY,
         params: params({
           reorderPoint: 5,
-          reorderQuantity: 1,
           maximumInventoryQuantity: 20,
           orderMultiple: 5
         })
@@ -448,7 +473,6 @@ describe("computePlanningOrders", () => {
         todayDate: TODAY,
         params: params({
           reorderPoint: 5,
-          reorderQuantity: 1,
           maximumInventoryQuantity: 20,
           orderMultiple: 5
         })
@@ -606,7 +630,6 @@ describe("splitIntoOrders", () => {
       "Maximum Quantity",
       {
         reorderPoint: 400,
-        reorderQuantity: 1,
         maximumInventoryQuantity: 500,
         maximumOrderQuantity: 200
       },

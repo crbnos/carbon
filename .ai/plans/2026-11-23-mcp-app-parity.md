@@ -185,6 +185,7 @@ Carbon records these actions against the person who did them. An API key acts as
 
 - MES app (`apps/mes`, outside the ERP manifest):
   - operation start and end: `x+/end.$operationId.tsx`, `x+/event.tsx`, `x+/finish.tsx`, `x+/complete.tsx`;
+    - [x] ENG-206: the timer Start and End of `x+/event.tsx` are published as `production_startOperationTimer` and `production_endOperationTimer`. Both run the MES body (`@carbon/lib/production/timer`), only for a user actor (the OAuth connector or a session), and record the caller's own user id. An API key gets `forbidden`. `end.$operationId.tsx`, `finish.tsx` and `complete.tsx` are still open;
   - step records: `x+/record.tsx`;
   - material issue: `x+/issue.tsx`, `x+/issue-tracked-entity.tsx`;
   - scrap: `x+/scrap.tsx`;

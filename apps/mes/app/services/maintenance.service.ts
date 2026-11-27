@@ -42,19 +42,6 @@ export async function getBlockedWorkCenters(
     .eq("isBlocked", true);
 }
 
-export async function getWorkCenterWithBlockingStatus(
-  client: SupabaseClient<Database>,
-  workCenterId: string
-) {
-  return client
-    .from("workCentersWithBlockingStatus")
-    .select(
-      "id, name, isBlocked, blockingDispatchId, blockingDispatchReadableId"
-    )
-    .eq("id", workCenterId)
-    .single();
-}
-
 export async function getMaintenanceDispatch(
   client: SupabaseClient<Database>,
   dispatchId: string

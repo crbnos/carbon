@@ -1036,6 +1036,7 @@ msgstr "停止"
 msgid "Down for maintenance"
 msgstr "保全中のため停止"
 
+#. placeholder {0}: block.dispatchReadableId
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Down for maintenance · {0}"
 msgstr "保全中のため停止 · {0}"

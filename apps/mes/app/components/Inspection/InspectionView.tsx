@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { MaintenanceBlock } from "@carbon/lib/production/floor";
 import { useAction } from "@carbon/query";
 import type { InspectionParameter, JSONContent } from "@carbon/react";
 import {
@@ -53,9 +54,12 @@ import { QualityIssueModal } from "~/components/JobOperation/components/QualityI
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { useScrapParts } from "~/components/JobOperation/components/ScrapPartsModal";
+import { MaintenanceBlockWarning } from "~/components/MaintenanceBlockWarning";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
+import { useUser } from "~/hooks";
+import { useWorkTypeElapsed } from "~/hooks/useEventTotals";
 import type { AbilityShortfall } from "~/services/operations.service";
 import type {
   InspectionGauge,
@@ -68,6 +72,7 @@ import type {
   ProductionEvent,
   TrackedEntity
 } from "~/services/types";
+import { formatClock } from "~/utils/eventTime";
 import {
   canPostPassedSamples,
   getPostableInspectionUnits,
@@ -93,6 +98,8 @@ type WorkType = "Setup" | "Labor" | "Machine";
 
 type InspectionViewProps = {
   abilityWarning?: AbilityShortfall | null;
+  /** The maintenance block on the work center; Start is disabled while it holds. */
+  maintenanceBlock?: MaintenanceBlock | null;
   operationId: string;
   job: Job;
   operation: OperationWithDetails;
@@ -134,6 +141,7 @@ type InspectionViewProps = {
 // shop-floor actions (timer, complete, scrap, rework, quality issue).
 export function InspectionView({
   abilityWarning,
+  maintenanceBlock,
   operationId,
   job,
   operation,
@@ -404,9 +412,10 @@ export function InspectionView({
                 key={wt}
                 operationId={operationId}
                 workCenterId={operation.workCenterId ?? undefined}
+                events={events}
                 openEvent={openEventForWorkType(wt)}
                 workType={wt}
-                startDisabled={abilityBlocked}
+                startDisabled={abilityBlocked || !!maintenanceBlock}
               />
             ))}
             <IconButton
@@ -509,9 +518,10 @@ export function InspectionView({
             key={wt}
             operationId={operationId}
             workCenterId={operation.workCenterId ?? undefined}
+            events={events}
             openEvent={openEventForWorkType(wt)}
             workType={wt}
-            startDisabled={abilityBlocked}
+            startDisabled={abilityBlocked || !!maintenanceBlock}
           />
         ))}
       </InspectionLotHeader>
@@ -519,6 +529,11 @@ export function InspectionView({
       {abilityWarning && (
         <div className="shrink-0 px-4 pt-3">
           <AbilityWarning warning={abilityWarning} />
+        </div>
+      )}
+      {maintenanceBlock && (
+        <div className="shrink-0 px-4 pt-3">
+          <MaintenanceBlockWarning block={maintenanceBlock} />
         </div>
       )}
 
@@ -807,19 +822,19 @@ export function InspectionView({
       {/* Inspecting is work: start the labor clock on open whenever no clock
           is running (any work type — the exclusive start would end it).
           Always on for inspections, independent of the company-level
-          autoStartOperationTimer setting. */}
-      {!abilityBlocked && (
-        <AutoTimer
-          operationId={operationId}
-          workType={workTypes.includes("Labor") ? "Labor" : workTypes[0]}
-          workCenterId={operation.workCenterId ?? undefined}
-          openEvent={
-            (events.find((e) => !e.endTime) as
-              | { id: string; startTime: string }
-              | undefined) ?? null
-          }
-        />
-      )}
+          autoStartOperationTimer setting. Mounted whatever the blocks, so a
+          block that clears later never starts a timer. */}
+      <AutoTimer
+        operationId={operationId}
+        enabled={!abilityBlocked && !maintenanceBlock}
+        workType={workTypes.includes("Labor") ? "Labor" : workTypes[0]}
+        workCenterId={operation.workCenterId ?? undefined}
+        openEvent={
+          (events.find((e) => !e.endTime) as
+            | { id: string; startTime: string }
+            | undefined) ?? null
+        }
+      />
     </div>
   );
 }
@@ -1078,11 +1093,13 @@ function ActionSheetButton({
 // never auto-ends one.
 function AutoTimer({
   operationId,
+  enabled,
   workType,
   workCenterId,
   openEvent
 }: {
   operationId: string;
+  enabled: boolean;
   workType: WorkType;
   workCenterId?: string;
   openEvent: { id: string; startTime: string } | null;
@@ -1104,10 +1121,11 @@ function AutoTimer({
     Machine: t`Machine`
   }[workType];
 
+  // Decided once, when the view opens: a later change of `enabled` never starts it.
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
-    if (running || busy) return;
+    if (!enabled || running || busy) return;
     const fd = new FormData();
     fd.set("jobOperationId", operationId);
     fd.set("type", workType);
@@ -1133,42 +1151,20 @@ function AutoTimer({
   );
 }
 
-function formatElapsed(s: number) {
-  const h = Math.floor(s / 3600)
-    .toString()
-    .padStart(2, "0");
-  const m = Math.floor((s % 3600) / 60)
-    .toString()
-    .padStart(2, "0");
-  const sec = (s % 60).toString().padStart(2, "0");
-  return `${h}:${m}:${sec}`;
-}
-
-// Live elapsed seconds from an open production event's startTime.
-function useElapsed(openEvent: { startTime: string } | null) {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (!openEvent) return;
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [openEvent]);
-  if (!openEvent) return 0;
-  const start = new Date(openEvent.startTime).getTime();
-  return Math.max(0, Math.floor((Date.now() - start) / 1000));
-}
-
 // Single-phase clocking control — posts Start/End to /x/event with
 // exclusive=true so starting one work type ends any other open one. Same
 // contract as the assembly view's TimerControl.
 function TimerControl({
   operationId,
   workCenterId,
+  events,
   openEvent,
   workType,
   startDisabled = false
 }: {
   operationId: string;
   workCenterId?: string;
+  events: ProductionEvent[];
   openEvent: { id: string; startTime: string } | null;
   workType: WorkType;
   // Starting is refused (ability policy Block); a running timer can still be
@@ -1177,6 +1173,7 @@ function TimerControl({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
+  const user = useUser();
   const workTypeLabel = {
     Setup: t`Setup`,
     Labor: t`Labor`,
@@ -1207,8 +1204,14 @@ function TimerControl({
     }
   }, [isTimerBusy]);
 
-  const liveElapsed = useElapsed(pendingAction === "End" ? null : openEvent);
-  const elapsed = pendingAction === "End" ? 0 : liveElapsed;
+  // Freeze the clock while a stop is in flight; otherwise tick live. The button shows this operator's own time.
+  const elapsed = useWorkTypeElapsed({
+    events,
+    workType,
+    openEvent,
+    employeeId: user.id,
+    frozen: pendingAction === "End"
+  });
 
   return (
     <fetcher.Form
@@ -1249,8 +1252,8 @@ function TimerControl({
           <span id={elapsedId} className="text-sm font-medium tabular-nums">
             {/* The clock moves between the server render and hydration, so the
                 elapsed time is only rendered in the browser. */}
-            <ClientOnly fallback={formatElapsed(0)}>
-              {() => formatElapsed(elapsed)}
+            <ClientOnly fallback={formatClock(0)}>
+              {() => formatClock(elapsed)}
             </ClientOnly>
             {/* The running state, read with the elapsed time. */}
             <span className="sr-only">

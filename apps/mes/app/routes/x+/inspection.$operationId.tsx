@@ -12,6 +12,10 @@ import {
   prefillInspectionSamples,
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
+import {
+  floorRuleRefusal,
+  maintenanceBlock
+} from "@carbon/lib/production/floor";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -20,7 +24,6 @@ import { useLoaderData, useParams } from "react-router";
 import { InspectionView } from "~/components/Inspection/InspectionView";
 import { getDatabaseClient } from "~/services/database.server";
 import {
-  floorRefusal,
   getAbilityShortfall,
   getJob,
   getJobMakeMethod,
@@ -41,12 +44,14 @@ import {
 import type { InspectionSample, OperationWithDetails } from "~/services/types";
 import { readUnitHolds } from "~/services/unit-hold.server";
 import { makeDurations } from "~/utils/durations";
-import type { Handle } from "~/utils/handle";
+import { type Handle, operationMaintenanceRealtime } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  erpLink: ({ data }) =>
+    data?.job?.id ? path.to.jobDetail(data.job.id) : undefined,
   realtime: [
     {
       table: "inspection",
@@ -60,7 +65,8 @@ export const handle: Handle = {
           ? `inspectionId=eq.${data.inspection.id}`
           : undefined
     },
-    { table: "jobOperation", column: "id", param: "operationId" }
+    { table: "jobOperation", column: "id", param: "operationId" },
+    operationMaintenanceRealtime
   ]
 };
 
@@ -125,8 +131,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(operation.error, "Failed to fetch operation"))
     );
 
-  const notOnFloor = await floorRefusal(serviceRole, {
-    jobStatus: job.data?.status,
+  const notOnFloor = await floorRuleRefusal(serviceRole, {
+    jobId: scopedOperation.data.jobId,
+    jobStatus: job.data?.status ?? null,
     jobOperationBatchId: scopedOperation.data.jobOperationBatchId,
     companyId
   });
@@ -296,7 +303,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
-  const [abilityWarning, holds] = await Promise.all([
+  const [abilityWarning, holds, workCenterBlock] = await Promise.all([
     getAbilityShortfall(serviceRole, {
       operationId,
       employeeId: userId,
@@ -307,7 +314,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           companyId,
           unitIds: (trackedEntities.data ?? []).map((unit) => unit.id)
         })
-      : { data: {}, error: null }
+      : { data: {}, error: null },
+    // The timer Start refuses a blocked work center; the view disables Start.
+    op.workCenterId
+      ? maintenanceBlock(serviceRole, {
+          companyId,
+          workCenterId: op.workCenterId
+        })
+      : null
   ]);
   if (holds.error) {
     throw redirect(
@@ -321,6 +335,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     abilityWarning,
+    maintenanceBlock: workCenterBlock,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     correctionName,
@@ -360,5 +375,8 @@ export default function InspectionRoute() {
   if (!operationId) throw new Error("Operation ID is required");
 
   const data = useLoaderData<typeof loader>();
-  return <InspectionView {...data} operationId={operationId} />;
+  // Keyed by operation: the auto-start decision and local state belong to one operation.
+  return (
+    <InspectionView key={operationId} {...data} operationId={operationId} />
+  );
 }

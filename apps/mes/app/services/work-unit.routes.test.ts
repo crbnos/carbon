@@ -34,16 +34,25 @@ function floor({
   later = true,
   allDone = false,
   firstDone = true,
-  extra = {}
+  extra = {},
+  operation = {}
 }: {
   later?: boolean;
   allDone?: boolean;
   firstDone?: boolean;
   extra?: Record<string, Record<string, unknown>[]>;
+  operation?: Record<string, unknown>;
 } = {}) {
   return fakeClient({
     ...extra,
-    jobOperation: [serialOperation({ id: op, jobMakeMethodId: "jmm", later })],
+    jobOperation: [
+      serialOperation({
+        id: op,
+        jobMakeMethodId: "jmm",
+        later,
+        extra: operation
+      })
+    ],
     jobMakeMethod: [
       {
         id: "jmm",
@@ -206,9 +215,8 @@ describe("kanban Complete scan (end route)", () => {
 });
 
 describe("kanban Start scan (start route)", () => {
-  it("starts the timer with no unit on a later operation, as the Start button does", async () => {
-    const fake = floor();
-    const thrown = await startOperationByScan(
+  const scanStart = (fake: ReturnType<typeof floor>) =>
+    startOperationByScan(
       {
         ...fake,
         db: () => {
@@ -218,15 +226,40 @@ describe("kanban Start scan (start route)", () => {
       },
       { ...caller, request: get(`/x/start/${op}`), operationId: op }
     ).catch((response: unknown) => response);
+  const timerBatch = (fake: ReturnType<typeof floor>) =>
+    (
+      fake
+        .writes()
+        .find((w) => w.op === "insert" && w.table === "productionEvent")
+        ?.values as { jobOperationBatchId?: string } | undefined
+    )?.jobOperationBatchId;
+
+  it("starts the timer with no unit on a later operation, as the Start button does", async () => {
+    const fake = floor();
+    const thrown = await scanStart(fake);
     expect(location(thrown)).toContain(`/x/operation/${op}`);
     const timer = fake
       .writes()
       .find((w) => w.op === "insert" && w.table === "productionEvent");
     expect(timer).toBeDefined();
+    // Not in a batch: the timer is the operation's own.
+    expect(timerBatch(fake)).toBeUndefined();
     // No unit is stamped on the timer: the screen asks for it next.
     expect(fake.writes().some((w) => w.table === "trackedActivityOutput")).toBe(
       false
     );
+  });
+
+  it("clocks a running batch member's timer on the batch's shared timer", async () => {
+    const fake = floor({
+      operation: { jobOperationBatchId: "bat_1" },
+      extra: {
+        jobOperationBatch: [{ id: "bat_1", companyId: "co", status: "Active" }]
+      }
+    });
+    const thrown = await scanStart(fake);
+    expect(location(thrown)).toContain(`/x/operation/${op}`);
+    expect(timerBatch(fake)).toBe("bat_1");
   });
 });
 

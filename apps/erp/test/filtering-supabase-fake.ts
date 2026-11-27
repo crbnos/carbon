@@ -14,6 +14,10 @@
  * when the query names no `companyId` filter, whatever the fixture holds.
  * `unscoped` lists the tables a code path reads by another key on purpose
  * (a record by its id, to learn its company).
+ *
+ * `range` pages a read; `maxRows` caps every read as PostgREST's `max_rows`
+ * does, so an unpaged read past the cap loses its tail. A read of a table in
+ * `failing` returns an error.
  */
 
 export type FakeWrite = {
@@ -25,7 +29,7 @@ export type FakeWrite = {
 
 export function filteringSupabase(
   tables: Record<string, any[]>,
-  options: { unscoped?: string[] } = {}
+  options: { unscoped?: string[]; maxRows?: number; failing?: string[] } = {}
 ) {
   const writes: FakeWrite[] = [];
   const from = (table: string) => {
@@ -33,6 +37,7 @@ export function filteringSupabase(
     const named: Array<[string, unknown]> = [];
     let scoped = false;
     let write: FakeWrite | null = null;
+    let page: [number, number] | null = null;
     const keep =
       (column: string, test: (value: unknown) => boolean) => (row: any) =>
         !(column in row) || test(row[column]);
@@ -49,9 +54,13 @@ export function filteringSupabase(
     };
 
     const chain: Record<string, any> = {};
-    for (const method of ["select", "order", "limit", "range", "or", "not"]) {
+    for (const method of ["select", "order", "limit", "or", "not"]) {
       chain[method] = () => chain;
     }
+    chain.range = (from: number, to: number) => {
+      page = [from, to];
+      return chain;
+    };
     chain.eq = (column: string, value: unknown) => {
       name(column);
       named.push([column, value]);
@@ -115,7 +124,12 @@ export function filteringSupabase(
         return { data: many ? data : (data[0] ?? null), error: null };
       }
       assertScoped();
-      const found = rows();
+      if (options.failing?.includes(table)) {
+        return { data: null, error: { message: `${table} read failed` } };
+      }
+      let found = rows();
+      if (page) found = found.slice(page[0], page[1] + 1);
+      if (options.maxRows !== undefined) found = found.slice(0, options.maxRows);
       return { data: many ? found : (found[0] ?? null), error: null };
     };
     chain.maybeSingle = async () => result(false);

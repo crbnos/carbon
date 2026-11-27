@@ -1036,6 +1036,7 @@ msgstr "डाउन"
 msgid "Down for maintenance"
 msgstr "रखरखाव के लिए बंद"
 
+#. placeholder {0}: block.dispatchReadableId
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Down for maintenance · {0}"
 msgstr "रखरखाव के लिए बंद · {0}"

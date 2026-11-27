@@ -4131,30 +4131,41 @@ export const orderPlannedPurchases = defineServiceFn({
       return ctx.error("notFound", "Project not found");
     }
 
-    const [suppliers, supplierParts, company, currencies, exchangeRates] =
-      await Promise.all([
-        client
-          .from("supplier")
-          .select("id, name, taxPercent, currencyCode")
-          .in("id", Array.from(supplierIds))
-          .eq("companyId", companyId),
-        client
-          .from("supplierPart")
-          .select("*")
-          .in("itemId", Array.from(itemIds))
-          .eq("companyId", companyId),
-        client
-          .from("company")
-          .select("id, baseCurrencyCode")
-          .eq("id", companyId)
-          .single(),
-        client
-          .from("currencies")
-          .select("code, decimalPlaces")
-          .eq("companyGroupId", companyGroupId),
-        // Today's rate for each currency a supplier part is priced in.
-        client.rpc("get_exchange_rates", { p_company_id: companyId })
-      ]);
+    const [
+      suppliers,
+      supplierParts,
+      company,
+      currencies,
+      exchangeRates,
+      supplierParties
+    ] = await Promise.all([
+      client
+        .from("supplier")
+        .select("id, name, taxPercent, currencyCode")
+        .in("id", Array.from(supplierIds))
+        .eq("companyId", companyId),
+      client
+        .from("supplierPart")
+        .select("*")
+        .in("itemId", Array.from(itemIds))
+        .eq("companyId", companyId),
+      client
+        .from("company")
+        .select("id, baseCurrencyCode")
+        .eq("id", companyId)
+        .single(),
+      client
+        .from("currencies")
+        .select("code, decimalPlaces")
+        .eq("companyGroupId", companyGroupId),
+      // Today's rate for each currency a supplier part is priced in.
+      client.rpc("get_exchange_rates", { p_company_id: companyId }),
+      service.getDefaultPurchaseOrderSupplierParties(
+        client,
+        companyId,
+        Array.from(supplierIds)
+      )
+    ]);
     if (suppliers.error) {
       return ctx.error(
         "internal",
@@ -4300,9 +4311,12 @@ export const orderPlannedPurchases = defineServiceFn({
             planningPurchaseOrderIds.add(purchaseOrder.id);
           }
         } else {
+          const party = supplierParties.get(supplierId);
           const createPO = await service.insertPurchaseOrder(client, {
             status: "Planned",
             supplierId,
+            supplierContactId: party?.supplierContactId ?? undefined,
+            supplierLocationId: party?.supplierLocationId ?? undefined,
             purchaseOrderType: "Purchase",
             currencyCode,
             locationId,
@@ -6715,6 +6729,7 @@ export const assignSupplierTaxCode = defineServiceFn({
  *
  * @remarks
  * Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier. LLM can create a PO with just supplierId.
+ * A supplier contact or location left out is filled from the supplier's defaults: its purchasing contact, and its shipping location when that is one of the supplier's own, else its only location.
  * The order starts as Draft (or Planned): finalize it to release it, through approval when a rule applies.
  *
  * @mcp
@@ -6744,10 +6759,11 @@ export const insertPurchaseOrder = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.insertPurchaseOrder(
-        ctx.asCaller.supabase,
-        payload(ctx, input).withGroup().forUpsert() as never
-      )
+      await service.insertPurchaseOrder(ctx.asCaller.supabase, {
+        ...(payload(ctx, input).withGroup().forUpsert() as object),
+        // A contact or location the caller leaves out takes the supplier's.
+        defaultSupplierParty: true
+      } as never)
     );
   }
 });

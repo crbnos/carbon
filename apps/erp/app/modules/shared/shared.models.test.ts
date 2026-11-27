@@ -17,6 +17,7 @@ import {
   optionalPlainTextDoc,
   optionalTiptapDoc,
   requiredTiptapDoc,
+  savedViewStateValidator,
   toTiptapDoc
 } from "./shared.models";
 
@@ -405,5 +406,20 @@ describe("force delete", () => {
     expect(forceDeleteNotificationId("receipt", "r1", "fdr1")).toBe(
       "receipt:r1:fdr1"
     );
+  });
+});
+
+describe("savedViewStateValidator", () => {
+  it("shows a column a view saved with a user id and keeps a hidden one hidden", () => {
+    const state = savedViewStateValidator.parse({
+      columnOrder: [],
+      columnPinning: {},
+      columnVisibility: { createdBy: "user-1", updatedBy: false, name: true }
+    });
+    expect(state.columnVisibility).toEqual({
+      createdBy: true,
+      updatedBy: false,
+      name: true
+    });
   });
 });

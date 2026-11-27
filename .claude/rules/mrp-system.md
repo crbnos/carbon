@@ -506,7 +506,9 @@ Their `demand_data` CTEs read the projection arm net of consumption
   and `maximumOrderQuantity` (`demandBasedPerOrder` in `planning-sizing.ts`;
   the SQL total is the whole need, `20261013004700`) — a maximum never caps
   the week. Fixed Reorder Quantity ignores `lotSize`; Maximum Quantity uses it
-  only as a rounding multiple. In `computePlanningOrders` each Demand-Based
+  only as a rounding multiple, and fills up to `maximumInventoryQuantity`
+  (at least the minimum) whatever the reorder quantity, which its planning
+  form leaves blank (newest SQL def `20261126122440`). In `computePlanningOrders` each Demand-Based
   Reorder batch is due in the week its share is needed (the first week the
   projection plus every earlier batch is under safety stock), not all in the
   window's first short week: `deriveChangeActions` dates a PO line by the

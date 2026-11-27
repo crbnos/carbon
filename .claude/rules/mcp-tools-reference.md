@@ -516,6 +516,16 @@ Markdown markers.
   what a key needs in `@remarks` (`users_inviteEmployee`: `users.accounts` at
   Edit and `people.employees` at Create; `users_inviteCustomerContact` /
   `inviteSupplierContact`: `sales.customers` / `purchasing.suppliers` at Edit).
+- **A write recorded against a person refuses API keys.** A key acts as its
+  creator, so a key would record the wrong person. Such a write runs only for
+  a user actor (the OAuth connector, a session) and takes the person from
+  `ctx.actor.userId`, never from an input: `run` starts with
+  `if (ctx.actor.type !== "user") return ctx.error("forbidden", …)`. The MES
+  timer Start and End (`production_startOperationTimer`,
+  `production_endOperationTimer`) are the precedent. A workflow runs as its
+  owner (a user actor), so a workflow step that called them would record time
+  against the owner; no workflow step can call them today, so refuse workflow
+  callers before adding one.
 - A write that runs as a job answers before its effect lands:
   `users_deactivateUsers` and `users_resendInvites` queue a job for several
   users (`queued: true`).

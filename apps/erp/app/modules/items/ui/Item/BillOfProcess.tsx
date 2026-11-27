@@ -1930,7 +1930,13 @@ function AttributesForm({
   itemMentions: { id: string; label: string }[];
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<typeof newMethodOperationParameterAction>();
+  const addStepDisclosure = useDisclosure();
+  // Closes once the step exists; the draft effects below still read fetcher.data.
+  const fetcher = useAction<typeof newMethodOperationParameterAction>({
+    onSuccess: (data) => {
+      if ((data as { id?: string | null }).id) addStepDisclosure.onClose();
+    }
+  });
   const sortOrderFetcher = useFetcher<{ success: boolean }>();
   const [type, setType] = useState<OperationStep["type"]>("Task");
   const [description, setDescription] = useState<JSONContent>({});
@@ -2237,6 +2243,17 @@ function AttributesForm({
     // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
+  const onCancelAddStep = () => {
+    setType("Task");
+    setDescription({});
+    setNumericControls([]);
+    setDraftSlides([]);
+    setDraftParts([]);
+    setDraftPartQuantities({});
+    setDraftTools([]);
+    addStepDisclosure.onClose();
+  };
+
   if (isDisabled && temporaryItems[operationId]) {
     return (
       <Alert className="max-w-[420px] mx-auto my-8">
@@ -2257,7 +2274,17 @@ function AttributesForm({
       isLoading={fetcher.state !== "idle"}
       // this is a hack to re-render the editor component when the form is submitted with the default values
     >
-      {!isDisabled && (
+      {!isDisabled && !addStepDisclosure.isOpen && (
+        <Button
+          variant="secondary"
+          leftIcon={<LuCirclePlus />}
+          className="self-start"
+          onClick={addStepDisclosure.onOpen}
+        >
+          <Trans>Add Step</Trans>
+        </Button>
+      )}
+      {!isDisabled && addStepDisclosure.isOpen && (
         <div className="p-6 border bg-card rounded-lg mb-6">
           <ValidatedForm
             action={path.to.newMethodOperationStep}
@@ -2462,13 +2489,18 @@ function AttributesForm({
                 }
               />
 
-              <Submit
-                leftIcon={<LuCirclePlus />}
-                isDisabled={isDisabled || fetcher.state !== "idle"}
-                isLoading={fetcher.state !== "idle"}
-              >
-                Save Step
-              </Submit>
+              <HStack className="w-full justify-end" spacing={2}>
+                <Button variant="secondary" onClick={onCancelAddStep}>
+                  <Trans>Cancel</Trans>
+                </Button>
+                <Submit
+                  leftIcon={<LuCirclePlus />}
+                  isDisabled={isDisabled || fetcher.state !== "idle"}
+                  isLoading={fetcher.state !== "idle"}
+                >
+                  Save Step
+                </Submit>
+              </HStack>
             </VStack>
           </ValidatedForm>
         </div>

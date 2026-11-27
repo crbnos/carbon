@@ -1569,6 +1569,7 @@ export const purchaseFixedAsset = defineServiceFn({
 
     const order = await insertPurchaseOrder(client, {
       supplierId,
+      defaultSupplierParty: true,
       locationId,
       status: "Draft",
       purchaseOrderType: "Purchase",

@@ -112,6 +112,8 @@ import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
 import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
+import { numberUnitOnFirstTouch } from "@carbon/lib/production/serial-numbering";
+import type { TimerDeps } from "@carbon/lib/production/timer";
 import {
   asJobSource,
   type JobSource,
@@ -13660,6 +13662,58 @@ export async function postEndedEvent(
     return posting.data.reason ?? "unknown reason";
   }
   return null;
+}
+
+/**
+ * Posts the events a timer Start or End ended, as the MES does
+ * (`postEndedProductionEvents`): a batch event is left for batch completion,
+ * which slices it per member. The reasons a posting was skipped or failed.
+ */
+export async function postEndedTimerEvents(
+  ctx: ServiceContext,
+  ids: string[]
+): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const events = await ctx.asSystem.supabase
+    .from("productionEvent")
+    .select("id")
+    .in("id", ids)
+    .eq("companyId", ctx.company.id)
+    .is("jobOperationBatchId", null);
+  if (events.error) {
+    logger.error("Failed to read the events a timer ended", {
+      companyId: ctx.company.id,
+      ids,
+      error: events.error
+    });
+    return ["Failed to read the ended events"];
+  }
+  const reasons: string[] = [];
+  for (const event of events.data) {
+    const reason = await postEndedEvent(ctx, event.id);
+    if (reason) reasons.push(reason);
+  }
+  return reasons;
+}
+
+/**
+ * The clients and callbacks the shared timer Start and End
+ * (`@carbon/lib/production/timer`) take, for the caller of `ctx`. The posting
+ * reasons it collects are returned beside the result.
+ */
+export function operationTimerDeps(ctx: ServiceContext) {
+  const postingErrors: string[] = [];
+  const deps: TimerDeps = {
+    client: ctx.asCaller.supabase,
+    serviceRole: ctx.asSystem.supabase,
+    db: () => ctx.asSystem.pg,
+    permitted: (gate) => ctx.can(gate),
+    numberUnit: (args) => numberUnitOnFirstTouch(ctx.asSystem.pg, args),
+    postEnded: async (ids) => {
+      postingErrors.push(...(await postEndedTimerEvents(ctx, ids)));
+    }
+  };
+  return { deps, postingErrors };
 }
 
 type OwnedTable =

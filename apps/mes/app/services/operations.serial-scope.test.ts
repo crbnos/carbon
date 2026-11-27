@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isSerialEntityIncompleteForOperation } from "@carbon/lib/production/shop-floor";
 import { describe, expect, it } from "vitest";
-import { isSerialEntityIncompleteForOperation } from "./operations.service";
 
 const op = "op_rework";
 

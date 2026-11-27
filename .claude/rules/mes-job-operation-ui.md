@@ -2,6 +2,11 @@
 paths:
   - "apps/mes/app/components/JobOperation/**"
   - "apps/mes/app/routes/x+/operation.$operationId.tsx"
+  - "apps/mes/app/routes/x+/assembly.$operationId.tsx"
+  - "apps/mes/app/routes/x+/inspection.$operationId.tsx"
+  - "apps/mes/app/components/AssemblyView.tsx"
+  - "apps/mes/app/components/Inspection/InspectionView.tsx"
+  - "apps/mes/app/components/MaintenanceBlockWarning.tsx"
   - "apps/mes/app/routes/x+/batch.$batchId.tsx"
   - "packages/react/src/hooks/useKeyboardWedge.ts"
   - "apps/mes/app/routes/x+/traveler.*"
@@ -12,7 +17,11 @@ paths:
   - "apps/mes/app/services/work-unit.server.ts"
   - "apps/mes/app/services/unit-hold.server.ts"
   - "apps/mes/app/utils/unitHold.ts"
+  - "apps/mes/app/utils/eventTime.ts"
+  - "apps/mes/app/hooks/useEventTotals.ts"
   - "apps/mes/app/services/kanban-scan.server.ts"
+  - "apps/mes/app/services/production-event.server.ts"
+  - "packages/lib/src/production/**"
 ---
 
 # MES Job Operation UI
@@ -103,7 +112,8 @@ redirects kinds it does not serve (no loops).
 ## Ability gate
 
 When the operation's process has `requiresAbility` on and the operator has no
-current `employeeAbility` row, `getAbilityShortfall` (`operations.service.ts`)
+current `employeeAbility` row, `getAbilityShortfall` (`@carbon/lib/production/ability`,
+re-exported by `operations.service.ts`)
 returns what is missing: the process's `abilityPolicy`, the process name, the
 expiry date and an Active training whose `grantsAbilityId` is the ability. It
 fails open on any read error. The operation, assembly and inspection loaders
@@ -127,6 +137,71 @@ banner.
 before the page hydrates) back to the referrer with the flash, so the operator never
 lands on the bare resource route.
 
+## Timer Start and End: one body for the MES and the API
+
+`productionEventAction` (`services/production-event.server.ts`, behind
+`event.tsx`) parses the form and flashes the result. The checks and the writes
+are `startOperationTimer` / `endOperationTimer` in
+`packages/lib/src/production/timer.ts` (`@carbon/lib/production/timer`), which
+the ERP's `production_startOperationTimer` / `production_endOperationTimer`
+run too (see the production module's `AGENTS.md`). The MES calls them in
+process; no MES→ERP call. They take clients and plain input and return
+`{ ok: true, … }` or a `TimerRefusal` (`category`, `message`); they never read
+a request or write a flash. The caller passes `postEnded` (the MES:
+`postEndedProductionEvents`) and `numberUnit` (`numberUnitOnFirstTouch`,
+`@carbon/lib/production/serial-numbering`).
+
+`packages/lib/src/production/` by concern:
+
+| Module | Holds |
+|---|---|
+| `timer.ts` | `startOperationTimer`, `endOperationTimer`, `TimerDeps`, `TimerRefusal` |
+| `event-writes.ts` | `startProductionEvent`, `startMachineProductionEvent`, `endProductionEvent`, `endMachineProductionEvent`, `notFoundResponse` |
+| `floor.ts` | `floorRule` (on statuses already read), `floorRuleRefusal`, `floorCheck` (the same, plus the batch status it read), `workCenterRefusal`, `maintenanceBlock`, `maintenanceRefusal` |
+| `ability.ts` | `getAbilityShortfall`, `abilityBlockRefusal` |
+| `serial-numbering.ts` | `numberUnitOnFirstTouch` |
+
+Start, in order: the operation read; the timer's work center is the one
+sent, else the operation's. Then the Machine permission (`production.jobs`
+Create) for a Machine press, Outside Processing, then four independent reads
+in one `Promise.all`, refused in this order: the floor rule
+(`floorCheck`), the work center (`workCenterRefusal`: the operation's
+own, or one whose `workCenterProcess` runs the operation's process, so an API
+caller cannot press another machine and end its time), the maintenance block
+(`maintenanceBlock`), the ability block. Then `resolveWorkUnit` (`optional`),
+`exclusive`, and the write. The event is tagged with the operation's own
+`jobOperationBatchId` when `floorCheck` read its batch as `Active` or
+`Completing`, whoever starts it (the MES, the API, or the kanban Start,
+`startOperationByScan`, which applies the same rule to its own `floorCheck`);
+a `Completed` batch's member, or an unbatched one, starts untagged. The caller
+sends no batch id.
+End is never gated by the floor rule.
+
+**The screens agree with Start.** The operation, assembly and inspection
+loaders apply the same floor rule and redirect with its text: the operation
+loader runs `floorRule` on the job and batch it already read, the assembly
+and inspection loaders `floorRuleRefusal`. A work center under a maintenance
+block disables Start on all three (the timer buttons' `startDisabled`) and
+shows `MaintenanceBlockWarning` ("Down for maintenance · <dispatch>"); the
+assembly and inspection views skip their automatic starts (`AutoTimer`, and
+the assembly view's Labor start on the first recorded step). Pausing a
+running timer stays enabled. `AutoTimer` stays mounted whatever the blocks and
+decides once, when the view opens (the views are keyed by operation id): a
+block that clears later never starts a timer. The inspection loader reads
+`maintenanceBlock` for the operation's work center; the operation and
+assembly loaders read the work center once (`getWorkCenter`, the same view)
+and take the block, the work center name and the Maintenance button from it.
+All three follow `maintenanceDispatch` on the operation's work center
+(`operationMaintenanceRealtime`, `~/utils/handle`), so a dispatch that starts
+or ends turns Start off or on without a reload.
+
+The ability gate and the unit reads are in `@carbon/lib`;
+`services/operations.service.ts` re-exports the ability gate, so MES routes
+import it where they did. The kanban Start imports the timer writes from
+`@carbon/lib/production/event-writes`. `isSerialEntityIncompleteForOperation` is
+imported from `@carbon/lib/production/shop-floor` directly: a re-export in a
+MES service would count as a server pick in `mes-unit-write-resolves-unit`.
+
 ## Quality hold
 
 With `companySettings.holdUnitsWithOpenIssues` on (Settings → Quality, default
@@ -135,8 +210,9 @@ in `nonConformanceTrackedEntity`. The hold follows the issue and its per-serial 
 is the one on the operator's screen. Spec:
 `.ai/specs/implemented/2026-11-23-unit-quality-hold.md`.
 
-- **One reader:** `readUnitHolds` (`services/unit-hold.server.ts`) returns
-  `UnitHolds` (`~/utils/unitHold`): the blocking issues and dispositions per unit, oldest first. With
+- **One reader:** `readUnitHolds` (`services/unit-hold.server.ts`, a re-export
+  of `@carbon/lib/production/unit-hold-read`) returns
+  `UnitHolds` (`~/utils/unitHold`, a re-export of `@carbon/lib/production/unit-hold`): the blocking issues and dispositions per unit, oldest first. With
   the setting off it reads the settings row and nothing else.
 - **The server:** `resolveWorkUnit` reads the holds of the units still to do
   (not in `member` mode, never for a lot) and `decideWorkUnit` treats a unit on
@@ -180,10 +256,14 @@ is the one on the operator's screen. Spec:
 floor-visible iff — in a batch → the batch is Released (`Active`/`Completing`),
 even when its job is Draft/Planned; in no batch → its job is in
 `activeJobStatuses` (the pre-batching rule). The operation loader
-(`operation.$operationId.tsx`) redirects with a flash for a `Planned`-batch
+(`operation.$operationId.tsx`, `floorRule`) and the assembly and inspection
+loaders (`floorRuleRefusal`) redirect with a flash for a `Planned`-batch
 member ("part of a batch that has not been released") and for an unbatched op
-on an unreleased job; `start.$operationId.tsx` runs the same two checks BEFORE
-its timer-reopen update. `end.$operationId.tsx` is deliberately ungated —
+on an unreleased job. The kanban Start (`start.$operationId.tsx`,
+`startOperationByScan`) runs `floorCheck` before it touches a timer (its
+timer re-open update still runs before its maintenance, ability and rule
+checks), and the timer Start (`event.tsx`, the API) runs `floorCheck` too
+(`@carbon/lib/production/floor`). `end.$operationId.tsx` is deliberately ungated —
 closing a timer is never blocked. `getOpenJobs` widens with Released-batch
 member jobs via a two-step `.or(status.in…, id.in…)` (quoted statuses — "In
 Progress" has a space). List visibility alone was the leak: nothing else gated
@@ -192,9 +272,9 @@ a direct operation URL.
 **Outside Processing never runs on the floor.** Subcontracted work runs at the
 supplier: `get_active_job_operations_by_location` filters it by type (not by a
 null `workCenterId`, which a stale value defeats), and the operation loader, the
-`start.$operationId.tsx` loader (before its timer re-open) and `event.tsx`'s
-Start branch all refuse it with `OUTSIDE_PROCESSING_REFUSAL`
-(`utils/operationView.ts`). `resolveOperationView` still maps it to the Operation
+`start.$operationId.tsx` loader (before its timer re-open) and the timer Start
+(`startOperationTimer`) all refuse it with `OUTSIDE_PROCESSING_REFUSAL`
+(`@carbon/lib/production/shop-floor`, re-exported by `utils/operationView.ts`). `resolveOperationView` still maps it to the Operation
 view so the resolver stays total; the refusal is the routes' job.
 
 
@@ -248,8 +328,8 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
 `isCompleting = batch.status === "Completing"`, and:
 - **Shared timer** — `useOperation({ batchId })` subscribes the `productionEvent`
   realtime filter to `jobOperationBatchId=eq.<id>` (all members' timers), and
-  `StartStopButton` renders `<Hidden name="jobOperationBatchId">` so the event is
-  tagged. `event.tsx`'s End branch **skips `post-production-event`** for a
+  every Start (the shared Start and the kanban Start) tags the event with the
+  operation's batch (see "Timer Start and End"). `event.tsx`'s End branch **skips `post-production-event`** for a
   batch-tagged event — cost posts once at batch completion when the aggregate
   events are sliced per member. A timer started on any member is the same shared
   timer on every member's page.
@@ -420,8 +500,10 @@ of a paused URL, which is itself a valid link.
 The rule: on a later operation of a serial part, every write names a unit
 the operator picked or scanned. It has two owners, one on each side.
 
-**The server: `resolveWorkUnit`** (`services/work-unit.server.ts`, tested by
-value and over an in-memory client). It reads, company-scoped and in one
+**The server: `resolveWorkUnit`** (`packages/lib/src/production/work-unit-resolve.ts`,
+re-exported by `services/work-unit.server.ts`, which MES code imports; tested by
+value and over an in-memory client in the MES). It lives in `@carbon/lib` because the ERP's
+timer Start runs it too. It reads, company-scoped and in one
 query with embeds, whether the operation's make method is serial and whether
 the operation is the first of its make method (no dependency on an operation
 of the same make method; a failed read refuses). It reads the units with their
@@ -446,7 +528,7 @@ whole axis.
 | `complete.tsx` (`completeOperationQuantity`), `scrap.tsx` (`scrapOperationQuantity`), `rework.tsx`, `issue-tracked-entity.tsx`, `issueScannedItem` (item scan) | `require` |
 | `record.tsx` (`recordStep`): the server keys the record by the unit's axis index, not the client's `index`. A request with no `trackedEntityId` (an older page) names the unit at its `index` on a first operation only (`legacyUnitIndex`) | `require` |
 | `start.$operationId`, `end.$operationId` (kanban scans) | `advance` |
-| `event.tsx` Start (`productionEventAction`, `services/production-event.server.ts`): a timer names a unit only when one is held open; when the server drops the named unit, the toast says the timer runs on the next open unit or on none. Not serial, the id passes through as `lotId` | `optional` |
+| `event.tsx` Start and the API's `production_startOperationTimer` (`startOperationTimer`, `@carbon/lib/production/timer`): a timer names a unit only when one is held open; when the server drops the named unit, the toast says the timer runs on the next open unit or on none. Not serial, the id passes through as `lotId` | `optional` |
 | `steps.complete-all.tsx` (`completeAllSteps`, `step-record.server.ts`): the manager override (Production delete permission) records every step left for the held unit, keyed by its axis index like `record.tsx` | `require` |
 | `quality-issue.new.tsx`, `trigger-correction.tsx`, `entity+/…scrap.tsx` (with `?operationId`) | `member` |
 | `unconsume.tsx` (`unconsumeFromUnit`, `issue.server.ts`): the parent, at the material's operation; then `childrenConsumedInto` (one read) refuses parts whose newest Consume did not output that parent | `member` |
@@ -844,7 +926,12 @@ while its serial or batch materials are not scanned in.
   `ScrapReason`, `Chat.tsx` (`OperationChat`), `TableSkeleton`.
 - `NeedMaterialModal` (Need material, see above).
 - **Hooks:** `hooks/useTravelerScan.ts` (see Traveler scan), `hooks/useWorkUnit.ts` (see Serial unit selection), `hooks/useOperation.tsx` (modal disclosures, live progress via
-  `useInterval` + realtime (`@carbon/query`, see `realtime-system.md`), active-event detection),
+  `useInterval` + realtime (`@carbon/query`, see `realtime-system.md`), active-event detection;
+  its totals come from `getEventTotals` (`~/utils/eventTime`): logged time for the work type,
+  every operator, plus the running time. The assembly and inspection timer buttons use the same
+  sum through `useWorkTypeElapsed` (`~/hooks/useEventTotals`), filtered by `employeeId` to the
+  signed-in operator's own logged and running time; the Progress panel and the status bar
+  meters still show the whole team's),
   `hooks/useFiles.tsx` (`downloadFile`/`downloadModel` via `path.to.file.previewFile`).
 
 ## Tabs

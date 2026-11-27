@@ -248,6 +248,7 @@ import {
 import { getMethod } from "~/modules/production/production.service";
 import {
   purchaseOrderLineRemainingToInvoice,
+  readDefaultPurchaseOrderSupplierParties,
   SUPPLIER_CONTACT_EMAIL_REQUIRED
 } from "~/modules/purchasing/purchasing.models";
 import { getLocationsList } from "~/modules/resources/resources.service";
@@ -12685,6 +12686,23 @@ export async function createDocument(
           throw new Error(supplierPayments.error.message);
         if (supplierShipping.error)
           throw new Error(supplierShipping.error.message);
+        const supplierParties = await readDefaultPurchaseOrderSupplierParties(
+          {
+            suppliers: Promise.resolve(suppliers),
+            shippings: Promise.resolve(supplierShipping),
+            // `many` throws; the defaults are best-effort, so a throw reads as a failed read.
+            locations: many(
+              db,
+              "supplierLocation",
+              { supplierId: Array.from(supplierIds), companyId },
+              { columns: ["id", "supplierId"] }
+            ).then(
+              (result) => result,
+              (error: unknown) => ({ data: null, error })
+            )
+          },
+          { companyId, jobId }
+        );
 
         // A supplier with no configured currency means "the company's own
         // base currency" (rate 1 by definition) -- never a hardcoded USD,
@@ -12753,6 +12771,7 @@ export async function createDocument(
                 : purchaseOrdersBySupplierId[supplier];
 
             if (!purchaseOrderId) {
+              const party = supplierParties.get(supplier);
               const supplierInteraction = await trx
                 .insertInto("supplierInteraction")
                 .values({
@@ -12779,6 +12798,8 @@ export async function createDocument(
                   purchaseOrderId: nextSequence,
                   status: "Draft",
                   supplierId: supplier,
+                  supplierContactId: party?.supplierContactId ?? null,
+                  supplierLocationId: party?.supplierLocationId ?? null,
                   jobId: jobId,
                   jobReadableId: job.data?.jobId,
                   companyId: companyId,

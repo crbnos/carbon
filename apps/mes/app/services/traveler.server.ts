@@ -9,6 +9,7 @@ import {
   fetchAllRecords,
   getLocationTimeZone
 } from "@carbon/database";
+import { isSerialEntityIncompleteForOperation } from "@carbon/lib/production/shop-floor";
 import { getLogger } from "@carbon/logger";
 import { datetime, resolveTrackedEntityBins } from "@carbon/utils";
 import { erpPosting } from "~/services/erp";
@@ -19,8 +20,7 @@ import {
 import {
   abilityBlockRefusal,
   getActiveJobOperationsByLocation,
-  getMyPeopleAssignment,
-  isSerialEntityIncompleteForOperation
+  getMyPeopleAssignment
 } from "~/services/operations.service";
 import {
   readOperationUnitFacts,
