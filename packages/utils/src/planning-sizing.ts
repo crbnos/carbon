@@ -478,11 +478,8 @@ export function computePlanningOrders(
           const requiredQuantity =
             maximumInventoryQuantity - (projectedQuantity + orderedQuantity);
 
-          // If reorder quantity is 0, use reorder point as the base order quantity
-          let orderQuantity =
-            reorderQuantity > 0
-              ? Math.max(minimumOrderQuantity, requiredQuantity)
-              : reorderPoint;
+          // Fill to the maximum; Reorder Quantity plays no part in this policy
+          let orderQuantity = Math.max(minimumOrderQuantity, requiredQuantity);
 
           // Ensure orderQuantity is positive to prevent infinite loop
           if (orderQuantity <= 0) break;
