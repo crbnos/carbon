@@ -121,7 +121,7 @@ prove it, and stop.
 
 1. **Read the brief.** No proven cause → you are not in Phase 3 yet; go back to
    Phase 1 (`/root-cause`). Never fix a guess.
-2. Read `.ai/lessons.md` for the affected area.
+2. Run `pnpm brief` on the affected files.
 3. Read the affected module/package `AGENTS.md`.
 4. Read `.claude/rules/write-time-checklist.md`.
 5. Read `BACKWARD_COMPATIBILITY.md` if the brief lists any BC impact.
@@ -206,6 +206,7 @@ to the human even in autonomous mode).
 | BC | Any FROZEN surface touched? STABLE without deprecation? |
 | Patterns | Does the code read like its neighbors? |
 | Leftovers | No debug logging, commented-out code, or stray files in the diff? |
+| Learn | If the root cause was an earlier agent's mistake, did you run `/learn` on it? |
 
 ### 3.7 Fix output
 

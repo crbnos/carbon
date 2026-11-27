@@ -3,6 +3,21 @@ paths:
   - "packages/database/**"
   - "apps/erp/app/modules/**/*.service.ts"
   - "apps/mes/app/services/**/*.service.ts"
+triggers:
+  - { text: ".update(", minCount: 2 }
+  - { text: ".insert(", minCount: 2 }
+  - "getDatabaseClient("
+  - "ctx.asSystem.pg"
+  - "withTransaction("
+  - "updateTable("
+  - "count: \"exact\""
+  - "fetchAllFromTable"
+summary:
+  - "Do multi-row or multi-table writes in one Kysely transaction, not a chain of supabase-js calls or `Promise.all`. The client has no transaction."
+  - "Never query inside a loop: collect the ids and make one `.in()` call, an embed or a view. `Promise.all` over the loop is not a fix."
+  - "Scope every Kysely `updateTable` and `deleteFrom` by `companyId`, and by the parent id when row ids come from the request. Kysely bypasses RLS."
+  - "In a building block that can get a transaction, open one with `withTransaction(db, fn)`, not `db.transaction()`."
+  - "Count list endpoints with `{ count: LIST_COUNT }`, not `count: \"exact\"`, which materializes the whole filtered set."
 ---
 
 # Database Access Patterns
@@ -113,7 +128,7 @@ Conventions (see also `conventions-services.md`):
 - List endpoints take `GenericQueryFilters` and run through `setGenericQueryFilters(query, args, [...])` (`~/utils/query`) for search/sort/pagination.
 - Count/select for list endpoints: prefer `{ count: LIST_COUNT }` (`LIST_COUNT = "estimated"`, `~/utils/query`) over `count: "exact"` (a paged list counts with `listCount(args)`, which asks for `exact` only in the Table's separate count request; see `table-infinite-scroll.md`). `exact` is `COUNT(*) OVER ()`, which materializes the whole filtered set just to produce a total the UI shows approximately anyway — on 500k `trackedEntity` rows that is 652 ms vs 1.5 ms. `estimated` is a hybrid: PostgREST still returns an exact count below its threshold, so small tenants see no change. Currently used by the ten view-backed endpoints plus `getJobs` and `getTrackedEntities`.
 - The ten endpoints backed by the big multi-join **views** (`parts`, `materials`, `tools`, `consumables`, `services`, `purchaseOrders`, `quotes`, `salesOrders`, `purchaseInvoices`, `salesInvoices`) additionally select an explicit `*_LIST_COLUMNS` constant instead of `select("*")`, so Postgres can prune the views' unreferenced computed columns. Adding a column to one of those tables means adding it to the constant — the `list-select-covers-columns` check (`@carbon/checks`) fails if an `accessorKey` is missing (a new constant needs a `LIST_TABLES` entry there), because the CSV export reads accessors untyped. The same check fails a constant that drops a sort or id column of its `X_PAGING`, which the cursor reads from each page's last row. The rationale lives once on `LIST_COUNT` in `apps/erp/app/utils/query.ts`, not at each constant.
-- Use `sanitize(...)` (re-exported from `@carbon/utils`) to strip empty values before insert/update.
+- `sanitize(...)` (re-exported from `@carbon/utils`) sets every `undefined` value to `null` (except `id`). It does not drop the key, so on an update it clears the column; leave out a field the caller did not send.
 - Upserts are done either with a manual `id ? update : insert` branch or supabase's native `.upsert(...)`; both are in use.
 - `fetchAllFromTable(client, table, columns, qb)` (from `@carbon/database`) pages through large result sets:
   the first page alone, then the rest in concurrent waves, and deliberately WITHOUT a count — `count: "exact"`

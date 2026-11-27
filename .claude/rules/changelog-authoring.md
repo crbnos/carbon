@@ -4,6 +4,18 @@ paths:
   - "docs/components/changelog-*.tsx"
   - "docs/lib/changelog*.ts*"
   - "docs/app/changelog/**"
+triggers:
+  - "getChangelogPanelEntry"
+  - "changelog-feed-components"
+  - "ChangelogSection"
+  - "generate-changelog-thumbnail"
+  - "/changelog/"
+summary:
+  - "Keep description to 15-20 words: it is the whole feed row, the RSS blurb and the in-app What's new text."
+  - "Make the filename date match the frontmatter date; Carbon has no versions, so the date orders entries."
+  - "Generate thumbnails with pnpm generate:changelog-thumbnails; never hand-draw a one-off SVG."
+  - "Give every component an entry uses a plain-HTML stand-in in docs/lib/changelog-feed-components.tsx, or the build fails."
+  - "Never invent a product fact; link each feature to its reference page on first mention."
 ---
 
 # Authoring a changelog entry

@@ -4,6 +4,18 @@ paths:
   - "**/*.server.ts"
   - "packages/jobs/**"
   - "packages/database/supabase/migrations/**"
+triggers:
+  - "forUpdate()"
+  - "forNoKeyUpdate()"
+  - "pg_advisory_xact_lock"
+  - "numUpdatedRows"
+  - { text: ".update(", minCount: 2 }
+summary:
+  - "Lock, then read: read the values you decide on after you take the row lock, never before, and lock the row you change, not a parent."
+  - "An UPDATE that moves a lifecycle status names the status it moves from; refuse when no row changed."
+  - "Write a running total in SQL (`sql`, `eb`) or read it under the row lock, never `x.total + delta` from an earlier read."
+  - "Run side effects (email, print, events) after commit, and give a retried external create an idempotency key."
+  - "Prove a multi-actor race with a two-connection database test, and register the fixed function in `guarded-code.json`."
 ---
 
 # Concurrency
@@ -92,6 +104,25 @@ between your read and your write is lost or counted twice.
 - No check enforces this rule: a side effect is usually a call to another
   function, which a text check cannot follow. Review it, and prove a retried
   create with a database test that runs it twice.
+
+## 5. Write only the fields the request changed
+
+Do not fill the fields a request omitted from an earlier read and write the
+whole row back (`{ ...current, ...input }`, `rate: input.rate ?? current.rate`,
+a JSONB object merged in JavaScript). A concurrent edit to a field this request
+never touched is lost.
+
+- Write only the columns the input names: build the payload from the keys the
+  caller sent. `sanitize` does not drop a key that is present but `undefined`;
+  it writes `null`, which clears the column. Merge JSONB in SQL
+  (`` sql`"attributes" || ${toJson(patch)}` ``).
+- When the new value depends on the old one, compare and set: put the value you
+  read in the UPDATE's filter (`.eq("updatedAt", read.updatedAt)`), and refuse
+  when no row changed (rule 2). Or read it under the row lock (rule 1).
+- No check enforces this rule. CodeRabbit flagged it 26 times, 15 of them in
+  November 2026 (`.ai/research/2026-11-25-coderabbit-review-findings.md`).
+  Fixed bug: `updateContractLine` filled omitted fields from a read and wrote
+  them all back.
 
 ## When a check flags your code
 

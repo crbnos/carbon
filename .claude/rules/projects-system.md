@@ -8,6 +8,21 @@ paths:
   - "packages/api/src/stock-stripes.ts"
   - "apps/erp/app/modules/inventory/grouped-receipt.ts"
   - "packages/ee/src/pegging/**"
+triggers:
+  - "\"projectLedger\""
+  - "resolveProjectPostingAccount"
+  - "project_posting_account"
+  - "loadProjectPostingContexts"
+  - "assertChargeable("
+  - "ProjectChargeError"
+  - "consumeToProject"
+  - "\"projectPeg\""
+summary:
+  - "Decide the GL account at posting with `resolveProjectPostingAccount`, and change its SQL mirror `project_posting_account` with it."
+  - "Never delete or update a `projectLedger` row; a void or repost writes negative rows with `reversalOfId`."
+  - "Only the postings and the job-completion SQL write `projectLedger`. The ERP only reads it."
+  - "Load posting contexts with `loadProjectPostingContexts` or `resolveProjectLineAccounts`; never load one context per line."
+  - "Never update a `projectPeg` row in place; write a new row that supersedes it."
 ---
 
 # Projects

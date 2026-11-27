@@ -147,6 +147,7 @@ const provenance = {
 export const accountFkRestrict = defineCheck({
   files: migrations,
   id: "account-fk-restrict",
+  triggers: ["account"],
   description: "A foreign key to account must be ON DELETE RESTRICT.",
   provenance,
   scan(file, contents) {
@@ -164,6 +165,7 @@ export const accountFkRestrict = defineCheck({
 
 const ABOUT = {
   id: "account-fk-classified",
+  triggers: ["account"],
   description:
     "A column with a foreign key to account must be classified in REFERENCE_POLICY.",
   provenance
@@ -502,6 +504,7 @@ export function scanJournalStatusFilter(
 
 export const journalStatusFilter = defineCheck({
   id: "journal-status-filter",
+  triggers: ["journal", "Journal", "JOURNAL"],
   description:
     "Journal readers filter status with a named status list, not `status <> 'Draft'`",
   provenance: {

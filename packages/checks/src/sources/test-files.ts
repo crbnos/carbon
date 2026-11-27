@@ -9,13 +9,22 @@ import type { SourceFile } from "../check";
 
 // packages/checks is left out: it is the one package whose tests read source
 // and migration text, by design.
+const TEST_DIRS = ["apps", "packages", "scripts", "docs/content"];
+
 const TEST_PATHSPECS = [
-  ...["apps", "packages", "scripts", "docs/content"].flatMap((dir) => [
+  ...TEST_DIRS.flatMap((dir) => [
     `:(glob)${dir}/**/*.test.ts`,
     `:(glob)${dir}/**/*.test.tsx`
   ]),
   ":(exclude)packages/checks/**"
 ];
+
+/** The path rule of TEST_PATHSPECS, for one repo-relative path. */
+export function isTrackedTestPath(path: string): boolean {
+  if (path.startsWith("packages/checks/")) return false;
+  if (!(path.endsWith(".test.ts") || path.endsWith(".test.tsx"))) return false;
+  return TEST_DIRS.some((dir) => path.startsWith(`${dir}/`));
+}
 
 /**
  * Every git-tracked vitest file, repo-relative and sorted. Tracked only, so

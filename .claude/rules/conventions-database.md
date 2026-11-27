@@ -1,6 +1,20 @@
 ---
 paths:
   - "packages/database/**"
+triggers:
+  - "CREATE TABLE"
+  - "CREATE POLICY"
+  - "CREATE OR REPLACE VIEW"
+  - "DEFAULT id("
+  - "NUMERIC("
+  - "uuid_generate_v4"
+  - "REFERENCES \"user\""
+summary:
+  - "Give every table `id TEXT NOT NULL DEFAULT id()`, `companyId` and the composite key `(id, companyId)`; never a raw UUID."
+  - "Add `updatedBy` to every table that has `createdBy`, even an append-only one; the shared audit injection stamps it on every write."
+  - "Index `companyId` and every FK; use bare `NUMERIC`, never `NUMERIC(p,s)`; never name a column `kind` or `*Kind`."
+  - "Never write `CREATE POLICY` in a migration; add the table's rule to `packages/database/src/authz/manifest.ts`."
+  - "Create views `WITH(SECURITY_INVOKER=true)`; create a migration with `pnpm db:migrate:new`, never with an HHMMSS of `000000`."
 ---
 
 # Database Conventions (Tables & Migrations)

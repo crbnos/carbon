@@ -3,6 +3,20 @@ paths:
   - "packages/database/supabase/migrations/*material*.sql"
   - "apps/erp/app/modules/items/items.service.ts"
   - "apps/erp/app/modules/items/items.models.ts"
+triggers:
+  - 'from("material")'
+  - "upsertMaterial"
+  - "updateMaterialProperties"
+  - "materialFormId"
+  - "materialSubstanceId"
+  - "get_material_details"
+  - "materialGeneratedIds"
+summary:
+  - "Join `material` to `item` on `readableId` + `companyId`; `material.id` is the item's `readableId`, and there is no `itemId` column."
+  - "Change substance, form, type, finish, grade or dimension only through `updateMaterialProperties`, the one path for these edits."
+  - "Filter taxonomy lookups for global (`companyId IS NULL`) and company rows; do not assume every row is company-owned."
+  - "Use the `dimensionId`, `finishId` and `gradeId` FKs; the old `dimensions`, `finish` and `grade` TEXT columns were dropped."
+  - "Stamp only `companyId` on `materialDimension`, `materialFinish`, `materialGrade` and `materialType`; they have no audit columns."
 ---
 
 # Material Tables Schema

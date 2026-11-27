@@ -8010,7 +8010,7 @@ export async function getLeaseRelatedDocuments(
   companyId: string
 ) {
   // Plain id reads, then one read per document table: the embedded selects
-  // trip TS2589 on these busy tables (.ai/lessons.md).
+  // trip TS2589 on these busy tables (.ai/lessons/database-access.md#ts-expect-error-ts2589-on-supabase-joined-selects-is-fragile).
   // Paged: every lease run month adds journal lines.
   const [invoiceLines, journalLines] = await Promise.all([
     fetchAllRecords(() =>

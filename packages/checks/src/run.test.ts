@@ -15,6 +15,7 @@ describe("runChecks", () => {
     defineCheck({
       id,
       description: "",
+      triggers: [],
       reads: { words },
       find: ({ words }) =>
         words.flatMap((text, index) =>
@@ -43,7 +44,13 @@ describe("runChecks", () => {
       return [root];
     };
     const reader = (id: string) =>
-      defineCheck({ id, description: "", reads: { input }, find: () => [] });
+      defineCheck({
+        id,
+        description: "",
+        triggers: [],
+        reads: { input },
+        find: () => []
+      });
     runChecks([reader("a"), reader("b")], openRepo("/repo"));
     expect(reads).toBe(1);
   });

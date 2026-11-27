@@ -7,12 +7,13 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Check the Task Router below before research or coding; a single task may match multiple rows — read all relevant guides.
 - Use the closest package/module `AGENTS.md` for local architecture, imports, and validation commands.
 - Follow `.claude/rules/` for subsystem-specific conventions (auto-loaded via `paths:` frontmatter).
-- Read `.ai/lessons.md` before non-trivial changes to avoid known pitfalls.
+- Run `pnpm brief <files>` before you edit a file. It lists the checks, rules and lessons (`.ai/lessons/`) that apply. Claude's PreToolUse hook also runs it on each edit: it refuses an edit that breaks a check, but the rest of its briefing arrives after the write, so brief first.
+- After the user corrects you, run `/learn`.
 - Answer `.claude/rules/write-time-checklist.md` before writing each file and again over the diff before committing. `/execute`, `/fix` and `/self-review` run it.
 - Preserve behavior unless the user or a spec explicitly asks for a behavior change.
 - Keep changes minimal, focused, and integrated through real call sites.
 - Use existing components — grep `packages/react/src/` and `apps/erp/app/components/` before writing UI.
-- A new record type copies its closest sibling — the record users would call the same kind of thing (lease ↔ rental agreement ↔ contract, sales order ↔ purchase order, RMA ↔ supplier return) — routes and UI file for file. Name the sibling in the spec and the plan. Ask before you deviate from it (see `.ai/lessons.md` → "A new record type copies its sibling's UI").
+- A new record type copies its closest sibling — the record users would call the same kind of thing (lease ↔ rental agreement ↔ contract, sales order ↔ purchase order, RMA ↔ supplier return) — routes and UI file for file. Name the sibling in the spec and the plan. Ask before you deviate from it (see `.ai/lessons/` → "A new record type copies its sibling's UI").
 - Enter plan mode for non-trivial tasks (3+ steps or architectural decisions).
 - Use subagents liberally to keep the main context window clean.
 - Only the main agent runs the heavy checks — the `erp` typecheck, `pnpm generate:mcp` and `pnpm check:manifest` — once, after its subagents finish. A subagent never runs them, nor raw `tsc` in `apps/erp`. Each can take up to ~10 GB, and a machine-wide lock (`packages/dev/bin/heavy-lock`) queues them one at a time across every worktree.
@@ -228,8 +229,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 
 ### Self-Improvement Loop
 
-- After corrections, update `.ai/lessons.md` with the `Context → Problem → Rule → Applies to` format.
-- Review lessons at the start of each session when relevant to the task.
+- After corrections, run `/learn`: it stores the mistake as a check, a rule line or a lesson in `.ai/lessons/`.
+- `pnpm brief <files>` shows the lessons for the files you touch; read them before you edit.
 
 ## Architecture Quick Reference
 

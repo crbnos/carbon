@@ -50,6 +50,7 @@
   },
   "private": true,
   "scripts": {
+    "brief": "pnpm --silent --filter @carbon/checks brief",
     "build": "turbo run build",
     "build:docs": "turbo run build --filter=docs",
     "build:erp": "turbo run build --filter=erp",

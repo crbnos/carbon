@@ -18024,7 +18024,7 @@ export async function getMethod(
       // On a one-connection pool a `db` query issued while the transaction is
       // open would block until the request timeout. itemReplenishment / itemLedger / pickMethod need no embeds,
       // so they go over the direct Postgres connection — bind parameters, no
-      // PostgREST URL-length cap (see .ai/lessons.md).
+      // PostgREST URL-length cap (see .ai/lessons/).
       async function ensureItemsPrefetched(
         reader: typeof db,
         itemIds: string[]

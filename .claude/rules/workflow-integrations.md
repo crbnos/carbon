@@ -15,6 +15,21 @@ paths:
   - "apps/erp/app/modules/workflows/ui/Builder/fields/OptionsField.tsx"
   - "apps/erp/app/modules/workflows/ui/Builder/config/forms/IntegrationNodeForm.tsx"
   - "packages/ee/src/workflows/runtime/integration.ts"
+triggers:
+  - "@activepieces/piece-"
+  - "integrationConnection"
+  - "resolvePieceAuth"
+  - "resolveConnectionAuth"
+  - "definePieceIntegration"
+  - "ACTIVEPIECES_PIECES"
+  - "OPTIONS_PROVIDERS"
+  - "@carbon/jobs/integrations"
+summary:
+  - "Import a piece package only in `registry.ts`; reach it through the server-only `@carbon/jobs/integrations` subpath, never from `packages/ee/src/workflows`."
+  - "Pin each piece version exactly in `allowlist.ts` (no `^`) and expose only the action names listed there."
+  - "Keep tokens in the vault, never in `integrationConnection.metadata`. Write connection rows only with the service role, scoped by `companyId`."
+  - "Read a step's token through `resolvePieceAuth` with the service role and the run's `companyId`; do not move the row read to the owner's client."
+  - "Throw `UnmappablePropertyError` for a piece property with no Carbon type; never let a half-described action reach the canvas."
 ---
 
 # Workflow Integrations (Activepieces pieces)

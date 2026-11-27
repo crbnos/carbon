@@ -25,6 +25,7 @@ import {
 import { typescript } from "../sources/inputs";
 import { loadModuleServerFiles } from "../sources/modules";
 import {
+  type Call,
   callArguments,
   chainCalls,
   lockedRead,
@@ -41,6 +42,7 @@ import {
   skipSpace,
   topLevelRegions
 } from "../sources/row-writes";
+import { loadServerFiles } from "../sources/server-files";
 import {
   childrenOf,
   isNamedMember,
@@ -53,9 +55,10 @@ import { IDENT_PART, IDENT_START, lineOf } from "../sources/text";
 /*
  * The data-access checks: how app and job code reads and writes the database.
  * They cover the supabase-js error and filter rules, the tenant scope of a
- * Kysely write, the columns a write names, where a database client is built,
- * realtime subscriptions and the MES unit resolver. The file ends with the two
- * concurrency checks, which share the write reader in `sources/row-writes.ts`.
+ * Kysely or supabase-js write, the columns a write names, where a database
+ * client is built, realtime subscriptions, the MES unit resolver and chained
+ * supabase-js writes. The file ends with the two concurrency checks, which
+ * share the write reader in `sources/row-writes.ts`.
  */
 
 /** One violation per match of the global `pattern`, its snippet the trimmed line the match starts on. */
@@ -97,6 +100,7 @@ const EXEMPT_FILES = new Set([
 export const noInlineUniqueViolation = defineCheck({
   files: typescript,
   id: "no-inline-unique-violation",
+  triggers: ["23505"],
   description:
     'Branch on a unique violation with isUniqueViolation(), never a literal "23505".',
   provenance: {
@@ -122,6 +126,7 @@ const RAW_OR_SEARCH = /\.or\(\s*`[^`]*\.ilike\.%?\$\{/g;
 export const noRawOrSearch = defineCheck({
   files: typescript,
   id: "no-raw-or-search",
+  triggers: [".ilike."],
   description:
     "Search text goes into an .or() filter through searchFilter, which quotes it",
   provenance: {
@@ -152,6 +157,7 @@ const POSTGRES_CHANGES = /["'`]postgres_changes["'`]/g;
 export const noPostgresChanges = defineCheck({
   files: typescript,
   id: "no-postgres-changes",
+  triggers: ["postgres_changes"],
   description:
     "Realtime subscriptions use broadcast topics, never postgres_changes",
   provenance: {
@@ -199,6 +205,15 @@ const COMMENT_LINE = /^\s*(?:\/\/|\/?\*)/;
 export const noDbClientInService = defineCheck({
   files: typescript,
   id: "no-db-client-in-service",
+  triggers: [
+    "getProcessPool",
+    "getPostgresConnectionPool",
+    "getPostgresClient",
+    "new Pool",
+    "PostgresDriver",
+    "getDatabaseClient",
+    "getJobDatabaseClient"
+  ],
   description:
     "A *.service.ts never constructs or fetches a DB pool/Kysely client — its caller passes one in as `db` (ctx.asSystem.pg in a service function, getDatabaseClient() in a route).",
   provenance: {
@@ -348,6 +363,7 @@ function literalTable(text: string, openParen: number): string | null {
 export const noUnscopedKyselyWrite = defineCheck({
   files: typescript,
   id: "no-unscoped-kysely-write",
+  triggers: [".updateTable", ".deleteFrom", "updateRows", "deleteRows"],
   description:
     "Every Kysely updateTable/deleteFrom in app/jobs code carries a companyId predicate — Kysely bypasses RLS, so the statement's own WHERE is the only tenant boundary.",
   provenance: {
@@ -421,6 +437,201 @@ export const noUnscopedKyselyWrite = defineCheck({
     }
     return violations;
   }
+});
+
+/**
+ * Every supabase-js `.from("<t>").update(…)` / `.delete()` on a table with a
+ * `companyId` column filters on `companyId`.
+ *
+ * The supabase-js half of `no-unscoped-kysely-write`. A service-role client
+ * (`getCarbonServiceRole()`, `ctx.asSystem.supabase`, an action with
+ * `bypassRls`) does not apply RLS, so the write's own filters are the only
+ * tenant boundary, and the ids they key on come from the URL or the body. An
+ * RLS client is not enough either: a user who works in two companies may write
+ * either company's rows while acting in one. The fixes this check names:
+ *  - the receipt post (573bcf0079) set the receipt to Pending by `id` alone;
+ *  - the sales invoice bulk update (0909321afd) rewrote `dateIssued` and
+ *    `paymentTermId` by `id` alone;
+ *  - the MES maintenance services (9ddb3bc295, a security disclosure) ended
+ *    events, moved dispatches and deleted dispatch items by `id` alone;
+ *  - the invoice shipment / delivery updates (89bdf0e27e) wrote by `id` alone,
+ *    reachable through the API and MCP.
+ *
+ * Like the Kysely check, the rule is blunt: scope the WRITE, even when the id
+ * was read under `companyId` a few lines up, or arrives from a parent that was.
+ *
+ * A write passes when a filter chained after `.update(`/`.delete(` names
+ * `companyId`: `.eq` / `.in` / `.is` / `.filter("companyId", …)`, or a
+ * `.match({ … companyId … })`. When the statement assigns the builder to a
+ * local with no `await` (`let q = client.from("t").delete().eq(…)`), a filter
+ * chained onto that local later in the same top-level function counts too
+ * (`q = q.eq("companyId", companyId)`, `q.eq(…)`); nothing else across
+ * statements is followed. The table must be a string literal and have a
+ * `companyId` column in the generated types; `company`, `companySettings`
+ * and the group-scoped tables (`account`, `currency`) have none and are out of
+ * scope, as is a table named by a variable.
+ *
+ * `.upsert(` is out of scope: it is an INSERT … ON CONFLICT, so a filter after
+ * it is never applied; its tenant key is the row's `companyId` and the
+ * conflict target. Inserts and reads are out of scope.
+ *
+ * Scope: the same roots as `no-unscoped-kysely-write` (`SCOPED_PREFIXES`) —
+ * ERP modules and routes, the MES app and `packages/jobs`. Edge functions and
+ * `packages/ee` are out, for the reasons given above that check.
+ *
+ * The snippet is `<function>: <table>.<update|delete>`, so a new unscoped
+ * write in an already-baselined function and table is grandfathered with it,
+ * and one in any other function is not.
+ */
+
+const UNSCOPED_SUPABASE_MESSAGE = (table: string, verb: string) =>
+  `This supabase-js ${verb} on ${table} has no companyId filter. A service-role client bypasses RLS, so an id from the request can reach another company's row. Add .eq("companyId", companyId) to the chain.`;
+
+const SUPABASE_WRITES = new Set(["update", "delete"]);
+
+/** Filters that name their column first: `.eq("companyId", …)`. */
+const COLUMN_FILTERS = new Set(["eq", "in", "is", "filter"]);
+
+/** The tables that carry a `companyId` column. */
+export function companyScopedTables(
+  columnTypes: Map<string, Map<string, string>>
+): Set<string> {
+  const out = new Set<string>();
+  for (const [table, columns] of columnTypes) {
+    if (columns.has("companyId")) out.add(table);
+  }
+  return out;
+}
+
+function namesCompanyId(text: string, call: Call): boolean {
+  const args = callArguments(text, call.open);
+  if (COLUMN_FILTERS.has(call.name)) {
+    return /^\s*["'`]companyId["'`]\s*$/.test(args[0]?.text ?? "");
+  }
+  if (call.name === "match") {
+    return /(?:^|[{,\s])["'`]?companyId\b/.test(args[0]?.text ?? "");
+  }
+  return false;
+}
+
+/**
+ * The local the write's statement assigns the builder to, when it holds the
+ * builder itself (no `await` between the `=` and the `.from(`).
+ */
+function heldBuilder(
+  text: string,
+  region: Region | undefined,
+  index: number
+): string | null {
+  if (!region) return null;
+  const head = text.slice(region.start, index);
+  const start = Math.max(
+    head.lastIndexOf(";"),
+    head.lastIndexOf("{"),
+    head.lastIndexOf("}")
+  );
+  const statement = head.slice(start + 1);
+  const m =
+    /^\s*(?:(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::[^=]*)?=(?![=>])/.exec(
+      statement
+    );
+  if (!m) return null;
+  if (/\bawait\b/.test(statement.slice(m[0].length))) return null;
+  return m[1] as string;
+}
+
+/** Whether a filter chained onto `name` later in the region names companyId. */
+function laterScoped(
+  text: string,
+  region: Region,
+  from: number,
+  name: string
+): boolean {
+  const escaped = name.replace(/\$/g, "\\$");
+  const body = text.slice(from, region.end);
+  for (const m of body.matchAll(new RegExp(`(?<![\\w$.])${escaped}\\b`, "g"))) {
+    const after = from + (m.index ?? 0) + name.length;
+    if (chainCalls(text, after).some((c) => namesCompanyId(text, c))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** The rule over one file, given the generated column types. */
+export function noUnscopedSupabaseWrite(
+  columnTypes: Map<string, Map<string, string>>
+): { scan: Scan } {
+  const scoped = companyScopedTables(columnTypes);
+  return {
+    scan(file, contents) {
+      if (!SCOPED_PREFIXES.some((prefix) => file.startsWith(prefix))) return [];
+      if (!/\.(?:update|delete)\s*\(/.test(contents)) return [];
+
+      const text = blankComments(contents);
+      const regions = topLevelRegions(text);
+      const violations: Violation[] = [];
+      for (const m of text.matchAll(/\.from\s*\(/g)) {
+        const index = m.index ?? 0;
+        // `client.storage.from("bucket")` is a storage bucket, not a table.
+        if (/\bstorage\s*$/.test(text.slice(Math.max(0, index - 40), index))) {
+          continue;
+        }
+        const open = index + m[0].length - 1;
+        const table = /^\(\s*["'`](\w+)["'`]\s*\)/.exec(
+          text.slice(open, open + 200)
+        )?.[1];
+        if (!table || !scoped.has(table)) continue;
+
+        const calls = chainCalls(text, matchBracket(text, open) + 1);
+        const write = calls[0];
+        if (!write || !SUPABASE_WRITES.has(write.name)) continue;
+        if (calls.slice(1).some((c) => namesCompanyId(text, c))) continue;
+
+        const region = regionOf(regions, index);
+        const held = heldBuilder(text, region, index);
+        if (
+          held &&
+          region &&
+          laterScoped(
+            text,
+            region,
+            (calls[calls.length - 1]?.close ?? open) + 1,
+            held
+          )
+        ) {
+          continue;
+        }
+
+        violations.push({
+          file,
+          line: text.slice(0, index).split("\n").length,
+          snippet: `${region?.name ?? "<top level>"}: ${table}.${write.name}`,
+          message: UNSCOPED_SUPABASE_MESSAGE(table, write.name)
+        });
+      }
+      return violations;
+    }
+  };
+}
+
+export const noUnscopedSupabaseWriteCheck = defineCheck({
+  id: "no-unscoped-supabase-write",
+  description:
+    "Every supabase-js update/delete of a company-scoped table in app/jobs code filters on companyId — a service-role client bypasses RLS, so the chain's own filters are the only tenant boundary.",
+  provenance: {
+    deprecates:
+      'a supabase-js update/delete keyed by id (or a parent id) alone, e.g. the receipt post\'s `.update({ status: "Pending" }).eq("id", receiptId)`, which a service-role client runs against any company\'s row',
+    replacedBy:
+      '.eq("companyId", companyId) on every supabase-js update/delete of a company-scoped table',
+    since: "573bcf0079",
+    incidents: ["573bcf0079", "0909321afd", "9ddb3bc295", "89bdf0e27e"]
+  },
+  // The text every file this check flags contains.
+  triggers: [".update(", ".delete("],
+  reads: { files: typescript, columnTypes: loadDbTableColumnTypes },
+  find: ({ files, columnTypes }) =>
+    eachFile(files, noUnscopedSupabaseWrite(columnTypes).scan)
 });
 
 /**
@@ -556,6 +767,7 @@ function rowKeys(node: Node, keys: RowKey[] = []): RowKey[] {
 
 const AUDIT_ABOUT = {
   id: "no-missing-audit-column",
+  triggers: ["createdBy", "updatedBy"],
   description:
     "A write never names createdBy/updatedBy on a table that has no such column — PostgREST rejects the statement with PGRST204 and TypeScript does not catch it.",
   provenance: {
@@ -912,6 +1124,7 @@ function fromTable(node: Node, contents: string): string | undefined {
 
 export const stampMatchesColumns = defineCheck({
   id: "stamp-matches-columns",
+  triggers: ["payload(ctx", ".forCreate(", ".forUpdate(", ".forUpsert("],
   description:
     "A service function's `payload(ctx, value)…forCreate()` (or `forUpdate`, `forUpsert`, `for(op)`, `build`) adds identity fields to the payload it hands a building block.",
   reads: { modules: loadModuleServerFiles, columns: loadDbTableColumns },
@@ -1267,6 +1480,7 @@ function requestEnd(text: string, from: number): number {
 export const noDiscardedQueryError = defineCheck({
   files: typescript,
   id: "no-discarded-query-error",
+  triggers: [".from(", ".rpc(", ".invoke("],
   description:
     "A supabase-js result is never read without its error: no `{ data }` destructure without `error`, no `(await …).data`, no `r.data` from a result whose `r.error` is never read, and no awaited write whose result is dropped.",
   provenance: {
@@ -1513,6 +1727,17 @@ function analyze(file: string, contents: string): Analysis {
 export const mesUnitWriteResolvesUnit = defineCheck({
   files: typescript,
   id: "mes-unit-write-resolves-unit",
+  triggers: [
+    ...UNIT_POSTING_TYPES,
+    ...UNIT_WRITE_CALLS,
+    ...UNIT_TABLES.split("|"),
+    "trigger-rework",
+    "trigger-correction",
+    "isSerialEntityIncompleteForOperation",
+    "getNextIncompleteSerialEntity",
+    '"issue"',
+    "'issue'"
+  ],
   description:
     "An MES function that writes a serial unit calls resolveWorkUnit, and only the resolver picks a unit on the server",
   provenance: {
@@ -1578,6 +1803,363 @@ export function unitPickers(files: { file: string; contents: string }[]) {
     )
   ].sort();
 }
+
+/**
+ * The supabase-js client has no transaction: every `.from(t).insert(…)`,
+ * `.update(…)`, `.upsert(…)` or `.delete(…)` is its own PostgREST request and
+ * commits on its own. A function that makes two of them, awaited in turn or
+ * fanned out with `Promise.all`, leaves the data half applied when the second
+ * fails: a delete without its re-insert (efd366dba0, the quote line prices), a
+ * Draft header whose source was set Active without its copy (37f71945a4), a
+ * contact without its customer link (f922057bbc).
+ *
+ * Reads the function bodies in oxc's syntax tree. A write belongs to the
+ * nearest enclosing function that is not a callback (a callback passed to a
+ * call, `items.map(async …)`, runs as part of its caller), so a write fanned
+ * out over a list counts toward the function that fans it out. A write inside
+ * a Kysely transaction's callback (`ctx.transaction`, `withTransaction`,
+ * `db.transaction().execute`) is not counted.
+ *
+ * Two writes that can never run in the same call are not a chain: the two
+ * branches of an `if`/`else`, a `? :` or a `switch`, and a write followed by a
+ * `return` or `throw` in its own block before the next write (the
+ * `if (id) return update(); return insert();` upsert). A write in a loop is
+ * one write here: a per-row loop is a different mistake.
+ *
+ * Not seen: writes made by a building block the function calls
+ * (`await insertX(client, …); await updateY(client, …)`), and `.rpc(…)`, which
+ * reads as often as it writes.
+ */
+
+const CHAINED_WRITE_FILES = [
+  /^apps\/erp\/app\/modules\/.+\.(?:service|server)\.ts$/,
+  /^apps\/mes\/app\/services\/.+\.ts$/
+];
+
+const CLIENT_WRITE_METHODS = new Set(["insert", "update", "upsert", "delete"]);
+
+/** A callback handed to one of these runs inside the Kysely transaction. */
+const TRANSACTION_CALLEE = /\bwithTransaction\b|\btransaction\b/;
+
+/**
+ * One supabase-js write: its call, and `path`, the nodes from the root down to
+ * the call (the call last). Everything the rule asks about a write — its
+ * owner, the owner's name, the branch it is on — is on that path.
+ */
+type ClientWrite = {
+  node: Node;
+  path: Node[];
+  table: string;
+  op: string;
+  label: string;
+};
+
+/** The expression under parentheses and TypeScript's `as` / `!` / `<T>` / `satisfies`. */
+function unwrapExpression(node: Node): Node {
+  let n = node;
+  while (
+    n.type === "ParenthesizedExpression" ||
+    n.type === "TSAsExpression" ||
+    n.type === "TSNonNullExpression" ||
+    n.type === "TSTypeAssertion" ||
+    n.type === "TSSatisfiesExpression"
+  ) {
+    n = n.expression;
+  }
+  return n;
+}
+
+/** The table and verb when `call` is a supabase-js `.from(t).insert/update/upsert/delete(…)`. */
+function clientWrite(
+  call: CallExpression,
+  contents: string
+): { table: string; op: string } | null {
+  const callee = call.callee;
+  if (!isNamedMember(callee)) return null;
+  const op = callee.property.name;
+  if (!CLIENT_WRITE_METHODS.has(op)) return null;
+  const from = unwrapExpression(callee.object);
+  if (from.type !== "CallExpression" || from.arguments.length !== 1) {
+    return null;
+  }
+  const fromCallee = from.callee;
+  if (!isNamedMember(fromCallee) || fromCallee.property.name !== "from") {
+    return null;
+  }
+  const base = unwrapExpression(fromCallee.object);
+  // `Array.from(…)`, `Buffer.from(…)`, and a storage bucket's `.update(path, file)`.
+  if (
+    base.type === "Identifier" &&
+    /^(?:Array|Buffer|Uint8Array)$/.test(base.name)
+  ) {
+    return null;
+  }
+  if (isNamedMember(base) && base.property.name === "storage") return null;
+  const table = from.arguments[0] as Node;
+  const literal =
+    table.type === "Literal" && typeof table.value === "string"
+      ? table.value
+      : table.type === "TemplateLiteral" && table.expressions.length === 0
+        ? (table.quasis[0]?.value.cooked ?? "")
+        : null;
+  const name =
+    literal ?? contents.slice(table.start, table.end).replace(/\s+/g, "");
+  return { table: name, op };
+}
+
+/** A function handed to a call as an argument: it runs as part of its caller. */
+function isCallback(fn: Node, parent: Node | undefined): boolean {
+  if (fn.type !== "ArrowFunctionExpression" && fn.type !== "FunctionExpression")
+    return false;
+  if (parent?.type !== "CallExpression" && parent?.type !== "NewExpression") {
+    return false;
+  }
+  return parent.arguments.some((argument) => argument === fn);
+}
+
+/**
+ * Where on `path` the function its last node belongs to is, or -1 when it runs
+ * in a transaction's callback or at the top level.
+ */
+function ownerAt(path: Node[], contents: string): number {
+  for (let i = path.length - 2; i >= 0; i--) {
+    const n = path[i] as Node;
+    if (!isFunction(n)) continue;
+    const parent = path[i - 1];
+    if (isCallback(n, parent)) {
+      const call = parent as CallExpression;
+      const callee = contents.slice(call.callee.start, call.callee.end);
+      if (TRANSACTION_CALLEE.test(callee)) return -1;
+      continue;
+    }
+    return i;
+  }
+  return -1;
+}
+
+/** The source of a property or method key, `[…]` around a computed one. */
+function keyText(
+  member: { key: Node; computed: boolean },
+  contents: string
+): string {
+  const key = contents.slice(member.key.start, member.key.end);
+  return member.computed ? `[${key}]` : key;
+}
+
+/** The source of a declared name, without its type annotation. */
+function bindingText(id: Node, contents: string): string {
+  if (id.type === "Identifier") return id.name;
+  const annotation =
+    "typeAnnotation" in id && id.typeAnnotation ? id.typeAnnotation : null;
+  return contents.slice(id.start, annotation?.start ?? id.end).trimEnd();
+}
+
+/**
+ * The name the function at `path[at]` is known by: its own, or the const it is
+ * defined in. A function that is a property of an object literal (a callback
+ * option) is `<outer>.<property>`, except a service function's `run`, which is
+ * the const.
+ */
+function functionName(path: Node[], at: number, contents: string): string {
+  const fn = path[at] as Node;
+  const parent = path[at - 1];
+  if (
+    parent?.type === "Property" &&
+    parent.kind === "init" &&
+    parent.value === fn
+  ) {
+    const call = path[at - 3];
+    const isDefineServiceFnArgument =
+      call?.type === "CallExpression" &&
+      call.callee.type === "Identifier" &&
+      call.callee.name === "defineServiceFn";
+    if (!isDefineServiceFnArgument) {
+      const key = keyText(parent, contents);
+      let outer = at - 2;
+      while (outer >= 0 && !isFunction(path[outer] as Node)) outer--;
+      return outer >= 0 ? `${functionName(path, outer, contents)}.${key}` : key;
+    }
+  }
+  for (let i = at; i >= 0; i--) {
+    const n = path[i] as Node;
+    if (n.type === "VariableDeclarator") return bindingText(n.id, contents);
+    if (n.type === "FunctionDeclaration" && n.id) return n.id.name;
+    if (n.type === "MethodDefinition" && n.kind === "method") {
+      const cls = path[i - 2];
+      const prefix =
+        (cls?.type === "ClassDeclaration" || cls?.type === "ClassExpression") &&
+        cls.id
+          ? `${cls.id.name}.`
+          : "";
+      return `${prefix}${keyText(n, contents)}`;
+    }
+  }
+  if ("id" in fn && fn.id?.type === "Identifier") return fn.id.name;
+  if (
+    (parent?.type === "Property" ||
+      (parent?.type === "MethodDefinition" && parent.kind !== "constructor")) &&
+    parent.value === fn
+  ) {
+    return keyText(parent, contents);
+  }
+  return "<anonymous>";
+}
+
+/**
+ * An upsert written as two statements on one row: update it, and insert it
+ * when nothing matched (`upsertExchangeRateOverride`); or insert it when absent,
+ * then update it (`markIntegrationInstalled`). Only one of the two changes the
+ * row, so a failure leaves nothing half applied. An insert followed by an
+ * update of the same table is not this: the update is usually another row
+ * (37f71945a4 inserted the Draft, then set its source Active).
+ */
+const oneUpsert = (a: ClientWrite, b: ClientWrite) =>
+  a.table === b.table &&
+  ((a.op === "update" && (b.op === "insert" || b.op === "upsert")) ||
+    (a.op === "upsert" && b.op === "update"));
+
+const endsCall = (node: Node) =>
+  node.type === "ReturnStatement" || node.type === "ThrowStatement";
+
+/** The statements of a block or `case`, or null for any other node. */
+function statementsOf(node: Node): Node[] | null {
+  if (node.type === "BlockStatement") return node.body;
+  if (node.type === "SwitchCase") return node.consequent;
+  return null;
+}
+
+/**
+ * Whether `a` (earlier) and `b` (later) can never both run in one call of the
+ * function at `path[owner]`, the owner of both.
+ */
+function exclusive(a: ClientWrite, b: ClientWrite, owner: number): boolean {
+  // From `a` up to the owner's child, `a` first.
+  const pathA = a.path.slice(owner + 1).reverse();
+  const onA = new Set(pathA);
+  let at = b.path.length - 1;
+  let childB = b.node;
+  while (at > owner && !onA.has(b.path[at] as Node)) {
+    childB = b.path[at] as Node;
+    at--;
+  }
+  if (at <= owner) return false;
+  const lca = b.path[at] as Node;
+  const lcaAt = pathA.indexOf(lca);
+  const childA = pathA[lcaAt - 1];
+  if (!childA) return false;
+
+  if (
+    lca.type === "IfStatement" &&
+    childA === lca.consequent &&
+    childB === lca.alternate
+  ) {
+    return true;
+  }
+  if (
+    lca.type === "ConditionalExpression" &&
+    childA !== lca.test &&
+    childB !== lca.test
+  ) {
+    return true;
+  }
+  if (
+    lca.type === "SwitchStatement" &&
+    childA.type === "SwitchCase" &&
+    childB.type === "SwitchCase"
+  ) {
+    return true;
+  }
+
+  // A `return`/`throw` after `a` in its own block, before the block that holds
+  // `b`, ends the call. Only within the owner's own body: a return inside a
+  // callback ends the callback.
+  let start = 0;
+  for (let i = 0; i < lcaAt; i++) {
+    if (isFunction(pathA[i] as Node)) start = i + 1;
+  }
+  for (let i = start; i < lcaAt; i++) {
+    const node = pathA[i] as Node;
+    if (endsCall(node)) return true;
+    const parent = pathA[i + 1];
+    const statements = parent && parent !== lca ? statementsOf(parent) : null;
+    if (statements) {
+      const index = statements.indexOf(node);
+      if (statements.slice(index + 1).some(endsCall)) return true;
+    }
+  }
+  return false;
+}
+
+export const noChainedClientWrites = defineCheck({
+  id: "no-chained-client-writes",
+  description:
+    "A function makes at most one supabase-js write; dependent writes run in one Kysely transaction or one RPC",
+  provenance: {
+    deprecates:
+      "two or more supabase-js writes in one function, each committing on its own",
+    replacedBy:
+      "one Kysely transaction (`ctx.transaction` in a service function, `withTransaction(db, …)` in a building block), or one RPC",
+    since: "2026-11-25",
+    incidents: ["efd366dba0", "37f71945a4", "f922057bbc"]
+  },
+  triggers: [".insert(", ".update(", ".upsert(", ".delete("],
+  files: loadServerFiles,
+  scan(file, contents) {
+    if (!CHAINED_WRITE_FILES.some((re) => re.test(file))) return [];
+    if (!/\.(?:insert|update|upsert|delete)\(/.test(contents)) return [];
+    const { program } = parseTypescript(file, contents);
+
+    // Each owner's writes, in source order, keyed by the owner's node; `at`
+    // is where the owner is on each of its writes' paths.
+    const byOwner = new Map<Node, { at: number; writes: ClientWrite[] }>();
+    walk(program, (node, ancestors) => {
+      if (node.type !== "CallExpression") return;
+      const write = clientWrite(node, contents);
+      if (!write) return;
+      const path = [...ancestors, node];
+      const at = ownerAt(path, contents);
+      if (at < 0) return;
+      const owner = path[at] as Node;
+      const entry = byOwner.get(owner) ?? { at, writes: [] };
+      entry.writes.push({
+        node,
+        path,
+        ...write,
+        label: `${write.table}.${write.op}`
+      });
+      byOwner.set(owner, entry);
+    });
+
+    const violations: Violation[] = [];
+    for (const { at, writes } of byOwner.values()) {
+      if (writes.length < 2) continue;
+      const chained = new Set<ClientWrite>();
+      let second: ClientWrite | null = null;
+      for (let i = 0; i < writes.length; i++) {
+        for (let j = i + 1; j < writes.length; j++) {
+          const a = writes[i] as ClientWrite;
+          const b = writes[j] as ClientWrite;
+          if (oneUpsert(a, b) || exclusive(a, b, at)) continue;
+          chained.add(a);
+          chained.add(b);
+          if (!second || b.node.start < second.node.start) second = b;
+        }
+      }
+      if (!second) continue;
+      const name = functionName(second.path, at, contents);
+      const labels = [
+        ...new Set(writes.filter((w) => chained.has(w)).map((w) => w.label))
+      ];
+      violations.push({
+        file,
+        line: lineOf(contents, second.node.start),
+        snippet: `${name}: ${labels.join(", ")}`,
+        message: `${name} makes ${chained.size} supabase-js writes (${labels.join(", ")}) and each commits on its own: when a later one fails, the earlier ones stay and the data is half applied. Do them in one Kysely transaction — \`ctx.transaction\` in a service function, \`withTransaction(db, …)\` in a building block — or in one RPC when the write must also run through PostgREST.`
+      });
+    }
+    return violations;
+  }
+});
 
 /**
  * An UPDATE that moves a row's lifecycle status must check the status it moves
@@ -1709,6 +2291,7 @@ const AUDIT_COLUMNS = new Set([
 
 const STATUS_ABOUT = {
   id: "status-write-guarded",
+  triggers: [".updateTable", ".update(", "updateRows"],
   description:
     "An UPDATE that sets a lifecycle status column carries a predicate on that column, or runs after the function locked the row — a status checked in code and written by id alone overwrites a concurrent change.",
   provenance: {
@@ -1956,6 +2539,7 @@ function rereadUnderNamedLock(
 
 const COUNTER_ABOUT = {
   id: "counter-write-relative",
+  triggers: [".updateTable", ".update(", "updateRows"],
   description:
     "A running total is added to in SQL, or read under the row lock — an absolute value computed in JavaScript from an earlier read loses or doubles a concurrent writer's change.",
   provenance: {
@@ -2038,10 +2622,12 @@ export const checks: Check[] = [
   noPostgresChanges,
   noDbClientInService,
   noUnscopedKyselyWrite,
+  noUnscopedSupabaseWriteCheck,
   noMissingAuditColumnCheck,
   stampMatchesColumns,
   noDiscardedQueryError,
   mesUnitWriteResolvesUnit,
+  noChainedClientWrites,
   statusWriteGuardedCheck,
   counterWriteRelativeCheck
 ];

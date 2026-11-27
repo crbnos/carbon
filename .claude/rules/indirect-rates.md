@@ -5,6 +5,21 @@ paths:
   - "packages/jobs/src/inngest/functions/tasks/indirect-rates.ts"
   - "apps/erp/app/modules/accounting/ui/IndirectRates/**"
   - "apps/erp/app/routes/x+/accounting+/indirect-*.tsx"
+triggers:
+  - "indirectPool"
+  - "indirectRate"
+  - "post-project-burden"
+  - "postProjectBurden"
+  - "@carbon/ee/indirect-rates"
+  - "burdenFiscalYear"
+  - "customerContractRateCeiling"
+  - "'Burden'"
+summary:
+  - "Call `requireEntitlement` first in every indirect-rates authoring function and run; the monthly job degrades with `companyHasFeature`."
+  - "Write Burden rows only through the `post-project-burden` posting (`postProjectBurden`), not directly from ee code."
+  - "Take a Burden row's year from `burdenFiscalYear`, never from `postingDate`: the Final true-up posts after the year ends."
+  - "Keep `@carbon/ee/indirect-rates` client-safe: derive `types.ts` from `@carbon/database`, never from `service.server.ts`."
+  - "Never map `projectExpenseAccount` or `projectWorkInProgressAccount` as a pool Base; the GL alone cannot give direct labor dollars."
 ---
 
 # Indirect rates and burden (Government Contracting Phase 5b)

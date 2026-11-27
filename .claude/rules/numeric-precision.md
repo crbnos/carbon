@@ -9,6 +9,21 @@ paths:
   - "packages/ee/src/accounting/providers/xero/serialize.ts"
   - "apps/erp/app/components/Form/TaxFields.tsx"
   - "apps/erp/app/hooks/useCurrencies.ts"
+triggers:
+  - "Math.round("
+  - ".toFixed("
+  - "FractionDigits"
+  - "INPUT_FORMAT"
+  - "applyRate("
+  - "taxPercent"
+  - "distributeRoundingResidual"
+  - "@carbon/database/precision"
+summary:
+  - "Use `round`, `applyRate` and `deriveRate` from `@carbon/utils`, not `Math.round`, `.toFixed` or a bare `amount / subtotal`."
+  - "Never pass a numeric literal as the `scale` argument; internal values use the default, settlement passes `currency.decimalPlaces`."
+  - "Editable inputs use `INPUT_FORMAT.*` and `INPUT_STEP.*`, never inline `minimumFractionDigits`, `maximumFractionDigits` or a `step` literal."
+  - "Any write that sets `taxPercent` or its amount sets both; never a GENERATED column that divides."
+  - "Apportion a document total with `distributeRoundingResidual`, not by rounding each part on its own."
 ---
 
 # Numeric Precision & Formatting

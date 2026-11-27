@@ -5,7 +5,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 ## Always
 
 - Import utilities from `@carbon/utils` — never duplicate utility logic in app code.
-- Use `sanitize(obj)` to strip empty values before Supabase insert/update operations.
+- `sanitize(obj)` sets every `undefined` value to `null` (except `id`) before a Supabase write. It does not drop the key: on an update it clears the column.
 - Use domain-specific helpers where they exist: `formatCurrency()` for money, `getStatus()` for status resolution, `getBomLevel()` for BOM traversal.
 - Keep utilities **pure** — no side effects, no database calls, no env access (except `isBrowser` check). The `async` module is the one exception to "no side effects": it schedules work the caller hands it and holds the host's lifetime hook. Runtime deps are the ones in `package.json`; `@carbon/database` is among them only for the pure subpaths listed under Never.
 

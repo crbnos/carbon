@@ -6,6 +6,20 @@ paths:
   - "apps/erp/app/routes/x+/traceability+/**"
   - "apps/mes/app/services/operations.service.ts"
   - "apps/erp/app/modules/projects/projects.service.ts"
+triggers:
+  - "\"trackedEntity\""
+  - "trackedActivity"
+  - "buildBatchSplitRecords"
+  - "settleQuantity"
+  - "isFullDraw"
+  - "resolvePick"
+  - "_of_tracked_entit"
+summary:
+  - "Settle every tracked quantity write with `settleQuantity` (`@carbon/utils` `entity-drain.ts`); a drained lot is Consumed, never 0 and Available."
+  - "Decide split or whole with `isFullDraw`, never a raw `===` or `<` on two stored floats."
+  - "On a partial batch draw, the source lot keeps its id; a new child from `buildBatchSplitRecords` holds the departing quantity."
+  - "The descendants RPC returns what an entity was made from, the ancestors RPC where it went; check the joins, not the name."
+  - "Call `resolvePick` only under a row lock on the line; it returns the new running total or throws a 400 `PickGuardError`."
 ---
 
 # Traceability / Genealogy Model

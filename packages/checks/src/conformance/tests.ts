@@ -41,6 +41,7 @@ const OWN_MODULE_MOCK =
 export const testMocksOwnModule = defineCheck({
   files: loadTestFiles,
   id: "test-mocks-own-module",
+  triggers: ["vi.mock(", "vi.doMock("],
   description: "Tests do not vi.mock a first-party module by relative path",
   provenance: {
     deprecates:
@@ -158,6 +159,7 @@ function context(text: string, decls: Map<string, string>): string {
 export const testReadsSource = defineCheck({
   files: loadTestFiles,
   id: "test-reads-source",
+  triggers: ["readFile", "readdir", "?raw", "import.meta.glob"],
   description: "Tests do not read source or migration text",
   provenance: {
     deprecates:
@@ -530,6 +532,7 @@ export function sharedTestWrappers(fixtures: SourceFile[]): string[] {
 
 const ABOUT = {
   id: "no-silent-test-pass",
+  triggers: ["it(", "test("],
   description:
     "A test case does not return early when what it needs is missing; it skips",
   provenance: {

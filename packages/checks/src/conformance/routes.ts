@@ -45,6 +45,17 @@ const ID = "route-action-shape";
  */
 export const routeActionShape = defineCheck({
   id: ID,
+  triggers: [
+    ".insert(",
+    ".upsert(",
+    ".update(",
+    ".delete(",
+    ".insertInto(",
+    ".updateTable(",
+    ".deleteFrom(",
+    "invokePosting",
+    "invokeCreate("
+  ],
   description:
     "An ERP route writes only through a service function: no client, Kysely or posting writes in the route",
   provenance: {
@@ -76,6 +87,7 @@ const MIDDLEWARE =
 export const indexRedirectBeforeLoaders = defineCheck({
   files: routeTypescript,
   id: "index-redirect-before-loaders",
+  triggers: ["redirect"],
   description:
     "An index route that only redirects must run the redirect before its parents' loaders",
   provenance: {
@@ -158,6 +170,7 @@ function argument(contents: string, open: number): string {
 export const noStateCopyOfLoaderData = defineCheck({
   files: typescript,
   id: "no-state-copy-of-loader-data",
+  triggers: ["useLoaderData", "useRouteData", "useRouteLoaderData"],
   description:
     "state must not be seeded from loader or route data: it is a copy no reload updates",
   provenance: {
@@ -243,6 +256,7 @@ export const LOADER_READS_THROUGH_API = "loader-reads-through-api";
 
 const ABOUT = {
   id: LOADER_READS_THROUGH_API,
+  triggers: [".service"],
   description:
     "An ERP route loader calls a wrapped building block through its service function, not directly",
   provenance: {
@@ -373,6 +387,7 @@ export function scanBareOutlets(file: string, contents: string): Violation[] {
 
 export const noBareOutlet = defineCheck({
   id: "no-bare-outlet",
+  triggers: ["<Outlet"],
   description:
     "a route under /x renders RecordOutlet, which remounts its page when the record changes",
   provenance: {

@@ -3,6 +3,21 @@ paths:
   - "packages/database/supabase/migrations/**"
   - "apps/erp/app/modules/sales/**"
   - "apps/erp/app/modules/purchasing/**"
+triggers:
+  - "\"customerContact\""
+  - "\"supplierContact\""
+  - "customerStatusId"
+  - "supplierStatus"
+  - "invoicingContactId"
+  - "externalIntegrationMapping"
+  - "insertCustomerContact"
+  - "insertSupplierContact"
+summary:
+  - "Never reintroduce `invoicingContactId`; the default contacts are `customer.salesContactId` and `supplier.purchasingContactId`."
+  - "Status is asymmetric: `customer.customerStatusId` is an FK to `customerStatus`; `supplier.supplierStatus` is an enum with no table."
+  - "Write a `contact` and its `customerContact`/`supplierContact` link in one Kysely transaction, not two separate writes."
+  - "Read external ids from `externalIntegrationMapping`, not an `externalId` column; `contact.email` is nullable and not unique."
+  - "Read phone and fax from the `customers`/`suppliers` views (the primary contact), not the legacy table columns."
 ---
 
 # Customer & Supplier Database Schema

@@ -4,6 +4,21 @@ paths:
   - "apps/erp/app/routes/x+/priority+/**"
   - "apps/mes/app/routes/x+/operations.tsx"
   - "packages/database/supabase/migrations/*schedul*.sql"
+triggers:
+  - "@carbon/planning"
+  - "runLocationSchedule"
+  - "notifyScheduleInputsChanged"
+  - "capacityReservation"
+  - "projectedCompletionAt"
+  - "manuallyScheduled"
+  - "WorkCenterSelector"
+  - "schedule.inputs.changed"
+summary:
+  - "Run the scheduler in-process with `runLocationSchedule` from `@carbon/planning`; the `schedule` edge function is deleted."
+  - "Send each scheduling input change through `notifyScheduleInputsChanged`; there is no single-job reschedule path."
+  - "Never use `jobOperation.dueDate` (the need-by target) as a placement constraint or a lateness input; lateness reads the job due date."
+  - "Do not confuse `jobOperation.order` (topological position) with `operationOrder` (the After Previous / With Previous enum)."
+  - "Clone the finite context with `cloneFiniteContext` for each what-if run; the selector mutates its reservation arrays."
 ---
 
 # Production Scheduling: data structures + flow

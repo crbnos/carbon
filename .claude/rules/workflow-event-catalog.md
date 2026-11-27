@@ -5,6 +5,21 @@ paths:
   - "packages/lib/src/workflows/**"
   - "scripts/generate-workflow-catalog.ts"
   - "scripts/check-workflow-catalog.ts"
+triggers:
+  - "raiseMoment"
+  - "@carbon/lib/workflows"
+  - "generate:workflow-catalog"
+  - "events.generated"
+  - "WORKFLOW_EVENTS"
+  - "createWorkflowCatalog"
+  - "buildCatalog("
+  - "catalog/moments"
+summary:
+  - "Never hand-edit a `*.generated.ts`; edit the hand-written input and run `pnpm run generate:workflow-catalog`."
+  - "Raise a moment in the service function or its building block, never the route, so API, MCP and workflow callers raise it too."
+  - "Raise after the write commits: place `raiseMoment` below the operation's rollback `catch`, not inside the `try`."
+  - "Declare a moment only with at least one raise site; a declared moment with none fails `check:workflow-catalog`."
+  - "Never import `@lingui/*` into `events.generated.ts`; `msg` labels live only in `labels.generated.ts`."
 ---
 
 # Workflow Event Catalog

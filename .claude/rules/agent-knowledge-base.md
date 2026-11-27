@@ -5,6 +5,20 @@ paths:
   - "docs/content/**"
   - "docs/source.config.ts"
   - "docs/app/llms*/**"
+triggers:
+  - "@carbon/content"
+  - "agentDocs"
+  - "parsePage"
+  - "stripComponents"
+  - "buildModelHistory"
+  - "search_docs"
+  - "read_doc"
+summary:
+  - "Never import `@carbon/content/agent-kb` outside a Vite build; feed raw MDX to `parsePage` from `@carbon/content/corpus` instead."
+  - Never add `fs` or any Node-only import to `@carbon/content`; it is isomorphic and browser components import its glossary.
+  - Never hardcode a docs page URL without keeping `links.test.ts` green.
+  - Keep every agent tool result bounded; `read_doc` returns one section, a short page whole, or a long page as intro plus section links.
+  - "Build the model's history from the stored thread with `buildModelHistory`, never from what the browser sends."
 ---
 
 # Docs content → site, agent, apps

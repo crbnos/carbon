@@ -4,6 +4,21 @@ paths:
   - "apps/erp/app/modules/**/*.server.ts"
   - "apps/erp/app/modules/*.server.ts"
   - "apps/mes/app/services/**"
+triggers:
+  - "defineServiceFn"
+  - "setGenericQueryFilters"
+  - "GenericQueryFilters"
+  - "sanitize("
+  - "ctx.asSystem"
+  - "ctx.transaction"
+  - "fetchAllFromTable"
+  - "searchFilter("
+summary:
+  - "Return the raw Supabase `{ data, error }` from a building block; do not throw and do not unwrap `data`."
+  - "Scope every list and every Kysely query by `companyId` in the query itself, also where RLS already scopes it."
+  - "Search several columns with `query.or(searchFilter([...], search))`, not a template literal inside `.or()`."
+  - "Never construct a Kysely client or `pg` pool in a service; take `db: Kysely<KyselyDatabase>`, which is `ctx.asSystem.pg` in an operation."
+  - "Wrap update payloads in `sanitize(...)`; use a Kysely transaction only for multi-row writes, since a single write is already atomic."
 ---
 
 # Services Conventions
@@ -94,6 +109,14 @@ export const cancelJob = defineServiceFn({
   transfer). Before an RLS-bypassing write keyed on an id the caller sent,
   `refuseUnlessOwned(ctx, table, match)` (`shared/shared.service.ts`) returns
   a refusal unless the row is the company's.
+- **A child id belongs to its parent.** An id the caller sent for a child row
+  (a line, a contact, a storage unit, a production event) must belong to the
+  parent the request names, not only to the company. Put the parent in the
+  check (`refuseUnlessOwned(ctx, "quoteMaterial", { id, quoteLineId })`,
+  `sales.server.ts`) or in the write's own filter (`.eq("salesOrderId",
+  orderId)`). In a route, the parent is the URL's `params`, never a second id
+  in the body. A company-only check lets a same-company caller write another
+  order's line.
 - **Request origin**: `ctx.origin` holds the request's `ip`, `city` and
   `userAgent` (`RequestOrigin`). `originOf(request)` (`@carbon/utils`) reads
   them from the headers: the IP through `getClientIp`, the city from
@@ -218,7 +241,7 @@ export async function upsertCustomer(
   }
   return client
     .from("customer")
-    .update({ ...sanitize(customer), updatedAt: today(getLocalTimeZone()).toString() })
+    .update({ ...sanitize(customer), updatedAt: datetime.timestamp() })
     .eq("id", customer.id)
     .select("id")
     .single();
@@ -231,8 +254,10 @@ form. Supabase's native `.upsert(...)` is also used in places — all three are 
 Notes that match real code:
 - Use `.select("id")` (or `"id, name"`) + `.single()` after insert/update to return the
   written row.
-- Wrap update payloads in `sanitize(...)` to strip `undefined`/empty values before
-  sending (`upsertCustomer`, and the MES `clockOut`/`updateTimeCardEntry`).
+- `sanitize(...)` (`upsertCustomer`, the MES `clockOut`/`updateTimeCardEntry`)
+  sets every key whose value is `undefined` to `null`, except `id`. On an update
+  that clears the column: leave a field the caller did not send out of the
+  payload, or the stored value is lost (and a NOT NULL column fails).
 - Pure `insert{Thing}` functions exist where there's never an update path (e.g.
   `insertCustomerContact`, `insertManualInventoryAdjustment`).
 

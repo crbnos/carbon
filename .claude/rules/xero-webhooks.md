@@ -4,6 +4,19 @@ paths:
   - "apps/erp/app/routes/api+/webhook.xero.ts"
   - "packages/ee/src/accounting/core/service.ts"
   - "packages/ee/src/accounting/providers/xero/**"
+triggers:
+  - "x-xero-signature"
+  - "XERO_WEBHOOK_SECRET"
+  - "sync-external-accounting"
+  - "verifySignature"
+  - "getAccountingIntegration"
+  - "ProviderID.XERO"
+  - "timingSafeEqual"
+summary:
+  - "Hash the raw `request.text()` body for the signature, not re-serialized JSON, and compare with `crypto.timingSafeEqual`."
+  - "Fail closed: with no `XERO_WEBHOOK_SECRET`, return 401 before anything else."
+  - "Trust a resolved integration only when its stored tenant equals the event's `tenantId`; `getAccountingIntegration` also matches on `companyId`."
+  - "Return 401, not 400, on a parse or schema failure. Only the intent handshake and a processed delivery return 200."
 ---
 
 # Xero Webhooks

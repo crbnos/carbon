@@ -3,6 +3,21 @@ paths:
   - "packages/database/supabase/migrations/**"
   - "packages/jobs/src/inngest/functions/events/**"
   - "packages/database/src/event.ts"
+triggers:
+  - "attach_event_trigger"
+  - "attach_statement_handler"
+  - "dispatch_event_batch"
+  - "eventSystemSubscription"
+  - "createEventSystemSubscription"
+  - "pgmq."
+  - "util.send_inngest_event"
+  - "carbon/event-"
+summary:
+  - "Edit an event-system function in its file under `packages/database/src/event-system/functions/`; a migration that redefines one fails the check."
+  - "Declare which functions run on a table in `event-system/attachments.ts`, not in a migration."
+  - "Write a new interceptor as SECURITY INVOKER, not SECURITY DEFINER; a definer interceptor is callable with the anon key."
+  - "Branch a statement handler on `TG_OP`: only `batched_new` exists on INSERT, only `batched_old` on DELETE."
+  - "Use a sync interceptor, not a subscription, for data integrity; subscription handlers run async, seconds later."
 ---
 
 # Event System

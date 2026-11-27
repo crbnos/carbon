@@ -21,7 +21,7 @@ bug."
 ## Step 0: Load context
 
 1. The bug report — full description, repro steps, linked threads/issues.
-2. `.ai/lessons.md` — known pitfalls in the affected area.
+2. `pnpm brief <files>` — the checks, rules and lessons for the affected files.
 3. Root `AGENTS.md` Task Router → the matching `.claude/rules/` guides.
 4. The affected module/package `AGENTS.md`.
 
@@ -52,7 +52,7 @@ Check each of these before inventing exotic theories:
 | RLS policy gaps | New table/column without policies; check the table's migrations |
 | Permission strings | `requirePermissions()` / `permissions.can()` scopes are string literals — invisible to typecheck; grep the whole repo after any scope rename |
 | Service signature drift | Caller args don't match the service function's current signature |
-| Migration ordering | A migration backdated older than deployed ones applies out of order on remotes (see `.ai/lessons.md`) |
+| Migration ordering | A migration backdated older than deployed ones applies out of order on remotes (see `.ai/lessons/database-migrations.md#backdated-migration-timestamps-break-remote-deploys`) |
 | Form submission | `ValidatedForm` only submits on a native submit with a `submitter`; react-aria number/date fields commit hidden inputs on **blur** (see `/test` for details) |
 | Import staleness | Import from a moved path with no re-export bridge |
 

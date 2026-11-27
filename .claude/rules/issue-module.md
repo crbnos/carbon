@@ -3,6 +3,19 @@ paths:
   - "apps/erp/app/modules/quality/**"
   - "apps/erp/app/routes/x+/issue+/**"
   - "packages/database/supabase/migrations/*ncr*.sql"
+triggers:
+  - "nonConformance"
+  - "lockIssueDispositions"
+  - "closeIssue"
+  - "postNonconformance"
+  - "splitIssueItem"
+  - "isIssueLocked"
+summary:
+  - "Take `lockIssueDispositions` first, inside the transaction, in every writer of `nonConformanceItemTrackedEntity`, `nonConformanceInspection` or item quantity."
+  - "Post disposition value movements through the `post-nonconformance` posting (`postNonconformance`), not raw `itemLedger` inserts."
+  - "`closeIssue` invokes the posting inside the status-flip transaction, so a write-off never commits while the NCR stays open."
+  - "The module is `quality`, not `issue`; the permission key is `quality`."
+  - "`nonConformanceInvestigationTask` no longer exists; investigation types are `nonConformanceRequiredAction` rows."
 ---
 
 # Issue / Non-Conformance Module

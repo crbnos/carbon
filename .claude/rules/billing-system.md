@@ -8,6 +8,21 @@ paths:
   - packages/jobs/src/inngest/functions/scheduled/weekly.ts
   - packages/jobs/src/inngest/functions/scheduled/inactive-companies.ts
   - packages/jobs/src/inngest/functions/scheduled/purge-company.ts
+triggers:
+  - "@carbon/stripe"
+  - "companyPlan"
+  - "companyHasPlan"
+  - "companyHasFeature"
+  - "requireFeature("
+  - "syncStripeDataToKV"
+  - "FEATURE_PLANS"
+  - "normalizePlanId"
+summary:
+  - "Write `companyPlan` from Stripe only through `syncStripeDataToKV`; do not add subscription-status logic anywhere else."
+  - "Use `companyHasFeature` / `requireFeature`, not `companyHasPlan` / `requirePlan`, for a feature that must be off on the Community edition."
+  - "Query `companyPlan` by the company id: its `id` IS the company id, not an `id('cplan')` value."
+  - "Run `normalizePlanId` before you compare a plan id with the `Plan` enum; partner rows are stored as `PARTNER-300/400/500`."
+  - "Plan gating is a no-op off Cloud; test plan logic with `CARBON_EDITION=cloud` and a company that is not bypass-listed."
 ---
 
 # Billing System

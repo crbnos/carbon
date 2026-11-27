@@ -5,6 +5,21 @@ paths:
   - "apps/erp/app/components/Form/**"
   - "apps/mes/app/components/**"
   - "packages/form/**"
+triggers:
+  - "ValidatedForm"
+  - "validator("
+  - "zfd."
+  - "validationError"
+  - "setCustomFields("
+  - "<Submit"
+  - "fetcher.Form"
+  - "carbon(args.request)"
+summary:
+  - "Pass the raw zod schema to the `ValidatedForm` `validator` prop; wrap it with `validator(schema)` only in the route action."
+  - "In an action, check with `validator(schema).request(args, ...)`, make ONE service call through `carbon(request)`, and return its result."
+  - "Disable a submit button while its submission is in flight: `<Submit>` in a `ValidatedForm`, else bind `isLoading` to `fetcher.state`."
+  - "Import form fields from `~/components/Form`, not from deep `@carbon/form` paths."
+  - "Do not write a new action in the legacy `assertIsPost`, `requirePermissions`, building-block shape."
 ---
 
 # Forms Conventions

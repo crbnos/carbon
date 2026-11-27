@@ -7,6 +7,21 @@ paths:
   - "scripts/lib/service-fn-metadata.ts"
   - "scripts/lib/build-manifest.ts"
   - "scripts/lib/id-lookups.ts"
+triggers:
+  - "@mcp"
+  - "serveMcpRequest"
+  - "callOperation"
+  - "tool-metadata.json"
+  - "requireEntitlement(\"MCP\")"
+  - "refuseKeyWithout"
+  - "@carbon/ee/mcp"
+  - "generate:mcp"
+summary:
+  - "Publish a service function only with `@mcp` in its TSDoc, and only when it is safe with nothing but its input."
+  - "Renaming or moving a published service function renames its tool, with no alias; list the old and new names in the changelog."
+  - "Never hand-edit `tool-metadata.json`; it is build output of `pnpm generate:mcp`, and `pnpm check:manifest` guards the digest."
+  - "Start a write gated on `{}` with `refuseKeyWithout(ctx, required)`; an API key with any scope passes that gate."
+  - "Give an API input the base object, not a validator with `.refine()`; refine checks are invisible in the published schema."
 ---
 
 # Carbon ERP MCP Server

@@ -16,6 +16,20 @@ paths:
   - "packages/database/supabase/migrations/*lease-enum*"
   - "packages/database/supabase/migrations/*lessor-schedule*"
   - "apps/erp/app/modules/projects/project-cip.ts"
+triggers:
+  - "fixedAsset"
+  - "depreciationRun"
+  - "postAssetTransfer"
+  - "fixedAssetCipCost"
+  - "fleetAssets"
+  - "complete_job_to_inventory"
+  - "outOfServiceSince"
+summary:
+  - "Post every asset journal for every company (Provisional before the accounting cutover, Posted after it), and write the journal before the asset flips."
+  - "Capitalize a CIP asset at the sum of its fixedAssetCipCost rows with postCapitalization false, not at acquisitionCost."
+  - "Depreciation is manual, with no cron: build runs with buildDepreciationRunLines, and refuse a post when a later period is already posted."
+  - "Book disposal gain or loss to gainOnDisposalAccountId / lossOnDisposalAccountId; writeOffAccountId is only the ship-to-invoice clearing account."
+  - "Refuse Return to Inventory while the unit is on a live rentalAgreementLine (Pending or On Rent)."
 ---
 
 # Fixed Asset Lifecycle

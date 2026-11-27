@@ -5,6 +5,21 @@ paths:
   - "packages/auth/src/services/**"
   - "apps/erp/app/modules/users/**"
   - "apps/erp/app/modules/resources/**"
+triggers:
+  - "userToCompany"
+  - "employeeJob"
+  - "userPermission"
+  - "employeeTypePermission"
+  - "get_claims"
+  - "deactivateEmployee"
+  - "getPermissionCacheKey"
+  - "isActiveCompanyEmployee"
+summary:
+  - "Scope `employee` and `employeeJob` queries by both `id` and `companyId`; a user has one row per company."
+  - "Check `employee.active` when you read `employeeJob` as current staff; deactivation keeps the `employeeJob` row."
+  - "Treat company id `0` in a permission array as all companies; do not match only a literal company id."
+  - "Save a user id into a responsible-employee or assignee column only after `isActiveCompanyEmployee(client, companyId, userId)` passes."
+  - "Make every writer of a user `membership` use `ON CONFLICT ... DO NOTHING` against `membership_groupId_memberUserId_key`."
 ---
 
 # User / Employee / EmployeeJob / Permission identity graph

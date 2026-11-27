@@ -45,7 +45,7 @@ Run all of these before designing anything:
 
 ```bash
 ls .ai/specs/ .ai/specs/implemented/ .ai/specs/archived/ | grep -i {keyword}   # prior art — never duplicate a spec; archived = superseded, cite the replacement
-cat .ai/lessons.md                                          # known pitfalls
+pnpm brief <files you will touch>                           # checks, rules, lessons
 cat .ai/docs/module-conventions.md                          # module layout rules
 cat apps/erp/app/modules/{module}/AGENTS.md                 # for every module touched
 ```
@@ -112,7 +112,7 @@ no-schema designs). For each question:
   alternatives and their trade-offs.
 - Cross-check the user's answer against the codebase before accepting it — if
   the answer contradicts something real (an existing table, a lesson in
-  `.ai/lessons.md`, a prior spec), say so and re-ask.
+  a lesson in `.ai/lessons/`, a prior spec), say so and re-ask.
 - Record the resolution: `- [x] {Question} — **Answer:** {decision and rationale}`.
 
 The user may batch ("accept all recommendations") — that is their call to make,

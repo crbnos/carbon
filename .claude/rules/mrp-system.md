@@ -29,6 +29,21 @@ paths:
   - "apps/erp/app/hooks/useMrpScheduleDescription.ts"
   - "packages/planning/src/index.ts"
   - "packages/ee/src/pegging/**"
+triggers:
+  - "runMrp"
+  - "runMRP"
+  - "@carbon/planning"
+  - "generatePlanningActions"
+  - "demandForecast"
+  - "supplyForecast"
+  - "planningAction"
+  - "makeKey"
+summary:
+  - "Build composite map keys with makeKey / makeLocationItemKey / makeActualKey (KEY_SEP), never with hyphen-joined template strings."
+  - "Page every PostgREST read with fetchAll and a stable .order(); production max_rows = 1000 truncates a bare select, and dev does not enforce it."
+  - "Enumerate companies from company, not companyPlan; a company with no plan row must still run MRP."
+  - "Date a PO line only with purchaseOrderLineArrivalDate and a job only with jobCompletionDate, so the projection and the actions agree."
+  - "Cancel a planned PO line by deleting it under the Draft / Planned guard, never with shortClosePurchaseOrderLine."
 ---
 
 # MRP (Material Requirements Planning)

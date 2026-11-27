@@ -4,6 +4,20 @@ paths:
   - "apps/erp/app/routes/x+/items+/revisions.new.tsx"
   - "packages/database/supabase/migrations/*revisions*.sql"
   - "packages/database/supabase/migrations/*make-method-version*.sql"
+triggers:
+  - "createRevision("
+  - "getReadableIdWithRevision"
+  - "revisionValidator"
+  - "item_revisions"
+  - "activeMakeMethods"
+  - "deleteItemsWithPriceBreaks"
+  - "copyItemPlanningAndPurchasing"
+summary:
+  - "Join a type table to `item` on `readableId` and `companyId`; there is no `itemId` FK, and never add `itemReadableId`."
+  - "Keep the type filter on the `item_revisions` CTE when you edit a `get_<type>_details` RPC."
+  - "Treat `'0'`, `''` and NULL `revision` all as the initial revision."
+  - "Delete items through `deleteItemsWithPriceBreaks`; `supplierPartPrice` blocks the delete with ON DELETE RESTRICT."
+  - "Do not confuse make method `version` (the per-item recipe) with item `revision` (a sibling item row)."
 ---
 
 # Revision System

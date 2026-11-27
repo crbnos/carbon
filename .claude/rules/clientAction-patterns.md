@@ -4,6 +4,21 @@ paths:
   - "apps/erp/app/routes/api+/**"
   - "apps/erp/app/modules/**/ui/**"
   - "apps/mes/app/components/**"
+triggers:
+  - "cachedClientLoader"
+  - "clientAction"
+  - "useLoaderQuery"
+  - "cachedApiQuery"
+  - "useAction("
+  - "createInvalidationMiddleware"
+  - "fetcher.load("
+  - "@carbon/query/cache"
+summary:
+  - "Cache an `api+` reference list with `cachedClientLoader<typeof loader>()` from `@carbon/query/cache`; never cache page loaders."
+  - "Never add a `clientAction` to invalidate; `createInvalidationMiddleware` in root.tsx marks every loader entry stale after a non-GET."
+  - "Read an `api+` list with `useLoaderQuery(url)`, not `useFetcher()` + `fetcher.load(url)` in a mount effect."
+  - "Use `useAction({ onSuccess })` for a mutation result, not an effect that watches `fetcher.data`."
+  - "Never name a module `*.client.ts` when a route calls it at evaluation; React Router empties it on the server."
 ---
 
 # Client cache: `cachedClientLoader` and the invalidation middleware

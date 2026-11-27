@@ -8,10 +8,14 @@
   },
   "scripts": {
     "baseline": "tsx src/scripts/generate-baseline.ts",
+    "brief": "tsx src/scripts/brief.ts",
     "clean": "rimraf .turbo node_modules dist",
     "clobbers": "tsx src/scripts/check-clobbers.ts",
     "guarded-code": "tsx src/scripts/guarded-code.ts",
     "invariants": "tsx src/scripts/run-invariants.ts",
+    "learn:log-gate": "tsx src/scripts/log-gate-failure.ts",
+    "learn:mark": "tsx src/scripts/learn-mark.ts",
+    "learn:sweep": "tsx src/scripts/learn-sweep.ts",
     "license-headers": "tsx src/scripts/license-headers.ts",
     "lint": "oxlint --fix",
     "test": "vitest run",
@@ -31,6 +35,7 @@
     "rimraf": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "yaml": "2.9.1"
   }
 }

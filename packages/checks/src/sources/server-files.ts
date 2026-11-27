@@ -13,7 +13,7 @@ import { isTest } from "./typescript";
  * API (explicit company/location timezone), never the process clock. Client
  * components are exempt — the browser's timezone IS the right one there.
  */
-const SERVER_ROOTS = [
+export const SERVER_ROOTS = [
   "apps/mes/app/services",
   "packages/jobs/src",
   "packages/database/supabase/functions",
@@ -21,8 +21,8 @@ const SERVER_ROOTS = [
 ];
 
 /** ERP module server files are matched by suffix inside apps/erp/app/modules. */
-const ERP_MODULES_ROOT = "apps/erp/app/modules";
-const ERP_SERVER_SUFFIXES = [".service.ts", ".server.ts"];
+export const ERP_MODULES_ROOT = "apps/erp/app/modules";
+export const ERP_SERVER_SUFFIXES = [".service.ts", ".server.ts"];
 
 /**
  * Route modules are server AND client in one file: `loader`/`action` run on the
@@ -31,7 +31,10 @@ const ERP_SERVER_SUFFIXES = [".service.ts", ".server.ts"];
  * `getLocalTimeZone()`, so route files are masked down to their server
  * functions before the checks see them.
  */
-const ROUTE_ROOTS = ["apps/erp/app/routes", "apps/mes/app/routes"];
+export const SERVER_ROUTE_ROOTS = [
+  "apps/erp/app/routes",
+  "apps/mes/app/routes"
+];
 
 /**
  * Opens a browser-only region. Masking *out* these rather than masking *in*
@@ -134,7 +137,7 @@ export function loadServerFiles(root: string): SourceFile[] {
   }
 
   const routePaths: string[] = [];
-  for (const rel of ROUTE_ROOTS) {
+  for (const rel of SERVER_ROUTE_ROOTS) {
     walk(join(root, rel), routePaths, [".ts", ".tsx"]);
   }
   paths.push(...routePaths);

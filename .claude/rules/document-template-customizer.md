@@ -4,6 +4,21 @@ paths:
   - "packages/documents/src/pdf/**"
   - "apps/erp/app/routes/x+/templates+/**"
   - "apps/erp/app/components/DocumentTemplateEditor/**"
+triggers:
+  - "@carbon/documents"
+  - "resolveTemplate"
+  - "BLOCK_META"
+  - "makeText("
+  - "documentTemplate"
+  - "interpolateContent"
+  - "validateTemplateText"
+  - "getPrintedTemplate"
+summary:
+  - "Put every printed heading, label, column header and fixed sentence in the text catalog (`texts/<doc>.ts`), never a literal."
+  - "Cast stored template JSON with `toDocumentTemplate(row, type)`, the one cast point; do not re-derive the shape."
+  - "When you add a block type, key it in every registry, add a `BLOCK_META` entry, and a `DEFAULT_TEMPLATES` entry if built in."
+  - "Render through `getPrintedTemplate` so the document's edits apply; a failed edit read throws, never prints without edits."
+  - "Add each new merge-field name to `mergeFieldNames.ts`; `@carbon/documents` renders outside Lingui macros."
 ---
 
 # Document Template Customizer

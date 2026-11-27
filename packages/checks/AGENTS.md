@@ -93,6 +93,8 @@ fails on any violation the committed baseline does not list.
 - **Write an invariant as a `.sql` file** in `src/invariants/`. It returns the
   rows that violate the rule (none means healthy). Its header says what it
   guards.
+- **Give every check its `triggers`** (`About.triggers` in `src/check.ts`): literal code tokens that every violation's file contains. `pnpm brief` lists the check for a file by them, and `src/brief/scopes.test.ts` fails a file check that reports a violation in a file without one of its triggers. A check whose topic no code text shows (a folder layout) has `triggers: []` with a comment saying why.
+- **A file check reaches `brief` through its loader.** `FILE_SETS` (`src/brief/file-sets.ts`) gives each file loader (`migrations`, `typescript`, `loadServerFiles`, …) a predicate on one path, and a set's checks are the file checks of `CHECKS` that read that loader, so a new file check needs no list entry. A check on a new loader needs a `FILE_SETS` entry, or `file-sets.test.ts` fails. Exempt: `edge-function-authorizes-caller` (one source per function folder). A check that reads several inputs (`reads: { … }`) runs in the gate only, not in `brief`.
 
 ## Ask First
 
@@ -123,6 +125,8 @@ pnpm --filter @carbon/checks workflow-events  # workflow event ids (needs a data
 pnpm --filter @carbon/checks license-headers  # write missing license headers
 pnpm --filter @carbon/checks guarded-code [base] [--root <repo>]
 pnpm --filter @carbon/checks baseline         # regenerate the baseline (ask first)
+pnpm brief <file> [<file> …]               # what applies to a file before an edit (root script)
+pnpm --filter @carbon/checks learn:sweep   # weekly report of repeated failures (.ai/runs/)
 ```
 
 The gate runs in four places with the same command
@@ -176,6 +180,10 @@ The gate runs in four places with the same command
   connection (`DATABASE_URL` / `SUPABASE_DB_URL`) and no CI job has database
   credentials. Run them by hand against staging or production after a catalog
   change.
+
+- **Briefing** (`src/brief/`): `buildBriefIndex` reads every rule (`.claude/rules/*.md`: `paths:`, `triggers:`, `summary:`), every lesson (a `## ` section of a topic file `.ai/lessons/<topic>.md`, with a fenced `scope` block: `id`, `paths`, `triggers`; parsed by `src/brief/lessons.ts`) and every single-file check (`FILE_SETS`: its file set and `triggers`) on each call, about 60 ms. `brief` selects an entry by a path glob or by a trigger in the file or the planned edit (`scope.ts`: plain substrings, case-sensitive, or `{ text, minCount }`), refuses an edit only for a check violation that is new to the file and not in the baseline, and ranks the rest by how they matched (`Match`): a trigger in the edit's own text (`edit`), then a specific path glob, then a trigger elsewhere in the file, then a broad glob only (`isBroadGlob`: the repo, an app or a package root), which it names instead of repeating, since Claude Code loads that rule when the file opens. `formatBriefing` caps the text at about 2k tokens and names at most 10 entries past the cap. `pnpm brief` (`src/scripts/brief.ts`) prints it for any agent
+- **Hooks** (`src/hooks/`, wired in `.claude/settings.json` through `.claude/hooks/*.sh`): `pre-tool-use.ts` runs `brief` before each Edit/Write/MultiEdit and denies a write with a new check violation, else adds the briefing to the context (Claude Code delivers that context with the tool result, after the write: `.ai/runs/2026-11-24-agent-context-briefing-hook-probe.md`), each entry once per session; `stop.ts` asks once per session for `/learn` while the worktree has logged failures
+- **Learning inbox** (`src/learn/`): `~/.carbon/learn-inbox.jsonl` (`CARBON_LEARN_INBOX` overrides) holds `gate-failure` (logged by `scripts/git-hooks/pre-commit` through `learn:log-gate`), `refused-edit`, `learned` (`learn:mark`, the last step of `/learn`) and `stop-asked` signals. `learn:sweep` groups the failures that repeat and the fix commits that may hold an unrecorded mistake
 
 ## Cross-References
 

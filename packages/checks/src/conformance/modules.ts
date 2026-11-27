@@ -98,6 +98,8 @@ function moduleShapeViolations(module: ModuleDir): Violation[] {
 
 export const moduleShapeCheck = defineCheck({
   id: "module-shape",
+  // triggers: none — the check reads a module folder layout, which no code text shows.
+  triggers: [],
   description:
     "Each ERP module: one <name>.service.ts (or <name>.ee.service.ts), one <name>.models.ts, types.ts, ui/, at most one <name>.server.ts, and no barrel.",
   provenance: {
@@ -186,6 +188,7 @@ const statementName = (node: Directive | Statement) => {
 export const serviceFnFile = defineCheck({
   files: typescript,
   id: "service-fn-file",
+  triggers: ["defineServiceFn"],
   description:
     "A module's <module>.server.ts exports only defineServiceFn consts; every other function lives in <module>.service.ts.",
   provenance: {
@@ -310,6 +313,8 @@ export function findDuplicatedAppFiles(files: SourceFile[]): Violation[] {
 
 export const noDuplicatedAppFile = defineCheck({
   id: NO_DUPLICATED_APP_FILE,
+  // triggers: none — the check compares file paths across the two apps, which no code text shows.
+  triggers: [],
   description:
     "A component or hook needed by both ERP and MES lives in a package; each app may keep a file of that name that only re-exports it.",
   reads: { files: sharedAppTypescript },
@@ -416,6 +421,7 @@ function scanRoute(file: string, contents: string): Violation[] {
 export const noServerCodeInClient = defineCheck({
   files: typescript,
   id: "no-server-code-in-client",
+  triggers: ['.service"', '.server"', '.pdf"'],
   description:
     "Components, hooks, ui/, models, utils, types and a route's browser code never import a .service or .server file.",
   provenance: {
@@ -535,6 +541,7 @@ export function findUndeclaredSideEffectImports(
 
 export const sideEffectImportDeclared = defineCheck({
   id: SIDE_EFFECT_IMPORT_DECLARED,
+  triggers: ['"sideEffects"', 'import "./', 'import "~/'],
   description:
     'In a package whose package.json says `"sideEffects": false`, or lists only some files, the production bundler drops a bare import of any file it does not list.',
   reads: { packages: loadSideEffectPackages },

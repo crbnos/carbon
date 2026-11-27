@@ -3,6 +3,19 @@ paths:
   - packages/ee/src/linear/**
   - packages/jobs/src/inngest/functions/integrations/linear.ts
   - apps/erp/app/routes/api+/integrations.linear.*.ts
+triggers:
+  - "@carbon/ee/linear"
+  - "getLinearClient"
+  - "verifyLinearWebhook"
+  - "sync-issue-from-linear"
+  - "LinearWorkStateType"
+  - "linearIssue"
+summary:
+  - "Re-fetch the issue from Linear on every webhook; the payload carries only id and assigneeId, so never trust it."
+  - "Store apiKey and webhookSigningSecret in the vault (SECRET_KEYS.linear), never in the plaintext metadata column."
+  - "Verify Linear-Signature (HMAC-SHA256 of the raw body) and webhookTimestamp when a secret is set; an unreadable vault returns 500."
+  - "Select user!inner(email) in getCompanyEmployees; without !inner PostgREST returns every employee."
+  - "Push field changes through the ISSUE_SYNC subscription (issue-sync.md), not from routes."
 ---
 
 # Linear Integration

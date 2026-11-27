@@ -8,6 +8,21 @@ paths:
   - apps/erp/app/routes/api+/integrations.jira.*.ts
   - apps/erp/app/components/ActionTasks/Linear/**
   - apps/erp/app/components/ActionTasks/Jira/**
+triggers:
+  - "@carbon/ee/issue-sync"
+  - "syncedEntities"
+  - "applyIssue"
+  - "pushRecords"
+  - "ISSUE_SYNC"
+  - "writeLinks"
+  - "carbon/issue-sync.push"
+  - "changedOutbound"
+summary:
+  - "Push to the tracker through the `ISSUE_SYNC` event subscription, never from a route, so every writer reaches Linear or Jira."
+  - "Upsert a link with `writeLinks`; never delete and reinsert an `externalIntegrationMapping` link, which drops the sync snapshot."
+  - "Write both `sync.values` sides (`carbon`, `remote`) after every push or pull; they are the echo guard."
+  - "Never let an empty value overwrite a real one on a first sync; remove `lockedFields` before an inbound write."
+  - "A deleted issue deletes the link and keeps the Carbon record; a deleted record never deletes the issue."
 ---
 
 # Issue sync (Linear and Jira)

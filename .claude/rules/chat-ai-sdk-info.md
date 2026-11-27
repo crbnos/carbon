@@ -5,6 +5,20 @@ paths:
   - "apps/erp/app/modules/agent/**"
   - "apps/erp/app/modules/quality/quality.service.ts"
   - "packages/utils/src/llm.ts"
+triggers:
+  - 'from "ai"'
+  - "@ai-sdk/"
+  - "streamText("
+  - "generateText("
+  - "generateObject"
+  - "Output.object"
+  - "toUIMessageStream"
+summary:
+  - "Use the v7 names (`instructions`, `isStepCount`, `onEnd`, `event.usage`), not the deprecated `system`, `stepCountIs`, `onFinish`, `totalUsage`."
+  - "Use `generateText({ output: Output.object({ schema }) })` and read `output`, not `generateObject`."
+  - "Make every `Output.object` schema key required and use `.nullable()`, not `.optional()` or `.partial()`; strict mode refuses optional keys."
+  - "Await `convertToModelMessages(...)`; it is async in v7."
+  - "Move `ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic` and `@ai-sdk/react` together in the pnpm catalog."
 ---
 
 # AI SDK Usage in Carbon

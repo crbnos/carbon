@@ -2,6 +2,19 @@
 description: Self-hosted single-VPS deployment — Docker Swarm + Caddy stack under contrib/deploying/simple-docker-caddy. Swarm secrets, full Supabase data plane, the alternative to the SST/AWS cloud path.
 paths:
   - "contrib/deploying/**"
+triggers:
+  - "docker stack"
+  - "secrets-entrypoint"
+  - "external: true"
+  - "postgrest_db_uri"
+  - "set_postgres_password"
+  - "replicated-job"
+summary:
+  - "Write `postgres_password` and `postgrest_db_uri` only through `set_postgres_password()` in deploy.sh, so the two never drift."
+  - "Use `127.0.0.1` in healthchecks, never `localhost`."
+  - "Do not use `depends_on`, `build:` or `restart:` in the Swarm stack; Swarm ignores them, so `deploy.sh up` orders the start."
+  - "Publish only caddy, in `mode: host`, not ingress; ingress makes ACME HTTP-01 validation fail."
+  - Do not override `shared_preload_libraries` in the postgres command; the image default already preloads pg_net and pg_cron.
 ---
 
 # Self-host: single-VPS Docker Swarm + Caddy (`contrib/deploying/simple-docker-caddy`)

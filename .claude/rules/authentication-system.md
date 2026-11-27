@@ -4,6 +4,21 @@ paths:
   - "apps/erp/app/routes/_public+/**"
   - "apps/erp/app/routes/_oauth+/**"
   - "apps/erp/app/routes/api+/mcp+/**"
+triggers:
+  - "getUserClaims"
+  - "getPermissionCacheKey"
+  - "requireAuthSession"
+  - "bypassRls"
+  - "carbon-key"
+  - "rejectCrossSiteNavigation"
+  - "isSsoEnabled"
+  - "mfaVerified"
+summary:
+  - "Invalidate the claims cache with `redis.del(getPermissionCacheKey(userId))` when permissions change; a stale cache causes Access Denied."
+  - "Use a service-role client only behind `bypassRls` and the employee role; it bypasses RLS."
+  - "Treat API key `scopes: {}` as deny, not as full access."
+  - "Call `rejectCrossSiteNavigation` in a GET loader that writes; the security middleware checks only POST, PUT, PATCH and DELETE."
+  - "In console mode, gate terminal-level actions on `sessionUserId`, never on `userId`."
 ---
 
 # Authentication System
@@ -238,7 +253,7 @@ querying), and every route entry point checks it too — login buttons, the
   with no VERIFIED domain covers nothing and refuses no invite.
 - **Config**: GoTrue SAML via `SAML_ENABLED` / `SAML_PRIVATE_KEY` in root `.env`
   (compose substitution → `GOTRUE_SAML_*`; `crbn reload` does not read root `.env` —
-  see `.ai/lessons.md`).
+  see `.ai/lessons/`).
 
 ## CSRF and CSP (`middleware/security.server.ts`, `lib/security.ts`)
 

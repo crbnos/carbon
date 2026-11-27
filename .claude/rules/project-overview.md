@@ -1,6 +1,16 @@
 ---
 description: What Carbon is, its apps and key packages, the tech stack, and where things live.
 paths: ["apps/**", "packages/**"]
+triggers:
+  - "@remix-run/"
+  - "@trigger.dev/"
+  - "remix-flat-routes"
+  - "@vercel/react-router"
+summary:
+  - "Use React Router v7, not Remix; the project migrated."
+  - "Run background jobs on Inngest, not Trigger.dev."
+  - "Grep `@carbon/react` before you write UI; it is the shared component library."
+  - "Build ERP URLs with the path helpers in `apps/erp/app/utils/path.ts`."
 ---
 
 # Carbon Project Overview

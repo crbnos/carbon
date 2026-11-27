@@ -11,6 +11,7 @@ import {
   counterWriteRelative,
   findStampColumnMismatches,
   mesUnitWriteResolvesUnit,
+  noChainedClientWrites,
   noDbClientInService,
   noDiscardedQueryError,
   noInlineUniqueViolation,
@@ -18,6 +19,7 @@ import {
   noPostgresChanges,
   noRawOrSearch,
   noUnscopedKyselyWrite,
+  noUnscopedSupabaseWrite,
   statusColumns,
   statusWriteGuarded,
   UNIT_PICK_ALLOW_LIST,
@@ -435,6 +437,376 @@ describe("noUnscopedKyselyWrite", () => {
     expect(
       unscopedScan("updateRows(next);\nupdateRows(db, next);")
     ).toHaveLength(0);
+  });
+});
+
+const supabaseColumns = (...names: string[]) =>
+  new Map(names.map((n) => [n, "string"] as [string, string]));
+
+const SUPABASE_WRITE_TYPES = new Map<string, Map<string, string>>([
+  ["receipt", supabaseColumns("id", "companyId", "status")],
+  ["salesInvoice", supabaseColumns("id", "companyId", "dateIssued")],
+  ["salesInvoiceShipment", supabaseColumns("id", "companyId")],
+  ["maintenanceDispatchItem", supabaseColumns("id", "companyId")],
+  ["maintenanceDispatchEvent", supabaseColumns("id", "companyId", "endTime")],
+  ["quoteLine", supabaseColumns("id", "companyId", "quoteId")],
+  ["company", supabaseColumns("id", "name")],
+  ["account", supabaseColumns("id", "companyGroupId")]
+]);
+
+const supabaseWriteCheck = noUnscopedSupabaseWrite(SUPABASE_WRITE_TYPES);
+const SUPABASE_WRITE_SERVICE = "apps/erp/app/modules/sales/sales.service.ts";
+const supabaseWriteScan = (ts: string, file = SUPABASE_WRITE_SERVICE) =>
+  supabaseWriteCheck.scan(file, ts);
+
+describe("noUnscopedSupabaseWrite", () => {
+  // git show 573bcf0079^:'apps/erp/app/routes/x+/receipt+/$receiptId.post.tsx', lines 166-171
+  it("flags the receipt post's Pending update from before 573bcf0079", () => {
+    const ts = [
+      "export async function action({ request, params }: ActionFunctionArgs) {",
+      "  const setPendingState = await client",
+      '    .from("receipt")',
+      "    .update({",
+      '      status: "Pending"',
+      "    })",
+      '    .eq("id", receiptId);',
+      "}"
+    ].join("\n");
+    const v = supabaseWriteScan(
+      ts,
+      "apps/erp/app/routes/x+/receipt+/$receiptId.post.tsx"
+    );
+    expect(v).toHaveLength(1);
+    expect(v[0]?.line).toBe(3);
+    expect(v[0]?.snippet).toBe("action: receipt.update");
+  });
+
+  // git show 573bcf0079:'apps/erp/app/routes/x+/receipt+/$receiptId.post.tsx', lines 167-173
+  it("passes the 573bcf0079 fix", () => {
+    const ts = [
+      "export async function action({ request, params }: ActionFunctionArgs) {",
+      "  const setPendingState = await client",
+      '    .from("receipt")',
+      "    .update({",
+      '      status: "Pending"',
+      "    })",
+      '    .eq("id", receiptId)',
+      '    .eq("companyId", companyId);',
+      "}"
+    ].join("\n");
+    expect(
+      supabaseWriteScan(
+        ts,
+        "apps/erp/app/routes/x+/receipt+/$receiptId.post.tsx"
+      )
+    ).toHaveLength(0);
+  });
+
+  // git show 0909321afd^:'apps/erp/app/routes/x+/sales-invoice+/update.tsx', lines 94-114
+  it("flags both dateIssued updates from before 0909321afd", () => {
+    const ts = [
+      "export async function action({ request }: ActionFunctionArgs) {",
+      "        if (value && paymentTerm?.data) {",
+      "          return await client",
+      '            .from("salesInvoice")',
+      "            .update({",
+      "              dateIssued: value,",
+      "              dateDue: parseDate(value)",
+      "                .add({ days: paymentTerm.data.daysDue })",
+      "                .toString(),",
+      "              updatedBy: userId,",
+      "              updatedAt: new Date().toISOString()",
+      "            })",
+      '            .eq("id", ids[0] as string);',
+      "        }",
+      "        return await client",
+      '          .from("salesInvoice")',
+      "          .update({",
+      "            dateIssued: value ? value : null,",
+      "            updatedBy: userId,",
+      "            updatedAt: new Date().toISOString()",
+      "          })",
+      '          .eq("id", ids[0] as string);',
+      "}"
+    ].join("\n");
+    const v = supabaseWriteScan(
+      ts,
+      "apps/erp/app/routes/x+/sales-invoice+/update.tsx"
+    );
+    expect(v.map((x) => x.line)).toEqual([4, 16]);
+  });
+
+  // git show 0909321afd:'apps/erp/app/routes/x+/sales-invoice+/update.tsx', the dateIssued branch
+  it("passes the 0909321afd fix", () => {
+    const ts = [
+      "export async function action({ request }: ActionFunctionArgs) {",
+      "        return await client",
+      '          .from("salesInvoice")',
+      "          .update({",
+      "            dateIssued: value ? value : null,",
+      "            ...(dateDue ? { dateDue } : {}),",
+      "            updatedBy: userId,",
+      "            updatedAt: new Date().toISOString()",
+      "          })",
+      '          .eq("id", ids[0] as string)',
+      '          .eq("companyId", companyId);',
+      "}"
+    ].join("\n");
+    expect(
+      supabaseWriteScan(ts, "apps/erp/app/routes/x+/sales-invoice+/update.tsx")
+    ).toHaveLength(0);
+  });
+
+  // git show 9ddb3bc295^:apps/mes/app/services/maintenance.service.ts, lines 135-152 and 267-272
+  it("flags the MES maintenance update and delete from before 9ddb3bc295", () => {
+    const ts = [
+      "export async function endMaintenanceEvent(",
+      "  client: SupabaseClient<Database>,",
+      "  args: {",
+      "    eventId: string;",
+      "    endTime: string;",
+      "    updatedBy: string;",
+      "  }",
+      ") {",
+      "  return client",
+      '    .from("maintenanceDispatchEvent")',
+      "    .update({",
+      "      endTime: args.endTime,",
+      "      updatedBy: args.updatedBy",
+      "    })",
+      '    .eq("id", args.eventId)',
+      '    .select("id")',
+      "    .single();",
+      "}",
+      "",
+      "export async function deleteMaintenanceDispatchItem(",
+      "  client: SupabaseClient<Database>,",
+      "  itemId: string",
+      ") {",
+      '  return client.from("maintenanceDispatchItem").delete().eq("id", itemId);',
+      "}"
+    ].join("\n");
+    const v = supabaseWriteScan(
+      ts,
+      "apps/mes/app/services/maintenance.service.ts"
+    );
+    expect(v.map((x) => x.snippet)).toEqual([
+      "endMaintenanceEvent: maintenanceDispatchEvent.update",
+      "deleteMaintenanceDispatchItem: maintenanceDispatchItem.delete"
+    ]);
+  });
+
+  // git show 9ddb3bc295:apps/mes/app/services/maintenance.service.ts, lines 273-283
+  it("passes the 9ddb3bc295 fix", () => {
+    const ts = [
+      "export async function deleteMaintenanceDispatchItem(",
+      "  client: SupabaseClient<Database>,",
+      "  itemId: string,",
+      "  companyId: string",
+      ") {",
+      "  return client",
+      '    .from("maintenanceDispatchItem")',
+      "    .delete()",
+      '    .eq("id", itemId)',
+      '    .eq("companyId", companyId);',
+      "}"
+    ].join("\n");
+    expect(
+      supabaseWriteScan(ts, "apps/mes/app/services/maintenance.service.ts")
+    ).toHaveLength(0);
+  });
+
+  // git show 89bdf0e27e^:apps/erp/app/modules/invoicing/invoicing.service.ts, lines 1340-1367
+  it("flags the invoice shipment update from before 89bdf0e27e", () => {
+    const ts = [
+      "export async function upsertSalesInvoiceShipment(",
+      "  client: SupabaseClient<Database>,",
+      "  salesInvoiceShipment:",
+      "    | (z.infer<typeof salesInvoiceShipmentValidator> & {",
+      "        companyId: string;",
+      "        createdBy: string;",
+      "        customFields?: Json;",
+      "      })",
+      "    | (z.infer<typeof salesInvoiceShipmentValidator> & {",
+      "        id: string;",
+      "        updatedBy: string;",
+      "        customFields?: Json;",
+      "      })",
+      ") {",
+      '  if ("id" in salesInvoiceShipment) {',
+      "    return client",
+      '      .from("salesInvoiceShipment")',
+      "      .update(sanitize(salesInvoiceShipment))",
+      '      .eq("id", salesInvoiceShipment.id)',
+      '      .select("id")',
+      "      .single();",
+      "  }",
+      "  return client",
+      '    .from("salesInvoiceShipment")',
+      "    .insert([salesInvoiceShipment])",
+      '    .select("id")',
+      "    .single();",
+      "}"
+    ].join("\n");
+    const v = supabaseWriteScan(
+      ts,
+      "apps/erp/app/modules/invoicing/invoicing.service.ts"
+    );
+    expect(v).toHaveLength(1);
+    expect(v[0]?.line).toBe(17);
+  });
+
+  // git show 89bdf0e27e:apps/erp/app/modules/invoicing/invoicing.service.ts, lines 1338-1355
+  it("passes the 89bdf0e27e fix", () => {
+    const ts = [
+      "export async function upsertSalesInvoiceShipment(",
+      "  client: SupabaseClient<Database>,",
+      "  salesInvoiceShipment: z.infer<typeof salesInvoiceShipmentValidator> & {",
+      "    companyId: string;",
+      "    updatedBy: string;",
+      "    customFields?: Json;",
+      "  }",
+      ") {",
+      "  const { companyId, ...shipment } = salesInvoiceShipment;",
+      "  return client",
+      '    .from("salesInvoiceShipment")',
+      "    .update(sanitize(shipment))",
+      '    .eq("id", shipment.id)',
+      '    .eq("companyId", companyId)',
+      '    .select("id")',
+      "    .single();",
+      "}"
+    ].join("\n");
+    expect(
+      supabaseWriteScan(
+        ts,
+        "apps/erp/app/modules/invoicing/invoicing.service.ts"
+      )
+    ).toHaveLength(0);
+  });
+
+  it("flags a delete keyed by a parent id alone", () => {
+    expect(
+      supabaseWriteScan(
+        'await client.from("quoteLine").delete().eq("quoteId", quoteId);'
+      )
+    ).toHaveLength(1);
+  });
+
+  it("accepts .in, .match and .filter on companyId", () => {
+    for (const filter of [
+      '.in("companyId", companyIds)',
+      ".match({ id, companyId })",
+      ".match({ id: lineId, companyId: args.companyId })",
+      '.filter("companyId", "eq", companyId)'
+    ]) {
+      const ts = `await client.from("quoteLine").update({ x }).eq("id", id)${filter};`;
+      expect(supabaseWriteScan(ts)).toHaveLength(0);
+    }
+  });
+
+  it("does not count companyId in the row, or in a match on another key", () => {
+    expect(
+      supabaseWriteScan(
+        'await client.from("quoteLine").update({ companyId, x }).eq("id", id);'
+      )
+    ).toHaveLength(1);
+    expect(
+      supabaseWriteScan(
+        'await client.from("quoteLine").update({ x }).match({ id: companyIdOf(x) });'
+      )
+    ).toHaveLength(1);
+  });
+
+  it("does not let a NEIGHBOURING write's companyId scope this one", () => {
+    const ts = [
+      'await client.from("quoteLine").update({ x }).eq("id", id);',
+      'await client.from("quoteLine").update({ y }).eq("id", id).eq("companyId", companyId);'
+    ].join("\n");
+    const v = supabaseWriteScan(ts);
+    expect(v).toHaveLength(1);
+    expect(v[0]?.line).toBe(1);
+  });
+
+  it("follows a builder held in a local within the same function", () => {
+    const scoped = [
+      "export async function f() {",
+      '  let query = client.from("quoteLine").delete().eq("quoteId", quoteId);',
+      '  if (companyId) query = query.eq("companyId", companyId);',
+      "  return query;",
+      "}"
+    ].join("\n");
+    expect(supabaseWriteScan(scoped)).toHaveLength(0);
+    const unscoped = [
+      "export async function f() {",
+      '  let query = client.from("quoteLine").delete().eq("quoteId", quoteId);',
+      '  if (ids) query = query.in("id", ids);',
+      "  return query;",
+      "}",
+      "export async function g() {",
+      '  return query.eq("companyId", companyId);',
+      "}"
+    ].join("\n");
+    expect(supabaseWriteScan(unscoped)).toHaveLength(1);
+  });
+
+  it("does not follow an awaited result held in a local", () => {
+    const ts = [
+      "export async function f() {",
+      '  const result = await client.from("quoteLine").delete().eq("id", id);',
+      '  result.eq("companyId", companyId);',
+      "}"
+    ].join("\n");
+    expect(supabaseWriteScan(ts)).toHaveLength(1);
+  });
+
+  it("ignores tables with no companyId column, unknown tables and variables", () => {
+    for (const ts of [
+      'await client.from("company").update({ name }).eq("id", companyId);',
+      'await client.from("account").update({ name }).eq("id", id);',
+      'await client.from("notATable").delete().eq("id", id);',
+      'await client.from(table).delete().eq("id", id);'
+    ]) {
+      expect(supabaseWriteScan(ts)).toHaveLength(0);
+    }
+  });
+
+  it("ignores reads, inserts, upserts, storage and comments", () => {
+    for (const ts of [
+      'await client.from("quoteLine").select("*").eq("id", id);',
+      'await client.from("quoteLine").insert([{ companyId, x }]);',
+      'await client.from("quoteLine").upsert({ id, companyId, x });',
+      'await client.storage.from("quoteLine").remove([path]); x.update(y);',
+      '// await client.from("quoteLine").delete().eq("id", id);'
+    ]) {
+      expect(supabaseWriteScan(ts)).toHaveLength(0);
+    }
+  });
+
+  it("ignores a companyId filter that is only in a comment", () => {
+    const ts = [
+      'await client.from("quoteLine").delete()',
+      '  // .eq("companyId", companyId)',
+      '  .eq("id", id);'
+    ].join("\n");
+    expect(supabaseWriteScan(ts)).toHaveLength(1);
+  });
+
+  it("covers routes, MES and jobs, and ignores edge functions and packages/ee", () => {
+    const ts = 'await client.from("quoteLine").delete().eq("id", id);';
+    for (const file of [
+      "apps/erp/app/routes/x+/quote+/delete.tsx",
+      "apps/mes/app/services/operations.service.ts",
+      "packages/jobs/src/inngest/functions/x.ts"
+    ]) {
+      expect(supabaseWriteScan(ts, file)).toHaveLength(1);
+    }
+    for (const file of [
+      "packages/database/supabase/functions/post-receipt/index.ts",
+      "packages/ee/src/xero/sync.ts"
+    ]) {
+      expect(supabaseWriteScan(ts, file)).toHaveLength(0);
+    }
   });
 });
 
@@ -1369,6 +1741,709 @@ describe("the MES unit writers", () => {
     expect(unitPickers(files)).toEqual(
       Object.keys(UNIT_PICK_ALLOW_LIST).sort()
     );
+  });
+});
+
+const CHAINED_SERVICE = "apps/erp/app/modules/sales/sales.service.ts";
+const chainedScan = (contents: string, file = CHAINED_SERVICE) =>
+  noChainedClientWrites
+    .scan(file, contents)
+    .map(({ line, snippet }) => ({ line, snippet }));
+
+describe("no-chained-client-writes", () => {
+  // git show efd366dba0^:apps/erp/app/modules/sales/sales.service.ts, lines 3871–3962
+  it("flags the quote line price delete and re-insert from before efd366dba0", () => {
+    expect(
+      chainedScan(`export async function upsertQuoteLinePrices(
+  client: SupabaseClient<Database>,
+  quoteId: string,
+  lineId: string,
+  quoteLinePrices: {
+    quoteLineId: string;
+    unitPrice: number;
+    leadTime: number;
+    discountPercent: number;
+    quantity: number;
+    createdBy: string;
+    categoryMarkups?: Record<string, number>;
+    priceSource?: "system" | "manual";
+  }[]
+) {
+  const existingPrices = await client
+    .from("quoteLinePrice")
+    .select("*")
+    .eq("quoteLineId", lineId);
+  if (existingPrices.error) {
+    return existingPrices;
+  }
+
+  const deletePrices = await client
+    .from("quoteLinePrice")
+    .delete()
+    .eq("quoteLineId", lineId);
+  if (deletePrices.error) {
+    return deletePrices;
+  }
+
+  const quoteExchangeRate = await client
+    .from("quote")
+    .select("id, exchangeRate")
+    .eq("id", quoteId)
+    .single();
+
+  const quoteLineUnitPricePrecision = await client
+    .from("quoteLine")
+    .select("unitPricePrecision")
+    .eq("id", lineId)
+    .single();
+
+  const pricesByQuantity = existingPrices.data.reduce<
+    Record<
+      number,
+      {
+        discountPercent: number;
+        leadTime: number;
+        shippingCost: number;
+        categoryMarkups: unknown;
+        priceSource: string;
+      }
+    >
+  >((acc, price) => {
+    acc[price.quantity] = price;
+    return acc;
+  }, {});
+
+  const pricesWithExistingDiscountsAndLeadTimes = quoteLinePrices.map((p) => {
+    const existing = pricesByQuantity[p.quantity];
+    const roundedUnitPrice = Number(
+      p.unitPrice.toFixed(
+        quoteLineUnitPricePrecision.data?.unitPricePrecision ?? 2
+      )
+    );
+
+    return {
+      ...p,
+      unitPrice: roundedUnitPrice,
+      discountPercent: existing?.discountPercent ?? p.discountPercent,
+      leadTime: existing?.leadTime ?? p.leadTime,
+      // Shipping is entered per quantity break and is independent of the price
+      // being rewritten — without this the delete+reinsert resets it to the
+      // column default of 0.
+      shippingCost: existing?.shippingCost ?? 0,
+      categoryMarkups: p.categoryMarkups ?? existing?.categoryMarkups ?? {},
+      // Explicit caller intent wins; otherwise keep the row's provenance so a
+      // delete+reinsert can never turn a manual price back into a system one.
+      priceSource: p.priceSource ?? existing?.priceSource ?? "system",
+      quoteId: quoteId,
+      exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1
+    };
+  });
+
+  return (
+    client
+      .from("quoteLinePrice")
+      // @ts-expect-error - categoryMarkups is a Json object
+      .insert(pricesWithExistingDiscountsAndLeadTimes)
+  );
+}`)
+    ).toEqual([
+      {
+        line: 87,
+        snippet:
+          "upsertQuoteLinePrices: quoteLinePrice.delete, quoteLinePrice.insert"
+      }
+    ]);
+  });
+
+  // git show efd366dba0:apps/erp/app/modules/sales/sales.service.ts, lines 3871–3956
+  it("passes the price rewrite in one Kysely transaction (efd366dba0)", () => {
+    expect(
+      chainedScan(`export async function upsertQuoteLinePrices(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  quoteId: string,
+  lineId: string,
+  quoteLinePrices: {
+    quoteLineId: string;
+    unitPrice: number;
+    leadTime: number;
+    discountPercent: number;
+    quantity: number;
+    createdBy: string;
+    categoryMarkups?: Record<string, number>;
+    priceSource?: "system" | "manual";
+  }[]
+) {
+  // Rewriting a line's prices is a delete + reinsert, so it has to be atomic:
+  // if the insert failed after the delete had already committed, the line would
+  // be left with no pricing at all and the previous values unrecoverable.
+  // Kysely bypasses RLS, so every statement is scoped by companyId explicitly.
+  return db.transaction().execute(async (trx) => {
+    const existingPrices = await trx
+      .selectFrom("quoteLinePrice")
+      .selectAll()
+      .where("quoteLineId", "=", lineId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    await trx
+      .deleteFrom("quoteLinePrice")
+      .where("quoteLineId", "=", lineId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    if (quoteLinePrices.length === 0) return;
+
+    const quote = await trx
+      .selectFrom("quote")
+      .select("exchangeRate")
+      .where("id", "=", quoteId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+
+    const quoteLine = await trx
+      .selectFrom("quoteLine")
+      .select("unitPricePrecision")
+      .where("id", "=", lineId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+
+    const existingByQuantity = new Map(
+      existingPrices.map((price) => [price.quantity, price])
+    );
+
+    await trx
+      .insertInto("quoteLinePrice")
+      .values(
+        quoteLinePrices.map((p) => {
+          const existing = existingByQuantity.get(p.quantity);
+
+          return {
+            ...p,
+            companyId,
+            quoteId,
+            unitPrice: Number(
+              p.unitPrice.toFixed(quoteLine?.unitPricePrecision ?? 2)
+            ),
+            discountPercent: existing?.discountPercent ?? p.discountPercent,
+            leadTime: existing?.leadTime ?? p.leadTime,
+            // Shipping is entered per quantity break and is independent of the
+            // price being rewritten — without this the delete+reinsert resets
+            // it to the column default of 0.
+            shippingCost: existing?.shippingCost ?? 0,
+            categoryMarkups:
+              p.categoryMarkups ?? existing?.categoryMarkups ?? {},
+            // Explicit caller intent wins; otherwise keep the row's provenance
+            // so a delete+reinsert can never turn a manual price back into a
+            // system one.
+            priceSource: p.priceSource ?? existing?.priceSource ?? "system",
+            exchangeRate: quote?.exchangeRate ?? 1
+          };
+        })
+      )
+      .execute();
+  });
+}`)
+    ).toEqual([]);
+  });
+
+  // git show 37f71945a4^:apps/erp/app/modules/items/items.service.ts, lines 4302–4342
+  it("flags the Draft insert and source activation from before 37f71945a4", () => {
+    expect(
+      chainedScan(
+        `export async function upsertMakeMethodVersion(
+  client: SupabaseClient<Database>,
+  makeMethodVersion: z.infer<typeof makeMethodVersionValidator> & {
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  const currentMakeMethod = await client
+    .from("makeMethod")
+    .select("*")
+    .eq("id", makeMethodVersion.copyFromId)
+    .eq("companyId", makeMethodVersion.companyId)
+    .single();
+
+  if (currentMakeMethod.error) return currentMakeMethod;
+
+  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  const { id, version, ...data } = currentMakeMethod.data;
+
+  const insert = await client
+    .from("makeMethod")
+    .insert({
+      ...data,
+      status: "Draft",
+      version: makeMethodVersion.version,
+      createdBy: makeMethodVersion.createdBy
+    })
+    .select("id, ...item(itemId:id, type)")
+    .single();
+
+  if (insert.error) return insert;
+
+  if (makeMethodVersion.activeVersionId) {
+    await client
+      .from("makeMethod")
+      .update({ status: "Active" })
+      .eq("id", makeMethodVersion.activeVersionId);
+  }
+
+  return insert;
+}`,
+        "apps/erp/app/modules/items/items.service.ts"
+      )
+    ).toEqual([
+      {
+        line: 34,
+        snippet: "upsertMakeMethodVersion: makeMethod.insert, makeMethod.update"
+      }
+    ]);
+  });
+
+  // git show 37f71945a4:apps/erp/app/modules/items/items.service.ts, lines 4312–4428
+  it("passes the version insert, activation and copy in withTransaction (37f71945a4)", () => {
+    expect(
+      chainedScan(
+        `export async function createMakeMethodVersion(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    copyFromId: string;
+    version: number;
+    /** Set a Draft source Active. An Active or Archived source is left alone. */
+    activate?: boolean;
+    /** The change notice the new Draft belongs to; else the source's. */
+    changeOrderId?: string;
+    companyId: string;
+    createdBy: string;
+  }
+): Promise<
+  | {
+      data: {
+        id: string;
+        itemId: string;
+        type: Database["public"]["Tables"]["item"]["Row"]["type"];
+      };
+      error: null;
+    }
+  | { data: null; error: ServiceError | ServerFnError }
+> {
+  const { copyFromId, version, companyId, createdBy } = args;
+
+  const source = await client
+    .from("makeMethod")
+    .select("itemId, status, customFields, tags, changeOrderId, ...item(type)")
+    .eq("id", copyFromId)
+    .eq("companyId", companyId)
+    .single();
+  if (source.error) return { data: null, error: source.error };
+
+  // The makeMethod policies ask for parts_create to insert and parts_update to
+  // set a version Active.
+  const activate = args.activate === true && source.data.status === "Draft";
+  const permitted = await requireCompanyPermission(
+    client,
+    companyId,
+    "parts_create"
+  );
+  if (permitted.error) return { data: null, error: permitted.error };
+  if (activate) {
+    const canActivate = await requireCompanyPermission(
+      client,
+      companyId,
+      "parts_update"
+    );
+    if (canActivate.error) return { data: null, error: canActivate.error };
+  }
+
+  try {
+    const draftId = await withTransaction(db, async (trx) => {
+      const draft = await trx
+        .insertInto("makeMethod")
+        .values({
+          itemId: source.data.itemId,
+          customFields: toJson(source.data.customFields),
+          tags: source.data.tags,
+          changeOrderId: args.changeOrderId ?? source.data.changeOrderId,
+          status: "Draft",
+          version,
+          companyId,
+          createdBy
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      if (activate) {
+        // A source set Active meanwhile, or archived behind a newer Active, is
+        // not outranked by the new Draft either: nothing to refuse.
+        await trx
+          .updateTable("makeMethod")
+          .set({ status: "Active" })
+          .where("id", "=", copyFromId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Draft")
+          .execute();
+      }
+
+      const copy = await copyMakeMethod(getCarbonServiceRole(), trx, {
+        sourceId: copyFromId,
+        targetId: draft.id,
+        billOfMaterial: true,
+        billOfProcess: true,
+        parameters: true,
+        tools: true,
+        steps: true,
+        workInstructions: true,
+        companyId,
+        userId: createdBy
+      });
+      if (copy.error) throw copy.error;
+
+      return draft.id;
+    });
+
+    return {
+      data: { id: draftId, itemId: source.data.itemId, type: source.data.type },
+      error: null
+    };
+  } catch (error) {
+    // The copy's refusal, with the status its category is read from.
+    if (error instanceof ServerFnError) return { data: null, error };
+    // A taken version number is the caller's to retry.
+    if (!isUniqueViolation(error)) {
+      logger.error("Failed to create make method version", {
+        companyId,
+        copyFromId,
+        version,
+        error
+      });
+    }
+    return { data: null, error: writeError(error) };
+  }
+}`,
+        "apps/erp/app/modules/items/items.service.ts"
+      )
+    ).toEqual([]);
+  });
+
+  // git show f922057bbc^:apps/erp/app/modules/sales/sales.service.ts, lines 2133–2176
+  it("flags the contact insert and its customer link from before f922057bbc", () => {
+    expect(
+      chainedScan(`export async function insertCustomerContact(
+  client: SupabaseClient<Database>,
+  customerContact: {
+    customerId: string;
+    companyId: string;
+    contact: PickPartial<z.infer<typeof customerContactValidator>, "email">;
+    customerLocationId?: string;
+    customFields?: Json;
+  }
+) {
+  const insertContact = await client
+    .from("contact")
+    .insert([
+      {
+        ...customerContact.contact,
+        isCustomer: true,
+        companyId: customerContact.companyId
+      }
+    ])
+    .select("id")
+    .single();
+  if (insertContact.error) {
+    return insertContact;
+  }
+
+  const contactId = insertContact.data?.id;
+  if (!contactId) {
+    return { data: null, error: new Error("Contact ID not found") };
+  }
+
+  return client
+    .from("customerContact")
+    .insert([
+      {
+        customerId: customerContact.customerId,
+        contactId,
+        customerLocationId: customerContact.customerLocationId,
+        companyId: customerContact.companyId,
+        customFields: customerContact.customFields
+      }
+    ])
+    .select("id")
+    .single();
+}`)
+    ).toEqual([
+      {
+        line: 31,
+        snippet: "insertCustomerContact: contact.insert, customerContact.insert"
+      }
+    ]);
+  });
+
+  // git show f922057bbc:apps/erp/app/modules/sales/sales.service.ts, lines 2138–2211
+  it("passes the contact and its link in one withTransaction (f922057bbc)", () => {
+    expect(
+      chainedScan(`export async function insertCustomerContact(
+  db: Kysely<KyselyDatabase>,
+  customerContact: {
+    customerId: string;
+    companyId: string;
+    contact: PickPartial<z.infer<typeof customerContactValidator>, "email">;
+    customerLocationId?: string;
+    customFields?: Json;
+  }
+) {
+  const { customerId, companyId, customerLocationId, contact } =
+    customerContact;
+  try {
+    // One transaction: a contact with no customer link is invisible in the app.
+    const id = await withTransaction(db, async (trx) => {
+      const owner = await trx
+        .selectFrom("customer")
+        .select("id")
+        .where("id", "=", customerId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) return "Customer not found";
+      if (customerLocationId) {
+        const location = await trx
+          .selectFrom("customerLocation")
+          .select("id")
+          .where("id", "=", customerLocationId)
+          .where("customerId", "=", customerId)
+          .executeTakeFirst();
+        if (!location) return "Location not found";
+      }
+
+      const inserted = await trx
+        .insertInto("contact")
+        .values({
+          companyId,
+          isCustomer: true,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          title: contact.title,
+          email: contact.email,
+          mobilePhone: contact.mobilePhone,
+          homePhone: contact.homePhone,
+          workPhone: contact.workPhone,
+          notes: contact.notes
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const link = await trx
+        .insertInto("customerContact")
+        .values({
+          customerId,
+          contactId: inserted.id,
+          customerLocationId,
+          companyId,
+          customFields: toJson(customerContact.customFields)
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      return { id: link.id };
+    });
+    return typeof id === "string"
+      ? { data: null, error: ruleError(id) }
+      : { data: id, error: null };
+  } catch (error) {
+    logger.error("Failed to create customer contact", {
+      companyId,
+      customerId,
+      error
+    });
+    return { data: null, error: error as Error };
+  }
+}`)
+    ).toEqual([]);
+  });
+
+  it("flags writes fanned out with Promise.all, in a service function's run", () => {
+    expect(
+      chainedScan(
+        `export const cancelOrder = defineServiceFn({
+  input,
+  permission,
+  async run(ctx, input) {
+    const client = ctx.asSystem.supabase;
+    const [lines, header] = await Promise.all([
+      client.from("salesOrderLine").update({ status: "Cancelled" }).eq("salesOrderId", input.id),
+      client.from("salesOrder").update({ status: "Cancelled" }).eq("id", input.id)
+    ]);
+    return unwrap(ctx, lines, header);
+  }
+});`,
+        "apps/erp/app/modules/sales/sales.server.ts"
+      )
+    ).toEqual([
+      {
+        line: 8,
+        snippet: "cancelOrder: salesOrderLine.update, salesOrder.update"
+      }
+    ]);
+  });
+
+  it("counts a write in a callback toward the function that calls it", () => {
+    expect(
+      chainedScan(`export async function replaceTags(client, id, tags) {
+  await client.from("tag").delete().eq("documentId", id);
+  await Promise.all(
+    tags.map((tag) => client.from("tag").insert({ documentId: id, tag }))
+  );
+}`)
+    ).toEqual([{ line: 4, snippet: "replaceTags: tag.delete, tag.insert" }]);
+  });
+
+  it("passes the two branches of an upsert", () => {
+    expect(
+      chainedScan(`export async function upsertThing(client, thing) {
+  if ("id" in thing) {
+    return client.from("thing").update(thing).eq("id", thing.id);
+  }
+  return client.from("thing").insert([thing]).select("id").single();
+}
+
+export async function upsertOther(client, other) {
+  if (other.id) {
+    const updated = await client.from("other").update(other).eq("id", other.id);
+    if (updated.error) return updated;
+    return updated;
+  } else {
+    return client.from("other").insert(other);
+  }
+}
+
+export async function saveMode(client, mode, row) {
+  return mode === "edit"
+    ? client.from("x").update(row).eq("id", row.id)
+    : client.from("x").insert(row);
+}
+
+export async function byIntent(client, intent, row) {
+  switch (intent) {
+    case "archive":
+      return client.from("x").update({ archived: true }).eq("id", row.id);
+    case "delete":
+      return client.from("x").delete().eq("id", row.id);
+  }
+}`)
+    ).toEqual([]);
+  });
+
+  it("passes writes inside a Kysely transaction callback, and a single write", () => {
+    expect(
+      chainedScan(`export async function one(client, row) {
+  return client.from("x").insert(row);
+}
+
+export async function inTransaction(db, client, row) {
+  return withTransaction(db, async (trx) => {
+    await client.from("x").delete().eq("id", row.id);
+    await client.from("x").insert(row);
+  });
+}`)
+    ).toEqual([]);
+  });
+
+  it("does not let a return inside a callback end the outer function", () => {
+    expect(
+      chainedScan(`export async function reset(client, ids) {
+  await Promise.all(
+    ids.map(async (id) => {
+      await client.from("x").delete().eq("id", id);
+      return id;
+    })
+  );
+  await client.from("y").insert({ ids });
+}`)
+    ).toEqual([{ line: 8, snippet: "reset: x.delete, y.insert" }]);
+  });
+
+  it("leaves reads, storage and Array.from alone", () => {
+    expect(
+      chainedScan(`export async function files(client, rows) {
+  await client.storage.from("private").update(path, file);
+  await client.storage.from("private").remove([path]);
+  const copy = Array.from(rows).delete;
+  await client.from("x").select("id");
+  return client.from("x").update({ a: 1 }).eq("id", 1);
+}`)
+    ).toEqual([]);
+  });
+
+  it("passes an update-else-insert upsert of one row, and insert-if-absent then update", () => {
+    expect(
+      chainedScan(`export async function upsertOverride(client, row) {
+  const update = await client
+    .from("exchangeRateOverride")
+    .update({ rate: row.rate })
+    .eq("currencyCode", row.currencyCode)
+    .select("id");
+  if (update.error) return update;
+  if (update.data.length > 0) return update;
+  return client.from("exchangeRateOverride").insert(row);
+}
+
+export async function markInstalled(client, row) {
+  const inserted = await client
+    .from("companyIntegration")
+    .upsert(row, { ignoreDuplicates: true });
+  if (inserted.error) return inserted;
+  return client
+    .from("companyIntegration")
+    .update({ active: true })
+    .eq("id", row.id)
+    .eq("active", false);
+}`)
+    ).toEqual([]);
+  });
+
+  it("still flags two updates of one table (archive the old, publish the new)", () => {
+    expect(
+      chainedScan(`export async function activateVersion(client, id, others) {
+  await client.from("instruction").update({ status: "Archived" }).in("id", others);
+  return client.from("instruction").update({ status: "Published" }).eq("id", id);
+}`)
+    ).toEqual([{ line: 3, snippet: "activateVersion: instruction.update" }]);
+  });
+
+  it("names a callback option after the function that passes it", () => {
+    expect(
+      chainedScan(
+        `export const attachFile = defineServiceFn({
+  input,
+  permission,
+  async run(ctx, input) {
+    return service.placeFile(ctx, {
+      setModel: async (id) => {
+        await ctx.client.from("quoteLine").update({ id }).eq("id", input.lineId);
+        await ctx.client.from("item").update({ id }).eq("id", input.itemId);
+      }
+    });
+  }
+});`,
+        "apps/erp/app/modules/sales/sales.server.ts"
+      )
+    ).toEqual([
+      { line: 8, snippet: "attachFile.setModel: quoteLine.update, item.update" }
+    ]);
+  });
+
+  it("scans only ERP module server files and MES services", () => {
+    const code = `export async function two(client) {
+  await client.from("a").insert({});
+  await client.from("b").insert({});
+}`;
+    expect(chainedScan(code, "apps/erp/app/routes/x+/a.tsx")).toEqual([]);
+    expect(chainedScan(code, "apps/erp/app/modules/a/a.models.ts")).toEqual([]);
+    expect(
+      chainedScan(code, "apps/mes/app/services/operations.service.ts")
+    ).toEqual([{ line: 3, snippet: "two: a.insert, b.insert" }]);
   });
 });
 

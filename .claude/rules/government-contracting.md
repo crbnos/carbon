@@ -10,6 +10,21 @@ paths:
   - "apps/erp/app/modules/projects/ui/Timesheet/**"
   - "apps/mes/app/routes/x+/timesheet.tsx"
   - "apps/mes/app/components/Timesheet/**"
+triggers:
+  - "timekeepingControls"
+  - "isUnallowableCharge"
+  - "save-timesheet-entry"
+  - "submit-timesheet-week"
+  - "useGovernmentContracting"
+  - "costObjective"
+  - "timesheetEntryRevision"
+  - "lineItemNumber"
+summary:
+  - "Gate every timekeeping control on `companySettings.timekeepingControls = 'DCAA'`; Standard mode keeps its Phase 1a behavior."
+  - "Stamp `projectLedger.unallowable` with `isUnallowableCharge` on every posting path; a reversal copies its original's flag."
+  - "Keep the timekeeping rules in `@carbon/utils` `timekeeping.ts` and call them from the postings, so the ERP and the MES agree."
+  - "Use `useGovernmentContracting()` only to hide fields and keep the server gates; post a hidden field's saved value as `Hidden`."
+  - "Refuse a DCAA timesheet change with a `ServerFnError` of status 422; never refuse a reversal for a charge restriction."
 ---
 
 # Government contracting (Phases 5a and 5d)

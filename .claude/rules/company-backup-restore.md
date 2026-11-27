@@ -14,6 +14,21 @@ paths:
   - "apps/erp/app/services/onboarding.server.ts"
   - "packages/jobs/src/scripts/check-backups.ts"
   - "packages/jobs/manifests/**"
+triggers:
+  - "@carbon/jobs/backups"
+  - "getCompanyTableCatalog"
+  - "wipeAndLoad"
+  - "buildCompanyBackup"
+  - "TABLE_RENAMES"
+  - "ID_REF_COLUMNS"
+  - "SECRET_TABLES"
+  - "session_replication_role"
+summary:
+  - "Never put `requireBackupsEntitlement` in `buildCompanyBackup` or `wipeAndLoad`; onboarding templates call them directly and must stay free."
+  - "Never skip out-of-scope export rows silently; the scope refusal is a tenant-leak detector, and only the user's Skip corrupted rows retry bypasses it."
+  - "Scope every wipe `WHERE <scopeColumn> = <value>`; never write an unscoped DELETE."
+  - "A migration that renames or drops a backed-up table adds its `TABLE_RENAMES` entry in the same commit."
+  - "A new TEXT or TEXT[] column that holds a tenant row id with no FK goes into `ID_REF_COLUMNS`, or a cross-company restore keeps the source ids."
 ---
 
 # Company Backup / Restore / Onboarding Seed

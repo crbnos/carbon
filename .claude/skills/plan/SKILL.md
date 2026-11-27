@@ -19,7 +19,7 @@ implementation plan."
 
 1. Read the spec. If any Open Question is unchecked → **STOP** and return to
    `/spec-writing` Step 7. Do not plan around an open question.
-2. Read `.ai/lessons.md` and the module `AGENTS.md` for every module the spec
+2. Run `pnpm brief` on the files the spec touches, and read the module `AGENTS.md` for every module the spec
    touches.
 3. Read the matching guides for the work in the plan (from the root `AGENTS.md`
    Task Router). At minimum:
@@ -70,6 +70,7 @@ Every task uses exactly this shape:
 
 Hard rules for task content:
 
+- **Brief each task.** Run `pnpm brief <the task's files>`. Paste its output into the task under a **Briefing:** line, so the executor starts with the checks, rules and lessons in scope.
 - **Write every sentence in STE-80 from the first draft.** Use the write-time habits in `.claude/rules/writing-ste.md`. Never ask the human to check the style.
 - **Prose follows STE-80** (`.claude/rules/writing-ste.md`): one instruction
   per step, imperative, at most 20 words. Step 5 makes the STE-80 review pass a gate.

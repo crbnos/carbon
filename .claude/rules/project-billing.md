@@ -9,6 +9,21 @@ paths:
   - "packages/jobs/src/invoicing/contract-funding.ts"
   - "apps/erp/app/modules/sales/ui/Contracts/ContractLineBilling*.tsx"
   - "apps/erp/app/modules/projects/ui/Billing/**"
+triggers:
+  - "billingMethod"
+  - "projectBillableItem"
+  - "resolveBillRate"
+  - "generateCostPlusItems"
+  - "progressLedgerRows"
+  - "fundedAmount"
+  - "isProgressRevenueMethod"
+  - "create-project-billing-invoices"
+summary:
+  - "Decide which line owns a ledger row only with `progressLedgerRows`; two lines that select one row fail the run on `projectCostRelief_ledger_key`."
+  - "Cost Plus items come only from `generateCostPlusItems` in ee code; posting writes no Cost Plus item."
+  - "A contract invoice line never ships; `isDirectItemLine` is false for a line with `customerContractLineId`."
+  - "Gate Cost Plus and Percent Complete with `requireProjectRevenueEntitlement` in routes and operations, not only in the form."
+  - "An audited table needs `auditConfig` AND `events: true` in `event-system/attachments.ts`; the config alone attaches no trigger."
 ---
 
 # Project billing (Phases 4a and 4b)

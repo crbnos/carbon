@@ -2,6 +2,20 @@
 paths:
   - "packages/jobs/src/inngest/functions/events/**"
   - "packages/database/src/event.ts"
+triggers:
+  - "attach_event_trigger"
+  - "createEventSystemSubscription"
+  - "eventSystemSubscription"
+  - "HandlerTypeSchema"
+  - "packBySize("
+  - "event-handler-"
+  - "carbon/event-"
+summary:
+  - "Declare event triggers in `packages/database/src/event-system/attachments.ts`, never in a migration."
+  - "Register a new handler in the `events/index.ts` barrel AND the `functions` array in `packages/jobs/src/inngest/index.ts`."
+  - "Pass `type`, not `handlerType`, to `createEventSystemSubscription`, and write `operations` in uppercase."
+  - "Chunk every dispatch with `packBySize(..., MAX_EVENT_BYTES, ...)`; Inngest caps an event at 256KB."
+  - "Add `idempotency` on `event.data.msgId` only to per-row handlers, never to batched ones."
 ---
 
 # Workflow: Add an Event Handler / Wire an Event

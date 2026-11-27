@@ -53,7 +53,7 @@ For every package or module directory the diff touches:
 2. New package/module without an `AGENTS.md`? → flag it (create via
    `/create-agents-md`).
 3. New pattern, convention, or pitfall worth keeping? → flag it for
-   `.ai/lessons.md`. Spec implemented? → flag the spec for `implemented/` per
+   `/learn`. Spec implemented? → flag the spec for `implemented/` per
    `.ai/specs/AGENTS.md`.
 
 ## Step 4: Output
@@ -68,7 +68,8 @@ bug, include it as a risk/question rather than dropping it.
 - **Docs freshness**
 
 End with a compact TLDR listing every item again, grouped by section. Present
-findings to the user — they decide what to act on; do not auto-fix.
+findings to the user — they decide what to act on; do not auto-fix. For each
+Must fix the user accepts, run `/learn` so the next agent is briefed on it.
 
 ## Strict mode (thermo-nuclear)
 

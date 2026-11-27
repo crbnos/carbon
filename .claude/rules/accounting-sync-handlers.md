@@ -4,6 +4,21 @@ paths:
   - "packages/jobs/src/inngest/functions/events/sync.ts"
   - "packages/jobs/src/inngest/functions/events/sync-tables.ts"
   - "packages/ee/src/accounting/**"
+triggers:
+  - "SyncFactory"
+  - "BaseEntitySyncer"
+  - "externalIntegrationMapping"
+  - "enqueueSyncOperations"
+  - "drainSyncOperations"
+  - "computeReconcileDecision"
+  - "ensureDependencySynced"
+  - "@carbon/ee/accounting"
+summary:
+  - "Route every sync through the accountingSyncOperation ledger (enqueueSyncOperations, drainSyncOperations), not a direct syncer call."
+  - "Decide outbound sync from current state in computeReconcileDecision, not from an event's old/new delta: events are hints."
+  - "Sync only Posted (and Reversed) journals; Provisional, Superseded, Manual and Opening Balance journals never sync."
+  - "Replay bill and invoice accounts from the posted journal, not from the item or today's account defaults."
+  - "Resolve tax before ensureDependencySynced, and raise a refusal as JournalEntrySyncError with warning true, not a plain Error."
 ---
 
 # Accounting Sync Handlers

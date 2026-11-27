@@ -8,6 +8,21 @@ paths:
   - "apps/erp/app/routes/x+/**"
   - "apps/erp/app/routes/api+/table.*"
   - "apps/erp/app/modules/**/ui/**/*Table.tsx"
+triggers:
+  - "setGenericQueryFilters"
+  - "loadListPage"
+  - "fetchListPage"
+  - "useInfiniteRows"
+  - "listCount("
+  - "_PAGING"
+  - "searchList("
+  - "toPage("
+summary:
+  - "Never put an .order() before setGenericQueryFilters; the cursor follows only the sorts that setGenericQueryFilters applies."
+  - "Put the *_PAGING constant above the @mcp read doc block, and never put cursor in an @mcp function's own args type."
+  - "Select every sortable column, the default sorts and the id column; toPage reads the cursor values from the row."
+  - "Pass the loader's data array (or a memoized one) to <Table infinite>, never a copy built in the render body."
+  - "Count with listCount(args), and name idColumn in the list's X_PAGING when id is not unique."
 ---
 
 # Cursor paging and infinite scroll
@@ -190,7 +205,7 @@ and the registry entry spreads it.
 
 🛑 Put the `*_PAGING` constant ABOVE the doc block. A constant between
 `/** @mcp read */` and its function takes the doc block, and the function stops
-being an MCP tool with no error (see `.ai/lessons.md`).
+being an MCP tool with no error (see `.ai/lessons/`).
 
 🛑 Never put `cursor` in an `@mcp` function's own args type. Type the args as
 `GenericQueryFilters & { … }` (the generator publishes `limit` + `offset`), or

@@ -101,6 +101,7 @@ export function findIgnoredColumnDrift(
 
 export const eventIgnoredColumns = defineCheck({
   id: EVENT_IGNORED_COLUMNS,
+  triggers: ["skipFields", "attach_event_trigger"],
   description:
     "The event triggers drop an UPDATE that changes only bookkeeping columns before it is queued, broadcast or logged, because the audit diff would discard it anyway (`auditConfig.skipFields`).",
   reads: { sources: loadEventFunctionSources },
@@ -217,6 +218,7 @@ export function findProviderRoleDrift(
 
 export const providerRoleBackfilled = defineCheck({
   id: PROVIDER_ROLE_BACKFILLED,
+  triggers: ["providerRole"],
   description:
     "An integration's providerRole in its config matches the role the migrations set on its row.",
   // Migrations first: the runner groups a check by its first input, so this
@@ -340,6 +342,7 @@ export function findScheduledSqlDrift(
 
 export const scheduledSqlConstants = defineCheck({
   id: SCHEDULED_SQL_CONSTANTS,
+  triggers: ["_has_work", "cron.schedule"],
   description:
     "pg_cron wakes a scheduled function only when its `util.*_has_work()` says a run would do something, and that SQL repeats the function's constants.",
   // Migrations first: the runner groups a check by its first input, so this
@@ -508,6 +511,11 @@ export function findUnsyncedDocumentSequences(sources: {
 
 export const documentSequenceSynced = defineCheck({
   id: DOCUMENT_SEQUENCE_SYNCED,
+  triggers: [
+    "get_next_sequence",
+    "sync_advance_document_sequence",
+    "getNextSequence"
+  ],
   description:
     "Every counter is either kept ahead of saved numbers by sync_advance_document_sequence or exempt with a reason, and the interceptor's table list matches the tables it is attached to.",
   reads: { sources: loadDocumentSequenceSources },
@@ -602,6 +610,7 @@ export function findDeploymentEnvGaps(
 
 export const deploymentsSetRequiredEnv = defineCheck({
   id: DEPLOYMENTS_SET_REQUIRED_ENV,
+  triggers: ['required: "error"', 'required: "warn"'],
   description:
     "A variable that stops startup when missing must already be set by every deployment, or adding it takes production down.",
   reads: { sources: loadDeploymentEnvSources },
@@ -730,6 +739,7 @@ export function findStaleOfflinePageCaches(
 
 export const offlinePageCacheBumped = defineCheck({
   id: OFFLINE_PAGE_CACHE_BUMPED,
+  triggers: ["offline.html", "caches.open("],
   description:
     "A worker re-caches offline.html only when it reinstalls, which takes a change to service-worker.js: a new page needs new cache names.",
   reads: { sources: loadOfflinePageSources },

@@ -9,6 +9,20 @@ paths:
   - "Dockerfile"
   - "apps/erp/app/utils/inngest-self-sync.server.ts"
   - "apps/erp/app/entry.server.tsx"
+triggers:
+  - "sst.aws."
+  - "sst.config"
+  - "IMAGE_TAG"
+  - "IMAGE_REGISTRY"
+  - "ci:deploy"
+  - "sst@3"
+  - "scheduleInngestSelfSync"
+summary:
+  - "Do not hand-edit `sst-env.d.ts` files; SST generates them."
+  - "The deploy pins `sst@3.17.24` in `ci/src/deploy.ts`; the catalog `sst` 4.6.9 is only for typegen."
+  - "SST deploy runs no DB migrations; they run in `ci/src/migrations.ts` (`ci:migrations`)."
+  - "Associate the WAF with the load balancer by hand; SST creates it but does not attach it."
+  - "Boot self-sync must never block or fail server boot, and it stays a no-op outside `NODE_ENV=production` and on Vercel."
 ---
 
 # SST / AWS ECS Deployment (managed cloud path)

@@ -4,6 +4,21 @@ paths:
   - packages/dev/**
   - scripts/restore-database.sh
   - scripts/lib/generate-db-types.ts
+triggers:
+  - "crbn-shared"
+  - "carbon-shared"
+  - "recordedStackMode"
+  - "bootSharedServices"
+  - "sharedComposeEnv"
+  - "provisionWorktreeData"
+  - "worktree-forwarding"
+  - "cron.schedule"
+summary:
+  - "Never use a bare service name from a container that joins `carbon-shared`; use the `local-*` aliases or the `carbon-*` container names."
+  - "Check `recordedStackMode` in every command that deletes data; a missing mode file means the volumes are live."
+  - "Give the shared compose commands `sharedComposeEnv()` only, not `crbn`'s own environment from the worktree `.env.local`."
+  - "Do not name a compose project with a `carbon-` prefix; every `crbn` version treats it as an orphan and removes it."
+  - Use `--isolated` on a branch that changes the Postgres, Realtime or Storage image.
 ---
 
 # Dev shared services

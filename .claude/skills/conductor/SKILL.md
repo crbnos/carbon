@@ -207,7 +207,7 @@ Before opening the PR:
    (modules: cut to depth 5 for `apps/erp/app/modules/{name}`).
 2. For each with an `AGENTS.md`, fix any reference your changes made stale —
    small scoped edits in the same branch.
-3. New pitfall discovered? Append it to `.ai/lessons.md`
+3. New pitfall discovered? Record it with `/learn`
    (`Context → Problem → Rule → Applies to`).
 
 ## Step 5: Finish — land a gated PR

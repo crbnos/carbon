@@ -2,6 +2,20 @@
 paths:
   - "apps/**"
   - "packages/**"
+triggers:
+  - "console.log("
+  - "console.error("
+  - "<Outlet"
+  - "shouldRevalidate"
+  - "redirectBeforeLoaders"
+  - "useResolved("
+  - "return json("
+summary:
+  - "Import `redirect` from `@carbon/utils`, not `react-router`; leave the origin only with `redirectExternal` and a URL the server built."
+  - "Render `<RecordOutlet />` in a route under `/x`, never a plain `<Outlet />`."
+  - "Never use `console.*`; log a failure once, in the layer that handles it, with `getLogger(...)`."
+  - "Return plain objects or `data(...)` from loaders and actions, never `json(...)`."
+  - "Do not export `shouldRevalidate` from a layout to skip its loader; make the loader faster."
 ---
 
 # Coding Conventions (General)
@@ -182,6 +196,22 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   person and say what was wrong ("The item could not be found…"); never pass a
   database or provider error as the body. A 5xx body is not shown.
 - Redirects (`throw redirect(...)`) are control flow, not errors; no log needed.
+
+## Missing data is an error, not a default
+
+- A value the code needs and did not get is refused, never replaced with a
+  plausible constant. No `exchangeRate ?? 1`, `?? "USD"`, `?? 0` on an amount,
+  `Number(formData.get("x"))` on a blank field (it is 0), `rows[0]` when several
+  rows can match, or `continue` past an unresolved reference. The stored row
+  then looks valid and is wrong. Throw or return the error with the missing
+  name; a form field takes `.min(1)` / `.positive()` in its validator.
+- A fallback is fine only when the domain defines one (the company's base
+  currency for a document without a currency, `getDefaultRentalRates`). Name
+  that source in the code.
+- A `Map` keyed by a column that is not unique keeps the last row
+  (`new Map(lines.map((l) => [l.salesOrderLineId, l]))` over invoice lines,
+  several per order line). Group with a `Map<key, Row[]>` or sum while you build
+  it; `.find()` on such rows takes one of several.
 
 ## Components & UI Library
 

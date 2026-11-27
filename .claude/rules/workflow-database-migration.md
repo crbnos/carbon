@@ -1,5 +1,20 @@
 ---
 paths: ["packages/database/supabase/migrations/**"]
+triggers:
+  - "CREATE TABLE"
+  - "ALTER TABLE"
+  - "DROP TABLE"
+  - "RENAME TO"
+  - "ADD COLUMN"
+  - "CREATE POLICY"
+  - "DEFAULT id("
+  - "TABLE_RENAMES"
+summary:
+  - "Create a migration with `pnpm db:migrate:new <name>` and apply it with `pnpm db:migrate`; there is no `db:build`."
+  - "Never use `000000` as the HHMMSS of a migration timestamp; randomize it to avoid collisions across branches."
+  - "Put RLS in `packages/database/src/authz/manifest.ts` and ship it with `authz migration <name>`; never write `CREATE POLICY` in a migration."
+  - "Default the PK to `id()`, never a raw UUID; use the composite PK of id and companyId, and index companyId and every FK."
+  - "Renaming or dropping a backed-up table needs a `TABLE_RENAMES` entry; a TEXT column holding a row id with no FK needs `ID_REF_COLUMNS`."
 ---
 
 # Workflow: Add a Database Migration

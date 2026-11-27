@@ -70,6 +70,8 @@ packages/database/supabase/snippets/**
 .claude/*
 !.claude/rules/
 !.claude/skills/
+!.claude/settings.json
+!.claude/hooks/
 .codex/
 
 # External skills manifest — locally resolved from skill sources, not committed

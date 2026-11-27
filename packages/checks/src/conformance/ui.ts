@@ -29,6 +29,7 @@ const NOOP_HANDLER =
 export const noNoopOpenChange = defineCheck({
   files: typescript,
   id: "no-noop-open-change",
+  triggers: ["onOpenChange="],
   description:
     "A dialog that cannot be dismissed omits onOpenChange instead of passing a handler that does nothing",
   provenance: {
@@ -287,6 +288,15 @@ function clearsGuardOnClose(
 export const noUnmountingDialog = defineCheck({
   files: typescript,
   id: "no-unmounting-dialog",
+  triggers: [
+    "Modal",
+    "Drawer",
+    "Dialog",
+    "Confirm",
+    "Delete",
+    'type="modal"',
+    "useCloseRoute"
+  ],
   description:
     "A modal or drawer stays mounted and closes through its open prop, so its closing animation plays",
   provenance: {
@@ -470,6 +480,7 @@ function inValidatedForm(contents: string, index: number): boolean {
 export const noUnguardedSubmit = defineCheck({
   files: typescript,
   id: "no-unguarded-submit",
+  triggers: ['"submit"', "'submit'"],
   description:
     'A submit button must disable while its submission is in flight — use <Submit> inside a ValidatedForm, or isDisabled={fetcher.state !== "idle"} with isLoading',
   provenance: {
@@ -535,6 +546,7 @@ export const FORM_FIELD_BUDGET = 14;
 export const formFieldBudget = defineCheck({
   files: typescript,
   id: "form-field-budget",
+  triggers: ["<ValidatedForm"],
   description: `a form with more than ${FORM_FIELD_BUDGET} fields groups them (FormGroup / FormFold) or steps them (FormStep*)`,
   provenance: {
     deprecates: "a long flat form grid",
@@ -615,6 +627,7 @@ function receiverBefore(text: string, dotIndex: number): string {
 export const noDefaultOnEffects = defineCheck({
   files: typescript,
   id: "no-default-on-effects",
+  triggers: [".default"],
   description:
     "`.default()` on a schema with transforms/refinements/pipes is not re-parsed in zod v4 — use `.prefault()` when the default must run through the schema",
   provenance: {
@@ -661,6 +674,7 @@ const DEFINITION = "packages/react/src/hooks/useRevalidator.ts";
 export const noRawRevalidator = defineCheck({
   files: typescript,
   id: "no-raw-revalidator",
+  triggers: ["useRevalidator"],
   description:
     "useRevalidator must come from @carbon/query, which holds a revalidation while a save is in flight",
   provenance: {
@@ -699,6 +713,7 @@ const UNWRAPPED_MSG = /[._]\(\s*msg`|\bt\(\s*msg\(/g;
 export const linguiMacroMisuse = defineCheck({
   files: requestHandlingTypescript,
   id: "lingui-macro-misuse",
+  triggers: ["@lingui/core/macro", "msg`", "msg("],
   description:
     "Translate with useLingui().t / <Trans>; never the global t, never i18n._(msg`...`)",
   provenance: {
@@ -738,6 +753,7 @@ const INLINE_OPTIONS = /^useSensor\(\s*\w+\s*,\s*\{/;
 export const noInlineSensorOptions = defineCheck({
   files: typescript,
   id: "no-inline-sensor-options",
+  triggers: ["useSensor("],
   description:
     "useSensor options must be a module constant, not an object literal created on every render",
   provenance: {
@@ -926,6 +942,7 @@ export function findUnselectedListColumns(
 
 export const listSelectCoversColumns = defineCheck({
   id: "list-select-covers-columns",
+  triggers: ["_LIST_COLUMNS", "accessorKey"],
   description:
     "Every list table's accessorKeys, and the columns its cursor reads, are in the columns its endpoint selects.",
   reads: { sources: loadListSources },

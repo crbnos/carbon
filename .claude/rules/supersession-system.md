@@ -5,6 +5,21 @@ paths:
   - "packages/planning/src/mrp/**"
   - "apps/erp/app/modules/inventory/supersession-pick.ts"
   - "apps/erp/app/modules/items/ui/Item/ItemSupersessionForm.tsx"
+triggers:
+  - "\"itemSupersession\""
+  - "supersessionMode"
+  - "substitutedFromItemId"
+  - "loadSupersessionRedirect"
+  - "buildSupersessionRedirectMap"
+  - "consumableInWholeAssemblies"
+  - "generatePickingList"
+  - "Consume First"
+summary:
+  - "A `jobMaterial` row is a snapshot: never rewrite existing rows when a supersession changes. Picking re-evaluates live on purpose."
+  - "Give one unit N of the SAME part: round Consume First on-hand down with `consumableInWholeAssemblies`. Never mix old and new in a unit."
+  - "Resolve the swap at the top of the `jobMaterial` row builder, before any field derives from the item; do not patch fields afterwards."
+  - "Type `supersessionMode` as the DB enum, never `string`, and page supersession reads with `fetchAll`, not a bare select."
+  - "Do not test with `No Stock` or a two-row loop: neither redirects, so the test proves nothing."
 ---
 
 # Item Supersession

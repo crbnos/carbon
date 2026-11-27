@@ -6,6 +6,19 @@ paths:
   - ".ai/**"
   - "**/AGENTS.md"
   - "BACKWARD_COMPATIBILITY.md"
+triggers:
+  - "AGENTS.md"
+  - ".claude/rules/"
+  - "UNVERIFIED"
+  - ".ai/lessons/"
+  - ".generated.ts"
+  - "docs/content/"
+summary:
+  - "When code or schema changes, update in the same PR the rule whose `paths:` track it and each AGENTS.md that names the changed thing."
+  - "If a doc disagrees with the code, the code wins; fix the doc, do not trust the stale text."
+  - "Document committed code only; mark a claim you cannot check against the code `<!-- UNVERIFIED: ... -->`."
+  - "Never hand-edit `docs/lib/*.generated.ts`; regenerate it with `pnpm --filter docs generate:api`."
+  - "Delete a wrong line rather than leave it; a confidently wrong doc is worse than a missing one."
 ---
 
 # Keep docs, rules, and AGENTS.md fresh with their source of truth
@@ -46,10 +59,10 @@ with the code, the **code wins** — fix the doc, don't trust the stale text.
 
 ### `.ai/` Knowledge Base
 
-- **`lessons.md`** — when you hit a new pitfall or learn something that would
-  prevent a future mistake, add it using the `Context → Problem → Rule →
-  Applies to` format. Review whether existing lessons are still accurate
-  when you work in their area.
+- **`lessons/`** — one file per lesson, with `paths:` and `triggers:` so
+  `pnpm brief` shows it before an edit. Record a new pitfall with `/learn`,
+  which puts it in a check or a rule line when it fits, else a lesson. Delete
+  a lesson that names code that no longer exists.
 - **`specs/`** — update the spec when implementation diverges from the design.
   Move to `specs/implemented/` when done.
 - **`ds-rules.md`** — update when the component library adds, removes, or

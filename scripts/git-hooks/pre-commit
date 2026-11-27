@@ -14,6 +14,8 @@ if [ -z "$CARBON_SKIP_CONFORMANCE_CHECK" ] && git diff --cached --name-only | gr
         echo ""
         echo "Commit blocked by a conformance check. The violation is printed above."
         echo "Skip it with: CARBON_SKIP_CONFORMANCE_CHECK=1 git commit ..."
+        # Record each violation for the learning loop (/learn, the weekly sweep).
+        pnpm --silent --filter @carbon/checks learn:log-gate >/dev/null 2>&1 || true
         exit 1
     fi
 fi

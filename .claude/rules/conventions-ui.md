@@ -3,6 +3,21 @@ paths:
   - "apps/erp/app/components/**"
   - "apps/mes/app/components/**"
   - "packages/react/**"
+triggers:
+  - "transition-all"
+  - "PopoverContent"
+  - "AnimatePresence"
+  - "useHotkeys"
+  - "keydown"
+  - "text-wrap-"
+  - "ModalContent"
+  - "DrawerContent"
+summary:
+  - "Use an existing @carbon/react or ~/components/Form component and its variant, not hand-rolled markup or ad-hoc bg-* / text-* classes."
+  - "Pass the condition as open / isOpen; never {x.isOpen && <Dialog />} or return null, which removes the dialog before it animates."
+  - "Bind shortcuts through react-hotkeys-hook with a named constant from shortcuts.ts, never a document keydown listener or a combo literal."
+  - "Stop wheel and touchmove propagation on a PopoverContent inside a Drawer or dialog, or its list cannot scroll."
+  - "Use IconButton with an aria-label for an icon-only button, and scope transitions to properties, not transition-all."
 ---
 
 # UI Conventions

@@ -75,6 +75,7 @@ const AUTH_CALL = /(?<!function\s+)\b(requireCaller|requireServiceRole)\s*\(/;
 export const edgeFunctionAuthorizesCaller = defineCheck({
   files: loadEdgeFunctions,
   id: "edge-function-authorizes-caller",
+  triggers: ["serve("],
   description:
     "Every edge function authorizes its caller in-function (requireCaller / requireServiceRole).",
   provenance: {
@@ -147,6 +148,7 @@ const registryHelpers = (root: string) => {
 
 export const registryHelpersFresh = defineCheck({
   id: REGISTRY_HELPERS_FRESH,
+  triggers: ["module_pages", "page_max_level", "renderRegistryHelpers"],
   description:
     "The managed helpers whose bodies are the registry (every file `renderRegistryHelpers()` renders) are written from `access/pages` by `authz sync`.",
   reads: { helpers: registryHelpers },
@@ -297,6 +299,14 @@ export function loadManagedFunctionFiles(root: string): SourceFile[] {
 
 const AUTHZ_DDL_ABOUT = {
   id: "no-authz-ddl-in-migrations",
+  triggers: [
+    "POLICY",
+    "policy",
+    "FUNCTION",
+    "attach_event_trigger",
+    "attach_statement_handler",
+    "set_event_triggers"
+  ],
   description:
     "Policies, RLS helpers, event-system functions and event triggers are authored as files, not migrations.",
   provenance: {
@@ -386,6 +396,7 @@ export const noAuthzDdlInMigrationsCheck = defineCheck({
 export const noLegacyRls = defineCheck({
   files: migrations,
   id: "no-legacy-rls",
+  triggers: ["has_company_permission"],
   description:
     "Use get_companies_with_employee_permission(...), not has_role()/has_company_permission().",
   provenance: {
@@ -667,6 +678,15 @@ export function scanModulePermissionKeys(
 
 export const noModulePermissionKey = defineCheck({
   id: "no-module-permission-key",
+  triggers: [
+    "_view",
+    "_create",
+    "_update",
+    "_delete",
+    "pagesOf(",
+    "_ids_with_",
+    "portal."
+  ],
   description:
     "Permission checks name a page (<module>.<page>_<action>, { page: Level }), never a module",
   provenance: {
@@ -822,6 +842,7 @@ export function findMovedTableGaps(
 
 export const movedTablesCovered = defineCheck({
   id: MOVED_TABLES_COVERED,
+  triggers: ["alsoWrittenBy", "writersOf(", "readersOf("],
   description:
     "A table whose page is now in another module than one its policies checked before page permissions keeps that module's holders.",
   reads: { migrations },
@@ -1007,6 +1028,7 @@ export function findRoutePageGaps(
 
 export const routeMapsToPage = defineCheck({
   id: ROUTE_MAPS_TO_PAGE,
+  triggers: ["UNPAGED_ROUTES", "pageOfUrl("],
   description:
     "Every ERP route under `x+` belongs to one page of the access registry, so a gate, the sidebar and `pageOfUrl` agree on whose screen it is, or is listed in `UNPAGED_ROUTES` with the reason.",
   reads: { routes: loadErpRouteFiles },
@@ -1258,6 +1280,7 @@ function gateOfCall(
 
 const ROUTE_GATE_ABOUT = {
   id: ROUTE_GATE_NAMES_PAGE,
+  triggers: ["authorize(", "loadListPage("],
   description:
     "An ERP route's authorize gate names the page its URL maps to in the access registry",
   provenance: {

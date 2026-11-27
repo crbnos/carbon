@@ -5,6 +5,20 @@ paths:
   - "packages/auth/src/middleware/flash.*.ts"
   - "packages/auth/src/utils/result.ts"
   - "apps/*/app/root.tsx"
+triggers:
+  - "await flash("
+  - "flashData("
+  - "getSessionFlash"
+  - "flashMiddleware"
+  - "flashResultContext"
+  - "toastError("
+  - "requireAffected("
+summary:
+  - "On success, `throw redirect(path, await flash(request, success(...)))`, not `return redirect`; use `data(...)`, not the old Remix `json(...)`."
+  - "Pass the real error object to `error(err, \"Failed to ...\")`, never `params` or a string that repeats the title."
+  - Make one `flash` call per response; the cookie holds a single message.
+  - The root loader returns both `flashResultContext` and `flashHeadersContext`; without the headers the message shows again on the next page.
+  - "On a page an outsider can reach (sign-in, invite, share link), log the real error and pass `null` as the cause."
 ---
 
 # Flash (Toast) System

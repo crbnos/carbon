@@ -1,5 +1,20 @@
 ---
 paths: ["packages/database/supabase/migrations/**"]
+triggers:
+  - "CREATE TABLE"
+  - "CREATE OR REPLACE VIEW"
+  - "CREATE OR REPLACE FUNCTION"
+  - "SECURITY DEFINER"
+  - "REVOKE EXECUTE"
+  - "NUMERIC("
+  - "ALTER TYPE"
+  - "CREATE POLICY"
+summary:
+  - "Create every view `WITH(SECURITY_INVOKER=true)`; `CREATE OR REPLACE VIEW` without it bypasses RLS for every caller."
+  - "Copy a redefined function from its NEWEST migration, never from an older one."
+  - "Guard a restricted function inside its body (`assert_company_access` or a role check), never with `REVOKE EXECUTE`."
+  - "Write bare `NUMERIC`, never `NUMERIC(19,4)`; give every table with `createdBy` an `updatedBy` column too."
+  - "Do not write RLS policies in a migration; add the rule to `packages/database/src/authz/manifest.ts`."
 ---
 
 # Database Migration Patterns

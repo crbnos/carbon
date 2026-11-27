@@ -25,6 +25,7 @@ const ROUNDING_EXCLUDED_FILES = new Set(["packages/database/src/precision.ts"]);
 export const noRawRounding = defineCheck({
   files: typescript,
   id: "no-raw-rounding",
+  triggers: ["Math.round(", "Math.ceil(", "Math.floor(", ".toFixed("],
   description:
     "Value-bearing rounding goes through @carbon/utils round/scrapAllowance/applyRate/deriveRate, not Math.round/ceil/floor or toFixed",
   provenance: {
@@ -93,6 +94,7 @@ const FRACTION_DIGITS_EXCLUDED_FILES = new Set([
 export const noInlineFractionDigits = defineCheck({
   files: typescript,
   id: "no-inline-fraction-digits",
+  triggers: ["FractionDigits", '"currency"', "'currency'"],
   description:
     "Pick a named kind from @carbon/utils format.ts (money/price/percent/quantity, INPUT_FORMAT.*) instead of passing digits",
   provenance: {
@@ -285,6 +287,7 @@ export const noUnroundedTrackedQuantity = defineCheck({
       "round() / settleQuantity() (@carbon/utils entity-drain.ts) at the write, isFullDraw() (@carbon/utils batch-split.ts) at the gate",
     since: "2026-09-23"
   },
+  triggers: ["trackedEntity", ".quantity"],
   scan(file: string, contents: string): Violation[] {
     if (TRACKED_QUANTITY_EXCLUDED_FILES.has(file)) return [];
     const violations: Violation[] = [];

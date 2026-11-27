@@ -107,7 +107,7 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
     }, [shortcutActive]);
 
     // Focus-aware guard: submit the form being edited; never steal keys from
-    // other editable surfaces (lesson .ai/lessons.md:373); on body-focus fire
+    // other editable surfaces (the keyboard-shortcut lessons in .ai/lessons/); on body-focus fire
     // only when this is the sole active Submit — ambiguity means no-op.
     const shortcutGuard = useCallback((_event: KeyboardEvent) => {
       const el = innerRef.current;
