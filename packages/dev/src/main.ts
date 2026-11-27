@@ -20,6 +20,10 @@ import { mainCheckoutRoot } from "./git.js";
 import { APPS_IDLE_MINUTES, IDLE_MINUTES } from "./services/hibernate.js";
 import { worktreePath } from "./worktree.js";
 
+// Read once, before any command runs: ui.ts sets CI=true for an instant to
+// calm clack's spinner, which a later read would take for a CI runner.
+const runsInCi = Boolean(process.env.CI);
+
 const main = defineCommand({
   meta: {
     name: "crbn",
@@ -187,18 +191,12 @@ const main = defineCommand({
           default: false,
           description:
             "Schema unreconcilable? Wipe the stack's volumes and re-provision from scratch (prompts to confirm)"
-        },
-        serve: {
-          type: "boolean",
-          default: false,
-          description:
-            "Boot only Postgres, Storage, GoTrue, Realtime, PostgREST and the gateway, and leave them running once the API answers (CI's database tests)"
         }
       },
       run: ({ args }) =>
         args.force
           ? reset()
-          : migrate({ regen: args.regen !== false, serve: args.serve === true })
+          : migrate({ regen: args.regen !== false, ci: runsInCi })
     }),
     restore: defineCommand({
       meta: {

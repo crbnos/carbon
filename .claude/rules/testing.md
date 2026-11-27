@@ -196,7 +196,7 @@ Interaction belongs in a browser playbook.
   runs the whole suite on every pull request that changes `apps/erp` or a
   package, half the files on each of two runners (`vitest --shard`). Each
   migrates an empty database and leaves PostgREST running
-  (`crbn migrate --no-regen --serve`), and fails when a test fails or when
+  (`crbn migrate --no-regen`, which with `CI` set leaves the API running), and fails when a test fails or when
   the database or PostgREST is missing, so the suite cannot skip unseen.
 
 ## Bug fixes

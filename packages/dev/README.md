@@ -49,7 +49,7 @@ source ./setup.sh   # adds crbn to PATH + installs shell wrapper
 | `crbn status` | Port assignment + container health. |
 | `crbn status --json` | The slot and containers as JSON, for scripts and agents. |
 | `crbn migrate` | Apply DB migrations against the running stack. |
-| `crbn migrate --serve` | With no stack running: start only Postgres, Storage, GoTrue, Realtime, PostgREST and the gateway, migrate, and leave them running once the API answers (CI's database tests). `crbn down` stops them. |
+| `crbn migrate` with `CI` set | Boot only Postgres, Storage, GoTrue and Realtime, apply every migration, then start PostgREST and the gateway and leave them running (GitHub's runners set `CI`). `crbn down` stops them. |
 
 `CARBON_DEV_APPS` skips the picker: `CARBON_DEV_APPS=erp,mes,email crbn up`.
 Comma-separated, from `erp`, `mes`, `assembler`, `email`, `studio` — unrecognized names

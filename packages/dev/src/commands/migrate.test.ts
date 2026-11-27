@@ -6,11 +6,11 @@ import { describe, expect, it } from "vitest";
 import { standaloneServices } from "./migrate.js";
 
 describe("standaloneServices", () => {
-  it("boots every crbn-shared service without --serve, as before", () => {
+  it("boots every crbn-shared service outside CI, as before", () => {
     expect(standaloneServices("shared", false).shared).toEqual([]);
   });
 
-  it("boots only Postgres and Storage of crbn-shared under --serve", () => {
+  it("boots only Postgres and Storage of crbn-shared in CI", () => {
     expect(standaloneServices("shared", true).shared).toEqual([
       "postgres",
       "storage"
@@ -28,7 +28,7 @@ describe("standaloneServices", () => {
     });
   });
 
-  it("boots the same worktree services with or without --serve", () => {
+  it("boots the same worktree services in CI or not", () => {
     for (const mode of ["shared", "isolated"] as const) {
       const { migration, api } = standaloneServices(mode, false);
       expect(standaloneServices(mode, true)).toMatchObject({ migration, api });

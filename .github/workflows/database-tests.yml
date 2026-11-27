@@ -73,12 +73,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @carbon/config build
 
-      # Boots only the shared Postgres and Storage, GoTrue and Realtime,
+      # With CI set, boots only the shared Postgres and Storage, GoTrue and Realtime,
       # applies every migration to a fresh database, then starts PostgREST and
       # the gateway and returns once they answer, leaving them running. The
       # types and swagger are Database types' to check.
       - name: Migrate an empty database and start PostgREST
-        run: packages/dev/bin/crbn migrate --no-regen --serve
+        run: packages/dev/bin/crbn migrate --no-regen
 
       # Without a local database the suite skips every test and passes, so
       # this fails the job instead.

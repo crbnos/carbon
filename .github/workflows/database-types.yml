@@ -58,10 +58,10 @@ jobs:
             node-modules-
       - run: pnpm install --frozen-lockfile
 
-      # Standalone `crbn migrate` boots the shared backend and migration services,
-      # applies every migration to a fresh worktree database, regenerates its
-      # types, boots PostgREST and the gateway for the swagger schema, then
-      # stops the worktree services.
+      # With CI set, `crbn migrate` boots only the shared Postgres and Storage,
+      # GoTrue and Realtime, applies every migration to a fresh worktree
+      # database, regenerates its types, then starts PostgREST and the gateway
+      # for the swagger schema and leaves them running.
       - name: Migrate an empty database and regenerate the types and swagger
         env:
           CARBON_DEV_YES: "1"
