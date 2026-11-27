@@ -116,7 +116,7 @@ its query; delete it once Lingui strips the query itself.
   function declaration or a plain `const X = () => …`. Inside a component passed inline
   to a call — `memo((props) => …)`, which is most ERP tables — Lingui 6.9.0 expands it
   into a call on the global `@lingui/core` instance instead, which throws at runtime
-  for the reason above. Extract, typecheck and Biome do not catch it. There, build the
+  for the reason above. Extract, typecheck and oxlint do not catch it. There, build the
   string in a function-declaration hook (`useReleasedJobsMessage` in `JobsTable.tsx`,
   `useBatchCountMessages` in `BatchesTable.tsx`) and call the hook from the component.
   Verify a new one by compiling the file (Vite `transformRequest`) and checking that no

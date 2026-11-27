@@ -7,11 +7,19 @@ paths:
   - "packages/database/src/mrp-engine.ts"
   - "packages/database/src/mrp-netting-sequence.ts"
   - "packages/utils/src/planning-sizing.ts"
+  - "packages/utils/src/planning-time-fence.ts"
+  - "packages/database/src/planning-lock.ts"
   - "apps/erp/app/modules/{production,purchasing}/ui/Planning/**"
   - "apps/erp/app/modules/production/planning-action-claims.ts"
+  - "apps/erp/app/modules/production/production.utils.ts"
+  - "packages/database/supabase/migrations/*planned-order*.sql"
   - "apps/erp/app/modules/settings/ui/Planning/**"
   - "apps/erp/app/routes/x+/{production,purchasing}+/planning*.tsx"
   - "apps/erp/app/routes/x+/settings+/planning.tsx"
+  - "apps/erp/app/routes/api+/production.planned-orders.ts"
+  - "apps/erp/app/routes/api+/production.planning-open-jobs.ts"
+  - "apps/erp/app/routes/api+/purchasing.planning-open-lines.ts"
+  - "apps/erp/app/routes/api+/purchasing.planning-supplier-parts.ts"
   - "apps/erp/app/modules/production/production.service.ts"
   - "apps/erp/app/modules/production/production.server.ts"
   - "apps/erp/app/modules/purchasing/purchasing.service.ts"
@@ -84,7 +92,9 @@ Phase-7 write) and throws on failure.
    `demandProjection`, and the rows an earlier run wrote (`planningAction`,
    `demandForecast` with
    `forecastMethod = 'mrp'`, `demandForecastSource`, `supplyForecast`, non-zero
-   actuals), plus the stock-only sources: an `itemPlanning` row with a positive
+   actuals, and `plannedOrder` rows with status `Planned` or `Firm` — a Firm
+   order is the planner's supply and still explodes, and a Planned one due
+   after the worklist's 48 weeks has no `planningAction`), plus the stock-only sources: an `itemPlanning` row with a positive
    floor its policy reads (minimum reserve; safety stock on Demand-Based
    Reorder; reorder point on Fixed Reorder Quantity / Maximum Quantity) and
    negative `itemStockQuantities` — the planning actions size an Order / Make
@@ -166,8 +176,9 @@ Phase-7 write) and throws on failure.
    `type: "company" | "location" | "item" | "job" | "purchaseOrder" |
    "salesOrder"`, `id?` (required for non-company), `companyId`, `userId`.
    Computation engine is
-   `packages/database/src/mrp-engine.ts` (`explodeBom(...)`, `@carbon/database/mrp-engine`),
-   also used by `getMethod` (`production.service.ts`).
+   `packages/database/src/mrp-engine.ts` (`explodeBom(...)`, `@carbon/database/mrp-engine`);
+   `planCompany` is its only caller (`production.service.ts` imports only
+   `effectiveReplenishment` from it).
 
    - **Periods**: generates/fetches weekly `period` rows 72 weeks forward from
      today on the company's clock (`WEEKS_TO_FORECAST = 18 * 4`, `"Week"`
@@ -228,10 +239,13 @@ Phase-7 write) and throws on failure.
      production `max_rows = 1000`
      truncates bare `.select("*")` reads, and the dev stack does NOT enforce
      the cap, so truncation is invisible locally.
-   - **Writes are atomic**: the Phase-7 delete-and-rewrite of
+   - **Writes are atomic**: the Phase-7 diff-write of `plannedOrder`
+     (first, under the company planning lock — see *Planned orders* below) and
+     the delete-and-rewrite of
      `demandForecast`/`demandForecastSource`/`supplyForecast` + actual inserts
-     runs in ONE Kysely transaction — a failed run leaves prior planning data
-     intact.
+     run in ONE Kysely transaction — a failed run leaves prior planning data
+     intact. An attempt whose planned orders changed since it read them rolls
+     back and plans again, up to 5 attempts (*Planned orders* below).
    - **Key encoding**: every composite map key goes through `makeKey` /
      `makeLocationItemKey` / `makeActualKey` in `packages/database/src/mrp-engine.ts` (joined on
      `KEY_SEP = "\x1f"`). Never build `${a}-${b}` keys — ids are caller-supplied
@@ -240,7 +254,26 @@ Phase-7 write) and throws on failure.
      `packages/database/src/mrp-engine.test.ts`.
    - **BOM explosion**: for `Make` items, explodes the active make method to
      derive child demand with low-level-code ordering, per-period inventory
-     netting, and lead-time offsetting. A line with quantity 0 is left out
+     netting, and lead-time offsetting. A child's demand lands where the
+     parent's order STARTS: the parent's period less the PARENT's lead time
+     (7 days when unset), floored at period[0]. The child's own order sizing
+     (`computePlanningOrders`) then subtracts the child's lead time from that
+     date, so each lead time is applied once. Open job materials are placed
+     the same way, by the job item's lead time. A key that gets planned orders
+     (*Planned orders* below) explodes each planned order instead: its
+     quantity plus scrap, in the order's release week (its start, by the same
+     rule). In a run (`scrapRateByItem` passed) every explosion sizes as job
+     creation does (`computeJobQuantities`): the raw-need path explodes the
+     net requirement plus the parent's scrap, and each child adds its own
+     scrap — except a made Make to Order child, which adds it when it
+     explodes itself (so a part under a Make to Order subassembly is not
+     planned short by the subassembly's scrap). This holds in every segment.
+     The rates are every item's `itemReplenishment.scrapPercentage`
+     (`loadPlannedOrderInputs`), with a planning row or not, as job creation
+     uses them.
+     Without `scrapRateByItem`, `explodeBom` adds no scrap. Pinned by the
+     `mrp-engine.test.ts` scrap cases and `planned-orders.test.ts` "explosion
+     parity with job creation". A line with quantity 0 is left out
      (`bomChildren`, `packages/planning/src/mrp/bom-children.ts`), never
      defaulted to 1: a configured item carries every configuration's lines at 0
      except the default's, and `|| 1` exploded all of them per parent.
@@ -254,16 +287,47 @@ Phase-7 write) and throws on failure.
    - **Planning actions**: after the Phase-7 transaction commits, `runMrp` calls
      `generatePlanningActions` (`planning-actions.ts`), which diff-writes the
      `planningAction` worklist in its own transaction. That transaction takes
-     `pg_advisory_xact_lock` on `planning-actions:<companyId>` BEFORE it reads
-     the existing rows: nothing else serialises `runMrp` per company (the cron
-     and the five route-triggered runs can overlap), and two runs that both
+     `pg_advisory_xact_lock` on `planning-actions:<companyId>`
+     (`lockCompanyPlanning`, `@carbon/database/planning-lock`, the one lock
+     every planned-order and planning-action writer takes) BEFORE it reads
+     the existing rows. The cron and the five route-triggered runs can overlap
+     for one company. The Phase-7 transaction takes its own lock, on
+     `mrp:<companyId>`, as its first statement and before the planning lock
+     (no other writer takes both, so the two never wait in opposite orders),
+     so two runs never delete and insert at the same time (two runs that both
+     found no rows used to both insert, and `demandForecastSource`, which has
+     no natural key, doubled).
+     **Newest read wins.** Before it reads any input, each attempt of a run
+     (`loadPlanAndWrite`; a retry reads again, so it starts again) takes its
+     start from the database clock (`databaseNow`, `run-order.ts`: `now()` as
+     fixed-width UTC text to the microsecond, so two starts order as strings
+     and no JS `Date` or app-server clock is involved). Under the `mrp:` lock
+     it reads `companySettings.lastMrpRunStartedAt`; when that is later than
+     its own start (`newestRunSaves`, pure, `run-order.test.ts`), a run that
+     read newer inputs has already saved, so it writes nothing (no planned
+     orders either), skips `generatePlanningActions`, logs at info and returns
+     `{ success: true, skipped: true }` — a success to every caller (the ERP
+     `runMRP`, the cron, `planDemoCompany`). Otherwise it records its start
+     there in the same transaction, after the planned-order write. The
+     worklist write (`writePlanningActions`) repeats the check under the
+     planning lock (`runStartedAt`), BEFORE its planned-order snapshot check,
+     so an older run whose forecasts committed first neither writes its
+     actions over a newer run's nor plans again. A company
+     with no `companySettings` row has nothing to compare: its runs save and
+     nothing is recorded. Two runs that both
      read "no row" for a natural key both insert — the second fails on
      `planningAction_natural_key_idx` and rolls the whole write back. Under
      the lock the second run reads the first run's rows and updates them in
      place. Its errors propagate, so
      a run whose actions failed reports failure even though the forecast rows
      are already committed. The write is `writePlanningActionDiff`
-     (RecordingDriver-tested in `planning-actions.write.test.ts`): its DELETE
+     (`planning-action-write.ts`, with `naturalKey`, `keyPeriodFor`,
+     `diffPlanningActions`, `writePlanningActions` and `writePegs`;
+     RecordingDriver-tested in `planning-actions.write.test.ts`). Under the lock,
+     `writePlanningActions` first reads which of the jobs, PO lines and planned
+     orders the candidates name still exist (one `FOR KEY SHARE` read per kind,
+     `withLiveTargets`) and drops a candidate whose order is gone, so a document
+     deleted during the run no longer fails the insert on its foreign key. Its DELETE
      and UPDATE skip `Actioned` rows themselves, because the run read the
      actions before diffing and a row applied in between would otherwise be
      deleted or reopened. Updates go as one `UPDATE … FROM (VALUES …)` per set
@@ -443,6 +507,324 @@ one gate in this package (`packages/planning/AGENTS.md`). The posting side
 A company with no planning group gets the same output as before: the golden
 snapshot did not change, and `groupPegInputs` is empty for it.
 
+## Planned orders (MRP v2 Phase 2a)
+
+Spec: `.ai/specs/2026-08-22-mrp-v2-planned-order-generation.md` §2a (plan
+`.ai/plans/2026-11-14-mrp-v2-phase-2a.md`). MRP keeps the new supply it suggests
+as `plannedOrder` rows and explodes the LOT-SIZED quantity of a Make order (plus
+scrap) to its components in the same run — so a reorder-point need and a lot-size
+round-up reach the components before any job exists. Not built yet (2b): pegs on
+planned orders, the projection RPCs (`get_*_planning`,
+`calculate_quantity_to_order`) reading `plannedOrder`, replacing
+`supplyForecast`, working-day dates. The grid wrappers read it for their
+Actions filter and `latestOrderDate` (`20261126091514`).
+
+- **Which keys.** Only the common segment, and only an item that is a row of
+  the planning grid: an `itemPlanning` row at the location (`runMrp` INNER JOINs
+  `itemPlanning` ⋈ `item` ⋈ `itemReplenishment`, as the RPCs do), active, not
+  Non-Inventory, replenishment Make (→ `Make`) or Buy / Buy and Make (→ `Buy`),
+  no `itemSupersession` row, and not built as Make to Order (and Make) by any
+  BOM line (`inlineProductionItemIds`, `plan-company.ts`) — the test is
+  `eligibleOf` in `planned-orders.ts` — and no Consume First redirect (`explodeBom`'s
+  `netAndExplode`, `mrp-engine.ts`, calls `planSupply` only for a common key
+  outside `consumeFirstRedirect`). Every other key — project and planning
+  group segments, superseded items, Make to Order children — keeps the Phase 1
+  path (lot-for-lot for segments, raw-need explosion with the child
+  lead-time offset), plus the run's scrap on that explosion (*BOM explosion*
+  above).
+- **The hook.** `explodeBom` takes optional `planSupply`, `extraPlanningKeys`,
+  `scrapRateByItem`; without them it is exactly Phase 1 (the golden test,
+  `plan-company.test.ts`, runs it that way). `scrapRateByItem` also
+  adds scrap on the raw-need path (*BOM explosion* above). `planSupply` is called once
+  per common key with no Consume First redirect, after its gross demand is complete;
+  null = Phase 1 path for the key. It returns `PlannedSupplyResult.explosions`
+  (`releasePeriodIndex`, `quantity` incl. parent scrap, `contributorPeriodIndex`),
+  which replace the raw net-requirement explosion: each goes to the children at the
+  RELEASE week (no child lead-time offset — Phase 1 used the child's lead time),
+  child scrap added through `scrapAllowance` except for a Make to Order child that
+  is made (its own job adds it), contributors inherited once per BOM line per week.
+  Planned supply never enters the key's running balance, so the common surplus a
+  project segment may draw is unchanged. `extraPlanningKeys`: eligible keys with a
+  reorder point > 0 on Fixed Reorder Quantity / Maximum Quantity, plus every key
+  with a held order — visited at their level even with no demand.
+- **Sizing is the worklist's.** `createPlanSupply` (`planned-orders.ts`, pure) sizes
+  each key with `sizeRowSupply` (`row-sizing.ts`) — the code `deriveRowActions`
+  ran inline, extracted with no behaviour change — over a projection of on-hand +
+  open supply + held planned orders − gross, and the open jobs / PO lines
+  (`buildOpenSupplyOrders`, `open-supply-orders.ts`, also extracted) plus the held
+  orders as open orders carrying `plannedOrderId`. Each new Order / Make becomes a
+  `GeneratedPlannedOrder`: `releaseDate` = the sizing's `latestOrderDate` (due date
+  − lead time, CALENDAR days), `periodId` = week of the due date, `splitIndex` per
+  (week, type) by due date then quantity, skipping held Planned rows' indexes,
+  `scrapQuantity` = `scrapAllowance(quantity, scrapPercentage)` for Make (0 for
+  Buy, which explodes nothing), `quantityTrace` = `{ policyName, triggerValues,
+  quantity, scrapQuantity, explosionQuantity }`, `supplierId` = the preferred
+  supplier, `lowLevelCode` = the level the engine plans the key at (`planSupply`'s
+  `lowLevelCode` argument, from the engine's own leveling BOM). `runMrp` always passes `plannedOrderInputs` (`loadPlannedOrderInputs`,
+  `planned-order-inputs.ts`, Kysely reads, the policy converted once by
+  `planningPolicyRowOf`, `row-sizing.ts`; the existing planned orders come from the run's snapshot, below);
+  `planCompany` without them plans exactly as Phase 1.
+- **Held and the time fence.** One rule, `@carbon/utils` `planning-time-fence.ts`,
+  shared by the engine and the drawer's "Fence" marker:
+  `resolvePlanningTimeFenceDays(item, location)` = `itemPlanning.planningTimeFenceDays` ??
+  `location.planningTimeFenceDays` ?? 0, calendar days, 0 = no fence (the item's
+  explicit 0 opts out; a negative or unreadable value is 0). `isPlannedOrderHeld`:
+  Firm, or Planned with `releaseDate <= today + fence` (fence > 0). Held orders keep
+  quantity and dates, count as fixed supply, and a held Make order still explodes.
+  Each held order MRP does not Cancel is also an Order / Make in `newSupplyByRow`
+  (its own quantity, dates and `plannedOrderId`; policy from its stored
+  `quantityTrace`), so its week's action covers it and ordering converts it. The
+  sizing already counted it, so it adds no new order. A held order past the
+  horizon is not supply and gets none. **A planned order is never frozen**
+  (`isOrderFrozen` is false when the order has a `plannedOrderId`): no document
+  exists, so a Firm order due inside its lead time still gets an Expedite or an
+  Increase. A NEW order starting before today + fence
+  is moved: release = fence end, due date shifted by the same days, period = the
+  week holding the new due date, and a signal (`plannedOrderSignals.expediteTo`)
+  becomes an Expedite on that planned order to the real need date, never before
+  today. With a fence, the sizing also judges each week before the earliest
+  week a new order can arrive (fence end + lead time,
+  `earliestNewSupplyIndex` on `sizeRowSupply`, `sizedFrom` in `row-sizing.ts`)
+  by the stock it will have in that week: a shortfall there no new order can
+  reach is ordered once, not again on every run. Without it, a reorder point or
+  safety stock short before the fence end read as short on each run, and each
+  run added another order the fence moved onto the same date as the held one.
+  With no fence the sizing is unchanged (the worklist parity holds). A held order
+  nothing needs gets a Cancel (no silent delete). Nothing
+  stores the hold; it is recomputed per run. A held order (Firm, or Planned
+  inside the fence) of an item MRP no longer plans (`eligibleOf` false:
+  deactivated, superseded, built as Make to Order, no planning row), or of
+  the wrong type for the item (a Make order of an item now bought, a Buy
+  order of one now made), is kept, never counted as supply, never exploded,
+  and gets a Cancel with the reason (`ineligibleHeld`, `planned-orders.ts`).
+  A held order of the reserved Transfer type is left as it is, with no
+  action.
+- **Read first, check before the write, retry.** Each attempt of a run
+  (`loadPlanAndWrite`, `mrp.ts`) reads the planned orders BEFORE any other input
+  (`readPlannedOrderSnapshot(…, { withOrders: true })`, `planned-order-write.ts`:
+  the database's `now()`, then every Planned and Firm
+  row with its `updatedAt` as UTC text). Under the planning lock, the write reads
+  the Planned and Firm rows and every row created since that `now()`;
+  `plannedOrdersChangedSince` (pure) sees a firm, unfirm, edit or convert (a
+  changed `updatedAt` or status, or a row gone from Planned / Firm), a Cancel (a
+  loaded id missing) and another run's insert (a row created after the read).
+  Then `writePlannedOrderDiff` throws `PlannedOrdersChangedError` before any
+  write, the Phase-7 transaction rolls back, and `retryOnPlannedOrderChange` plans
+  again — up to `MAX_PLAN_ATTEMPTS` (5) attempts in all, with a random pause of
+  up to `MAX_RETRY_PAUSE_MS` (250 ms) between them so overlapping runs stop
+  retrying in step, then the run fails with "Run MRP again". Any other error is
+  not retried. Without it a convert that
+  committed between the run's read and its write was overwritten (a converted
+  week planned again is a second Make). Tested in `planned-order-write.write.test.ts`.
+- **Diff-write.** `writePlannedOrderDiff(trx, …)` (`planned-order-write.ts`) is the
+  first write of the Phase-7 transaction, after only the `mrp:` lock and the
+  newest-run check (*Planning actions* above): it takes the planning lock, runs the
+  check above (given the run's `snapshot`), reads the Planned rows at the planned
+  locations, updates a natural-key match only when a
+  value changed, inserts the rest, deletes unmatched Planned rows unless held, and
+  never touches Firm, Converted or held rows (every DELETE / UPDATE re-checks
+  `status = 'Planned'`). Set-based, 500 rows a statement, every statement scoped by
+  `companyId`. Returns natural key → id for the worklist (`withPlannedOrderIds`
+  then names each new Order / Make's id). RecordingDriver-tested in
+  `planned-order-write.write.test.ts`; `planned-order-write.database.test.ts`
+  proves a failed later statement of the transaction leaves the previous planned
+  orders unchanged. A dataset apply drops `plannedOrder`
+  (`TRANSIENT_MRP_TABLES`, `datasets/wipe.ts`); a backup keeps it (Firm rows are
+  planner state).
+- **The planning lock.** `pg_advisory_xact_lock(hashtextextended('planning-actions:<companyId>', 0))`
+  (`lockCompanyPlanning` / `planningLockKey`, `@carbon/database/planning-lock` —
+  the one definition; the planning package and the ERP both import it, so the
+  writers can never drift onto different keys). Taken first by: the run's planned-order write,
+  `generatePlanningActions`, `settleNewSupplyPlanningActions` (settle + convert),
+  `firmPlannedOrder`, `unfirmPlannedOrder`, `updatePlannedOrders`,
+  `applyPlannedOrderPlanningActions`. The lock serialises the writes; the run's
+  inputs are read before it, so a person's change made after that read is caught
+  by the snapshot check above and the run plans again (an unfirm could otherwise
+  clash with a row the run inserts on the same key, and a convert be overwritten).
+  It is the only lock: nothing locks a whole run (a run lock held on one
+  connection while the run worked on others hung a run on a one-connection
+  pool), so runs overlap and part through the retry above.
+- **Worklist.** `generatePlanningActions` takes the run's planned-order output as
+  one `plannedOrders` argument (`newSupplyByRow`, `documentChangeActionsByRow`,
+  `changeActions`, `signals`, `idByKey`, `heldIds`, `snapshot`); for a row the
+  engine planned, `deriveRowActions` (`row-actions.ts`, with
+  `deriveReleaseActions`, `plannedOrderActions` and `onePerPlannedOrder`) takes
+  it as `engine: { supply, changeActions }` and skips the RPC row's sizing — so the Order / Make total of a week equals its planned orders
+  still to convert, new AND held (Firm, or Planned inside the fence; a held one
+  MRP cancels is left out). Each engine Order / Make candidate stands for one
+  planned order and names it (`plannedOrderKey`, plus `plannedOrderId` for a held
+  one or a new one once written), but the stored Order / Make carries NO
+  `plannedOrderId` (`engineNewSupply` drops it; `planningAction_change_target_chk`):
+  one action covers every planned order of its week, summed per week as in
+  Phase 1. Only change actions on a held planned order carry it
+  (`requiresManualAction` always false, no Release). `plannedOrderActions` adds
+  the engine's change actions on held orders and the fence Expedites even for an
+  item with no RPC row this run (a fence Expedite is sized by the new order, not a
+  held Firm order that shares its natural key); `onePerPlannedOrder`
+  keeps one per planned order (Cancel > Expedite / Defer > Increase / Decrease).
+  `naturalKey` targets `purchaseOrderLineId ?? jobId ?? plannedOrderId`.
+- **Convert by id.** The suggested orders are one per unconverted (Planned or
+  Firm) planned order of the action's week, with its quantity, dates and
+  `plannedOrderId`, ordered by due date then `splitIndex`
+  (`productionOrdersFromActions` / `plannedOrdersFromActions` given
+  `plannedOrders`, `planned-orders-from-actions.ts`); the current week's action
+  (the page's first period) also takes every overdue planned order
+  (`plannedOrderWeekIndex`, `@carbon/utils`), because MRP sizes and sums it
+  there — unless the row has an Order / Make of a week already past (the week
+  turned before MRP ran again), Open OR Dismissed: that action counted the
+  overdue orders, so the current week's action takes only its own week's
+  (`hasPastWeekAction`, which reads the row's actions, not just the offered
+  ones), and a dismissed one's overdue orders are offered nowhere. Only the
+  LATEST Open past week's action (by its date, then its week) takes the overdue
+  orders (`overdueOwnerOf`); another past week's action, or a Dismissed one,
+  takes none and is split by its policy. A week with no planned order is split
+  by its policy as before. The drawers get the planned
+  orders from `DrawerPlannedOrders`' `onOrdersLoaded` (re-read through
+  `refreshKey` after an order is placed); a bulk Make / Order on rows never
+  opened reads them with `getRowPlannedOrders` (`production.utils.ts`, 100 items
+  per request). Each order sends `plannedOrderId` (`productionOrderValidator` /
+  purchasing's `plannedOrderValidator`) and `orderPlannedJobs` / `orderPlannedPurchases`
+  pass it, with `asOf` = the location's today, to `settleNewSupplyPlanningActions`.
+  In the SAME transaction under the same lock it calls
+  `convertPlannedOrdersForActions` (`production.service.ts`), which reads the
+  candidates `FOR UPDATE` and matches them with the pure
+  `matchPlannedOrdersToDocuments`:
+  1. A document that names its planned order converts that one, while it is
+     still Planned / Firm with the same item, location, segment and type. One
+     SMALLER than what is left of it only takes its quantity off (the order
+     keeps its status; several documents naming one order count together).
+     One LARGER converts it and takes the excess off its week's next Planned
+     orders, as in 2. A stale id (gone, converted, another
+     item / location / segment / type, or converted earlier in the batch)
+     falls back to 2.
+  2. Each other document takes a planned order of the week of the action it
+     settled, per (item, location, segment, week, type) — the current week
+     (the period holding `asOf`) also holding every overdue planned order:
+     first one of EQUAL quantity (Planned before Firm, then due date and
+     `splitIndex`), then the next Planned one by due date, then `splitIndex`
+     (the suggestions' order, so an overdue one goes first), which a smaller
+     document only reduces. A document of a past week's action draws only on
+     the overdue orders (due before the current week's start), and its excess
+     never reaches the current week's. A document of the current week draws
+     only on the current week's when its row has a past week's action: one
+     settled in the same batch, or an Open / Dismissed Order / Make of a week
+     before the current one (`pastWeekActionRows`, read under the lock). It
+     differs from the drawer in one case: with several past weeks' actions,
+     every past week's document draws on the overdue orders, where the drawer
+     offers them to the latest Open one only. A LARGER document converts it and is also the supply of the
+     week's next Planned orders: each drops by what is left of the excess, and
+     one the excess covers whole is deleted (its actions cascade). A Firm order
+     converts only by id or equal quantity, so a smaller job never takes it,
+     and an excess never touches it. No row converts twice. A reduced order's
+     Make scrap is restated and its Open / Dismissed change actions deleted.
+  Converted rows get `jobId` / `purchaseOrderLineId`, lose `firmedBy` /
+  `firmedAt` (the CHECK), and their Open / Dismissed change actions are deleted
+  (the document is the order now; MRP raises actions on it). One read, one
+  UPDATE, one DELETE for the batch. A planned order with no document left
+  stays; the next run sizes it again. Two orders merged into one PO line point
+  both planned orders at it. A Converted row cascades away with its document.
+  Pinned by `apps/erp/test/database/convert-planned-orders.test.ts` and
+  `apps/erp/test/planned-orders-from-actions.test.ts` ("suggestions from the
+  week's planned orders").
+- **Firm / unfirm / edit / apply** (`production.service.ts`, operations in
+  `production.server.ts`, NOT published to MCP): `readPlannedOrderForChange`
+  refuses an order at another location than the posted `locationId` (`conflict`,
+  as `readPlanningJob` does for a job), checks Edit on production's Material
+  Planning for a Make order and on purchasing's for a Buy order
+  (`plannedOrderChangePages`, `production.utils.ts`; the operation's gate is
+  `anyOf` the two, `plannedOrderChangeGate`, and the body decides), refuses Transfer and Converted. `firmPlannedOrder` Planned → Firm with `firmedBy` / `firmedAt`;
+  `unfirmPlannedOrder` back, taking the next free `splitIndex` when MRP planned
+  the same key meanwhile; `updatePlannedOrders` (one statement) sets quantity and /
+  or due date and FIRMS the row (keeps an existing firm stamp) — a new due date
+  moves `releaseDate` by the same days and moves the row to the `Week` period
+  holding it, a new Make quantity restates `scrapQuantity` (CEIL, item scrap rate).
+  `applyPlanningActions` in both modules routes actions with `plannedOrderId` to
+  `applyPlannedOrderTargets` (`production.service.ts`; it never throws and returns
+  `{ applied, errors, changedPlannedOrderIds }`), which runs
+  `applyPlannedOrderPlanningActions` (one transaction: lock + `FOR UPDATE` the
+  orders, refuse another `orderType` / Converted / gone, claim, one
+  `updatePlannedOrders` for Expedite / Defer (due date) and Increase / Decrease
+  (quantity), one DELETE for Cancels — the FK cascades the actions — then release
+  refused claims). A Cancel on a Buy planned order needs no `delete: purchasing`:
+  it is a suggestion, not a document. Both Apply operations read every action and
+  target before the first write, and report a later failure in `errors` with what
+  was applied, never as an error after a committed write. Each row is checked on
+  its own: production's gate is Edit on Production → Material Planning and a job
+  row also needs Edit on Jobs (`applyPlanningJobActionsPermission`); purchasing's
+  gate is Edit on Purchase Orders or on Purchasing → Material Planning, a PO-line
+  row needs Purchase Orders Edit and a planned-order row Material Planning Edit
+  (`plannedOrderChangePages.Buy`). A refused row goes to `errors`. Both `planning.update` routes take
+  `firmPlannedOrder` / `unfirmPlannedOrder` / `updatePlannedOrder` (purchasing calls
+  the production operations).
+  **Every change re-plans.** Firm, unfirm and edit run MRP once the change commits
+  (`replanAfterChange(ctx, reason)`, `production.service.ts`, the one building
+  block `replanAfterItemChange` uses too; `reason` is only logged). In both
+  modules `applyPlanningActions` runs its whole body inside
+  `replanAfterPlannedOrderChanges`, which runs MRP once after it when
+  `applyPlannedOrderTargets` reported a changed planned order
+  (`changedPlannedOrderIds`) — whatever the body returns, so no early return
+  skips it. Without it the week's Order / Make kept the old total until the
+  next scheduled run. A failed run is logged and never fails the change.
+  After a successful post `DrawerPlannedOrders` refetches its orders (the post
+  is a plain `fetch`, which the router's invalidation does not see), calls
+  `onReplanned` and revalidates the page. Every run is company-wide, so a
+  component row's suggestions may have moved too: the production grid drops
+  EVERY row's draft and cached planned orders, as Recalculate does
+  (`dropAllDrafts` of `usePlanningRowDrafts`, through the drawer's
+  `onPlanReran`), and bumps the editor
+  reset key. Planning or releasing a Draft job does the same. An Apply that
+  changed a planned order drops them the same way (`usePlanningActions`
+  calls `onRowsReplanned` with the rows `rowsReplannedByApply` returns, both in
+  `usePlanningActions.ts`; the grid's `draftVersion` resets the drawer's
+  editors). Both grids keep this state in one hook, `usePlanningRowDrafts`
+  (`ui/Planning/`), with the difference as an option: `replanDrops: "everyRow"`
+  for production and `"appliedRows"` for purchasing. The purchasing grid, after
+  an Apply that changed a planned order, drops only the applied rows' drafts: its
+  Apply changes Buy planned orders only, and a Buy order explodes nothing, so
+  no other row of the page moves. A Make order explodes to its components,
+  which may be rows of the production grid too. Placing an order drops only
+  its own row's draft. Pinned by
+  `apps/erp/test/database/planned-order-firm.test.ts`.
+- **UI.** Both order drawers render `DrawerPlannedOrders` (Planned Orders section,
+  above Suggested Jobs / Orders, common segment only): `useLoaderQuery` reads
+  `api+/production.planned-orders` (`path.to.api.plannedOrders`; its loader runs
+  `getDrawerPlannedOrders` and `getPlanningTimeFenceDays` from
+  `production.utils.ts` as the caller, View on production's Material
+  Planning for Make and on purchasing's for Buy; 400 on a bad query, 500 on a failed read). The
+  router's invalidation makes it follow an Apply or an order placed, and
+  `refreshKey` refetches it after the drawer re-seeds (Plan, Release, an order
+  placed with the drawer left open), which drops the grid's copy of the row's
+  planned orders. `onOrdersLoaded` runs on every read (`dataUpdatedAt`), not
+  only on a changed answer: the read after a re-seed often returns the same
+  orders, and TanStack keeps the same `data` reference for them. It never runs
+  while a read is in flight or after a failed one, and every open reads again
+  (`refetchOnMount: "always"`), so the suggestions are never built from a
+  cached answer whose planned orders a run since has converted or replaced. It feeds `PlannedOrdersGrid` (`PlannedOrdersGrid.tsx`) — status
+  chip, release date, due date, quantity with the trace tooltip ("Projected stock
+  -3 → Fixed Reorder Quantity 5 → scrap +1 → explode 6"), a "Fence" marker on a
+  Planned order `isPlannedOrderHeld` holds (the engine's rule), Firm / Unfirm, and
+  the order's action. A cell edit saves; on
+  a Planned order the drawer first asks "Keep your numbers through plan
+  updates?". `PlanningActionLines` names a planned-order target "Planned order",
+  and `planningActionNeedsReview` is false for it (always Apply). The fence fields
+  are on `LocationForm` and `ItemPlanningForm` ("Planning and Sales" section,
+  beside the planning horizon; the location value as placeholder; a new revision does not copy it). The column is
+  NOT NULL: `upsertLocation` (`resources.service.ts`) inserts a new location with
+  no fence as 0, and an update without the field leaves it out of the UPDATE, so
+  `updateLocation` called without `planningTimeFenceDays` (the API, MCP)
+  keeps the stored fence; the location form route always sends it, an emptied
+  field as 0. `updateItemPlanning` (`items.server.ts`) keeps the stored item fence
+  the same way when `planningTimeFenceDays` is left out; `null` inherits the
+  location's, and the four item planning routes send an emptied field as `null`. Pinned by `apps/erp/test/database/location-planning-fence.test.ts`.
+- **Horizon gap.** The engine plans 72 weeks, the worklist reads 48
+  (`WEEKS_TO_PLAN`): a new planned order due after week 48 gets no Order /
+  Make. A change action on a held planned order in a later week goes in the
+  worklist's last week, with its own date, so a person still sees it
+  (`plannedOrderActions`, `row-actions.ts`).
+- The projection RPCs (`get_*_planning`, `calculate_quantity_to_order`) do not
+  read `plannedOrder` yet. `supplyForecast` stays: the `planning.update` routes still
+  write it and Phase 7 still deletes it.
+
 ## Planning data model (tables — all in newest schema)
 
 Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
@@ -455,7 +837,8 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | `demandForecast` | `(itemId, locationId, periodId, planningSegmentId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
 | `demandActual` | `(itemId, locationId, periodId, sourceType, planningSegmentId)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'\|'Project Material'\|'Project Borrow'` |
 | `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs); MRP never inserts it but DELETES every row at the company's locations in Phase 7 |
-| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261006130000`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease / Release / Transfer / Borrow (Borrow is Phase 3); `status` = Open / Dismissed / Actioned. `planningSegmentId`, `fromProjectId` / `toProjectId` (a Transfer's owners, null = common) and `projectStockTransferId` (an applied Transfer) from `20261021004600`. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, segment, type, and the target order — or, for a new Order / Make / Transfer, its week — and the two owners) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, periodId)`. `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
+| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId` / `plannedOrderId`, `assignee` | the MRP worklist (`20261006130000`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease / Release / Transfer / Borrow (Borrow is Phase 3); `status` = Open / Dismissed / Actioned. `planningSegmentId`, `fromProjectId` / `toProjectId` (a Transfer's owners, null = common) and `projectStockTransferId` (an applied Transfer) from `20261021004600`. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, segment, type, and the target order — or, for a new Order / Make / Transfer, its week — and the two owners) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, plannedOrderId, periodId)` (`plannedOrderId` from `20261126091510`: a change action may target a planned order; FK `(plannedOrderId, companyId)` `ON DELETE CASCADE`; `planningAction_change_target_chk` keeps Order / Make / Transfer / Borrow targetless and gives every change type exactly one target). `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
+| `plannedOrder` | `(id, companyId)` | `orderType` (`Make` / `Buy` / reserved `Transfer`), `status` (`Planned` / `Firm` / `Converted`), `quantity`, `scrapQuantity`, `quantityTrace`, `dueDate`, `releaseDate`, `periodId`, `splitIndex`, `firmedBy` / `firmedAt`, `jobId` / `purchaseOrderLineId` | MRP v2 Phase 2a (`20261126091510`), see *Planned orders* above. Unique per (company, item, location, segment, type, week, `splitIndex`) while Planned (`plannedOrder_natural_key_idx`); `plannedOrder_firm_chk` ties `firmedBy` to Firm, `plannedOrder_converted_chk` ties a document to Converted. Read-only through the API, read as `planningAction` is: View on a Production page or Purchasing → Material Planning (`production.materialPlanning` owns it, `purchasing.materialPlanning` reads it) |
 | `supplyActual` | `(itemId, locationId, periodId, sourceType, planningSegmentId)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'\|'Project Borrow'` |
 | `demandForecastSource` | surrogate `id` | `sourceType`, `jobId`/`salesOrderLineId`/`demandProjectionId`, `parentItemId`, `quantity` | MRP lineage; enum `demandForecastSourceType` = `'Job Material'\|'Sales Order'\|'Demand Projection'`; CHECK exactly one source id set |
 | `itemPostingGroupResponsibility` | `(id, companyId)` | `locationId`, `itemPostingGroupId`, `responsibleEmployee` | one rung of the action owner ladder (`20261006130000`): the owner of an item group AT a location; UNIQUE `(companyId, locationId, itemPostingGroupId)`; RLS employee read, `settings_update` writes (`20261006130100`). Written by `upsertItemPostingGroupResponsibility` (a null employee deletes the row) |
@@ -522,7 +905,7 @@ to child demand. Note current `methodType` enum is
 ## Source views (open demand/supply)
 
 Newest defs: `openPurchaseOrderLines` in `20261117123417_open-po-lines-exclude-outside-processing.sql`,
-`openProductionOrders` in `20260811123619_widen-sales-production-scale.sql`,
+`openProductionOrders` in `20261125153018_open-production-orders-good-units.sql`,
 `openJobMaterialLines` in `20260926093417_open-job-material-lines-invoker.sql`,
 `openSalesOrderLines` in `20261006130001_demand-forecast-consumption.sql`.
 All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`,
@@ -542,7 +925,12 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
 - `openJobMaterialLines` — job status IN `('Planned','Ready','In Progress','Paused')`,
   `methodType != 'Make to Order'`.
 - `openProductionOrders` — job status IN those 4, `salesOrderId IS NULL`
-  (make-to-stock jobs only); `quantityToReceive = productionQuantity − received`.
+  (make-to-stock jobs only), not `consumeToProject`; `quantityToReceive =
+  GREATEST(quantity − quantityReceivedToInventory, 0)`, in GOOD units: the
+  scrap allowance (`productionQuantity − quantity`) is expected to be lost,
+  so it is not supply. Every reader books that one figure: MRP, the planning
+  actions, available-to-promise, the buildable check's on-order and the item
+  planning chart. Pinned by `apps/erp/test/database/open-production-orders.test.ts`.
 - `openPurchaseOrderLines` — `purchaseOrderLineType != 'Service'`, `purchaseOrderType <>
   'Outside Processing'` (the job it serves is the supply; receiving it stocks nothing), status IN
   `('To Receive','To Receive and Invoice','Planned')`; `dueDate` = the line's
@@ -667,7 +1055,9 @@ never offered a Cancel, Defer or Expedite.
   lands in the sizing projection (`firstNeedPeriodByOrder`'s `frozen`
   argument), so the need it misses gets new supply instead of a silent gap.
   Defer, Cancel and Release are unchanged. Before this an overdue job got
-  "Increase from 111 to 131" beside a Make for the same week.
+  "Increase from 111 to 131" beside a Make for the same week. A planned order
+  (an open order with `plannedOrderId`) is never frozen: no document exists, so
+  planning changes it directly.
 - **Change actions keep the policy's order rules** (`orderSizingRules`, the
   same definition the page split reads). A Decrease keeps the policy's
   minimum and lands on its whole multiples — `orderMultiple`, a Fixed Reorder
@@ -691,16 +1081,15 @@ never offered a Cancel, Defer or Expedite.
 - `runMrp` throws when the forecast-consumption settings cannot be read; the
   window decides what is persisted as `consumedQuantity`, so defaults are not a
   safe fallback.
-- **A job order is measured in GOOD units** — `job.quantity` less
-  `quantityReceivedToInventory`, from one read of the company's open jobs
-  (the same four statuses as `openProductionOrders`), never the view's
-  `quantityToReceive`, which is `productionQuantity` (quantity + scrap) less
-  received. A change action is applied to `job.quantity`, so on the view's
-  figure every job with a scrap allowance read as over-supplied, got "Only 80
-  of 84 is required", and got it again after the Decrease was applied.
-  `updatePlanningJob` restates `scrapQuantity` for the new quantity from the
-  item's scrap rate, as `insertJob` derives it. (The projection itself still
-  books `productionQuantity` as supply — a separate, older choice.)
+- **A job order is measured in GOOD units** — the view's `quantityToReceive`
+  (`job.quantity` less `quantityReceivedToInventory`, no scrap allowance).
+  The generator still reads the open jobs' `status` from `job` (the view does
+  not expose it). A change action is applied to `job.quantity`; when the view
+  counted the scrap allowance, every job with one read as over-supplied, got
+  "Only 80 of 84 is required", and got it again after the Decrease was
+  applied. `updatePlanningJob` restates `scrapQuantity` for the new quantity
+  from the item's scrap rate, as `insertJob` derives it. The projection books
+  the same figure as supply.
 - The `demandProjection.consumedQuantity` write touches only rows whose value
   changed (`IS DISTINCT FROM`) and leaves `updatedAt` / `updatedBy` alone:
   consumption is derived, and the audit columns name the planner who entered
@@ -755,7 +1144,9 @@ never offered a Cancel, Defer or Expedite.
   and a bulk order for rows never opened all read the item's OPEN new-supply
   actions (`openNewSupplyActions` + `plannedOrdersFromActions` /
   `productionOrdersFromActions`, `ui/Planning/planned-orders-from-actions.ts`,
-  tested by `apps/erp/test/planned-orders-from-actions.test.ts`): each action
+  tested by `apps/erp/test/planned-orders-from-actions.test.ts`): in the common
+  segment, one per unconverted planned order of the action's week (*Planned
+  orders* → *Convert by id*); otherwise each action
   split back into the orders its policy sized, on the action's own week, in
   purchase units for a PO (rounded up by the chosen supplier part's factor).
   MRP sums the orders a week needs into one action (the natural key), so
@@ -874,10 +1265,12 @@ never offered a Cancel, Defer or Expedite.
   else. Purchasing Apply deletes a PO line for a Cancel only when the caller
   also holds `delete: "purchasing"` (`ctx.can`). An assignee or responsible employee is
   saved only after `isActiveCompanyEmployee` (`shared.service.ts`), and
-  `planningAction` is read-only through the API (manifest rule: read is
-  `anyOf("production_view", "purchasing_view")`, since both planning pages
-  read it with the user's client; MRP and these routes write it with the
-  service role).
+  `planningAction` is read-only through the API (manifest rule `company()`
+  with `create` / `update` / `delete` false; the access registry gives it to
+  `production.materialPlanning` and lets `purchasing.materialPlanning` read
+  it, so a read needs View on a Production page or on Purchasing → Material
+  Planning, since both planning pages read it with the user's client; MRP
+  and these routes write it with the service role).
   The Actions column filter (`filter=planningActions:eq:<type>`) and the
   Assignee column's people filter (`filter=planningAssignee:in:<userId>,…` —
   the same people list every other assignee filter uses; the column is hidden
@@ -885,7 +1278,12 @@ never offered a Cancel, Defer or Expedite.
   columns: the loader strips them with `resolvePlanningActionScope`
   (`ui/Planning/planning-action-scope.ts`, pure, unit-tested) and passes them to
   the grid RPC as ARGUMENTS (`action_types`, `action_assignees`), which keeps the
-  items with a matching OPEN action inside the item's planning horizon. The
+  items with a matching OPEN action inside the item's planning horizon. An action
+  counts for a page when it is that page's Order / Make, targets a PO line / job,
+  or targets a planned order of the page's `orderType` (Buy for purchasing, Make
+  for production — `20261126091514`; the grid's `latestOrderDate` reads the same
+  set). Before that, a row whose only action was on a planned order was hidden
+  (pinned by `apps/erp/test/database/planning-grid-planned-order-actions.test.ts`). The
   loader then reads the actions for the rows ON THE PAGE (`getPlanningActions`
   with `itemIds`, paged). An earlier version loaded the location's first 500
   actions and resolved item ids from them — it silently dropped items past the
@@ -933,10 +1331,11 @@ never offered a Cancel, Defer or Expedite.
   suggested date, so a Defer counts from where its order sits today and an
   Expedite from when it is needed — and the grids surface only rows with
   `horizonDate <= today + days`. That is what lets a planner move ONE row's
-  fence in the **Planning Horizon** column (`useTimeFenceOverrides`, page state,
+  fence in the **Planning Horizon** column (`usePlanningHorizonOverrides`, page state,
   gone on reload, never written to the item) without an MRP run. Named
-  `planningHorizonDays` on purpose: `planningTimeFenceDays` is reserved by the
-  MRP v2 spec for the auto-firm fence, a different concept.
+  `planningHorizonDays` on purpose: `planningTimeFenceDays` is the MRP v2
+  planning time fence (*Planned orders* above), an engine input — a different
+  concept.
   - The fence comparison exists twice and must stay one inclusive `<=` on ISO
     dates: in SQL (`get_*_planning_grid`, the saved horizon, for the Actions
     filter) and in `ui/Planning/planning-fence.ts` (on screen, override
@@ -951,11 +1350,14 @@ never offered a Cancel, Defer or Expedite.
     and the grid row follow together. The drawer marks the fence on the chart
     and carries the same Planning Horizon control as the grid cell.
   - Moving a row's fence DROPS that item's entry in the grid's `ordersMap`
-    (`onFenceChange`): the drawer's draft list is kept per item once opened,
+    (`onHorizonChange`): the drawer's draft list is kept per item once opened,
     and a stale one would neither show the newly included orders nor offer
     them. That discards manual edits to the draft, by design.
 - **The order drawer is two tables with two save models**
-  (`ui/Planning/PlanningOrderGrids.tsx`, both on the shared `Grid`), because a
+  (`ui/Planning/SuggestedOrdersGrid.tsx` and `OpenOrdersGrid.tsx`, with
+  `PlannedOrdersGrid.tsx` and the shared cells and `useSavingEditors` in
+  `PlanningOrderGridParts.tsx`, all on the shared `Grid`; the drawers' shared
+  hooks are in `useDrawerOrders.ts`), because a
   row that does not exist yet cannot autosave:
   - **Suggested Orders / Suggested Jobs** (`SuggestedOrdersGrid`) — a DRAFT.
     Quantity and due date are click-to-edit; the edits live in the planning
@@ -972,8 +1374,20 @@ never offered a Cancel, Defer or Expedite.
     created ASAP, while a date the planner types clears it). The drawers pass `resetKey`, bumped when the rows are re-seeded, so
     a cell editor left open cannot show one row's value on another.
   - **Open Orders / Open Jobs** (`OpenOrdersGrid`) — existing PO lines / jobs
-    at the page's location (both drawer reads filter on `locationId`, and
-    `updateLine` / `updateJob` refuse another location's record with 409).
+    at the page's location. Each drawer reads them with `useLoaderQuery` from
+    an `api+` route (`api+/purchasing.planning-open-lines.ts`, which also
+    reads each line's purchase quantity and factor; `api+/production.planning-open-jobs.ts`),
+    as the caller, filtered on `locationId`; the drawer maps the rows to its
+    weeks. A router action (Apply, an order placed, a PO reopened or
+    finalized, Recalculate) marks the reads stale; the production drawer's
+    `openJobsVersion` refetches after Plan (a plain `fetch`) and Release, and
+    a cell save refetches the list it edited (both drawers). The purchasing
+    drawer's Suppliers tab shows the row's `suppliers` as the drawer opened
+    on it; after `SupplierPartForm` saves (`onSaved`, never on Cancel) it reads
+    `api+/purchasing.planning-supplier-parts.ts` (the item's active supplier
+    parts, as the caller) into the drawer row, and an item's first supplier
+    is chosen for its orders.
+    `updateLine` / `updateJob` refuse another location's record with 409.
     A cell edit SAVES that one field (optimistic, reverted with a toast on
     failure) through `planning.update`'s `updateLine` / `updateJob` action,
     which re-reads the record under the company and refuses a committed record
@@ -1049,7 +1463,7 @@ never offered a Cancel, Defer or Expedite.
   The earlier single list mixed both: an edit to an existing order sat unsaved
   until Order was pressed and was dropped by Close.
 - **Grid RPCs are wrappers.** `get_purchasing_planning_grid` /
-  `get_production_planning_grid` (latest: `20261006205037_planning-grid-order-quantity.sql`) select
+  `get_production_planning_grid` (latest: `20261126091514_planning-grid-planned-order-actions.sql`) select
   `p.*` from the base RPC and add `itemPostingGroupId` (**Item Group** column +
   filter), `planningHorizonDays`, `timeFenceDate`, `firstNegativeDate` (**1st
   Negative On Hand**: the start of the first week whose projection is below
@@ -1111,7 +1525,9 @@ never offered a Cancel, Defer or Expedite.
     week; an order without one (a row the planner added) settles its
     (item, week, segment) action. An id that no longer names an open action
     of the item settles nothing, not a neighbour of its week: the next MRP
-    run nets the new order. A PO line counts in inventory units (purchase
+    run nets the new order. An order may also carry `plannedOrderId`, and the
+    settle converts planned orders in the same transaction (*Planned orders* →
+    *Convert by id*). A PO line counts in inventory units (purchase
     quantity after the supplier minimum × the supplier part's conversion
     factor; a line with another factor is not merged into,
     `findMergeablePlanningLine`). The settle returns, per
@@ -1150,7 +1566,7 @@ never offered a Cancel, Defer or Expedite.
   The engine itself is in-process Node (`runMrp` from `@carbon/planning`), NOT
   a Supabase edge function — the `mrp` Deno function was deleted.
 - MRP itself writes `demandForecast`/`demandActual`/`supplyActual`/
-  `demandForecastSource`/`planningAction`; it never inserts `supplyForecast` —
+  `demandForecastSource`/`planningAction`/`plannedOrder`; it never inserts `supplyForecast` —
   that comes from the user-driven `planning.update` routes (planned orders) —
   but Phase 7 deletes every `supplyForecast` row at the company's locations.
 - The engine runs full MRP regardless of `type`/`id` scope: `type` is only

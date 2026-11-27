@@ -862,7 +862,7 @@ function SubAssemblyRow({
   const name = title || t`Sub-Assembly`;
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
     <div
       ref={sortable.setNodeRef}
       style={sortable.style}
@@ -1015,7 +1015,7 @@ function StepRow({
   const displayTitle = title || t`Untitled step`;
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
     <div
       ref={sortable.setNodeRef}
       style={sortable.style}

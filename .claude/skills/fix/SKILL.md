@@ -179,7 +179,8 @@ sure Phase 4 (Browser verify) is in the phase set.
 pnpm run generate:types
 
 # 2. Format + lint the files you touched
-pnpm exec biome check --write <changed paths>
+pnpm exec oxlint --fix --no-error-on-unmatched-pattern <changed paths>
+pnpm exec oxfmt --no-error-on-unmatched-pattern <changed paths>
 
 # 3. Typecheck each touched package — NEVER whole-repo (it OOMs)
 pnpm exec turbo run typecheck --filter=<pkg>
@@ -215,7 +216,7 @@ to the human even in autonomous mode).
 **Root-cause brief:** <path/link>
 **Files changed:** <path — what>
 **Proof:** <committed test path, or scratch proof quoted here — failed before fix (output), passes after (output)>
-**Gates:** generate:types PASS|SKIP · biome PASS · typecheck(<pkgs>) PASS · test(<pkgs>) PASS
+**Gates:** generate:types PASS|SKIP · oxlint PASS · typecheck(<pkgs>) PASS · test(<pkgs>) PASS
 **BC assessment:** NONE | <surfaces and how they comply>
 **Summary:** <2–3 sentences>
 ```

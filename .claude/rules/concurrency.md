@@ -112,13 +112,17 @@ whole row back (`{ ...current, ...input }`, `rate: input.rate ?? current.rate`,
 a JSONB object merged in JavaScript). A concurrent edit to a field this request
 never touched is lost.
 
-- Write only the columns the input names (`sanitize(input)` drops the omitted
-  ones), and merge JSONB in SQL (`` sql`"attributes" || ${toJson(patch)}` ``).
+- Write only the columns the input names: build the payload from the keys the
+  caller sent. `sanitize` does not drop a key that is present but `undefined`;
+  it writes `null`, which clears the column. Merge JSONB in SQL
+  (`` sql`"attributes" || ${toJson(patch)}` ``).
 - When the new value depends on the old one, compare and set: put the value you
   read in the UPDATE's filter (`.eq("updatedAt", read.updatedAt)`), and refuse
   when no row changed (rule 2). Or read it under the row lock (rule 1).
 - No check enforces this rule. CodeRabbit flagged it 26 times, 15 of them in
   November 2026 (`.ai/research/2026-11-25-coderabbit-review-findings.md`).
+  Fixed bug: `updateContractLine` filled omitted fields from a read and wrote
+  them all back.
 
 ## When a check flags your code
 

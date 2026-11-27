@@ -15,8 +15,8 @@ import {
   Spinner
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { RunStatus } from "../../Runs/RunStatus";
 import { runOutcome } from "../../Runs/runOutcome";
+import { RunStatus } from "../../Runs/RunStatus";
 import { useNodeLabel } from "../../Runs/useNodeLabel";
 import { WorkflowRunSteps } from "../../Runs/WorkflowRunSteps";
 import { useBuilderStore } from "../context";

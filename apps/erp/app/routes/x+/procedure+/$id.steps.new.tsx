@@ -31,7 +31,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...rest } = validation.data;
 
   const create = await upsertProcedureStep(client, {

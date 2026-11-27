@@ -45,6 +45,8 @@ export async function action(args: ActionFunctionArgs) {
   const { api } = await authorize(args.request);
   const result = await api.resources.updateLocation({
     ...input.data,
+    // the form always sends the fence: an emptied field is no fence (0)
+    planningTimeFenceDays: input.data.planningTimeFenceDays ?? 0,
     id: input.params.locationId,
     customFields: input.formData && setCustomFields(input.formData)
   });
@@ -71,6 +73,7 @@ export default function LocationRoute() {
     timezone: location.timezone ?? getLocalTimeZone(),
     latitude: location.latitude ?? undefined,
     longitude: location.longitude ?? undefined,
+    planningTimeFenceDays: location.planningTimeFenceDays,
     ...getCustomFields(location.customFields)
   };
 

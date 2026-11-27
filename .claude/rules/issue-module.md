@@ -49,6 +49,10 @@ in the migrations — **newest wins**; core tables created in
 - **Issue status** (`nonConformanceStatus`): `Registered` → `In Progress` → `Closed`.
   DB column default is `'Registered'`. `isIssueLocked(status)` ⇒ `status === "Closed"`
   (blocks edits to issue + task assignments).
+  An issue that is not `Closed` and is linked to a serial unit
+  (through its header or a material disposition row) puts that unit on hold in the MES when
+  `companySettings.holdUnitsWithOpenIssues` is on (Settings → Quality); see
+  `mes-job-operation-ui.md` → Quality hold. After closure, the serials on Scrap and Return to Supplier disposition rows remain blocked by `unitQualityHold`. Closing or deleting the last issue, or removing its last unit association, releases a stocked serial an earlier close accepted (Use As Is or Rework) but left on hold, header-only link included (`releaseAcceptedUnits`, `quality.service.ts`); it does not release a unit an open lot holds or one held again since. Creating an issue against a job operation links its named output units, or all output units when none are named (`linkJobOperationLot`). Attaching an operation to an existing issue links the job item and every output unit in the same transaction as the operation association (`attachJobOperationToIssue`).
 - **Task status** (`nonConformanceTaskStatus`): `Pending`, `In Progress`,
   `Completed`, `Skipped`. Tasks start `Pending`; they do **not** auto-start.
 - **Source** (`nonConformanceSource`): `Internal`, `External`.
@@ -83,7 +87,7 @@ in the migrations — **newest wins**; core tables created in
   `nonConformanceItem.quantity` takes it first, inside its transaction, before touching
   any item row: the quantity edit, `assignEntitiesToIssueItem`, `splitIssueItem`, the
   inspection association (`createIssueAssociation`), the job-operation auto-link of
-  `createIssue` and its tracked-entity link (`linkIssueTrackedEntities`: only a
+  `createIssue` (limited to explicitly selected units when supplied) and its tracked-entity link (`linkIssueTrackedEntities`: only a
   unit in stock goes on a row, at what it holds), the ERP inspection reject (`rejectInspection`), sales-return
   escalation, and MES
   `linkIssueDispositionContext` (which also writes the MES reject's inspection link, via
@@ -109,7 +113,7 @@ in the migrations — **newest wins**; core tables created in
   Rework leaves such a unit as it is, and the close's `warning` says so. An NCR can hold several inspection lots: every linked lot's
   write-off is restored on Use As Is / Rework. Movement rules: tracked Scrap/Return → for a unit with ledger
   rows, up to `link.qty` drawn from the bins it has stock in (largest first); for
-  a unit with none (job work in progress), `-link.qty` at the NCR's location; non-tracked `Inventory` **non-inspection** Scrap → `-row.qty` write-off;
+  job output with no ledger history records its rejection without a finished-stock write-off; other tracked origins with no ledger history retain the issue-location fallback; non-tracked `Inventory` **non-inspection** Scrap → `-row.qty` write-off;
   non-tracked `Inventory` **inspection-originated** Use-As-Is/Rework → `+row.qty` restore
   (undoing the reject write-off; each restore row carries its disposition row
   in `itemLedger.documentLineId`, which Put Away reads to offer only Use As Is

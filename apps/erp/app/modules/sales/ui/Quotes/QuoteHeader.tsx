@@ -461,7 +461,6 @@ function CreateRevisionBody({
     | { success: true; data: { newQuoteId: string } }
   >();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success === false) {
       toastError(fetcher.data.message, fetcher.data);
@@ -475,6 +474,7 @@ function CreateRevisionBody({
       );
       setNewQuoteId(fetcher.data?.data.newQuoteId ?? null);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [fetcher.data?.success, t]);
 
   return (

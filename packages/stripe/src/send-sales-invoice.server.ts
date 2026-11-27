@@ -13,12 +13,12 @@ import {
 } from "@carbon/utils";
 import { parseDate, Time, toCalendarDateTime } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createAndSendConnectInvoice } from "./connect.server";
 import {
   stripeDueDate,
   stripeEffectiveDate,
   toStripeInvoiceLines
 } from "./connect-invoice";
+import { createAndSendConnectInvoice } from "./connect.server";
 
 const logger = getLogger("stripe", "connect");
 

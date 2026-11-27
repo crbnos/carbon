@@ -125,6 +125,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 // `settings.quality.update` it saves (the operation drops `intent`).
 const qualitySettingsForm = z.discriminatedUnion("intent", [
   settingsToggle("enforceInspectionFourEyes", "enforceInspectionFourEyes"),
+  settingsToggle("holdUnitsWithOpenIssues", "holdUnitsWithOpenIssues"),
   samplingStandardValidator,
   dashboardValidator,
   gaugeCalibrationValidator.transform((form) => ({
@@ -191,6 +192,31 @@ export default function QualitySettingsRoute() {
     "enforceInspectionFourEyes",
     (companySettings as { enforceInspectionFourEyes?: boolean })
       .enforceInspectionFourEyes ?? false
+  );
+
+  const holdFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (data?.holdUnitsWithOpenIssues === undefined) return;
+      toast.success(
+        data.holdUnitsWithOpenIssues
+          ? t`Units with an open issue are now on hold`
+          : t`Open issues no longer stop work`
+      );
+    }
+  });
+  const holdEnabled = useSavedToggle(
+    holdFetcher,
+    "holdUnitsWithOpenIssues",
+    companySettings.holdUnitsWithOpenIssues ?? false
+  );
+  const handleHoldToggle = useCallback(
+    (checked: boolean) => {
+      holdFetcher.submit(
+        { intent: "holdUnitsWithOpenIssues", enabled: checked.toString() },
+        { method: "POST" }
+      );
+    },
+    [holdFetcher]
   );
 
   const handleFourEyesToggle = useCallback(
@@ -312,6 +338,49 @@ export default function QualitySettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Issues</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Issues: Hold Units</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Stop shop floor work on a serial unit while an issue linked to
+                it is open.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {holdEnabled ? (
+                    <Trans>Units with an open issue are on hold</Trans>
+                  ) : (
+                    <Trans>Open issues do not stop work</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  <Trans>
+                    When enabled, units marked Scrap or Return to Supplier stay
+                    blocked after the issue closes.
+                  </Trans>
+                </span>
+              </VStack>
+              <Switch
+                aria-label={t`Issues: Hold Units`}
+                checked={holdEnabled}
+                onCheckedChange={handleHoldToggle}
+                disabled={holdFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
         </Card>
 
         <SettingsSectionHeader>

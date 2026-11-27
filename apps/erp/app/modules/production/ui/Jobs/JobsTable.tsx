@@ -85,8 +85,8 @@ import {
 } from "../../production.models";
 import type { Job } from "../../types";
 import { getDeadlineIcon } from "./Deadline";
-import JobStatus from "./JobStatus";
 import { JOB_LIST_EXPORT_VALUES } from "./job-list-export";
+import JobStatus from "./JobStatus";
 
 // A row of the jobs list, with the values the loader adds per page.
 type JobRow = Job & {
@@ -198,7 +198,6 @@ const JobsTable = memo((props: JobsTableProps) => {
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
   const customColumns = useCustomColumns<JobRow>("job");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const columns = useMemo<ColumnDef<JobRow>[]>(() => {
     const defaultColumns: ColumnDef<JobRow>[] = [
       {
@@ -656,6 +655,7 @@ const JobsTable = memo((props: JobsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [params, customColumns]);
 
   const { submit: submitBulk } = useBulkFormAction();
@@ -786,7 +786,6 @@ const JobsTable = memo((props: JobsTableProps) => {
     [onBulkUpdate, permissions, releaseFetcher, releaseLimitLabel]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const renderContextMenu = useCallback<(row: JobRow) => JSX.Element>(
     (row) => (
       <>
@@ -814,6 +813,7 @@ const JobsTable = memo((props: JobsTableProps) => {
       </>
     ),
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [navigate, params, permissions]
   );
 

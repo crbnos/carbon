@@ -81,7 +81,7 @@ export function assignRef<T = any>(
 
   try {
     ref.current = value;
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+    // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   } catch (error) {
     throw new Error(`Cannot assign value '${value}' to ref '${ref}'`);
   }

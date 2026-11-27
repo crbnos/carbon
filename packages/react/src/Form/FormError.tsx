@@ -9,8 +9,7 @@ import type { FormControlOptions } from "./FormControl";
 import { useFormControlContext } from "./FormControl";
 
 export interface FormErrorMessageProps
-  extends ComponentProps<"div">,
-    FormControlOptions {}
+  extends ComponentProps<"div">, FormControlOptions {}
 
 /**
  * Used to provide feedback about an invalid input,

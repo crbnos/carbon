@@ -27,7 +27,8 @@ const textareaVariants = cva(
 );
 
 export interface TextareaProps
-  extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "size">,
+  extends
+    Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "size">,
     VariantProps<typeof textareaVariants> {}
 
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(

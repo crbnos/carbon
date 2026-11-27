@@ -441,3 +441,19 @@ sends them straight back to it: a redirect loop. The one-page-role pass found it
 
 **Applies to:** Every flag-, plan- or environment-gated route under a module whose
 root is `moduleIndexLoader`.
+
+## A component reads its data through an `api+` route, not from an effect
+
+```scope
+id: a-component-reads-its-data-through-an-api-route-not-from-an
+paths: ["apps/erp/app/routes/api+/production.planned-orders.ts", "apps/erp/app/modules/production/ui/Planning/DrawerPlannedOrders.tsx"]
+triggers: ["useCarbon()"]
+```
+
+**Context:** The MRP planning drawer read its planned orders, open jobs and open PO lines with the browser's Supabase client, from an async function started inside `useEffect`.
+
+**Problem:** A rejected read was never caught, so the drawer could spin for ever. The code also needed a read counter so an old answer could not land last, a version number bumped after each change, and a flag to skip the second read the revalidation caused. Every new way to change the data needed another trigger. The query ran in the browser, so it could not log a failure or answer with a status.
+
+**Rule:** Put a component's read in an `api+` route and read it with `useLoaderQuery`. Follow `.claude/rules/clientAction-patterns.md` → "A component that loads its own data"; copy `api+/production.planned-orders.ts` and `DrawerPlannedOrders`. An async call in an effect stays acceptable only for a third-party API or a load started by an event (a search box, a click).
+
+**Applies to:** Every drawer, panel or card in `apps/erp` and `apps/mes` that loads its own data. Before you write `useEffect(() => { (async () => …)() })` or `.then(` on a client read, write the route.

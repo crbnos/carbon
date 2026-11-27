@@ -46,7 +46,7 @@ import {
   accountsReceivableEmailValidator,
   billingAddressFields,
   defaultCustomerCcValidator,
-  invoiceAutomations,
+  inheritableInvoiceAutomations,
   invoiceAutomationValidator,
   invoiceNotificationValidator,
   settingsToggle
@@ -157,7 +157,7 @@ export default function InvoicingSettingsRoute() {
   );
 
   const invoiceAutomationLabels: Record<
-    (typeof invoiceAutomations)[number],
+    (typeof inheritableInvoiceAutomations)[number],
     string
   > = {
     "Draft Only": t`Draft only`,
@@ -226,7 +226,7 @@ export default function InvoicingSettingsRoute() {
                 <Select
                   name="invoiceAutomation"
                   label={t`When an invoice is created`}
-                  options={invoiceAutomations.map((mode) => ({
+                  options={inheritableInvoiceAutomations.map((mode) => ({
                     value: mode,
                     label: invoiceAutomationLabels[mode],
                     helper:

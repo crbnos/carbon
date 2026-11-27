@@ -9,6 +9,7 @@ import {
   getFinishedUnreceivedQuantity,
   getReceivableSerialUnits,
   getSerialCompleteChoice,
+  isSerialReceiptBlockedByHolds,
   type JobSerialUnit
 } from "../app/modules/production/ui/Jobs/job-complete-logic";
 
@@ -22,14 +23,13 @@ const unit = (overrides: Partial<JobSerialUnit>): JobSerialUnit => ({
 });
 
 describe("getReceivableSerialUnits", () => {
-  it("lists numbered units by serial number", () => {
+  it("preserves database collation for serials with the same status", () => {
     expect(
       getReceivableSerialUnits([
-        unit({ readableId: "SN-0003" }),
-        unit({ readableId: "SN-0001" }),
-        unit({ readableId: "SN-0002" })
+        unit({ readableId: "Z-1" }),
+        unit({ readableId: "a-1" })
       ])
-    ).toEqual(["SN-0001", "SN-0002", "SN-0003"]);
+    ).toMatchObject([{readableId:"Z-1"}, {readableId:"a-1"}]);
   });
 
   it("puts units finished on the shop floor first", () => {
@@ -39,7 +39,11 @@ describe("getReceivableSerialUnits", () => {
         unit({ readableId: "SN-0002" }),
         unit({ readableId: "SN-0003", status: "Available" })
       ])
-    ).toEqual(["SN-0003", "SN-0001", "SN-0002"]);
+    ).toMatchObject([
+      { readableId: "SN-0003" },
+      { readableId: "SN-0001" },
+      { readableId: "SN-0002" },
+    ]);
   });
 
   it("never offers consumed, rejected or scrapped units", () => {
@@ -50,7 +54,9 @@ describe("getReceivableSerialUnits", () => {
         unit({ readableId: "SN-0003", status: "Scrapped" }),
         unit({ readableId: "SN-0004" })
       ])
-    ).toEqual(["SN-0004"]);
+    ).toMatchObject([
+      { readableId: "SN-0004" },
+    ]);
   });
 
   it("never offers units the job already received", () => {
@@ -63,7 +69,10 @@ describe("getReceivableSerialUnits", () => {
         ],
         new Set(["SN-0001"])
       )
-    ).toEqual(["SN-0002", "SN-0003"]);
+    ).toMatchObject([
+      { readableId: "SN-0002" },
+      { readableId: "SN-0003" },
+    ]);
   });
 
   it("offers a finished unit issued into another job before its job was received, first", () => {
@@ -80,7 +89,11 @@ describe("getReceivableSerialUnits", () => {
         new Set(),
         new Set(["SN-0002"])
       )
-    ).toEqual(["SN-0002", "SN-0004", "SN-0001"]);
+    ).toMatchObject([
+      { readableId: "SN-0002" },
+      { readableId: "SN-0004" },
+      { readableId: "SN-0001" },
+    ]);
   });
 
   it("never offers an issued unit the job already received", () => {
@@ -93,7 +106,9 @@ describe("getReceivableSerialUnits", () => {
         new Set(["SN-0001"]),
         new Set(["SN-0001"])
       )
-    ).toEqual(["SN-0002"]);
+    ).toMatchObject([
+      { readableId: "SN-0002" },
+    ]);
   });
 
   it("keeps the quantity locked when a unit has no serial number yet", () => {
@@ -250,8 +265,27 @@ describe("getSerialCompleteChoice", () => {
           hasSerialSequence,
           jobQuantity: 2
         })
-      ).toEqual({ mode: "serials", serials: ["SN-0001", "SN-0002"] });
+      ).toMatchObject({ mode: "serials", serials: [{ readableId: "SN-0001" }, { readableId: "SN-0002" }] });
     }
+  });
+
+  it("offers the Reserved replacement without treating the units on a held seed as unstarted", () => {
+    const replacement = unit({ id: "replacement", readableId: "SN-0005" });
+    const choice = getSerialCompleteChoice({
+      trackedEntities: [unit({ id: "held", quantity: 3 }), replacement],
+      heldUnitIds: new Set(["held"]),
+      receivedEntityIds: none,
+      issuedEntityIds: none,
+      hasSerialSequence: true,
+      jobQuantity: 4
+    });
+    expect(choice).toEqual({ mode: "serials", serials: [replacement] });
+    expect(getDefaultSerialCompleteQuantity({
+      finishedUnreceivedQuantity: 0,
+      priorReceivedQuantity: 3,
+      jobQuantity: 4,
+      receivableSerialCount: 1
+    })).toBe(4);
   });
 
   it("stays locked for an unsplit seed when the item has no serial sequence", () => {
@@ -323,9 +357,9 @@ describe("getSerialCompleteChoice", () => {
           hasSerialSequence,
           jobQuantity: 3
         })
-      ).toEqual({
+      ).toMatchObject({
         mode: "serials",
-        serials: ["SN-0001", "SN-0002", "SN-0003"]
+        serials: [{ readableId: "SN-0001" }, { readableId: "SN-0002" }, { readableId: "SN-0003" }]
       });
     }
   });
@@ -420,7 +454,7 @@ describe("getSerialCompleteChoice", () => {
         hasSerialSequence: false,
         jobQuantity: 3
       })
-    ).toEqual({ mode: "serials", serials: ["SN-0001", "SN-0002"] });
+    ).toMatchObject({ mode: "serials", serials: [{ readableId: "SN-0001" }, { readableId: "SN-0002" }] });
   });
 
   it("still owes a scrapped unit", () => {
@@ -467,6 +501,19 @@ describe("getSerialCompleteChoice", () => {
         hasSerialSequence: true,
         jobQuantity: 3
       })
-    ).toEqual({ mode: "serials", serials: ["SN-0001", "SN-0002", "SN-0003"] });
+    ).toMatchObject({ mode: "serials", serials: [{ readableId: "SN-0001" }, { readableId: "SN-0002" }, { readableId: "SN-0003" }] });
+  });
+});
+
+describe("receipt capacity with a held sibling", () => {
+  it.each([
+    [null, false],
+    [{ held: 0, receivable: 0 }, false],
+    [{ held: 1, receivable: 2 }, false],
+    [{ held: 2, receivable: 0 }, true]
+  ])("capacity %j blocks the receipt: %s", (serialReceiptCapacity, blocked) => {
+    expect(isSerialReceiptBlockedByHolds({ serialReceiptCapacity })).toBe(
+      blocked
+    );
   });
 });

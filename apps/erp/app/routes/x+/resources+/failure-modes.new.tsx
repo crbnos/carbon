@@ -2,15 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { failureModeValidator } from "~/modules/resources/resources.models";
-import { upsertFailureMode } from "~/modules/resources/resources.service";
 import FailureModeForm from "~/modules/resources/ui/FailureModes/FailureModeForm";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
@@ -20,48 +17,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return null;
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    "resources.failureModes": "Create"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(failureModeValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  const result = await api.resources.createFailureMode({
+    name: input.data.name,
+    type: input.data.type
   });
-
-  const formData = await request.formData();
-  const modal = formData.get("formType") === "modal";
-
-  const validation = await validator(failureModeValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const insertFailureMode = await upsertFailureMode(client, {
-    ...d,
-    companyId,
-    createdBy: userId
+  // The modal form reads the result and closes itself.
+  if (input.formData?.get("formType") === "modal") return result;
+  const list = `${path.to.failureModes}?${getParams(args.request)}`;
+  return respond(args.request, result).redirect(list, {
+    message: "Failure mode created",
+    onError: requestReferrer(args.request) ?? list
   });
-  if (insertFailureMode.error) {
-    return modal
-      ? insertFailureMode
-      : redirect(
-          requestReferrer(request) ??
-            `${path.to.failureModes}?${getParams(request)}`,
-          await flash(
-            request,
-            error(insertFailureMode.error, "Failed to insert failure mode")
-          )
-        );
-  }
-
-  return modal
-    ? insertFailureMode
-    : redirect(
-        `${path.to.failureModes}?${getParams(request)}`,
-        await flash(request, success("Failure mode created"))
-      );
 }
 
 export default function NewFailureModeRoute() {

@@ -482,7 +482,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       allJobs.reduce(
         (acc, job) => {
           if (job.tags) {
-            // biome-ignore lint/suspicious/useIterableCallbackReturn: suppressed due to migration
+            // oxlint-disable-next-line array-callback-return -- suppressed due to migration
             job.tags.forEach((tag: string) => (acc[tag] = true));
           }
           return acc;

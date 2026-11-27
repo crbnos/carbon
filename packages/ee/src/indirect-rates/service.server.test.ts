@@ -9,6 +9,7 @@ vi.mock("../plan.server", () => ({ companyHasFeature }));
 
 import { EntitlementError } from "../entitlements.server";
 import {
+  getIndirectRates,
   INDIRECT_RATE_ACTUAL_REFUSED,
   setIndirectRate,
   upsertIndirectPool
@@ -96,5 +97,61 @@ describe("indirect rates authoring", () => {
     });
     expect(result.error?.message).toEqual(INDIRECT_RATE_ACTUAL_REFUSED);
     expect(written).toEqual([]);
+  });
+});
+
+// A table read the way PostgREST serves it: the filters a query names, and
+// at most the row cap per request, by `range`.
+function pagingClient(rows: Record<string, unknown>[], rowCap: number) {
+  const client = {
+    from: () => {
+      const filters: [string, unknown][] = [];
+      const query = {
+        select: () => query,
+        order: () => query,
+        eq: (column: string, value: unknown) => {
+          filters.push([column, value]);
+          return query;
+        },
+        range: async (from: number, to: number) => {
+          const kept = rows.filter((row) =>
+            filters.every(([column, value]) => row[column] === value)
+          );
+          return {
+            data: kept.slice(from, Math.min(to + 1, from + rowCap)),
+            error: null
+          };
+        },
+        then: (resolve: (value: unknown) => unknown) =>
+          resolve({ data: rows.slice(0, rowCap), error: null })
+      };
+      return query;
+    }
+  };
+  return client as never;
+}
+
+describe("indirect rates reading", () => {
+  it("getIndirectRates returns a year's every rate past the API's row cap", async () => {
+    // 27 pools x 12 periods x 4 rate types = 1,296 rows, over a cap of 1,000.
+    const year = [...Array(27).keys()].flatMap((pool) =>
+      [...Array(12).keys()].flatMap((period) =>
+        ["Actual", "Final", "Provisional", "Target"].map((rateType) => ({
+          companyId: "company-1",
+          fiscalYear: 2026,
+          indirectPoolId: `pool-${pool}`,
+          periodNumber: period + 1,
+          rateType
+        }))
+      )
+    );
+    const otherYear = { ...year[0]!, fiscalYear: 2025 };
+    const result = await getIndirectRates(
+      pagingClient([...year, otherYear], 1000),
+      { companyId: "company-1", fiscalYear: 2026 }
+    );
+    expect(result.error).toBeNull();
+    expect(result.data).toHaveLength(1296);
+    expect(result.data).toEqual(year);
   });
 });

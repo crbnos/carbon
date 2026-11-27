@@ -13,7 +13,7 @@
 // Plan: .ai/plans/2026-10-09-government-contracting-phase-5b.md (Task 7, B2, B12)
 
 import { posting } from "@carbon/api/postings.server";
-import type { Database } from "@carbon/database";
+import { type Database, fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { datetime, formatPercent, formatQuantity } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -1220,14 +1220,21 @@ export async function getIndirectRates(
   client: Client,
   { companyId, fiscalYear }: { companyId: string; fiscalYear: number }
 ) {
-  return client
-    .from("indirectRate")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("fiscalYear", fiscalYear)
-    .order("indirectPoolId")
-    .order("periodNumber")
-    .order("rateType");
+  // A row per pool, period and rate type passes the API's row cap with many
+  // pools, so every page is read. The order is the table's unique key within
+  // a year, so the pages do not shift.
+  return fetchAllFromTable<Database["public"]["Tables"]["indirectRate"]["Row"]>(
+    client,
+    "indirectRate",
+    "*",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("fiscalYear", fiscalYear)
+        .order("indirectPoolId")
+        .order("periodNumber")
+        .order("rateType")
+  );
 }
 
 export async function getIndirectRateRuns(client: Client, companyId: string) {

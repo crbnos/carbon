@@ -15,7 +15,6 @@ const Popover = ({ children }: PropsWithChildren) => {
     refs: { listBoxRef, popoverRef, focusableNodes }
   } = useUserSelectContext();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     /* Build a triple linked-list (TreeNode[]) of the focusable tree items in
     DOM order, at any nesting depth.

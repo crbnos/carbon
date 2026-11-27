@@ -42,19 +42,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // HS256 op. Each page mints its own, so every loaded row carries one.
     mapRows: (documents, { companyId, userId }) =>
       Promise.all(
-        (documents as Document[]).map(
-          async (document): Promise<Document> => ({
-            ...document,
-            downloadToken:
-              document.id && document.path
-                ? await generateDownloadToken({
-                    userId,
-                    companyId,
-                    documentId: document.id
-                  })
-                : undefined
-          })
-        )
+        (documents as Document[]).map(async (document): Promise<Document> => ({
+          ...document,
+          downloadToken:
+            document.id && document.path
+              ? await generateDownloadToken({
+                  userId,
+                  companyId,
+                  documentId: document.id
+                })
+              : undefined
+        }))
       ),
     onError: {
       redirectTo: path.to.authenticatedRoot,

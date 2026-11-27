@@ -46,9 +46,9 @@ import {
 import { path } from "~/utils/path";
 import { contractScheduleRevenueMethods } from "../../sales.models";
 import ContractAmountsModal from "./ContractAmountsModal";
+import { contractLineName, lineColumnKey } from "./contractGrid";
 import { Remaining } from "./ContractInvoiceGrid";
 import ContractMoney from "./ContractMoney";
-import { contractLineName, lineColumnKey } from "./contractGrid";
 import type { ContractLine, ContractRouteData } from "./types";
 
 type ContractRevenueGridProps = Pick<

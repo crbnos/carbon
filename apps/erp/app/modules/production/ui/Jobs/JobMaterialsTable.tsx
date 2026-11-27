@@ -149,7 +149,6 @@ const JobMaterialsTable = memo(
       return map;
     }, [items]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<JobMaterial>[]>(() => {
       return [
         {
@@ -296,6 +295,8 @@ const JobMaterialsTable = memo(
                   ? orderStatusByMaterialId[row.original.id]
                   : undefined
               }
+              itemId={row.original.jobMaterialItemId}
+              methodType={row.original.methodType}
             />
           ),
           meta: {
@@ -308,7 +309,7 @@ const JobMaterialsTable = memo(
               type: "static",
               isArray: true,
               options: [
-                { value: "needsOrder", label: t`Needs ordering` },
+                { value: "needsOrder", label: t`Needs ordering or making` },
                 { value: "needsJob", label: t`Needs job` },
                 { value: "planned", label: t`Planned` },
                 { value: "plannedJob", label: t`Planned job` },
@@ -677,6 +678,7 @@ const JobMaterialsTable = memo(
           }
         }
       ];
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     }, [
       items,
       jobId,

@@ -1666,7 +1666,6 @@ function AssemblyScene({
       ].join("|")
     : `none|${activeStepIndex}`;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: clipKey is the content signature that keys the rebuild — a revalidation with an equivalent steps array must not re-run this effect
   useEffect(() => {
     const step = stepsLiveRef.current[activeStepIndex];
 
@@ -1791,7 +1790,6 @@ function AssemblyScene({
   // re-running the clip effect — a timeline drag fires many times per second,
   // and each effect re-run would stop/uncache/rebuild the whole clip when only
   // `action.time` changes.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: seekVersion is the trigger for re-applying a same-step seek
   useEffect(() => {
     const seek = seekRef.current;
     if (seek === null) return;
@@ -2463,7 +2461,6 @@ function AssemblyScene({
 
   return (
     <>
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: a react-three-fiber scene object, not a DOM element; raycast picks have no keyboard equivalent here */}
       <primitive
         object={scene}
         onClick={handleClick}

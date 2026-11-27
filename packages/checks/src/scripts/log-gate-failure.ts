@@ -23,13 +23,15 @@ const branch = (() => {
 })();
 
 const at = new Date().toISOString();
-for (const { checkId, violation } of newViolations()) {
-  appendSignal({
-    kind: "gate-failure",
-    at,
-    worktree: root,
-    branch,
-    checkId,
-    file: violation.file
-  });
-}
+newViolations().then((found) => {
+  for (const { checkId, violation } of found) {
+    appendSignal({
+      kind: "gate-failure",
+      at,
+      worktree: root,
+      branch,
+      checkId,
+      file: violation.file
+    });
+  }
+});

@@ -33,6 +33,7 @@ const caller = (
     "production.jobs": { view: ["c1"], create: [], update: ["c1"], delete: [] }
   }
 ): AuthedContext => ({
+  origin: {},
   client: {} as AuthedContext["client"],
   userId: "u1",
   companyId: "c1",
@@ -134,5 +135,21 @@ describe("callServiceFn", () => {
       ["companyId", "c1"],
       ["id", "j1"]
     ]);
+  });
+
+  // The invite email and the audit log show these, so they come from the
+  // route's headers and never from the arguments.
+  it("hands the function the origin the route read from the request", async () => {
+    const origin = { ip: "203.0.113.9", city: "Oslo", userAgent: "agent/1" };
+    const echo = defineServiceFn({
+      input: z.object({}),
+      permission: { "production.jobs": "View" },
+      async run(ctx) {
+        return ctx.origin;
+      }
+    });
+    await expect(
+      callServiceFn(echo, single, { ...caller("api-key"), origin }, {})
+    ).resolves.toEqual({ data: origin });
   });
 });

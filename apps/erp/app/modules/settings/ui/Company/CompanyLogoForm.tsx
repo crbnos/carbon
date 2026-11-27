@@ -93,7 +93,9 @@ const CompanyLogoForm = ({ company, target }: CompanyLogoFormProps) => {
     if (logo.size > maxSizeBytes) {
       toast.error(
         t`File size exceeds ${maxSizeMB}MB limit. Current size: ${(
-          logo.size / 1024 / 1024
+          logo.size /
+          1024 /
+          1024
         ).toFixed(2)}MB`
       );
       return;

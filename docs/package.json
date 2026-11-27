@@ -9,9 +9,9 @@
     "generate:api": "node scripts/generate-api-docs.mjs",
     "postinstall": "fumadocs-mdx",
     "clean": "rimraf .cache .turbo .next .source node_modules",
-    "lint": "biome lint --write .",
-    "format": "biome format --write .",
-    "check": "biome check --write .",
+    "lint": "oxlint --fix --no-error-on-unmatched-pattern",
+    "format": "oxfmt .",
+    "check": "oxlint --fix --no-error-on-unmatched-pattern && oxfmt .",
     "typecheck": "node scripts/generate-api-docs.mjs && fumadocs-mdx && tsc --noEmit",
     "generate:changelog-thumbnails": "node scripts/generate-changelog-thumbnail.mjs"
   },

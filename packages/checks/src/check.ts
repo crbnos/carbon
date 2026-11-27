@@ -34,29 +34,93 @@ export type Provenance = {
   incidents?: string[];
 };
 
-/**
- * A conformance check forbids a single deprecated pattern.
- * `scan` is PURE: same (file, contents) in → same violations out. No I/O.
- */
-export type ConformanceCheck = {
-  id: string;
-  description: string;
-  provenance: Provenance;
-  /** Code text that shows the check's topic. brief lists the check when one occurs. */
-  triggers: Trigger[];
-  scan(file: string, contents: string): Violation[];
-};
-
 /** A module folder and its top-level entry names. */
 export type ModuleDir = { name: string; dir: string; entries: string[] };
 
+/** Reads one input of the repository: every migration, the app's TypeScript, … */
+export type Loader<T> = (root: string) => T;
+
 /**
- * A structure check inspects a directory's layout (not file text).
- * `inspect` is PURE: same module in → same violations out. No I/O.
+ * The repository a check reads. `read(load)` runs a loader once and keeps its
+ * result, so checks that read the same input (every migration, the app's
+ * TypeScript) share one read. A loader is any `(root) => T`; give one a name
+ * at module level so every check that uses it passes the same function.
  */
-export type StructureCheck = {
+export type Repo = {
+  root: string;
+  read<T>(load: Loader<T>): T;
+};
+
+/** PURE: the violations in one file. */
+export type Scan = (file: string, contents: string) => Violation[];
+
+type About = {
   id: string;
   description: string;
-  provenance: Provenance;
-  inspect(module: ModuleDir): Violation[];
+  /** The change that retired the old pattern; absent on a check that states an invariant. */
+  provenance?: Provenance;
+  /** Code text that shows the check's topic. `brief` lists the check when one occurs. */
+  triggers: Trigger[];
 };
+
+/**
+ * One rule over the repository, made by `defineCheck`. `reads` lists the
+ * loaders it declared, so the runner can group checks without running them;
+ * `run` loads them through `repo.read` and applies the rule.
+ */
+export type Check = About & {
+  reads: readonly Loader<unknown>[];
+  run(repo: Repo): Violation[];
+};
+
+/** Every violation `scan` finds in `files`. */
+export function eachFile(files: SourceFile[], scan: Scan): Violation[] {
+  return files.flatMap(({ file, contents }) => scan(file, contents));
+}
+
+type FileRule = About & { files: Loader<SourceFile[]>; scan: Scan };
+
+type InputsRule<T> = About & {
+  reads: { [K in keyof T]: Loader<T[K]> };
+  find(inputs: T): Violation[];
+};
+
+/**
+ * A check, from the inputs it reads and its rule over them. A rule over one
+ * file at a time names its `files` and a `scan`; a rule over several inputs
+ * names them in `reads` and gets them loaded in `find`. Neither sees the repo,
+ * so a check reads only what it declares, and a test calls `scan` or `find`
+ * with its own values.
+ */
+export function defineCheck(rule: FileRule): Check & { scan: Scan };
+export function defineCheck<T extends Record<string, unknown>>(
+  rule: InputsRule<T>
+): Check & { find(inputs: T): Violation[] };
+export function defineCheck(
+  rule: FileRule | InputsRule<Record<string, unknown>>
+): Check & {
+  scan?: Scan;
+  find?(inputs: Record<string, unknown>): Violation[];
+} {
+  if ("files" in rule) {
+    const { files, scan, ...about } = rule;
+    return {
+      ...about,
+      scan,
+      reads: [files],
+      run: (repo) => eachFile(repo.read(files), scan)
+    };
+  }
+  const { reads, find, ...about } = rule;
+  return {
+    ...about,
+    find,
+    reads: Object.values(reads),
+    run: (repo) =>
+      find(
+        Object.fromEntries(
+          Object.entries(reads).map(([name, load]) => [name, repo.read(load)])
+        )
+      )
+  };
+}

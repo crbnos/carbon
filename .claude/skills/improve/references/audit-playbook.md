@@ -72,7 +72,7 @@ The goal is not a percentage — it's *which untested code is dangerous*.
 
 ## 6. Dependencies & Migrations
 
-- Major-version lag on core deps (React Router, Kysely, Supabase client, turbo, biome) where staying behind has real cost (EOL, security cutoffs).
+- Major-version lag on core deps (React Router, Kysely, Supabase client, turbo, oxlint) where staying behind has real cost (EOL, security cutoffs).
 - Deprecated APIs with announced removal timelines.
 - Abandoned dependencies on critical paths.
 - Duplicate deps solving the same problem.
@@ -81,7 +81,7 @@ The goal is not a percentage — it's *which untested code is dangerous*.
 
 ## 7. DX & Tooling
 
-- Missing or broken per-package: typecheck script, biome config, test wiring.
+- Missing or broken per-package: typecheck script, lint script, test wiring.
 - Slow feedback loops: dev startup, test startup, turbo cache not hit in CI.
 - Onboarding friction: README/setup steps wrong, undocumented env vars (check `packages/env` + `.env.example`).
 - **Agent knowledge gaps:** a subsystem with no `.claude/rules/` doc, or a convention not captured in `.claude/rules/conventions-*` — high leverage for an agent-driven repo. Recommend the rule/convention doc as a plan.

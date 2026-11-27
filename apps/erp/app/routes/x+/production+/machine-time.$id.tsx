@@ -38,9 +38,9 @@ import {
   getUnattributedMachineTimeNeighbors,
   getWorkCenterDayEvents
 } from "~/modules/production/production.service";
-import MachineTimeDrawer from "~/modules/production/ui/MachineTime/MachineTimeDrawer.ee";
 import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
 import { suggestMachineTimeOperations } from "~/modules/production/ui/MachineTime/machine-time-suggestions.ee";
+import MachineTimeDrawer from "~/modules/production/ui/MachineTime/MachineTimeDrawer.ee";
 import {
   getCompanyTimeZone,
   getLocationTimeZone

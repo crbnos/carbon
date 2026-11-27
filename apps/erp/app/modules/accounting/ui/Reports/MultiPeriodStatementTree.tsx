@@ -307,7 +307,6 @@ const MultiPeriodStatementTree = memo(
                       <LevelLine key={index} isSelected={state.selected} />
                     ))}
 
-                    {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer shortcut only; the row toggles groups on Enter and carries aria-expanded */}
                     <div
                       role="presentation"
                       className={cn(

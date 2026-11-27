@@ -100,6 +100,7 @@ Answer before you write a file, and again over the diff before you commit. `/exe
 - No `fetcher.submit` in a loop: one request with every id, and the server branches per row. A bulk button shows the eligible count from the handler's own predicate.
 - A list filtered by status renders only that status, and every count and empty check reads the filtered set.
 - Avoid `useEffect`. If you need one, put it in a named hook. Toasts key on `fetcher.state` and `fetcher.data`. [conventions-ui]
+- Does a component load data with an async call in `useEffect` (`(async () => …)()`, `.then(`) on the browser client? Move the read to an `api+` route and read it with `useLoaderQuery`. A router action needs no trigger; call `refetch()` after a plain `fetch`. [clientAction-patterns]
 - Editable cells commit on blur or close, never per keystroke.
 - A change to a shared `Grid`, `Table` or `packages/react` component for one consumer is a prop that defaults to the old behaviour.
 - The loader returns only what the page renders. Do not fetch a whole table to show one field.

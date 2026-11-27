@@ -11,6 +11,7 @@ import { loadBaseline } from "../baseline";
 import { brief, formatBriefing, isEmpty } from "../brief/brief";
 import { buildBriefIndex } from "../brief/index-builder";
 import { repoRoot } from "../sources/migrations";
+import { loadSqlParser } from "../sources/sql";
 
 const root = repoRoot();
 const cwd = process.env.INIT_CWD ?? process.cwd();
@@ -21,21 +22,27 @@ if (files.length === 0) {
   process.exit(0);
 }
 
-const index = buildBriefIndex(root);
-const baseline = loadBaseline();
+async function main() {
+  // The SQL checks parse with libpg-query, whose WASM module loads once.
+  await loadSqlParser();
+  const index = buildBriefIndex(root);
+  const baseline = loadBaseline();
 
-for (const arg of files) {
-  const path = relative(root, resolve(cwd, arg));
-  const absolute = resolve(root, path);
-  const content = existsSync(absolute) ? readFileSync(absolute, "utf8") : "";
-  const result = brief({
-    root,
-    path,
-    before: content,
-    after: content,
-    index,
-    baseline
-  });
-  const body = isEmpty(result) ? "Nothing in scope." : formatBriefing(result);
-  process.stdout.write(`## ${path}\n\n${body}\n\n`);
+  for (const arg of files) {
+    const path = relative(root, resolve(cwd, arg));
+    const absolute = resolve(root, path);
+    const content = existsSync(absolute) ? readFileSync(absolute, "utf8") : "";
+    const result = brief({
+      root,
+      path,
+      before: content,
+      after: content,
+      index,
+      baseline
+    });
+    const body = isEmpty(result) ? "Nothing in scope." : formatBriefing(result);
+    process.stdout.write(`## ${path}\n\n${body}\n\n`);
+  }
 }
+
+main();

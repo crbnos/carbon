@@ -22,9 +22,8 @@ beforeEach(() => exporter.reset());
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 it("records each middleware's own time on the request span, not what runs after it", async () => {
-  const { routerInstrumentation, timedMiddleware } = await import(
-    "./tracing.server"
-  );
+  const { routerInstrumentation, timedMiddleware } =
+    await import("./tracing.server");
 
   type Handle = () => Promise<{ error?: Error }>;
   let request: (handle: Handle, info: never) => Promise<void> = async () =>

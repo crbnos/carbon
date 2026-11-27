@@ -198,9 +198,9 @@ export default function PurchasesReportRoute() {
   // measure / % of total / sort are applied client-side; when only those change
   // the loader is skipped (revalidateIgnoringPivotDisplay), so overlay them from
   // the URL to keep the pivot in sync without a refetch.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed by the URL string, not the unstable URLSearchParams identity
   const state = useMemo(
     () => applyPivotDisplayParams(loaderState, searchParams),
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed by the URL string, not the unstable URLSearchParams identity
     [loaderState, searchParams.toString()]
   );
 

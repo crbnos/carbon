@@ -73,7 +73,14 @@ import type { DragControls } from "motion/react";
 import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { flushSync } from "react-dom";
 import {
   LuActivity,
@@ -155,6 +162,7 @@ import {
   useUrlParams,
   useUser
 } from "~/hooks";
+import { useProcessWorkCenter } from "~/hooks/useProcessWorkCenter";
 import {
   OperationRowDetails,
   OperationRowTitle
@@ -520,7 +528,7 @@ const JobBillOfProcess = ({
 }: JobBillOfProcessProps) => {
   const { t } = useLingui();
   const { locale } = useLocale();
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   const { carbon, accessToken } = useCarbon();
   const sortOrderFetcher = useAction();
   const deleteOperationFetcher = useAction();
@@ -1378,7 +1386,6 @@ function StepsForm({
 
   // When the new step is created, attach any buffered slides to it, then revalidate so they
   // show on the step and reset the buffer for the next step.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftSlides.length === 0 || !carbon) return;
@@ -1412,10 +1419,10 @@ function StepsForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   // When the new step is created, attach any buffered parts, then revalidate + reset.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftParts.length === 0 || !carbon) return;
@@ -1446,13 +1453,13 @@ function StepsForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   // When the new step is created, attach any buffered tools, then revalidate + reset.
   // Goes through the step-tool route (not a direct insert) because the buffer holds
   // tool ITEM ids and the operation tool row may not exist yet — the route creates
   // it before linking. Sequential so a repeated tool never races its own creation.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftTools.length === 0 || !carbon) return;
@@ -1483,6 +1490,7 @@ function StepsForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   if (isDisabled && temporaryItems[operationId]) {
@@ -2149,7 +2157,7 @@ function StepsListItem({
     }
     try {
       return JSON.parse(attribute.description);
-      // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+      // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
     } catch (e) {
       return {};
     }
@@ -2845,6 +2853,8 @@ function OperationForm({
   const { carbon } = useCarbon();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
+  const formId = useId();
+  const keepForProcess = useProcessWorkCenter(formId);
 
   const machineDisclosure = useDisclosure();
   const laborDisclosure = useDisclosure();
@@ -2915,10 +2925,18 @@ function OperationForm({
       carbon.from("supplierProcess").select("*").eq("processId", processId)
     ]);
 
-    const activeWorkCenters =
-      workCenters?.data?.filter((wc) => Boolean(wc.workCenter)) ?? [];
-
     if (process.error) throw new Error(process.error.message);
+    // A failed read would leave no work centers, and clear a valid one.
+    if (workCenters.error) throw new Error(workCenters.error.message);
+
+    const activeWorkCenters = workCenters.data.filter((wc) =>
+      Boolean(wc.workCenter)
+    );
+
+    keepForProcess(
+      activeWorkCenters.flatMap((wc) => (wc.workCenter ? [wc.workCenter] : [])),
+      locationId
+    );
 
     setProcessData((p) => ({
       ...p,
@@ -3021,6 +3039,7 @@ function OperationForm({
           ? path.to.newJobOperation(jobId)
           : path.to.jobOperation(jobId, item.id!)
       }
+      id={formId}
       method="post"
       defaultValues={item.data}
       validator={
@@ -4220,7 +4239,7 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const { t } = useLingui();
   const [isLoading, setIsLoading] = useState(false);
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   const { carbon, accessToken } = useCarbon();
 
   const fetchChat = async () => {

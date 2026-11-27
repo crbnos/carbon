@@ -213,7 +213,6 @@ const PartProperties = ({
       setTrackingRefusals((count) => count + 1);
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (
       field:
@@ -246,10 +245,10 @@ const PartProperties = ({
       );
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.partSummary?.id]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
@@ -266,10 +265,10 @@ const PartProperties = ({
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.partSummary?.readableId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -284,6 +283,7 @@ const PartProperties = ({
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.partSummary?.readableId]
   );
 

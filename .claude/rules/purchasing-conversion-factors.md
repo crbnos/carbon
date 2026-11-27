@@ -90,9 +90,15 @@ forward likewise (`update-purchased-prices` uses the planning `ln` alias).
 
 **Reverse direction (planning → purchase qty).** MRP/planning has an inventory
 requirement and computes the purchase quantity, rounding up:
-`round(inventoryQuantity / conversionFactor, 0, RoundingMode.Up)` (when factor
-> 0) — see `PurchasingPlanningOrderDrawer.tsx` and
-`production/ui/Planning/planned-orders-from-actions.ts`.
+`round(round(inventoryQuantity / conversionFactor), 0, RoundingMode.Up)` (when
+factor > 0); the inner round strips float noise (0.07 / 0.01 is
+7.000000000000001, which a bare ceil turns into 8). The drawer side is one pure
+function, `purchaseUnitsFor` (`production/ui/Planning/planned-orders-from-actions.ts`),
+used by `plannedOrdersFromActions` for the suggested orders and by
+`PurchasingPlanningOrderDrawer.tsx` for an order the planner adds (`onAddOrder`)
+and an Open Orders row's suggested quantity (`openOrderRows`). Apply writes the
+same rounding (`toPurchaseQuantity`, `purchasing.models.ts`; `quantityAfterApply`,
+`@carbon/planning`).
 
 **Display-only conversions** multiply purchase qty by the factor to show derived
 inventory qty (e.g. `PurchaseOrderSummary.tsx`, `SupplierQuoteSummary.tsx`) and

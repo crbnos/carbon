@@ -2,15 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import { describe, expect, it } from "vitest";
 import {
   buildAssemblyToolStepLinks,
+  type ConvertiblePlannedOrder,
   computeStepTimings,
+  findClosedBatchJob,
   jobStatusMoment,
+  matchPlannedOrdersToDocuments,
   maxToolQuantityByItem,
+  type PlannedOrderConversion,
   planAssemblyStepMarkerRemap,
   planAssemblyStepMarkerSync,
-  planOrphanStepAdoption
+  planBatchSerialRun,
+  planOrphanStepAdoption,
+  planSerialNumberDraws,
+  withoutLiveReservation
 } from "./production.service";
 
 describe("planAssemblyStepMarkerSync", () => {
@@ -342,6 +350,433 @@ describe("computeStepTimings", () => {
   });
 });
 
+describe("matchPlannedOrdersToDocuments", () => {
+  // one week (w1) of Make planned orders at one location, common segment
+  const plannedOrder = (
+    id: string,
+    overrides: Partial<ConvertiblePlannedOrder> = {}
+  ): ConvertiblePlannedOrder => ({
+    id,
+    itemId: "item",
+    locationId: "loc",
+    planningSegmentId: "",
+    periodId: "w1",
+    orderType: "Make",
+    status: "Planned",
+    quantity: 100,
+    splitIndex: 0,
+    dueDate: "2283-01-05",
+    ...overrides
+  });
+  const job = (
+    documentId: string,
+    overrides: Partial<PlannedOrderConversion> = {}
+  ): PlannedOrderConversion => ({
+    documentId,
+    quantity: 100,
+    plannedOrderId: null,
+    itemId: "item",
+    locationId: "loc",
+    planningSegmentId: "",
+    periodId: "w1",
+    orderType: "Make",
+    ...overrides
+  });
+
+  it("takes a larger job's excess off the week's next Planned orders, deleting one it covers whole", () => {
+    // 250 = A 100 (converted) + B 100 (covered, deleted) + 50 of C
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { quantity: 250 })],
+        [
+          plannedOrder("C", { splitIndex: 2 }),
+          plannedOrder("A", { splitIndex: 0 }),
+          plannedOrder("B", { splitIndex: 1 })
+        ]
+      )
+    ).toEqual({
+      conversions: [{ plannedOrderId: "A", documentId: "job" }],
+      reductions: [{ plannedOrderId: "C", quantity: 50 }],
+      deletions: ["B"]
+    });
+  });
+
+  it("takes the excess of a larger job that names its planned order off the week's next Planned orders", () => {
+    // 80 naming A (50): A converted, 30 off B (50 → 20); the Firm order stays
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { quantity: 80, plannedOrderId: "A" })],
+        [
+          plannedOrder("A", { splitIndex: 0, quantity: 50 }),
+          plannedOrder("F", { splitIndex: 1, quantity: 50, status: "Firm" }),
+          plannedOrder("B", { splitIndex: 2, quantity: 50 })
+        ]
+      )
+    ).toEqual({
+      conversions: [{ plannedOrderId: "A", documentId: "job" }],
+      reductions: [{ plannedOrderId: "B", quantity: 20 }],
+      deletions: []
+    });
+  });
+
+  it("deletes the Planned orders a larger named job covers whole", () => {
+    // 120 naming B (50): B converted, A (50) deleted, 20 off C (50 → 30)
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { quantity: 120, plannedOrderId: "B" })],
+        [
+          plannedOrder("A", { splitIndex: 0, quantity: 50 }),
+          plannedOrder("B", { splitIndex: 1, quantity: 50 }),
+          plannedOrder("C", { splitIndex: 2, quantity: 50 })
+        ]
+      )
+    ).toEqual({
+      conversions: [{ plannedOrderId: "B", documentId: "job" }],
+      reductions: [{ plannedOrderId: "C", quantity: 30 }],
+      deletions: ["A"]
+    });
+  });
+
+  it("never takes a larger job's excess off a Firm order", () => {
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { quantity: 150 })],
+        [
+          plannedOrder("A", { splitIndex: 0 }),
+          plannedOrder("F", { splitIndex: 1, status: "Firm" }),
+          plannedOrder("B", { splitIndex: 2 })
+        ]
+      )
+    ).toEqual({
+      conversions: [{ plannedOrderId: "A", documentId: "job" }],
+      reductions: [{ plannedOrderId: "B", quantity: 50 }],
+      deletions: []
+    });
+  });
+
+  it("converts by week a job whose planned order is gone or already converted in the batch", () => {
+    expect(
+      matchPlannedOrdersToDocuments(
+        [
+          job("first", { plannedOrderId: "A" }),
+          // A is the first job's: this one takes the week's next
+          job("same", { plannedOrderId: "A" }),
+          // no such planned order any more: the week's equal one
+          job("gone", { plannedOrderId: "deleted", quantity: 40 })
+        ],
+        [
+          plannedOrder("A", { splitIndex: 0 }),
+          plannedOrder("B", { splitIndex: 1 }),
+          plannedOrder("C", { splitIndex: 2, quantity: 40 })
+        ]
+      )
+    ).toEqual({
+      conversions: [
+        { plannedOrderId: "A", documentId: "first" },
+        { plannedOrderId: "B", documentId: "same" },
+        { plannedOrderId: "C", documentId: "gone" }
+      ],
+      reductions: [],
+      deletions: []
+    });
+  });
+
+  it("takes the week's Planned orders by due date before split index", () => {
+    // 150 = B 100 (due first, converted) + 50 off A
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { quantity: 150 })],
+        [
+          plannedOrder("A", { splitIndex: 0, dueDate: "2283-01-06" }),
+          plannedOrder("B", { splitIndex: 1, dueDate: "2283-01-04" })
+        ]
+      )
+    ).toEqual({
+      conversions: [{ plannedOrderId: "B", documentId: "job" }],
+      reductions: [{ plannedOrderId: "A", quantity: 50 }],
+      deletions: []
+    });
+  });
+
+  describe("after the week turned", () => {
+    // today is in w0; wPast is last week's, whose orders are now overdue
+    const calendar = {
+      weeks: [{ id: "w0", startDate: "2283-01-01", endDate: "2283-01-07" }],
+      today: "2283-01-03",
+      earlierWeekIds: ["wPast"]
+    };
+    const overdue = plannedOrder("A", {
+      periodId: "wPast",
+      dueDate: "2282-12-28"
+    });
+    const current = plannedOrder("C", {
+      periodId: "w0",
+      dueDate: "2283-01-05"
+    });
+
+    it("draws a past week's document only on the overdue orders", () => {
+      // 150: A converted; the excess never reaches the current week's C
+      expect(
+        matchPlannedOrdersToDocuments(
+          [job("past", { periodId: "wPast", quantity: 150 })],
+          [current, overdue],
+          calendar
+        )
+      ).toEqual({
+        conversions: [{ plannedOrderId: "A", documentId: "past" }],
+        reductions: [],
+        deletions: []
+      });
+    });
+
+    it("draws the current week's document only on its own week's orders beside a past week's document", () => {
+      expect(
+        matchPlannedOrdersToDocuments(
+          [
+            job("past", { periodId: "wPast", quantity: 150 }),
+            job("now", { periodId: "w0", quantity: 60 })
+          ],
+          [current, overdue],
+          calendar
+        )
+      ).toEqual({
+        conversions: [{ plannedOrderId: "A", documentId: "past" }],
+        reductions: [{ plannedOrderId: "C", quantity: 40 }],
+        deletions: []
+      });
+    });
+
+    it("leaves the overdue orders to a past week's action of the row that is still Open or Dismissed", () => {
+      const now = job("now", { periodId: "w0" });
+      expect(
+        matchPlannedOrdersToDocuments([now], [overdue, current], {
+          ...calendar,
+          pastWeekActionRows: [
+            {
+              itemId: "item",
+              locationId: "loc",
+              planningSegmentId: "",
+              orderType: "Make"
+            }
+          ]
+        })
+      ).toEqual({
+        conversions: [{ plannedOrderId: "C", documentId: "now" }],
+        reductions: [],
+        deletions: []
+      });
+      // with none, the current week's document also takes the overdue ones
+      expect(
+        matchPlannedOrdersToDocuments([now], [overdue, current], calendar)
+      ).toEqual({
+        conversions: [{ plannedOrderId: "A", documentId: "now" }],
+        reductions: [],
+        deletions: []
+      });
+    });
+  });
+
+  it("does not convert by id a planned order of another segment", () => {
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { plannedOrderId: "P" })],
+        [plannedOrder("P", { planningSegmentId: "project" })]
+      )
+    ).toEqual({ conversions: [], reductions: [], deletions: [] });
+  });
+});
+
+describe("findClosedBatchJob", () => {
+  const jobs = [
+    { status: "In Progress", jobId: "J-1", operationId: "op_1" },
+    { status: "Completed", jobId: "J-2", operationId: "op_2" },
+    { status: "Cancelled", jobId: "J-3", operationId: "op_3" }
+  ];
+
+  it("completes a batch with a finished job when the company does not hold units", () => {
+    expect(
+      findClosedBatchJob(jobs, ["op_1", "op_2", "op_3"], false)
+    ).toBeUndefined();
+  });
+
+  it("refuses the run's finished job when the company holds units, and ignores an excluded member's", () => {
+    expect(findClosedBatchJob(jobs, ["op_1", "op_2"], true)).toEqual(jobs[1]);
+    expect(findClosedBatchJob(jobs, ["op_1"], true)).toBeUndefined();
+  });
+});
+
+describe("planBatchSerialRun", () => {
+  type Run = Parameters<typeof planBatchSerialRun>[0];
+  type Unit = Run["units"][number];
+  const unit = (id: string, overrides: Partial<Unit> = {}): Unit => ({
+    id,
+    quantity: 1,
+    status: "Reserved",
+    attributes: {},
+    received: false,
+    ...overrides
+  });
+  // A member of four serials; the run completes three of them.
+  const base = (overrides: Partial<Run> = {}): Run => ({
+    operation: {
+      id: "op_1",
+      targetQuantity: 4,
+      operationQuantity: 4,
+      quantityComplete: 0,
+      quantityReworked: 0
+    },
+    member: { quantity: 3 },
+    units: [unit("u1"), unit("u2"), unit("u3"), unit("u4")],
+    outputs: [],
+    holds: [],
+    ...overrides
+  });
+
+  it("closes the operation when the unit left was scrapped by a closed issue", () => {
+    expect(
+      planBatchSerialRun(
+        base({
+          units: [
+            unit("u1"),
+            unit("u2"),
+            unit("u3"),
+            unit("u4", { status: "Rejected" })
+          ],
+          holds: [
+            {
+              trackedEntityId: "u4",
+              issueNumber: "NCR-1",
+              disposition: "Scrap"
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      eligibleIds: ["u1", "u2", "u3"],
+      partial: false,
+      workedCount: 0
+    });
+  });
+
+  it("closes the operation when a Rejected unit has no open issue to accept it", () => {
+    // u1 was received earlier, so the run must name its units.
+    expect(
+      planBatchSerialRun(
+        base({
+          member: { quantity: 2 },
+          units: [
+            unit("u1", { received: true }),
+            unit("u2"),
+            unit("u3"),
+            unit("u4", { status: "Rejected" })
+          ]
+        })
+      )
+    ).toEqual({ eligibleIds: ["u2", "u3"], partial: false, workedCount: 0 });
+  });
+
+  it.each([
+    ["an open issue holds", "Available"],
+    ["an open issue may still accept a Rejected", "Rejected"]
+  ] as const)("keeps the operation open for a unit %s", (_label, status) => {
+    expect(
+      planBatchSerialRun(
+        base({
+          units: [unit("u1"), unit("u2"), unit("u3"), unit("u4", { status })],
+          holds: [
+            { trackedEntityId: "u4", issueNumber: "NCR-2", disposition: null }
+          ]
+        })
+      )?.partial
+    ).toBe(true);
+  });
+
+  it("keeps the operation open for units still on the unsplit seed", () => {
+    expect(
+      planBatchSerialRun(
+        base({
+          operation: { ...base().operation, quantityComplete: 1 },
+          member: { quantity: 1 },
+          units: [
+            unit("u1", {
+              status: "Available",
+              attributes: { "Operation op_1": 1 }
+            }),
+            unit("u2"),
+            unit("seed", { quantity: 2 })
+          ]
+        })
+      )
+    ).toEqual({ eligibleIds: ["u2"], partial: true, workedCount: 1 });
+  });
+
+  it("leaves a run with nothing held, received or worked to the quantity posting", () => {
+    expect(planBatchSerialRun(base())).toBeNull();
+  });
+
+  it("refuses a quantity that does not cover every eligible unit", () => {
+    expect(() =>
+      planBatchSerialRun(
+        base({
+          member: { quantity: 2 },
+          holds: [
+            { trackedEntityId: "u4", issueNumber: "NCR-2", disposition: null }
+          ]
+        })
+      )
+    ).toThrow(InvalidInputError);
+  });
+});
+
+describe("planSerialNumberDraws", () => {
+  const unit = (
+    id: string,
+    itemId: string | null,
+    locationCode: string | null,
+    readableId: string | null = null
+  ) => ({ id, itemId, readableId, locationCode, locationName: null });
+
+  it("draws once per run of one item and location, in completion order", () => {
+    expect(
+      planSerialNumberDraws([
+        unit("a", "item_1", "NYC"),
+        unit("b", "item_1", "NYC", "SN-9"),
+        unit("c", "item_1", "NYC"),
+        unit("a", "item_1", "NYC"),
+        unit("d", null, "NYC"),
+        unit("e", "item_2", "NYC"),
+        unit("f", "item_1", "BOS"),
+        unit("g", "item_1", "NYC")
+      ])
+    ).toEqual([
+      {
+        itemId: "item_1",
+        locationCode: "NYC",
+        locationName: null,
+        trackedEntityIds: ["a", "c"]
+      },
+      {
+        itemId: "item_2",
+        locationCode: "NYC",
+        locationName: null,
+        trackedEntityIds: ["e"]
+      },
+      {
+        itemId: "item_1",
+        locationCode: "BOS",
+        locationName: null,
+        trackedEntityIds: ["f"]
+      },
+      {
+        itemId: "item_1",
+        locationCode: "NYC",
+        locationName: null,
+        trackedEntityIds: ["g"]
+      }
+    ]);
+  });
+});
+
 describe("jobStatusMoment", () => {
   it("announces a release when a Planned job is flipped to Ready", () => {
     expect(
@@ -378,5 +813,56 @@ describe("jobStatusMoment", () => {
     ["a status that is neither a release nor a hold", "Ready", "Cancelled"]
   ] as const)("announces nothing for %s", (_, priorStatus, status) => {
     expect(jobStatusMoment({ updated: true, priorStatus, status })).toBeNull();
+  });
+});
+
+describe("withoutLiveReservation", () => {
+  const op = (id: string, jobOperationBatchId: string | null = null) => ({
+    id,
+    jobOperationBatchId
+  });
+  const reservation = (
+    operationId: string,
+    jobOperationBatchId: string | null = null
+  ) => ({ operationId, jobOperationBatchId });
+
+  it("keeps an operation no reservation names", () => {
+    expect(
+      withoutLiveReservation([op("op-stale")], [reservation("op-other")])
+    ).toEqual([op("op-stale")]);
+  });
+
+  it("drops an operation with its own reservation, a placeholder included", () => {
+    expect(
+      withoutLiveReservation(
+        [op("op-placed"), op("op-stale")],
+        [reservation("op-placed")]
+      )
+    ).toEqual([op("op-stale")]);
+  });
+
+  it("drops every member of a batch whose booking names only its anchor", () => {
+    expect(
+      withoutLiveReservation(
+        [op("op-anchor", "bat-1"), op("op-member", "bat-1")],
+        [reservation("op-anchor", "bat-1")]
+      )
+    ).toEqual([]);
+  });
+
+  it("keeps a member of a batch with no booking", () => {
+    expect(
+      withoutLiveReservation(
+        [op("op-member", "bat-planned")],
+        [reservation("op-anchor", "bat-other")]
+      )
+    ).toEqual([op("op-member", "bat-planned")]);
+  });
+
+  it("keeps everything when there are no reservations", () => {
+    expect(withoutLiveReservation([op("a"), op("b", "bat-1")], [])).toEqual([
+      op("a"),
+      op("b", "bat-1")
+    ]);
   });
 });

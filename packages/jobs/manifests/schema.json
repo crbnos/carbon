@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261124080141",
+  "schemaVersion": "20261126091518",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-24T01:59:59.650Z",
+  "exportedAt": "2026-11-26T11:31:31.024Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -523,7 +523,9 @@
         "receiptBatchNumbersFromPurchaseOrder",
         "sequenceWeekNumbering",
         "supplierPartNumberDisplay",
-        "customerPartNumberDisplay"
+        "customerPartNumberDisplay",
+        "holdUnitsWithOpenIssues",
+        "lastMrpRunStartedAt"
       ]
     },
     {
@@ -1812,6 +1814,25 @@
         "skippedReason",
         "evidenceJournalId",
         "notes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "permission",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "employeeTypeId",
+        "userId",
+        "apiKeyId",
+        "module",
+        "page",
+        "level",
+        "convertedFrom",
         "createdBy",
         "createdAt",
         "updatedBy",
@@ -4002,6 +4023,7 @@
         "responsibleEmployee",
         "planningHorizonDays",
         "allowCommonSupplyForProjects",
+        "planningTimeFenceDays",
         "deliveryDateControl"
       ]
     },
@@ -4193,8 +4215,14 @@
         "requiresStaffing",
         "responsibleEmployee",
         "inspectionStorageUnitId",
-        "rejectedStorageUnitId"
+        "rejectedStorageUnitId",
+        "planningTimeFenceDays"
       ]
+    },
+    {
+      "name": "locationScheduleRun",
+      "rows": 0,
+      "columns": ["locationId", "companyId", "lastRunStartedAt"]
     },
     {
       "name": "nonConformance",
@@ -4452,7 +4480,8 @@
         "opportunityId",
         "completedDate",
         "customerEngineeringContactId",
-        "emailOrderOnAcceptance"
+        "emailOrderOnAcceptance",
+        "sendViaEmail"
       ]
     },
     {
@@ -5723,7 +5752,8 @@
         "workCenterId",
         "assignee",
         "storageUnitId",
-        "acceptedQuantity"
+        "acceptedQuantity",
+        "acceptedUnitIds"
       ]
     },
     {
@@ -7614,8 +7644,8 @@
         "projectId",
         "projectElementId",
         "planningGroupId",
-        "partNumberDisplay",
-        "taxCodeId"
+        "taxCodeId",
+        "partNumberDisplay"
       ]
     },
     {
@@ -7632,6 +7662,36 @@
         "createdBy",
         "updatedAt",
         "updatedBy"
+      ]
+    },
+    {
+      "name": "plannedOrder",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "itemId",
+        "locationId",
+        "planningSegmentId",
+        "orderType",
+        "status",
+        "quantity",
+        "scrapQuantity",
+        "quantityTrace",
+        "dueDate",
+        "releaseDate",
+        "periodId",
+        "splitIndex",
+        "lowLevelCode",
+        "supplierId",
+        "firmedBy",
+        "firmedAt",
+        "jobId",
+        "purchaseOrderLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -7667,7 +7727,8 @@
         "fromProjectId",
         "toProjectId",
         "projectStockTransferId",
-        "projectBorrowId"
+        "projectBorrowId",
+        "plannedOrderId"
       ]
     },
     {

@@ -53,7 +53,7 @@ import { path } from "~/utils/path";
 import { demandProjectionValidator } from "../../production.models";
 
 type LoaderData = {
-  periods?: Array<{ id: string; name: string }>;
+  periods?: Array<{ id: string; name?: string; startDate: string }>;
   initialValues?: z.infer<typeof demandProjectionValidator>;
 };
 
@@ -152,26 +152,23 @@ const DemandProjectionsForm = ({
     ? !permissions.has({ "production.demandForecasts": "Edit" })
     : !permissions.has({ "production.demandForecasts": "Create" });
 
-  const timeZone = getLocalTimeZone();
-  const startDate = startOfWeek(today(timeZone), "en-US");
   const useCalendarWeeks = useCompanySettings()?.useCalendarWeeks ?? false;
+  // Each column is the week its hidden `weekStarts[i]` posts: the loader's
+  // period, else the browser's week (the form posts no week without one).
+  const firstWeek = startOfWeek(today(getLocalTimeZone()), "en-US").toString();
+  const weekStarts = Array.from(
+    { length: WEEK_COUNT },
+    (_, i) =>
+      periods[i]?.startDate ?? parseDate(firstWeek).add({ weeks: i }).toString()
+  );
   // The number each week is headed with: 1, 2, … from this week, or the
   // calendar week of the year when the company plans by calendar week.
-  const firstWeek = startDate.toString();
-  const weekNumbers = useMemo(
-    () =>
-      Array.from({ length: WEEK_COUNT }, (_, i) =>
-        planningWeekNumber(
-          parseDate(firstWeek).add({ weeks: i }).toString(),
-          i,
-          useCalendarWeeks
-        )
-      ),
-    [firstWeek, useCalendarWeeks]
+  const weekNumbers = weekStarts.map((weekStart, i) =>
+    planningWeekNumber(weekStart, i, useCalendarWeeks)
   );
   const weekLabels = weekNumbers.map((weekNumber, i) => {
     const formattedDate = formatDate(
-      startDate.add({ weeks: i }).toString(),
+      weekStarts[i],
       { month: "numeric", day: "numeric" },
       i18n.locale
     );
@@ -189,13 +186,13 @@ const DemandProjectionsForm = ({
 
   // Re-seed the chart when the drawer is reused for a different projection
   // (same route, new item/location) — otherwise it keeps the prior values.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setWeekValues(
       Array.from({ length: WEEK_COUNT }, (_, i) =>
         toFinite((initialValues as Record<string, unknown>)[`week${i}`])
       )
     );
+    // oxlint-disable-next-line react/exhaustive-deps -- the new form builds initialValues every render, so depending on it resets the chart on any parent render
   }, [initialValues.itemId, initialValues.locationId]);
 
   const handleWeekChange = (index: number, value: number) => {
@@ -279,8 +276,8 @@ const DemandProjectionsForm = ({
               {periods?.map((period, index) => (
                 <Hidden
                   key={period.id}
-                  name={`periods[${index}]`}
-                  value={period.id}
+                  name={`weekStarts[${index}]`}
+                  value={period.startDate}
                 />
               ))}
             </div>

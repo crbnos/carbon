@@ -21,7 +21,6 @@ export function StatusReadout({
   // every render, so keying off identity would reset the typewriter to 0 on
   // each re-render and it would never advance past the cursor.
   const content = lines.join("\n");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `content` is the intended reset trigger, not read in the body
   useEffect(() => {
     setVisible(0);
   }, [content]);

@@ -65,7 +65,6 @@ function OperationLabel({ text }: { text: string }) {
     <span className="min-w-0 break-normal font-mono text-ed-13">
       <span className="text-ed-ink/45">{verb}</span>
       {words.map((word, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: words of one fixed name
         <span key={i}>
           {i > 0 && <wbr />}
           {word}

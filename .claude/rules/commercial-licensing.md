@@ -133,7 +133,7 @@ UI stays `.ee.tsx` in `apps/erp/app/modules/<module>/ui/` (coupled to `~/compone
 6. UI → `.ee.tsx`. Route → keep `requireFeature` for the UX redirect + catch
    `EntitlementError`.
 7. Verify: `pnpm --filter @carbon/ee typecheck`, `pnpm exec turbo run typecheck --filter=erp`,
-   Biome, and if an `@mcp` service function leaves `<module>.server.ts` note the MCP digest
+   oxlint, and if an `@mcp` service function leaves `<module>.server.ts` note the MCP digest
    changes (`pnpm run generate:mcp`) — moving it out of the router removes it as an MCP
    tool, which is usually correct (an ungated MCP path would bypass the gate).
 
@@ -153,8 +153,10 @@ Refactor one at a time; each PR should leave the tree green.
   (feature chosen by the `family` discriminator), `assignSalesRule`/`unassignSalesRule`
   (`SALES_RULES`), and `assignStorageRule`/`unassignStorageRule` (`STORAGE_RULES`). The
   runtime evaluators (`isSalesRulesEnabledForCompany`/`isStorageRulesEnabledForCompany`)
-  degrade via `companyHasFeature`; write routes gate with `requireFeature`. The
-  entitled writes are kept OUT of the client-safe `@carbon/ee/rules` barrel (which
+  degrade via `companyHasFeature`. The storage rule write routes gate with
+  `requireFeature`; the sales rule write routes call the `sales.server.ts`
+  operations, which turn the `EntitlementError` into an `entitlement` refusal
+  (`salesRulesEntitlementRefusal`). The entitled writes are kept OUT of the client-safe `@carbon/ee/rules` barrel (which
   client components reach via `useRuleViolations`) — the query getters stay there.
 - ✅ **API keys** — `saveApiKey`/`deleteApiKey` in `packages/ee/src/api-keys.server.ts`,
   `requireEntitlement("API_KEYS")`; routes gate with `requireFeature`.

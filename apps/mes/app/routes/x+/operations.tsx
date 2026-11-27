@@ -851,7 +851,7 @@ function useProgressByOperation(
   const {
     company: { id: companyId }
   } = useUser();
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   const { carbon, accessToken } = useCarbon();
 
   const [productionEventsByOperation, setProductionEventsByOperation] =
@@ -951,12 +951,12 @@ function useProgressByOperation(
     setProgressByOperation(progress);
   }, 5000);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (Object.keys(productionEventsByOperation).length > 0) {
       const { progress } = getProgress();
       setProgressByOperation(progress);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [productionEventsByOperation]);
 
   useChangedRows<{ id: string; workCenterId: string; priority: number }>({

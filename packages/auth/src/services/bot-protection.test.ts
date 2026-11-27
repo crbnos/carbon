@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // botProtection is decided at import time from env, so each case sets the env
 // stub, resets the module registry and imports the module fresh.
@@ -30,6 +30,13 @@ async function load(overrides: Partial<typeof env>) {
   vi.resetModules();
   return import("./bot-protection.server");
 }
+
+// The first import transforms @carbon/utils and @carbon/logger from scratch,
+// which takes seconds on a busy CI runner. Load them once here, outside every
+// test's timeout; each case still imports a fresh copy through load().
+beforeAll(async () => {
+  await import("./bot-protection.server");
+}, 30_000);
 
 const turnstileKeys = {
   CLOUDFLARE_TURNSTILE_SITE_KEY: "site",

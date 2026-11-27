@@ -36,7 +36,6 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: id is stripped for insert
   const { id, ...d } = validation.data;
 
   const insertReturnReason = await upsertReturnReason(client, {

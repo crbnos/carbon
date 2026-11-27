@@ -5,6 +5,8 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { activeJobStatuses, fetchAllFromTable } from "@carbon/database";
 import { datetime } from "@carbon/utils";
+import { sql } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
 // PostgREST .in() filters are URL-encoded — thousands of ids in one filter can
@@ -56,42 +58,45 @@ export const nightlyReplanFunction = inngest.createFunction(
     await step.run("stamp-aged-schedules", async () => {
       const today = datetime.today("UTC").toString();
 
-      const agedOps = await fetchAllFromTable<{ jobId: string }>(
-        serviceRole,
-        "jobOperation",
-        "jobId",
-        (query) =>
-          query
-            .not("status", "in", '("Done","Canceled")')
-            .lt("startDate", today)
+      const agedOps = await fetchAllFromTable<{
+        jobId: string;
+        companyId: string;
+      }>(serviceRole, "jobOperation", "jobId, companyId", (query) =>
+        query.not("status", "in", '("Done","Canceled")').lt("startDate", today)
       );
       if (agedOps.error) {
         throw new Error(
           `Failed to find aged schedules: ${agedOps.error.message}`
         );
       }
-      const agedJobIds = [...new Set((agedOps.data ?? []).map((o) => o.jobId))];
+      const companyByJobId = new Map(
+        (agedOps.data ?? []).map((o) => [o.jobId, o.companyId])
+      );
+      const agedJobIds = [...companyByJobId.keys()];
       if (agedJobIds.length === 0) {
         return { stamped: 0 };
       }
 
-      const stamp = {
-        scheduleOutdatedReason: "Schedule re-anchored (day passed)",
-        scheduleOutdatedAt: datetime.timestamp()
-      };
+      // Stamped on the database clock: a schedule run compares the mark with
+      // its own start, read from the same clock (`runStartedAt`).
+      const db = getJobDatabaseClient();
       let stamped = 0;
       for (const jobIdChunk of chunkArray(agedJobIds, IN_FILTER_CHUNK_SIZE)) {
-        const result = await serviceRole
-          .from("job")
-          .update(stamp)
-          .in("id", jobIdChunk)
-          .in("status", [...activeJobStatuses])
-          .is("scheduleOutdatedAt", null)
-          .select("id");
-        if (result.error) {
-          throw new Error(`Failed to stamp aged jobs: ${result.error.message}`);
-        }
-        stamped += result.data?.length ?? 0;
+        const result = await db
+          .updateTable("job")
+          .set({
+            scheduleOutdatedReason: "Schedule re-anchored (day passed)",
+            scheduleOutdatedAt: sql<string>`now()`
+          })
+          .where("id", "in", jobIdChunk)
+          // Each job's own company: the sweep spans every company.
+          .where("companyId", "in", [
+            ...new Set(jobIdChunk.map((id) => companyByJobId.get(id)!))
+          ])
+          .where("status", "in", [...activeJobStatuses])
+          .where("scheduleOutdatedAt", "is", null)
+          .executeTakeFirst();
+        stamped += Number(result.numUpdatedRows);
       }
       return { stamped };
     });

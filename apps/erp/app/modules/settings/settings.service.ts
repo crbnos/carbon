@@ -27,6 +27,7 @@ import {
   fetchAllFromTable,
   getCompanyTimeZone
 } from "@carbon/database";
+import { ownersOf } from "@carbon/database/access";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import {
   type Kysely,
@@ -220,16 +221,16 @@ import {
   takePanelPlan
 } from "@carbon/ee/onshape";
 import {
-  ONSHAPE_PANEL_INTEGRATION_IDS,
-  ONSHAPE_V2_INTEGRATION_ID
-} from "@carbon/ee/onshape/integration-id";
-import { panelCompanyChoices } from "@carbon/ee/onshape/panel-session.server";
-import {
   isOnshapeOAuthIntegrationId,
   loadOnshapeOAuthConfig,
   patchOnshapeOAuthGrant,
   patchOnshapeSettings
 } from "@carbon/ee/onshape.server";
+import {
+  ONSHAPE_PANEL_INTEGRATION_IDS,
+  ONSHAPE_V2_INTEGRATION_ID
+} from "@carbon/ee/onshape/integration-id";
+import { panelCompanyChoices } from "@carbon/ee/onshape/panel-session.server";
 import {
   isIntegrationComingSoon,
   isIntegrationWhitelisted
@@ -257,16 +258,19 @@ import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
   datetime,
+  indexBy,
   isInternalEmail,
   labelSizes,
   requireAffected,
   requiresItarEntityCertification,
   searchFilter,
+  toSafeHref,
   withLabelDpi
 } from "@carbon/utils";
-import { parseAbsolute } from "@internationalized/date";
+import { parseAbsolute, parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { type Insertable, type Selectable, sql } from "kysely";
+import isEqual from "lodash/isEqual";
 import { nanoid } from "nanoid";
 import { data } from "react-router";
 import { extract as tarExtract } from "tar-stream";
@@ -329,6 +333,7 @@ import type {
 } from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
+import { DataType } from "~/modules/shared/types";
 import { getItarCertificationStatus } from "~/modules/users/users.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
@@ -670,6 +675,209 @@ export async function getCustomFieldsTables(
   return query;
 }
 
+// Custom field tables whose rows a company group shares: a record carries
+// `companyGroupId`, not `companyId`.
+const GROUP_CUSTOM_FIELD_TABLES = new Set(["account", "currency"]);
+
+/**
+ * What edits the records of a custom field table: the pages that own the
+ * table, whose Edit row-level security asks of a write (one page per item type
+ * for a table the item pages share), and the column that ties a record to the
+ * company. Data is null when the table has no custom fields.
+ */
+export async function getCustomFieldTableEditScope(
+  client: SupabaseClient<Database>,
+  table: string
+) {
+  const { data, error } = await client
+    .from("customFieldTable")
+    .select("table")
+    .eq("table", table)
+    .maybeSingle();
+  if (error || !data) return { data: null, error };
+  return {
+    data: {
+      pages: ownersOf(table),
+      scopeColumn: GROUP_CUSTOM_FIELD_TABLES.has(table)
+        ? ("companyGroupId" as const)
+        : ("companyId" as const)
+    },
+    error: null
+  };
+}
+
+/** A table's custom fields, with what decides the values each takes. */
+export async function getTableCustomFieldTypes(
+  client: SupabaseClient<Database>,
+  table: string,
+  companyId: string
+) {
+  return client
+    .from("customField")
+    .select("id, dataTypeId, listOptions")
+    .eq("table", table)
+    .eq("companyId", companyId);
+}
+
+export type CustomFieldType = {
+  id: string;
+  dataTypeId: number;
+  listOptions: string[] | null;
+};
+
+function isIsoDate(value: string) {
+  try {
+    parseDate(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether a record's properties panel (`CustomFormInlineFields`) can send
+ * this value for a field of this type. A File field has no input there.
+ */
+function isCustomFieldValue(field: CustomFieldType, value: unknown) {
+  switch (field.dataTypeId) {
+    case DataType.Boolean:
+      return value === "on" || value === "";
+    case DataType.Date:
+      return value === null || (typeof value === "string" && isIsoDate(value));
+    case DataType.List:
+      return (
+        value === null ||
+        (typeof value === "string" && (field.listOptions ?? []).includes(value))
+      );
+    case DataType.Numeric:
+      return (
+        value === null ||
+        (typeof value === "number" && Number.isFinite(value)) ||
+        (typeof value === "string" &&
+          value.trim() !== "" &&
+          Number.isFinite(Number(value)))
+      );
+    case DataType.Text:
+      return typeof value === "string";
+    case DataType.Link:
+      return (
+        typeof value === "string" &&
+        (value === "" || toSafeHref(value) !== null)
+      );
+    case DataType.User:
+    case DataType.Customer:
+    case DataType.Supplier:
+      return typeof value === "string" && value.length > 0;
+    default:
+      return false;
+  }
+}
+
+/**
+ * What a save does with each custom field key it sent, given the values the
+ * records hold (`stored`, one map per record). `write` is the values it
+ * writes: each a value its field's panel input sends. `notFields` (keys that
+ * are not one of the table's custom fields) and `badValues` (a value its
+ * field's input never sends) refuse the save, unless every record already
+ * holds that value: such a key is in none of the three, taken but not written.
+ * A caller that sends back the stored map (a panel loaded before the panel
+ * sent only its changed field, an API caller) sends a deleted field's value,
+ * or one stored in another shape, unchanged. Values compare as JSON: an
+ * object's members in any order, an array's items in theirs.
+ */
+export function classifyCustomFieldKeys(
+  sent: Record<string, unknown>,
+  fields: readonly CustomFieldType[],
+  stored: readonly (Record<string, unknown> | null)[]
+) {
+  const fieldById = indexBy(fields, (field) => field.id);
+  const heldByEveryRecord = (key: string) =>
+    stored.length > 0 &&
+    stored.every((values) => isEqual(values?.[key], sent[key]));
+  const write: Record<string, unknown> = {};
+  const notFields: string[] = [];
+  const badValues: string[] = [];
+  for (const [key, value] of Object.entries(sent)) {
+    const field = fieldById.get(key);
+    if (field && isCustomFieldValue(field, value)) write[key] = value;
+    else if (heldByEveryRecord(key)) continue;
+    else if (field) badValues.push(key);
+    else notFields.push(key);
+  }
+  return { write, notFields, badValues };
+}
+
+type CustomFieldRecord = {
+  id: string;
+  customFields: Record<string, unknown> | null;
+};
+
+function fromCustomFieldTable(client: SupabaseClient<Database>, table: string) {
+  // The table is only known at runtime, so the generated types cannot name it.
+  return (client as unknown as SupabaseClient).from(table);
+}
+
+/** The stored custom field values of some records of one table. */
+export async function getRecordsCustomFields(
+  client: SupabaseClient<Database>,
+  args: {
+    table: string;
+    ids: string[];
+    scopeColumn: "companyId" | "companyGroupId";
+    scopeId: string;
+  }
+) {
+  return fromCustomFieldTable(client, args.table)
+    .select("id, customFields")
+    .in("id", args.ids)
+    .eq(args.scopeColumn, args.scopeId)
+    .overrideTypes<CustomFieldRecord[], { merge: false }>();
+}
+
+/**
+ * The change a save makes to a record's custom fields: the values it sets,
+ * and the keys a null clears. Keys it does not name are left as stored.
+ */
+function customFieldsPatch(customFields: Record<string, unknown>) {
+  const set: Record<string, unknown> = {};
+  const clear: string[] = [];
+  for (const [key, value] of Object.entries(customFields)) {
+    if (value === null) clear.push(key);
+    else if (value !== undefined) set[key] = value;
+  }
+  return { set, clear };
+}
+
+/**
+ * Set some custom field values on the records of one company (or, for a table
+ * a company group shares, of its group), as one UPDATE that merges them into
+ * each record's stored map (`set_record_custom_fields`): a value another save
+ * wrote to a field this one does not name is kept. RLS on the table applies.
+ */
+export async function updateRecordCustomFields(
+  client: SupabaseClient<Database>,
+  args: {
+    table: string;
+    ids: string[];
+    scopeColumn: "companyId" | "companyGroupId";
+    scopeId: string;
+    customFields: Record<string, unknown>;
+    updatedBy: string;
+  }
+) {
+  const { set, clear } = customFieldsPatch(args.customFields);
+  const { data, error } = await client.rpc("set_record_custom_fields", {
+    p_table: args.table,
+    p_ids: args.ids,
+    p_scope_column: args.scopeColumn,
+    p_scope_id: args.scopeId,
+    p_set: set as Json,
+    p_clear: clear,
+    p_updated_by: args.updatedBy
+  });
+  return { data: data ?? null, error };
+}
+
 export async function getIntegration(
   client: SupabaseClient<Database>,
   id: string,
@@ -897,14 +1105,28 @@ export async function getItemSerialSequenceByItemId(
     .maybeSingle();
 }
 
+/**
+ * A sequence's fields as the form or the API sends them: the API may send a
+ * null timing (follow the company setting) and leave the label flag out.
+ */
+type ItemSerialSequenceFields = Omit<
+  z.infer<typeof itemSerialSequenceValidator>,
+  "id" | "serialNumberTiming" | "printLabelOnCompletion"
+> & {
+  serialNumberTiming?:
+    | z.infer<typeof itemSerialSequenceValidator>["serialNumberTiming"]
+    | null;
+  printLabelOnCompletion?: boolean;
+};
+
 export async function upsertItemSerialSequence(
   client: SupabaseClient<Database>,
   itemSerialSequence:
-    | (Omit<z.infer<typeof itemSerialSequenceValidator>, "id"> & {
+    | (ItemSerialSequenceFields & {
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof itemSerialSequenceValidator>, "id"> & {
+    | (ItemSerialSequenceFields & {
         id: string;
         companyId: string;
         updatedBy: string;
@@ -917,14 +1139,17 @@ export async function upsertItemSerialSequence(
       .select("id")
       .single();
   }
+  // A sequence stays on its item: the update matches only that item's row.
   const { id, companyId, ...update } = itemSerialSequence;
-  return client
-    .from("itemSerialSequence")
-    .update(sanitize(update))
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
+  return requireAffected(
+    client
+      .from("itemSerialSequence")
+      .update(sanitize(update))
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .eq("itemId", update.itemId)
+      .select("id")
+  );
 }
 
 export async function deleteItemSerialSequence(
@@ -2919,7 +3144,12 @@ export async function deleteCustomField(
     clearCustomFieldsCache(companyId);
   } finally {
     return requireAffected(
-      client.from("customField").delete().eq("id", id).select("id")
+      client
+        .from("customField")
+        .delete()
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .select("id")
     );
   }
 }
@@ -3209,8 +3439,16 @@ export async function upsertCustomField(
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof customFieldValidator>, "id"> & {
+    // An update writes only the fields it is given: its table and data type
+    // never change.
+    | (Partial<
+        Pick<
+          z.infer<typeof customFieldValidator>,
+          "name" | "listOptions" | "tags" | "required"
+        >
+      > & {
         id: string;
+        companyId: string;
         updatedBy: string;
       })
 ) {
@@ -3221,7 +3459,8 @@ export async function upsertCustomField(
       const sortOrders = await client
         .from("customField")
         .select("sortOrder")
-        .eq("table", customField.table);
+        .eq("table", customField.table)
+        .eq("companyId", customField.companyId);
 
       if (sortOrders.error) return sortOrders;
       const maxSortOrder = sortOrders.data.reduce((max, item) => {
@@ -3230,18 +3469,19 @@ export async function upsertCustomField(
 
       return client
         .from("customField")
-        .insert([{ ...customField, sortOrder: maxSortOrder + 1 }]);
+        .insert([{ ...customField, sortOrder: maxSortOrder + 1 }])
+        .select("id")
+        .single();
     }
+    const { id, companyId, ...changes } = customField;
     return requireAffected(
       client
         .from("customField")
-        .update(
-          sanitize({
-            ...customField,
-            updatedBy: customField.updatedBy
-          })
-        )
-        .eq("id", customField.id)
+        // Not sanitized: a key left undefined is left out of the JSON, so a
+        // field the update was not given is not written.
+        .update(changes)
+        .eq("id", id)
+        .eq("companyId", companyId)
         .select("id")
     );
   }
@@ -7074,10 +7314,7 @@ export async function pushOnshapeAssembly(
       { status: 500 }
     );
   }
-  const childMethodFor = (
-    childItem: AssemblyPushItemRow,
-    childMade: boolean
-  ) =>
+  const childMethodFor = (childItem: AssemblyPushItemRow, childMade: boolean) =>
     childMade
       ? methodByItemId.get(childItem.id)
       : childItem.defaultMethodType === "Make to Order"
@@ -8927,9 +9164,8 @@ export async function pushOnshapeRelease(
   // Delete the revision's copies of the base's Onshape lines (manual lines stay),
   // then the lines a previous push of this release wrote.
   const baseMethodIdByTargetMethodId = new Map<string, string>(
-    bomTargets.flatMap(
-      (target): Array<[string, string]> =>
-        target.baseMethodId ? [[target.methodId, target.baseMethodId]] : []
+    bomTargets.flatMap((target): Array<[string, string]> =>
+      target.baseMethodId ? [[target.methodId, target.baseMethodId]] : []
     )
   );
   const copyTargetMethodIds = [...baseMethodIdByTargetMethodId.entries()]

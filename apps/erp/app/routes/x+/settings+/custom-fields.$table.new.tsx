@@ -2,55 +2,30 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people/types";
 import { customFieldValidator } from "~/modules/settings/settings.models";
-import { upsertCustomField } from "~/modules/settings/settings.service";
 import { CustomFieldForm } from "~/modules/settings/ui";
 import { DataType } from "~/modules/shared/types";
 import { getParams, path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    "settings.customFields": "Create"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(customFieldValidator).request(args, {
+    params: ["table"]
   });
-
-  const { table } = params;
-  if (!table) throw new Error("table is not found");
-
-  const validation = await validator(customFieldValidator).validate(
-    await request.formData()
+  if ("invalid" in input) return input.invalid;
+  const { id: _id, ...field } = input.data;
+  const { api } = await authorize(args.request);
+  const result = await api.settings.createCustomField(field);
+  return respond(args.request, result).redirect(
+    `${path.to.customFieldList(input.params.table)}?${getParams(args.request)}`
   );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const create = await upsertCustomField(client, {
-    ...d,
-    companyId,
-    createdBy: userId
-  });
-  if (create.error) {
-    return data(
-      {},
-      await flash(request, error(create.error, "Failed to insert custom field"))
-    );
-  }
-
-  throw redirect(`${path.to.customFieldList(table)}?${getParams(request)}`);
 }
 
 export default function NewCustomFieldRoute() {

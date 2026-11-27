@@ -14,9 +14,9 @@
 // `planAccountImport` is pure, so the review page and the apply server
 // function compute the same plan. The reads live in ./account-import-reads.
 
+import { MIGRATION_CLEARING_ACCOUNT_CLASS } from "./accounting-cutover.ts";
 import type { AccountDefaultColumn } from "./accounting-cutover/shared.ts";
 import { ACCOUNT_DEFAULT_COLUMNS } from "./accounting-cutover/shared.ts";
-import { MIGRATION_CLEARING_ACCOUNT_CLASS } from "./accounting-cutover.ts";
 import { Constants } from "./constants.ts";
 import { hasDefaultFallback } from "./journal-posting-status.ts";
 import type { AccountClass } from "./ledger.ts";

@@ -85,7 +85,6 @@ const DetailTopbar = ({
       return `${link.name}|${link.to}|${link.count}|${active}`;
     })
     .join(",");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on itemsKey
   const items = useMemo<CompactTabItem[]>(
     () =>
       links.map((route) => ({
@@ -97,6 +96,7 @@ const DetailTopbar = ({
           ? route.isActive(location.pathname)
           : location.pathname.includes(route.to)
       })),
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed on itemsKey
     [itemsKey, preserveParams, paramString]
   );
   recordTabsSlot.useProvide(isPhone ? items : null);

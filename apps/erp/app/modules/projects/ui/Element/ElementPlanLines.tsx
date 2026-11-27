@@ -92,13 +92,6 @@ import {
 } from "../ChangeRequests/useActiveChangeRequest";
 import { useElementRoutes } from "../Elements/ElementRoutes";
 import {
-  CostCard,
-  CostToolbar,
-  FigureSeparator,
-  NoMatchingCosts,
-  useCostTypeLabels
-} from "./CostCards";
-import {
   type CostTypeFilter,
   costDescriptionKey,
   type EstimatedSort,
@@ -108,6 +101,13 @@ import {
   planProgress,
   sortPlanCards
 } from "./cost-cards";
+import {
+  CostCard,
+  CostToolbar,
+  FigureSeparator,
+  NoMatchingCosts,
+  useCostTypeLabels
+} from "./CostCards";
 import { orderPlanRows, type PlanLineType } from "./plan-rows";
 
 type PlanLines = ProjectElementPage["planLines"];

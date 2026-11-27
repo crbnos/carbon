@@ -262,3 +262,51 @@ where a secret lives, grep for the *column and id* (`"companyIntegration"` + `"s
 make the old path fail loudly (throw) rather than return `undefined`.
 
 **Applies to:** every `companyIntegration` / `integrationConnection` reader; any future secret move.
+
+## A helper that writes the rows you are about to update
+
+```scope
+id: a-helper-that-writes-the-rows-you-are-about-to-update
+paths: ["apps/erp/app/modules/users/users.server.ts", "packages/auth/src/services/users.server.ts"]
+triggers: ["revokeInvites", "deactivateUser"]
+```
+
+**Context:** `users_revokeInvites` deactivates each user, then marks the invites revoked with an UPDATE filtered on `revokedAt IS NULL`.
+
+**Problem:** `deactivateUser` (`@carbon/auth/users.server`) already stamps the invite revoked. For one user the operation's own UPDATE matched nothing, so it answered `{ revoked: 0 }` for a revoke that worked and skipped the audit entry that records the request's origin. Its unit test used two users, which take the job path, so it never saw the one-user path.
+
+**Rule:** Before calling a helper, read it to its end. If it writes the rows the next statement filters on, read their ids first and update by id. Count from the rows found, not from a second filtered write.
+
+**Applies to:** Any operation that calls a shared write (deactivate, post, close) and then updates the same rows.
+
+## A gate the manifest cannot show reads as membership
+
+```scope
+id: a-gate-the-manifest-cannot-show-reads-as-membership
+paths: ["scripts/lib/service-fn-metadata.ts", "scripts/lib/manifest-digest.ts", "apps/erp/test/mcp-tool-permissions.test.ts"]
+triggers: ["describe_tool"]
+```
+
+**Context:** The MCP manifest published a gate over two or more modules (`{ create: "production", view: "projects" }`) as `{ module: null, actions: [] }`, the shape of a company-membership gate.
+
+**Problem:** `describe_tool` printed no permission and the digest wrote `none`, so a gate could lose a module, or become `{}`, without any digest line changing. The API still enforced the full gate, so nothing was open, but the contract a caller reads was wrong.
+
+**Rule:** The manifest publishes every page a gate names (`allOf` for pages of several modules, `oneOf` for a choice), and the digest line names them. When the generator meets a gate shape it does not know, fail generation rather than fall back to membership.
+
+**Applies to:** `scripts/lib/service-fn-metadata.ts`, `scripts/lib/manifest-digest.ts`, `apps/erp/test/mcp-tool-permissions.test.ts`.
+
+## Decide with the conditional write, then act on the rows it returned
+
+```scope
+id: decide-with-the-conditional-write-then-act-on-the-rows-it-re
+paths: ["apps/erp/app/modules/users/users.server.ts"]
+triggers: ["revokeInvites", "revokedAt"]
+```
+
+**Context:** `users_revokeInvites` checked the invites were pending, then deactivated the users, then marked the invites revoked.
+
+**Problem:** An invite accepted between the check and the deactivation got its new account deactivated.
+
+**Rule:** Do the conditional write that decides first: stamp `revokedAt` where `acceptedAt` and `revokedAt` are still null. Deactivate only the users whose rows it returned, and clear the stamp if the deactivation fails. Acceptance requires `revokedAt IS NULL` under the invite's row lock.
+
+**Applies to:** A destructive step that follows a status check: revoke, cancel, close, deactivate.

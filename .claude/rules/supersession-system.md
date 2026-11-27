@@ -148,7 +148,8 @@ provisional; the settle pass is what applies the per-line rule.
 The job materials **Order Status** column (`getJobMaterialShortfallByItem`)
 nets a Consume First shortfall against the successor's on-hand and incoming
 supply in a second pass; `ItemOrderStatus.substituteItemId` tells the badge to
-say "In stock, the remainder as NEW" or "Order N × NEW for this job". The
+say "In stock, the remainder as NEW" or "Order N × NEW for this job"
+("Make N × NEW" when NEW is a Make item). The
 successor's own supply also drives the badge: `getJobMaterialsOrderStatus`
 loads PO lines and supply jobs for every substitute item that is not itself a
 material of the job, and `getJobOrderStatusByMaterial` reads a line's own item
@@ -323,10 +324,9 @@ the factors.
   IMMEDIATE parent's per-unit need stamped by the cascade — `parentItemId` is
   the root source's item and cannot answer that for a sub-sub-assembly — so a
   parent needing two per unit draws only multiples of two, at any depth) and moves the shortfall (× factor, stamped
-  `redirectedFromItemId`) to the successor — in the old part's period, or
-  EARLIER by the difference when the successor's lead time is longer (the
-  parent needs it by the same date); never later, since the old part's period
-  may already be floored at period[0]. The old part
+  `redirectedFromItemId`) to the successor in the old part's period: both are
+  needed when the parent's order starts, and the successor's own order sizing
+  subtracts its lead time. The old part
   never explodes its own BOM; the successor is planned as itself at a deeper
   level — its BOM explodes for exactly the shortfall when it is Make, and it
   surfaces as a buy when it is Buy. The supersession is a synthetic edge in
@@ -342,7 +342,8 @@ the factors.
   have no per-assembly quantity and net by the unit. Pinned by
   `packages/database/src/mrp-engine.test.ts`.
 - **The redirect also moves the ACTUAL demand rows.** Phase 4.5 rewrites
-  `jobMaterialDemandByKey` / `salesDemandByKey` in the same proportion it
+  `jobMaterialDemandByKey` / `salesDemandByKey` / `projectMaterialDemandByKey`
+  (common-segment Project Material) in the same proportion it
   moves `grossDemand`, so `demandActual` (which `get_purchasing_planning`,
   `get_production_planning` and the item planning chart read) shows the
   predecessor with only what its stock covers and the successor with the rest

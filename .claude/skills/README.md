@@ -74,6 +74,7 @@ in root-cause, BLOCKED in fix) always surface to the human.
 | `resolving-merge-conflicts` | External (mattpocock/skills, MIT, `3216582`; since removed upstream): THE default for any in-progress merge or rebase conflict — find each side's intent, resolve every hunk, run the checks, finish | a finished merge/rebase |
 | `writing-skills` | House guide for authoring skills | skills |
 | `explain` | HTML explainer (STE-80 prose + one diagram) for a spec, plan or research file | `{source}.html` beside the `.md` |
+| `pr` | External (show-me by Dex Horthy, see `CREDITS.md`): THE format for every PR body — Summary, Evidence, Merge Danger | PR description |
 | `pr-explainer` | Self-contained HTML review aid for a PR | `.pr-review/*.html` |
 | `pr-splitter` | Split a large PR into reviewable stacked PRs | branches + split notes |
 | `carbon-design` | Carbon's design language: principles, page archetypes, components, states, copy, anti-patterns + mandatory design review for any ERP/MES UI | design brief + reviewed UI |

@@ -47,9 +47,10 @@ export const kanbanOutputTypes = ["label", "qrcode", "url"] as const;
 // others are thermal label ids in @carbon/utils `labelSizes`.
 export const kanbanLabelSizes = ["letter", "label4x2", "label3x2"] as const;
 
-// Mirrors the `invoiceAutomation` DB enum: what happens to a recurring
-// invoice (rental agreements today) when the daily job creates it.
-export const invoiceAutomations = [
+// Every `invoiceAutomation` value but Manual: the company default and a
+// contract's own mode. Only a rental agreement takes Manual (a CHECK on
+// `companySettings` and `customerContract`), so nothing inherits it.
+export const inheritableInvoiceAutomations = [
   "Draft Only",
   "Post",
   "Post and Email",
@@ -245,6 +246,21 @@ export const onboardingCompanyValidator = z.object({
   next: z.string().min(1, { message: "Next is required" })
 });
 
+/** A list field needs at least one option, and no empty one. */
+const listFieldHasOptions = (input: {
+  dataTypeId: number;
+  listOptions?: string[];
+}) =>
+  input.dataTypeId !== DataType.List ||
+  (input.listOptions !== undefined &&
+    input.listOptions.length > 0 &&
+    input.listOptions.every((option) => option.length > 0));
+
+const listFieldOptionsIssue = {
+  message: "A list field needs at least one option",
+  path: ["listOptions"]
+};
+
 export const customFieldValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -257,18 +273,19 @@ export const customFieldValidator = z
     tags: z.array(z.string()).optional(),
     required: zfd.checkbox()
   })
-  .refine((input) => {
-    // allows bar to be optional only when foo is 'foo'
-    if (
-      input.dataTypeId === DataType.List &&
-      (input.listOptions === undefined ||
-        input.listOptions.length === 0 ||
-        input.listOptions.some((option) => option.length === 0))
-    )
-      return false;
+  .refine(listFieldHasOptions, listFieldOptionsIssue);
 
-    return true;
-  });
+/** A custom field definition as the API creates it: the form's fields, as JSON. */
+export const customFieldInputValidator = z
+  .object({
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    table: z.string().min(1, { message: "Table is required" }),
+    dataTypeId: z.number().int().min(1, { message: "Data type is required" }),
+    listOptions: z.string().min(1).array().optional(),
+    tags: z.array(z.string()).optional(),
+    required: z.boolean().optional()
+  })
+  .refine(listFieldHasOptions, listFieldOptionsIssue);
 
 export const digitalQuoteValidator = z.object({
   digitalQuoteEnabled: zfd.checkbox(),
@@ -300,7 +317,7 @@ export const jobCompletedValidator = z.object({
 });
 
 export const invoiceAutomationValidator = z.object({
-  invoiceAutomation: z.enum(invoiceAutomations)
+  invoiceAutomation: z.enum(inheritableInvoiceAutomations)
 });
 
 /** The company's service labor rates: cost per hour and default bill rate. */

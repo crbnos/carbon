@@ -100,7 +100,6 @@ const LeaseProperties = () => {
     }
   }, [fetcher.data]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
     (field: LeaseDetailField, value: string | null) => {
       if ((lease?.[field] ?? null) === (value || null)) return;
@@ -113,10 +112,10 @@ const LeaseProperties = () => {
         action: path.to.leaseUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id, lease]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -128,6 +127,7 @@ const LeaseProperties = () => {
         action: path.to.customFields
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id]
   );
 

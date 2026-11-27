@@ -24,7 +24,6 @@ export const EditorBubble = forwardRef<HTMLDivElement, EditorBubbleProps>(
       instanceRef.current.popperInstance?.update();
     }, [tippyOptions?.placement]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const bubbleMenuProps: Omit<BubbleMenuProps, "children"> = useMemo(() => {
       const shouldShow: BubbleMenuProps["shouldShow"] = ({ editor, state }) => {
         const { selection } = state;
@@ -66,7 +65,7 @@ export const EditorBubble = forwardRef<HTMLDivElement, EditorBubbleProps>(
         editor: currentEditor,
         ...rest
       };
-      // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     }, [rest, tippyOptions]);
 
     if (!currentEditor) return null;

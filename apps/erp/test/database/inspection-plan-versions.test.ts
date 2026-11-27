@@ -256,6 +256,77 @@ databaseTest(
 );
 
 databaseTest(
+  "a new version keeps the order of the characteristics it copies",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const planId = `${f.prefix}-ordered`;
+      // Out of label order, a microsecond apart; "10" and "2" tie, as the
+      // characteristics of one save did before saves spaced them.
+      const characteristics = [
+        ["Thread", "2026-01-05 08:00:00.000001+00"],
+        ["Bore", "2026-01-05 08:00:00.000002+00"],
+        ["10", "2026-01-05 08:00:00.000003+00"],
+        ["2", "2026-01-05 08:00:00.000003+00"],
+        ["Angle", "2026-01-05 08:00:00.000004+00"]
+      ] as const;
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("inspectionDocument")
+          .values({
+            id: planId,
+            companyId: f.companyId,
+            partId: f.partId,
+            name: "Ordered plan",
+            status: "Active",
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("inspectionFeature")
+          .values(
+            characteristics.map(([label, createdAt], index) => ({
+              id: `${f.prefix}-o${index}`,
+              companyId: f.companyId,
+              inspectionDocumentId: planId,
+              label,
+              pageNumber: 1,
+              createdAt,
+              createdBy: USER
+            }))
+          )
+          .execute();
+      });
+
+      const copy = await copyInspectionDocumentAsVersion(f.db, {
+        copyFromId: planId,
+        companyId: f.companyId,
+        userId: USER
+      });
+
+      const copied = await f.db
+        .selectFrom("inspectionFeature")
+        .select("label")
+        .where("inspectionDocumentId", "=", copy!.id)
+        .where("companyId", "=", f.companyId)
+        .orderBy("createdAt")
+        .orderBy("label")
+        .execute();
+      // The tie is broken as the editor breaks it: "2" before "10".
+      expect(copied.map((row) => row.label)).toEqual([
+        "Thread",
+        "Bore",
+        "2",
+        "10",
+        "Angle"
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
   "deleting the first version keeps the other versions one plan",
   async () => {
     const f = await alwaysPostFixture();
@@ -414,6 +485,55 @@ it.skipIf(!hasLocalDatabase || !client)(
         .where("companyId", "=", f.companyId)
         .executeTakeFirstOrThrow();
       expect(plan.name).toBe("Receipt plan");
+    } finally {
+      await f.cleanup();
+    }
+  },
+  60_000
+);
+
+// The save RPC inserts in one transaction, so the characteristics one save
+// creates share a createdAt; the editor then breaks the tie by label.
+it.skipIf(!hasLocalDatabase || !client)(
+  "the characteristics one save creates keep the order they were sent in",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const v0 = await activePlan(f);
+      const v1 = (await copyInspectionDocumentAsVersion(f.db, {
+        copyFromId: v0,
+        companyId: f.companyId,
+        userId: USER
+      }))!.id;
+      const sent = ["Thread", "Bore", "10", "2", "Angle"];
+
+      const result = await quality.saveInspectionDocument(serviceContext(f), {
+        inspectionDocumentId: v1,
+        features: {
+          create: sent.map((label) => ({
+            tempId: `t-${label}`,
+            pageNumber: 1,
+            label
+          })),
+          update: [],
+          delete: []
+        }
+      });
+
+      expect(result.error).toBeNull();
+      const saved = await f.db
+        .selectFrom("inspectionFeature")
+        .select("label")
+        .where("inspectionDocumentId", "=", v1)
+        .where("companyId", "=", f.companyId)
+        .orderBy("createdAt")
+        .orderBy("label")
+        .execute();
+      expect(saved.map((row) => row.label)).toEqual(["1", ...sent]);
+      expect(result.data?.features.map((row) => row.label)).toEqual([
+        "1",
+        ...sent
+      ]);
     } finally {
       await f.cleanup();
     }

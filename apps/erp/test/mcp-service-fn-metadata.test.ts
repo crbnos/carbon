@@ -112,6 +112,34 @@ describe("buildServiceFnTools", () => {
     });
   });
 
+  it("lists null among a nullable enum's values, so the input validator takes null", () => {
+    const [sampling] = toolsFor({
+      "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+/**
+ * Set a sampling level.
+ *
+ * @mcp
+ */
+export const setSampling = defineServiceFn({
+  input: null,
+  permission: { "production.jobs": "Edit" },
+  async run(_ctx, input: { level: "II" | "I" | null; mode: "A" | "B" }) {
+    return null;
+  }
+});`,
+      "/m/router.ts": ROUTER
+    });
+    expect(sampling?.schema).toEqual({
+      type: "object",
+      properties: {
+        level: { type: ["string", "null"], enum: ["I", "II", null] },
+        mode: { type: "string", enum: ["A", "B"] }
+      },
+      required: ["level", "mode"]
+    });
+  });
+
   it("publishes a gate of one module by its page, and of several by every page", () => {
     // A level lists every action it holds; a gate of one page names it.
     expect(cancel?.permission).toEqual({

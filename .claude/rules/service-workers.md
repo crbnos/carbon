@@ -24,7 +24,7 @@ summary:
   - "Every change to `offline.html` bumps both offline caches (ERP `OFFLINE_CACHE`, MES `SHELL_CACHE`); the page sha256 test fails otherwise."
   - "Never cache a page, loader data or a private file in a worker; nothing may outlive a sign-out."
   - "Do not pass a `tag` to `showNotification`."
-  - "Workers in `public/` are plain JS with no Biome or typecheck; check them with `node --check`."
+  - "Workers in `public/` are plain JS with no oxlint or typecheck; check them with `node --check`."
 ---
 
 # Service workers, the offline page, the app badge and installing
@@ -34,7 +34,7 @@ one registration per scope, so anything a worker does (push, offline, caching) g
 into that file. Both `entry.client.tsx` files register it on every page load,
 immediately when `document.readyState` is already `complete` (the dev server
 imports the entry after `load`), else on `load`. Workers in `public/` are plain JS:
-no Biome, no typecheck, no bundling. Check them with `node --check`.
+no oxlint, no typecheck, no bundling. Check them with `node --check`.
 
 ## ERP (`apps/erp/public/service-worker.js`)
 

@@ -99,7 +99,7 @@ function scanBoth(input: BriefInput): { before: Found[]; after: Found[] } {
   for (const set of FILE_SETS) {
     if (!set.includes(input.path)) continue;
     const file = set.violationFile(input.path);
-    for (const check of set.checks(input.root)) {
+    for (const check of set.checks()) {
       const scan = (contents: string, out: Found[]) => {
         if (contents === "") return;
         for (const violation of check.scan(
@@ -109,7 +109,7 @@ function scanBoth(input: BriefInput): { before: Found[]; after: Found[] } {
           out.push({
             checkId: check.id,
             violation,
-            replacedBy: check.provenance.replacedBy
+            replacedBy: check.provenance?.replacedBy ?? check.description
           });
         }
       };

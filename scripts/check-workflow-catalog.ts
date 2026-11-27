@@ -291,7 +291,7 @@ async function main(): Promise<void> {
 
     // Read as text, not imported: the untransformed `msg` macro throws in plain Node.
     const labelSource = fs.readFileSync(LABELS_FILE, "utf8");
-    // Biome drops the quotes around a key that is a valid identifier. A label
+    // oxfmt drops the quotes around a key that is a valid identifier. A label
     // never holds a backtick (`assertLabelIsSafe`), so the text ends at the next.
     const committedLabels = new Map(
       [

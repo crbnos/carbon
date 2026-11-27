@@ -24,7 +24,8 @@ import {
 import { bucketSupplyByPeriod } from "~/modules/items/ui/Item/planningSupplyDemand";
 import {
   getLocationTimeZone,
-  getOrCreatePeriods
+  getOrCreatePeriods,
+  PLANNING_WEEKS
 } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -42,8 +43,6 @@ const defaultResponse = {
   openProductionOrders: [],
   openPurchaseOrderLines: []
 };
-
-const WEEKS_TO_FORECAST = 12 * 4;
 
 type OpenJobMaterialLine = NonNullable<
   Awaited<ReturnType<typeof getOpenJobMaterials>>["data"]
@@ -182,7 +181,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const periods = await getOrCreatePeriods(
     getDatabaseClient(),
     today,
-    WEEKS_TO_FORECAST
+    PLANNING_WEEKS
   );
 
   const [

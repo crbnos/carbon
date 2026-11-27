@@ -105,7 +105,11 @@ export const locationValidator = z
       .min(1, { message: "Timezone is required" })
       .refine(isValidTimeZone, { message: "Invalid timezone" }),
     latitude: zfd.numeric(z.number().optional()),
-    longitude: zfd.numeric(z.number().optional())
+    longitude: zfd.numeric(z.number().optional()),
+    // The planning time fence in calendar days from today; an item at this
+    // location inherits it unless it sets its own. A new location without
+    // it has none (0); an update without it keeps the stored fence.
+    planningTimeFenceDays: zfd.numeric(z.number().int().min(0).optional())
   })
   .superRefine(({ latitude, longitude }, ctx) => {
     if ((latitude && !longitude) || (!latitude && longitude)) {
@@ -117,7 +121,6 @@ export const locationValidator = z
   });
 
 export const maintenanceDispatchCommentValidator = z.object({
-  id: zfd.text(z.string().optional()),
   maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
   comment: z.string().min(1, { message: "Comment is required" })
 });
@@ -146,17 +149,6 @@ export const maintenanceDispatchEventValidator = z
       path: ["endTime"]
     }
   );
-
-export const maintenanceDispatchItemValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
-  itemId: z.string().min(1, { message: "Item is required" }),
-  quantity: zfd.numeric(z.number().min(1)),
-  unitOfMeasureCode: z
-    .string()
-    .min(1, { message: "Unit of measure is required" }),
-  unitCost: zfd.numeric(z.number().min(0).optional())
-});
 
 export const maintenanceDispatchPriority = [
   "Low",

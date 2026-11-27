@@ -3,47 +3,29 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { basename } from "node:path";
-import type { ConformanceCheck } from "../check";
-import { accountFkClassified } from "../conformance/account-fk-restrict";
-import { formFieldBudget } from "../conformance/form-field-budget";
-import { indexRedirectBeforeLoaders } from "../conformance/index-redirect-before-loaders";
-import { linguiMacroMisuse } from "../conformance/lingui-macro-misuse";
-import { noAuthzDdlInMigrations } from "../conformance/no-authz-ddl-in-migrations";
-import { noBareOutlet } from "../conformance/no-bare-outlet";
-import { noInlineSensorOptions } from "../conformance/no-inline-sensor-options";
-import { noInterpolatedErrorLog } from "../conformance/no-interpolated-error-log";
-import { noRawForwardedHeaders } from "../conformance/no-raw-forwarded-headers";
-import { noRawOrSearch } from "../conformance/no-raw-or-search";
-import { noRawRedirect } from "../conformance/no-raw-redirect";
-import { noRawRevalidator } from "../conformance/no-raw-revalidator";
-import { noStateCopyOfLoaderData } from "../conformance/no-state-copy-of-loader-data";
+import type { Check, Loader, Scan, SourceFile } from "../check";
+import { CHECKS } from "../checks";
 import {
-  noUntimedFetch,
-  UNTIMED_FETCH_ROOTS
-} from "../conformance/no-untimed-fetch";
-import { spdxLicenseHeader } from "../conformance/spdx-license-header";
-import {
-  tenantFkComposite,
-  tenantKeysFromMigrations
-} from "../conformance/tenant-fk-composite";
+  UNTIMED_FETCH_ROOTS,
+  untimedFetchTypescript
+} from "../conformance/server";
 import { classifyPath, isLicenseCandidate } from "../license-headers";
 import {
-  CONFORMANCE_CHECKS,
-  loadManagedFunctions,
-  SERVER_CHECKS,
-  TEST_CHECKS,
-  TS_CHECKS
-} from "../run";
-import { loadAccountReferencePolicy } from "../sources/cross-file";
-import { loadSqlFiles, migrationsDir } from "../sources/migrations";
+  migrations,
+  requestHandlingTypescript,
+  routeTypescript,
+  typescript
+} from "../sources/inputs";
+import { loadLicenseFiles } from "../sources/license-files";
 import {
   ERP_MODULES_ROOT,
   ERP_SERVER_SUFFIXES,
+  loadServerFiles,
   maskClientCode,
   SERVER_ROOTS,
   SERVER_ROUTE_ROOTS
 } from "../sources/server-files";
-import { isTrackedTestPath } from "../sources/test-files";
+import { isTrackedTestPath, loadTestFiles } from "../sources/test-files";
 import {
   isTest,
   REQUEST_HANDLING_ROOTS,
@@ -51,28 +33,36 @@ import {
   TYPESCRIPT_ROOTS
 } from "../sources/typescript";
 
+/** A check that reads one file at a time (`defineCheck({ files, scan })`). */
+export type FileCheck = Check & { scan: Scan };
+
 /**
- * The files one set of single-file checks reads, as a predicate on one path.
- * Each set mirrors one per-file `scanAll` call in `collectFindings` (run.ts);
- * file-sets.test.ts keeps the predicates equal to the loaders.
+ * The files one loader returns, as a predicate on one path. A check that reads
+ * that loader and scans file by file is in the set (`checks`), so `brief` runs
+ * it on a planned edit; file-sets.test.ts keeps each predicate equal to its
+ * loader.
  */
 export type FileSet = {
-  name:
-    | "migrations"
-    | "server"
-    | "typescript"
-    | "request-handling"
-    | "routes"
-    | "untimed-fetch"
-    | "license"
-    | "tests";
+  name: string;
+  loader: Loader<SourceFile[]>;
   includes(path: string): boolean;
   /** The `file` a violation carries, which its baseline key uses. */
   violationFile(path: string): string;
   /** The text the checks see: route modules lose their browser half. */
   prepare(path: string, contents: string): string;
-  checks(root: string): ConformanceCheck[];
+  checks(): FileCheck[];
 };
+
+/** The file checks of `CHECKS` that read `loader`. */
+export function fileChecksOf(loader: Loader<SourceFile[]>): FileCheck[] {
+  return CHECKS.filter(
+    (check): check is FileCheck =>
+      "scan" in check &&
+      typeof check.scan === "function" &&
+      check.reads.length === 1 &&
+      check.reads[0] === loader
+  );
+}
 
 const MIGRATIONS_DIR = "packages/database/supabase/migrations/";
 
@@ -110,95 +100,81 @@ function isServerFile(path: string): boolean {
 const asIs = (_path: string, contents: string) => contents;
 const samePath = (path: string) => path;
 
-export const FILE_SETS: FileSet[] = [
+type Entry = Omit<FileSet, "checks">;
+
+const ENTRIES: Entry[] = [
   {
     name: "migrations",
+    loader: migrations,
     includes: (path) =>
       path.startsWith(MIGRATIONS_DIR) &&
       path.endsWith(".sql") &&
       !path.slice(MIGRATIONS_DIR.length).includes("/"),
     violationFile: (path) => basename(path),
-    prepare: asIs,
-    checks: (root) => [
-      ...CONFORMANCE_CHECKS,
-      noAuthzDdlInMigrations(loadManagedFunctions(root)),
-      accountFkClassified(loadAccountReferencePolicy(root)),
-      tenantFkComposite(
-        tenantKeysFromMigrations(loadSqlFiles(migrationsDir(root)))
-      )
-    ]
+    prepare: asIs
   },
   {
     name: "server",
+    loader: loadServerFiles,
     includes: isServerFile,
     violationFile: samePath,
     prepare: (path, contents) =>
-      under(path, SERVER_ROUTE_ROOTS) ? maskClientCode(contents) : contents,
-    checks: () => SERVER_CHECKS
+      under(path, SERVER_ROUTE_ROOTS) ? maskClientCode(contents) : contents
   },
   {
     name: "typescript",
+    loader: typescript,
     includes: (path) =>
       under(path, TYPESCRIPT_ROOTS) && isTypescriptSource(path),
     violationFile: samePath,
-    prepare: asIs,
-    // noMissingAuditColumn is left out: it needs the generated column map.
-    checks: () => [
-      ...TS_CHECKS,
-      noRawOrSearch,
-      noRawRevalidator,
-      noInlineSensorOptions,
-      noBareOutlet,
-      noStateCopyOfLoaderData,
-      formFieldBudget
-    ]
+    prepare: asIs
   },
   {
     name: "request-handling",
+    loader: requestHandlingTypescript,
     includes: (path) =>
       under(path, REQUEST_HANDLING_ROOTS) && isTypescriptSource(path),
     violationFile: samePath,
-    prepare: asIs,
-    checks: () => [
-      noRawForwardedHeaders,
-      noInterpolatedErrorLog,
-      noRawRedirect,
-      linguiMacroMisuse
-    ]
+    prepare: asIs
   },
   {
     name: "routes",
+    loader: routeTypescript,
     includes: (path) => under(path, ROUTE_ROOTS) && isTypescriptSource(path),
     violationFile: samePath,
-    prepare: asIs,
-    checks: () => [indexRedirectBeforeLoaders]
+    prepare: asIs
   },
   {
     name: "untimed-fetch",
+    loader: untimedFetchTypescript,
     includes: (path) =>
       under(path, UNTIMED_FETCH_ROOTS) && isTypescriptSource(path),
     violationFile: samePath,
-    prepare: asIs,
-    checks: () => [noUntimedFetch]
+    prepare: asIs
   },
   {
     name: "license",
+    loader: loadLicenseFiles,
     includes: (path) =>
       isLicenseCandidate(path) &&
       !hasNodeModules(path) &&
       !("excluded" in classifyPath(path)),
     violationFile: samePath,
-    prepare: asIs,
-    checks: () => [spdxLicenseHeader]
+    prepare: asIs
   },
   {
     name: "tests",
+    loader: loadTestFiles,
     includes: (path) => isTrackedTestPath(path) && !hasNodeModules(path),
     violationFile: samePath,
-    prepare: asIs,
-    checks: () => TEST_CHECKS
+    prepare: asIs
   }
 ];
+
+export const FILE_SETS: FileSet[] = ENTRIES.map((entry) => ({
+  ...entry,
+  checks: () => fileChecksOf(entry.loader)
+}));
 
 export function fileSetsFor(path: string): FileSet[] {
   return FILE_SETS.filter((set) => set.includes(path));

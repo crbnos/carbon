@@ -28,11 +28,7 @@ import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { EmployeePermissionsForm } from "~/modules/users/ui";
 import { employeeValidator } from "~/modules/users/users.models";
-import {
-  getEmployee,
-  getEmployeeTypes,
-  originOf
-} from "~/modules/users/users.service";
+import { getEmployee, getEmployeeTypes } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 // The per-user permissions editor is a modal over the accounts list; when the
@@ -131,8 +127,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { api } = await authorize(args.request);
   const result = await api.users.updateEmployeePermissions({
-    ...input.data,
-    ip: originOf(args.request).ip
+    ...input.data
   });
   return respond(args.request, result).redirect(path.to.employeeAccounts, {
     message: "Permissions updated"

@@ -209,7 +209,7 @@ describe("check triggers", () => {
   it("every check reports violations only in files that contain one of its triggers", () => {
     const misses: string[] = [];
     for (const set of FILE_SETS) {
-      const checks = set.checks(root);
+      const checks = set.checks();
       for (const file of sources) {
         if (!set.includes(file.path)) continue;
         const prepared = set.prepare(file.path, file.contents);

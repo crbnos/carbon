@@ -26,9 +26,9 @@ import {
   AdditionalValidatorsContext
 } from "./internal/AdditionalValidators";
 import { FORM_ID_FIELD } from "./internal/constants";
-import { FormErrorAlert } from "./internal/FormErrorAlert";
 import type { InternalFormContextValue } from "./internal/formContext";
 import { InternalFormContext } from "./internal/formContext";
+import { FormErrorAlert } from "./internal/FormErrorAlert";
 import { FormStateContext } from "./internal/formStateContext";
 import {
   useDefaultValuesFromLoader,
@@ -412,7 +412,6 @@ export function ValidatedForm<
     setFormElementInState(formRef.current);
   }, [setFormElementInState]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     setFieldErrors(backendError?.fieldErrors ?? {});
     if (backendError?.fieldErrors) endSubmit();

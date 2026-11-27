@@ -110,9 +110,9 @@ msgstr "{0} maintenance display"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} of {1}"
 
@@ -255,6 +255,9 @@ msgstr "{recorded}/{0} jobs"
 
 msgid "{scrapped} scrapped"
 msgstr "{scrapped} scrapped"
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} is on hold"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} in stock, in no bin"
@@ -703,9 +706,6 @@ msgstr "Chart"
 
 msgid "Chart of {series}"
 msgstr "Chart of {series}"
-
-msgid "Chat"
-msgstr "Chat"
 
 msgid "Check your email"
 msgstr "Check your email"
@@ -2248,6 +2248,9 @@ msgstr "Oldest first"
 msgid "On Hold"
 msgstr "On Hold"
 
+msgid "On hold · {issueNumbers}"
+msgstr "On hold · {issueNumbers}"
+
 msgid "On its way"
 msgstr "On its way"
 
@@ -2630,6 +2633,9 @@ msgstr "Quality Issue"
 
 msgid "Quality issue created"
 msgstr "Quality issue created"
+
+msgid "Quality rejected this unit for production."
+msgstr "Quality rejected this unit for production."
 
 msgid "Quantity"
 msgstr "Quantity"
@@ -3580,6 +3586,9 @@ msgstr "This unit is complete here"
 msgid "This unit is not part of this operation"
 msgstr "This unit is not part of this operation"
 
+msgid "This unit is on hold"
+msgstr "This unit is on hold"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "This unit will be permanently scrapped and a replacement unit will be created."
 
@@ -3898,6 +3907,9 @@ msgstr "Work Center Displays"
 
 msgid "Work instructions"
 msgstr "Work instructions"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "Work on this unit waits until quality closes every issue below. Other units are not affected."
 
 msgid "Work Site"
 msgstr "Work Site"

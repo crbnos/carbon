@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { Provenance } from "./check";
+import type { Check, Provenance } from "./check";
+import { CHECKS } from "./checks";
 import {
   citedShas,
   expectsFinding,
@@ -24,15 +25,14 @@ const CONFORMANCE = join(__dirname, "conformance");
  * merge, as the checks before them did.
  */
 const UNPROVEN_CHECKS = new Set([
+  "account-fk-classified",
   "account-fk-restrict",
   "deployments-set-required-env",
   "document-sequence-synced",
   "edge-function-authorizes-caller",
   "event-ignored-columns",
   "form-field-budget",
-  "function-redefinition-keeps-changes",
   "index-redirect-before-loaders",
-  "journal-status-filter",
   "lingui-macro-misuse",
   "list-select-covers-columns",
   "loader-reads-through-api",
@@ -52,7 +52,6 @@ const UNPROVEN_CHECKS = new Set([
   "no-integration-id-branching",
   "no-interpolated-error-log",
   "no-legacy-rls",
-  "no-local-timezone",
   "no-missing-audit-column",
   "no-module-permission-key",
   "no-noop-open-change",
@@ -89,56 +88,69 @@ const UNPROVEN_CHECKS = new Set([
 ]);
 
 // The size the list was frozen at. Lower it when a check leaves; raising it
-// lets an unproven check in, which is what this test exists to stop.
-const UNPROVEN_CEILING = 62;
+// lets an unproven check in, which is what this test exists to stop. It went
+// from 61 to 63 once, when checks began to be read from the registry: the list
+// had been built from file names, which hid `account-fk-classified` (it shares
+// one file with `account-fk-restrict`) and `route-action-shape` (a lint plugin). Both
+// predate this rule.
+const UNPROVEN_CEILING = 60;
 
-/** Every check `run.ts` registers: one `./conformance/<id>` module each. */
-function registeredChecks(): string[] {
-  const run = readFileSync(join(__dirname, "run.ts"), "utf8");
-  return [
-    ...new Set(
-      [...run.matchAll(/from "\.\/conformance\/([\w-]+)"/g)].map(
-        (m) => m[1] as string
-      )
-    )
-  ].sort();
-}
-
-const isProvenance = (value: unknown): value is Provenance =>
+const isCheck = (value: unknown): value is Check =>
   typeof value === "object" &&
   value !== null &&
-  typeof (value as Provenance).deprecates === "string" &&
-  typeof (value as Provenance).replacedBy === "string";
+  "id" in value &&
+  typeof value.id === "string" &&
+  "run" in value &&
+  typeof value.run === "function" &&
+  "reads" in value &&
+  Array.isArray(value.reads);
 
 /**
- * A module's provenance: its check object's, or — for a check built by a
- * factory or run as a cross-file `find*` — an exported `Provenance` constant.
+ * Every check a `conformance/` module exports, with that module's file: a
+ * module may hold several checks, and they share its test file.
  */
-async function moduleProvenance(id: string): Promise<Provenance | null> {
-  const mod: Record<string, unknown> = await import(`./conformance/${id}.ts`);
-  const values = Object.values(mod);
-  for (const value of values) {
-    const check = value as { id?: unknown; provenance?: unknown };
-    if (check?.id === id && isProvenance(check.provenance)) {
-      return check.provenance;
-    }
-  }
-  return values.find(isProvenance) ?? null;
-}
+const exported = (
+  await Promise.all(
+    readdirSync(CONFORMANCE)
+      .filter((file) => file.endsWith(".ts") && !file.endsWith(".test.ts"))
+      .map(async (file) => {
+        const module: Record<string, unknown> = await import(
+          `./conformance/${file}`
+        );
+        return Object.values(module)
+          .filter(isCheck)
+          .map((check) => ({ check, file }));
+      })
+  )
+).flat();
 
 describe("every registered check proves itself on the fix it encodes", () => {
-  const ids = registeredChecks();
+  const ids = exported.map(({ check }) => check.id).sort();
 
-  it.each(ids)("%s", async (id) => {
-    const testFile = join(CONFORMANCE, `${id}.test.ts`);
-    const problems = provenanceProblems({
-      id,
-      provenance: await moduleProvenance(id),
-      testSource: existsSync(testFile) ? readFileSync(testFile, "utf8") : null,
-      unproven: UNPROVEN_CHECKS.has(id)
-    });
-    expect(problems).toEqual([]);
+  it("registers every check a module exports, once", () => {
+    expect(CHECKS.map((check) => check.id).sort()).toEqual(ids);
   });
+
+  it.each(exported.map((entry) => [entry.check.id, entry] as const))(
+    "%s",
+    (id, { check, file }) => {
+      const testFile = file.replace(/\.ts$/, ".test.ts");
+      const testPath = join(CONFORMANCE, testFile);
+      const problems = provenanceProblems({
+        id,
+        provenance: check.provenance ?? null,
+        testSource: existsSync(testPath)
+          ? readFileSync(testPath, "utf8")
+          : null,
+        testFile,
+        siblingIncidents: exported
+          .filter((other) => other.file === file && other.check !== check)
+          .flatMap((other) => other.check.provenance?.incidents ?? []),
+        unproven: UNPROVEN_CHECKS.has(id)
+      });
+      expect(problems).toEqual([]);
+    }
+  );
 
   it("lists only registered checks as unproven, and never more of them", () => {
     expect([...UNPROVEN_CHECKS].filter((id) => !ids.includes(id))).toEqual([]);
@@ -204,6 +216,18 @@ it("passes the de82a88cc6 fix", () => {
     expect(provenanceProblems({ ...input, testSource: null })).toEqual([
       "c has no c.test.ts to replay de82a88cc6"
     ]);
+  });
+
+  it("leaves a fix another check of the module declares to that check", () => {
+    expect(
+      provenanceProblems({
+        ...input,
+        provenance: null,
+        unproven: true,
+        testSource: REPLAY,
+        siblingIncidents: ["de82a88cc6"]
+      })
+    ).toEqual([]);
   });
 
   it("sends an unproven check that gained a fix off the list", () => {

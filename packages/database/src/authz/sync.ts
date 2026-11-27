@@ -63,7 +63,6 @@ export async function assertOnlyPolicies(
   schema: string,
   table: string
 ): Promise<void> {
-  // biome-ignore lint/suspicious/noExplicitAny: libpg-query's AST is untyped JSON
   const tree: any = await parse(sql);
   for (const { stmt } of tree.stmts ?? []) {
     const target = stmt?.CreatePolicyStmt?.table;

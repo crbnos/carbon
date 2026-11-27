@@ -451,7 +451,6 @@ export default function AuthenticatedRoute() {
         dismissible: false
       }
     : systemStatus.data?.announcement;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
   useEffect(() => {
     shellLoadedAt = Date.now();
   }, [loaderData]);

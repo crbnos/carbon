@@ -11,26 +11,22 @@ import {
   isIssueLocked,
   nonConformanceAssociationType
 } from "~/modules/quality/quality.models";
-import {
-  deleteIssueAssociation,
-  getIssue
-} from "~/modules/quality/quality.service";
+import { getIssue } from "~/modules/quality/quality.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, { "quality.issues": "Full" });
+  const { client, api } = await authorize(request, {
+    "quality.issues": "Full"
+  });
 
   const { id, type, associationId } = params;
   if (!id) throw new Error("Could not find id");
   if (!type) throw new Error("Could not find type");
   if (!associationId) throw new Error("Could not find associationId");
 
-  const { client: viewClient } = await authorize(request, {
-    "quality.issues": "View"
-  });
-  const issue = await getIssue(viewClient, id);
+  const issue = await getIssue(client, id);
   await requireUnlocked({
     request,
     isLocked: isIssueLocked(issue.data?.status),
@@ -43,7 +39,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error(`Invalid type: ${type}`);
   }
 
-  const deletion = await deleteIssueAssociation(client, type, associationId);
+  const deletion = await api.quality.deleteIssueAssociation({
+    type: type as (typeof nonConformanceAssociationType)[number],
+    associationId
+  });
 
   if (deletion.error) {
     throw redirect(

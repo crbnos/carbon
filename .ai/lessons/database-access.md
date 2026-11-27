@@ -116,9 +116,9 @@ triggers: ["upsertSalesOrderLine","upsertPurchaseOrderLine","upsertQuoteLine","u
 
 **Context:** Creating a Fixed Asset sales-order line failed with `23502 null value in column "methodType" violates not-null constraint`, even though `salesOrderLine.methodType` is `NOT NULL DEFAULT 'Pull from Inventory'`. The validator (`salesOrderLineValidator`) intentionally coerces the form's empty `methodType` to `undefined` for Fixed Asset / Comment lines (`zfd.text` + a refine that exempts them). The action spreads `...validation.data` into `upsertSalesOrderLine`, whose insert path spreads `...salesOrderLine` — so the object still carries `methodType: undefined`. A raw psql insert omitting the column succeeded (used the default); the app's PostgREST insert did not.
 
-**Problem:** `postgrest-js` builds its `?columns=` list from `Object.keys(row)`, which **includes keys whose value is `undefined`**. `JSON.stringify` then drops the value from the body, so PostgREST sees the column listed with no value and inserts `NULL` — it does **not** fall back to the column `DEFAULT`. A truly absent key (never spread, e.g. `id`) is excluded from `?columns=` and does get its default. This is why the sibling **update** path was fine: it runs `sanitize(...)`, which strips `undefined`/empty keys before the write. Only the **insert** path (which didn't sanitize) leaked the `undefined` key.
+**Problem:** `postgrest-js` builds its `?columns=` list from `Object.keys(row)`, which **includes keys whose value is `undefined`**. `JSON.stringify` then drops the value from the body, so PostgREST sees the column listed with no value and inserts `NULL` — it does **not** fall back to the column `DEFAULT`. A truly absent key (never spread, e.g. `id`) is excluded from `?columns=` and does get its default. The sibling **update** path runs `sanitize(...)`, which sets an `undefined` value to `null`; it does not drop the key. Only the **insert** path leaked the `undefined` key.
 
-**Rule:** When spreading validated/optional data into a supabase-js `.insert(...)`, a NOT-NULL column with a DB default will still fail if the key is present-but-`undefined`. Either (a) supply the value explicitly at the insert site next to the other defaults (`methodType: x.methodType ?? "Pull from Inventory"`), (b) `sanitize(...)` the insert object so undefined keys are dropped (matches the update path), or (c) pass `{ defaultToNull: false }` to `.insert(...)` (sends `Prefer: missing=default`). Prefer (a) for a single column, (b) for consistency with an existing update path. Don't assume the DB `DEFAULT` will apply — it only does for keys entirely absent from the object.
+**Rule:** When spreading validated/optional data into a supabase-js `.insert(...)`, a NOT-NULL column with a DB default will still fail if the key is present-but-`undefined`. Either (a) supply the value explicitly at the insert site next to the other defaults (`methodType: x.methodType ?? "Pull from Inventory"`), or (b) pass `{ defaultToNull: false }` to `.insert(...)` (sends `Prefer: missing=default`). Prefer (a) for a single column. Never `sanitize(...)` it: that sends the key as `null`, which fails the same way. Don't assume the DB `DEFAULT` will apply — it only does for keys entirely absent from the object.
 
 **Applies to:** `upsertSalesOrderLine` (`apps/erp/app/modules/sales/sales.service.ts`); any `upsert*` whose insert branch spreads optional/validated fields into a table with NOT-NULL-DEFAULT columns (sales/purchase/quote/invoice line inserts especially, which all carry a NOT NULL `methodType`).
 
@@ -776,3 +776,32 @@ triggers: ["TS2589"]
 **Rule:** Don't manage TS2589 on Supabase joined-selects with `@ts-expect-error` — it *requires* an error, so it flips to TS2578 the moment the trigger moves to another file. Use `@ts-ignore` instead: it suppresses the error when it fires and stays green when it doesn't, and it preserves the inferred `result` type. A localized `(client as any)` cast is the heavier alternative — it removes the file from the cumulative-depth pool entirely but drops the result's type; prefer `@ts-ignore` unless you specifically need to break the inference chain.
 
 **Applies to:** any Supabase joined select or embed that trips TS2589.
+
+## An update must omit a NOT NULL field it was not sent
+
+```scope
+id: an-update-must-omit-a-not-null-field-it-was-not-sent
+paths: ["apps/erp/app/modules/resources/resources.service.ts"]
+triggers: ["upsertLocation", "planningTimeFenceDays"]
+```
+
+- **Context:** `upsertLocation` updates a location through `sanitize(...)`. `updateLocation` from the API or MCP may not send `planningTimeFenceDays`, which is NOT NULL.
+- **Problem:** `sanitize` turns a field that is present but `undefined` into null. Sent as null, the UPDATE fails on the NOT NULL column.
+- **Rule:** In an update path, leave an omitted NOT NULL field out of the payload, so the stored value stays. Give the default only on insert.
+- **Applies to:** `upsertLocation` (`resources.service.ts`), any `upsert*` that passes an optional field of a NOT NULL column through `sanitize`.
+
+## One advisory lock key for a global table with no unique key
+
+```scope
+id: one-advisory-lock-key-for-a-global-table-with-no-unique-key
+paths: ["packages/database/src/period.ts", "apps/erp/app/modules/shared/shared.service.ts", "packages/planning/src/mrp/mrp.ts"]
+triggers: ["PERIOD_LOCK_KEY", "getOrCreatePeriods", "getOrCreateDemandPeriods"]
+```
+
+**Context:** `period` is shared by every company and has no unique key on (`periodType`, `startDate`). The planning screens, MRP and the dataset seeder each insert the weeks they miss.
+
+**Problem:** Each reads the missing weeks, then inserts them. Two writers at once insert the same week, and later reads return two rows for it. A per-company lock key does not serialize two companies.
+
+**Rule:** Every writer takes `pg_advisory_xact_lock(PERIOD_LOCK_KEY)` (`@carbon/database`) and reads the missing weeks again under it, in the transaction that inserts them.
+
+**Applies to:** `getOrCreatePeriods` (ERP), `getOrCreateDemandPeriods` (`@carbon/planning`), dataset tier 12, and any other global table written by read-then-insert.

@@ -69,7 +69,6 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
     new Map<string, Pick<DocumentTemplate, "blocks" | "settings">>()
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `previewNonce` is a manual retrigger — bumped by the toolbar refresh button to re-run the fetch.
   useEffect(() => {
     const controller = new AbortController();
     const handle = setTimeout(async () => {

@@ -102,9 +102,8 @@ async function endBrowserPush(request: Request) {
   try {
     // Loaded here, not at module load: importing the session module must not
     // build a Supabase client.
-    const { getCarbonServiceRole } = await import(
-      "../lib/supabase/client.server"
-    );
+    const { getCarbonServiceRole } =
+      await import("../lib/supabase/client.server");
     // Every user's row for this browser: after sign-out nobody is signed in.
     const { error } = await getCarbonServiceRole()
       .from("pushSubscription")

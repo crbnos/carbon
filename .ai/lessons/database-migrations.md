@@ -891,3 +891,19 @@ triggers: ["CREATE UNIQUE INDEX", "peopleAssignment_person_day_key", "23505"]
 **Rule:** When a feature lets a record hold several rows where it held one, find the unique keys over that record in the newest migrations and widen them in the same change. A refusal whose only reason is a unique index is a sign the index is stale: check it against the feature it contradicts before adding the refusal.
 
 **Applies to:** Any migration that relaxes a one-row-per-X rule, and any service code that refuses an action because a unique index would reject it.
+
+## A value written on every run lives where no trigger fires
+
+```scope
+id: a-value-written-on-every-run-lives-where-no-trigger-fires
+paths: ["packages/database/src/event-system/attachments.ts"]
+triggers: ["locationScheduleRun", "serviceOnly("]
+```
+
+**Context:** The schedule's newest-read-wins marker was first a column on `location`.
+
+**Problem:** Every saved schedule run updated the `location` row, and `location` has event triggers (`events: true`) and `broadcast_reference_changes`. Each run would queue a location update for webhooks and workflows and push a realtime refresh to every client of the company.
+
+**Rule:** Before adding a column that a job writes on every run, read the table's entry in `packages/database/src/event-system/attachments.ts`. If it has events or a broadcast, put the value in a lean table with no triggers (`serviceOnly()` in the manifest), as `locationScheduleRun` and `employeePin` do.
+
+**Applies to:** run markers, cursors, heartbeats and counters written by scheduled jobs or engines.

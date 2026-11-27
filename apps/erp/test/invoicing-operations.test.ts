@@ -8,9 +8,12 @@ import { describe, expect, it } from "vitest";
 import { fromServerFn } from "../app/modules/shared/shared.service";
 import {
   changePurchaseInvoiceLineAccount,
-  changeSalesInvoiceLineAccount
+  changeSalesInvoiceLineAccount,
+  updatePurchaseInvoiceField,
+  updateSalesInvoiceField
 } from "../app/modules/invoicing/invoicing.server";
 import { tieOutAdjustmentLines } from "../app/modules/invoicing/invoicing.service";
+import { filteringSupabase } from "./filtering-supabase-fake";
 
 const unreachable = () => {
   throw new Error("must not be reached");
@@ -132,5 +135,178 @@ describe("changing a posted line's account", () => {
       const result = await change(invoicingOnly(), input);
       expect(result.error).toMatchObject({ category: "forbidden" });
     }
+  });
+});
+
+describe("setting an invoice header field", () => {
+  const actions = (...granted: string[]) => ({
+    view: ["company-1"],
+    create: granted.includes("create") ? ["company-1"] : [],
+    update: granted.includes("update") ? ["company-1"] : [],
+    delete: []
+  });
+  const as = (
+    client: unknown,
+    permissions: Record<string, ReturnType<typeof actions>>
+  ) =>
+    createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: pageClaims(permissions)
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: client as never,
+      system: unreachable,
+      pg: unreachable,
+      kv: unreachable
+    });
+  // company-2 holds an invoice with the same id: a write that drops the
+  // companyId filter reaches it.
+  const invoices = () => {
+    const rows = [
+      { id: "inv-1", companyId: "company-2", status: "Draft" },
+      { id: "inv-1", companyId: "company-1", status: "Draft" },
+      { id: "inv-2", companyId: "company-1", status: "Draft" }
+    ];
+    return { salesInvoice: rows, purchaseInvoice: rows };
+  };
+  const invoicingUpdate = { invoicing: actions("update") };
+
+  it("needs Edit on the invoice's page, which the invoice tables' RLS asks for, not on sales or purchasing", async () => {
+    const { client, writes } = filteringSupabase(invoices());
+    const salesAndPurchasing = {
+      sales: actions("create", "update"),
+      purchasing: actions("create", "update"),
+      invoicing: actions()
+    };
+    const input = {
+      ids: ["inv-1"],
+      field: "customerReference" as const,
+      value: "PO-9"
+    };
+    expect(
+      (await updateSalesInvoiceField(as(client, salesAndPurchasing), input))
+        .error
+    ).toMatchObject({ category: "forbidden" });
+    expect(
+      (
+        await updatePurchaseInvoiceField(as(client, salesAndPurchasing), {
+          ...input,
+          field: "supplierReference"
+        })
+      ).error
+    ).toMatchObject({ category: "forbidden" });
+    expect(writes).toEqual([]);
+  });
+
+  it("answers the invoices the write reached, and refuses when it reached none", async () => {
+    const { client } = filteringSupabase(invoices());
+    const ctx = as(client, invoicingUpdate);
+
+    // A date a posted invoice still takes is written by the caller's client;
+    // the fields only a Draft takes are written under a row lock.
+    const reached = await updateSalesInvoiceField(ctx, {
+      ids: ["inv-1", "inv-9"],
+      field: "datePaid",
+      value: "2026-11-02"
+    });
+    expect(reached).toEqual({ data: { ids: ["inv-1"] }, error: null });
+
+    const none = await updatePurchaseInvoiceField(ctx, {
+      ids: ["inv-9"],
+      field: "datePaid",
+      value: "2026-11-02"
+    });
+    expect(none.error).toMatchObject({ category: "notFound" });
+  });
+
+  it("sets the issue date or payment term on one invoice at a time, since each due date follows its own", async () => {
+    const { client, writes } = filteringSupabase(invoices());
+    const ctx = as(client, invoicingUpdate);
+    for (const field of ["dateIssued", "paymentTermId"] as const) {
+      const result = await updateSalesInvoiceField(ctx, {
+        ids: ["inv-1", "inv-2"],
+        field,
+        value: "2026-11-01"
+      });
+      expect(result.error).toMatchObject({ category: "validation" });
+    }
+    expect(writes).toEqual([]);
+  });
+
+  it.each([
+    ["the customer", "customerId", null],
+    ["the invoice customer", "invoiceCustomerId", ""],
+    // The panel's date is required; a cleared one would keep its due date.
+    ["the issue date", "dateIssued", ""]
+  ] as const)("does not clear %s of a sales invoice", async (_, field, value) => {
+    const { client, writes } = filteringSupabase(invoices());
+    const result = await updateSalesInvoiceField(as(client, invoicingUpdate), {
+      ids: ["inv-1"],
+      field,
+      value
+    });
+    expect(result.error).toMatchObject({ category: "validation" });
+    expect(writes).toEqual([]);
+  });
+
+  // The ownership reads run as the system, the writes as the caller.
+  const withReferences = () => {
+    const tables: Record<string, Record<string, unknown>[]> = invoices();
+    for (const table of [
+      "customer",
+      "customerContact",
+      "customerLocation",
+      "supplier",
+      "supplierContact",
+      "supplierLocation",
+      "paymentTerm",
+      "location"
+    ]) {
+      tables[table] = [
+        { id: "foreign", companyId: "company-2" },
+        { id: "own", companyId: "company-1" }
+      ];
+    }
+    const fake = filteringSupabase(tables);
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: pageClaims(invoicingUpdate)
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: fake.client,
+      system: () => fake.client,
+      pg: unreachable,
+      kv: unreachable
+    });
+    return { ...fake, ctx };
+  };
+
+  it.each([
+    ["sales", "customerId"],
+    ["sales", "invoiceCustomerId"],
+    ["sales", "invoiceCustomerContactId"],
+    ["sales", "invoiceCustomerLocationId"],
+    ["sales", "paymentTermId"],
+    ["sales", "locationId"],
+    ["purchase", "supplierId"],
+    ["purchase", "invoiceSupplierId"],
+    ["purchase", "invoiceSupplierContactId"],
+    ["purchase", "invoiceSupplierLocationId"],
+    ["purchase", "paymentTermId"]
+  ] as const)("refuses another company's row for a %s invoice's %s, before any write", async (kind, field) => {
+    const { ctx, writes } = withReferences();
+    const input = { ids: ["inv-1"], field, value: "foreign" } as never;
+    const result =
+      kind === "sales"
+        ? await updateSalesInvoiceField(ctx, input)
+        : await updatePurchaseInvoiceField(ctx, input);
+    expect(result.error).toMatchObject({ category: "notFound" });
+    expect(writes).toEqual([]);
   });
 });

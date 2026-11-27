@@ -13,6 +13,8 @@ export function useInvoiceAutomationHint() {
   const { t } = useLingui();
   return (mode: InvoiceAutomation) => {
     switch (mode) {
+      case "Manual":
+        return t`The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself.`;
       case "Draft Only":
         return t`Invoices are created as drafts. Nothing is posted or emailed until you do it.`;
       case "Post":

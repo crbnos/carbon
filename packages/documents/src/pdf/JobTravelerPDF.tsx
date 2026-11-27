@@ -14,8 +14,8 @@ import {
   type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
-import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
+import { DocumentPage } from "./blocks/DocumentPage";
 import type {
   JobTravelerData,
   JobTravelerMaterial

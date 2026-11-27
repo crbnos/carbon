@@ -126,7 +126,6 @@ export async function renderMigration(
   return `${parts.join("\n\n")}\n`;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: libpg-query's AST is untyped JSON
 type Ast = any;
 
 /** Each statement's AST and its own text (comments before it and the `;` excluded). */

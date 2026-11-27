@@ -88,12 +88,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const { locationPlanningTimeFenceDays, ...planning } = partPlanning.data;
   return {
-    partPlanning: partPlanning.data,
+    partPlanning: planning,
     supersession: supersession.data,
     supersessionChain: supersessionChain.chain,
     supersededBy: supersessionChain.supersededBy,
     quantityOnHand: quantities.data?.quantityOnHand ?? 0,
+    // the placeholder of the item's empty fence; a failed read shows none
+    locationTimeFenceDays: locationPlanningTimeFenceDays ?? undefined,
     locationId
   };
 }
@@ -160,6 +163,8 @@ export async function action(args: ActionFunctionArgs) {
   if (validation.error) return validationError(validation.error);
   const result = await api.items.updateItemPlanning({
     ...validation.data,
+    // the form always posts the fence: an emptied field inherits
+    planningTimeFenceDays: validation.data.planningTimeFenceDays ?? null,
     itemId,
     customFields: setCustomFields(formData)
   });
@@ -186,6 +191,7 @@ export default function PartPlanningRoute() {
     supersessionChain,
     supersededBy,
     quantityOnHand,
+    locationTimeFenceDays,
     locationId
   } = useLoaderData<typeof loader>();
 
@@ -205,6 +211,7 @@ export default function PartPlanningRoute() {
           ...partPlanning,
           ...getCustomFields(partPlanning.customFields)
         }}
+        locationTimeFenceDays={locationTimeFenceDays}
         locations={sharedPartsData.locations ?? []}
         type="Part"
       />

@@ -229,7 +229,6 @@ export const useGooglePlaces = () => {
     }
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const selectPlace = useCallback(
     async (placeId: string): Promise<AddressComponents | null> => {
       const addressComponents = await getPlaceDetails(placeId);
@@ -241,6 +240,7 @@ export const useGooglePlaces = () => {
       return addressComponents;
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     []
   );
 

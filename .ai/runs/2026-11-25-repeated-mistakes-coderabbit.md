@@ -39,7 +39,7 @@ on the API each fix added. Kept: 15 fixes across 5 causes.
 ## A migration takes a long write lock on a live table
 - Fixes, constraints added without `NOT VALID`: `efde0fe4ea` (account FKs), `ddeaab8da5` (posted-number CHECKs), `7a2220cf4d` (exchange-rate CHECKs), `b52644969b` (jobOperation FKs), `dab1966019` (a salesOrderLine CHECK). A `VALIDATE` moved out of its file: `b2e62f8c00`. `DROP INDEX` without `lock_timeout`: `86bd0af78d`, `90634155b3`.
 - Existing guard: none.
-- Enforcement: check `migration-lock-safe`. It is written and tested (24 cases), but not registered.
+- Enforcement: check `migration-lock-safe`, in `packages/checks/src/proposed/migration-lock-safe.ts`. It is written and tested (24 cases), but `CHECKS` does not include it.
 - Why not registered: the repo does not follow the constraint rule today. Main has 220 such constraints since August, 140 of them on a column the same file adds, and `adf7c23698` removed `NOT VALID` on purpose. Registered as written, the check flags about 35 new migrations a month. The user decides whether to keep the rule for columns the same file adds.
 - Not confirmed: `CREATE INDEX` without `lock_timeout`. The repo builds plain indexes on purpose (`c94312947a`, the reply on PR 2067).
 

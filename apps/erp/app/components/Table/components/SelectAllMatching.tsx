@@ -280,11 +280,11 @@ export function useSelectAllMatching<T>({
     );
 
   /* Rows keyed by index: a new row count leaves the keys on other rows. */
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the row count changes
   useEffect(() => {
     if (isSelectable && !hasStableRowIds && !isControlled) {
       setBaseSelection({});
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- runs when the row count changes
   }, [rows.length, isSelectable]);
 
   // Every loaded row is selected and more rows exist: offer the rest. A list

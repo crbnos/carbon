@@ -354,9 +354,8 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
         .execute();
       if (documents.length === 0) return;
 
-      const { getCarbonServiceRole } = await import(
-        "@carbon/auth/client.server"
-      );
+      const { getCarbonServiceRole } =
+        await import("@carbon/auth/client.server");
       const bucket = storage(getCarbonServiceRole()).company(this.companyId);
       for (const document of documents) {
         // Falls back to the legacy shared bucket, so a receipt stored before

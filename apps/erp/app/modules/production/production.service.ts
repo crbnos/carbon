@@ -65,13 +65,13 @@ import {
   traverseQuoteMethod
 } from "@carbon/database/methods";
 import { effectiveReplenishment } from "@carbon/database/mrp-engine";
+import { lockCompanyPlanning } from "@carbon/database/planning-lock";
 import type * as rows from "@carbon/database/rows";
 import {
   inOrder,
   isNull,
   many,
   maybeSingle,
-  neq,
   newIds,
   notNull,
   rpcValue,
@@ -102,7 +102,13 @@ import {
   settleConsumeFirstLine,
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import {
+  deleteDemandProjections,
+  upsertDemandProjections
+} from "@carbon/ee/forecast.server";
 import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
+import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
 import { TiptapText } from "@carbon/files/markdown";
@@ -148,6 +154,7 @@ import {
   mustViolations,
   nameSimilarity,
   planBatchCompletion,
+  plannedOrderWeekIndex,
   requireAffected,
   resolveBatchRules,
   round,
@@ -169,12 +176,14 @@ import {
 import {
   parseDate,
   parseDateTime,
+  startOfWeek,
   toCalendarDateTime
 } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import {
   type ExpressionBuilder,
   type QueryCreator,
+  type RawBuilder,
   sql,
   type Transaction
 } from "kysely";
@@ -198,7 +207,10 @@ import {
   chunked,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
+  getLocationTimeZone,
+  getOrCreatePeriods,
   getStorageUnitId,
+  refuseUnlessOwned,
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
@@ -242,12 +254,14 @@ import {
   type assemblyInstructionStatuses,
   type assemblyStepStatuses,
   type cameraSchema,
+  type DemandProjectionRow,
   type deadlineTypes,
-  type failureModeValidator,
+  demandProjectionRows,
   type fastenerSchema,
   getAssemblyModelState,
   isJobLocked,
   isJobOrderStatusHidden,
+  isPlannedOrderEditable,
   JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
@@ -255,16 +269,10 @@ import {
   type jobOperationValidator,
   type jobStatus,
   type jobValidator,
-  type maintenanceDispatchCommentValidator,
-  type maintenanceDispatchEventValidator,
-  type maintenanceDispatchItemValidator,
-  type maintenanceDispatchValidator,
-  type maintenanceDispatchWorkCenterValidator,
-  type maintenanceScheduleItemValidator,
-  type maintenanceScheduleValidator,
   makeToAssetReleaseError,
   motionSchema,
   type orientationSchema,
+  PLANNED_ORDER_EDITABLE_STATUSES,
   PLANNING_EDITABLE_JOB_STATUSES,
   PO_STATUS_PRIORITY,
   type procedureParameterValidator,
@@ -272,15 +280,22 @@ import {
   type procedureValidator,
   type productionEventValidator,
   type productionQuantityValidator,
+  SCHEDULED_JOB_STATUSES,
   type scrapReasonValidator,
   WEEKDAYS_MONDAY_FIRST
 } from "./production.models";
+import {
+  isInDrawScope,
+  plannedOrderChangePages,
+  plannedOrderDrawScope
+} from "./production.utils";
 import type {
   ItemOrderStatus,
   ItemShortfall,
   Job,
   JobMaterialPurchaseOrderLine,
-  JobMaterialSupplyJobLine
+  JobMaterialSupplyJobLine,
+  JobReceiptTracking
 } from "./types";
 import {
   makeMethodsMissingOperations,
@@ -1086,110 +1101,6 @@ export async function deleteScrapReason(
   );
 }
 
-export async function deleteFailureMode(
-  client: SupabaseClient<Database>,
-  failureModeId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceFailureMode")
-      .delete()
-      .eq("id", failureModeId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatch(
-  client: SupabaseClient<Database>,
-  dispatchId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatch")
-      .delete()
-      .eq("id", dispatchId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchComment(
-  client: SupabaseClient<Database>,
-  commentId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchComment")
-      .delete()
-      .eq("id", commentId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchEvent(
-  client: SupabaseClient<Database>,
-  eventId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchEvent")
-      .delete()
-      .eq("id", eventId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchItem(
-  client: SupabaseClient<Database>,
-  itemId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchItem")
-      .delete()
-      .eq("id", itemId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchWorkCenter(
-  client: SupabaseClient<Database>,
-  workCenterId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchWorkCenter")
-      .delete()
-      .eq("id", workCenterId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceSchedule(
-  client: SupabaseClient<Database>,
-  scheduleId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceSchedule")
-      .delete()
-      .eq("id", scheduleId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceScheduleItem(
-  client: SupabaseClient<Database>,
-  itemId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceScheduleItem")
-      .delete()
-      .eq("id", itemId)
-      .select("id")
-  );
-}
-
 export async function getDemandForecasts(
   client: SupabaseClient<Database>,
   params: {
@@ -1662,6 +1573,108 @@ export async function getCapacityReservationsForResources(
   }
 
   return query.order("startAt");
+}
+
+/** The most operations one Forecast load lists as unreserved. */
+const UNRESERVED_OPERATIONS_LIMIT = 200;
+
+/**
+ * The most candidate operations one Forecast load reads: PostgREST's row cap.
+ * A late operation that was placed is a candidate too and is dropped, so the
+ * candidates must reach past the listed cap.
+ */
+const UNRESERVED_OPERATION_CANDIDATE_LIMIT = 1000;
+
+/**
+ * Drops the operations a live reservation already draws on the Forecast: one
+ * booked on the operation itself (a placeholder included), or the coalesced
+ * booking of the Released batch it is a member of, which names only the
+ * batch's anchor operation.
+ */
+export function withoutLiveReservation<
+  T extends { id: string; jobOperationBatchId: string | null }
+>(
+  operations: T[],
+  reservations: { operationId: string; jobOperationBatchId: string | null }[]
+): T[] {
+  const reservedOperationIds = new Set(reservations.map((r) => r.operationId));
+  const reservedBatchIds = new Set(
+    reservations.flatMap((r) =>
+      r.jobOperationBatchId ? [r.jobOperationBatchId] : []
+    )
+  );
+  return operations.filter(
+    (op) =>
+      !reservedOperationIds.has(op.id) &&
+      !(op.jobOperationBatchId && reservedBatchIds.has(op.jobOperationBatchId))
+  );
+}
+
+/**
+ * Open operations of the jobs the scheduler places at a location that have no
+ * live capacity reservation, so the Forecast draws them nowhere else: no work
+ * center, or a work center or process the scheduler could not use there (it
+ * flags those with a conflict and keeps the stored work center). Outside
+ * Processing has no work center by design and is left out.
+ */
+export async function getUnreservedOperations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  const candidates = await client
+    .from("jobOperation")
+    .select(
+      `id, jobId, description, conflictReason, jobOperationBatchId,
+       job!inner(jobId, status, locationId),
+       jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))`
+    )
+    .eq("companyId", companyId)
+    .or("workCenterId.is.null,hasConflict.eq.true")
+    .neq("operationType", "Outside Processing")
+    .not("status", "in", '("Done","Canceled")')
+    .eq("job.locationId", locationId)
+    .in("job.status", SCHEDULED_JOB_STATUSES)
+    // Operations with no work center first: they never have a reservation.
+    .order("workCenterId", { ascending: true, nullsFirst: true })
+    .order("id")
+    .limit(UNRESERVED_OPERATION_CANDIDATE_LIMIT);
+  if (candidates.error) return { data: null, error: candidates.error };
+  if (candidates.data.length === 0) return { data: [], error: null };
+
+  const batchIds = [
+    ...new Set(
+      candidates.data.flatMap((op) =>
+        op.jobOperationBatchId ? [op.jobOperationBatchId] : []
+      )
+    )
+  ];
+  const reservationsFor =
+    (column: "operationId" | "jobOperationBatchId") => (ids: string[]) =>
+      client
+        .from("capacityReservation")
+        .select("id, operationId, jobOperationBatchId")
+        .eq("companyId", companyId)
+        .is("scenarioId", null)
+        .in(column, ids)
+        .order("id");
+  const [byOperation, byBatch] = await Promise.all([
+    fetchAllByIds(
+      candidates.data.map((op) => op.id),
+      reservationsFor("operationId")
+    ),
+    fetchAllByIds(batchIds, reservationsFor("jobOperationBatchId"))
+  ]);
+  if (byOperation.error) return { data: null, error: byOperation.error };
+  if (byBatch.error) return { data: null, error: byBatch.error };
+
+  return {
+    data: withoutLiveReservation(candidates.data, [
+      ...byOperation.data,
+      ...byBatch.data
+    ]).slice(0, UNRESERVED_OPERATIONS_LIMIT),
+    error: null
+  };
 }
 
 export async function getMaintenanceDowntimeForResources(
@@ -3422,6 +3435,115 @@ export async function getJobTrackedEntitiesPreview(
   };
 }
 
+/** Materialize the state once so the candidate rows and confirmation identify
+ * the same receipt. The route reads the ledger and hold explanations alongside
+ * it in a repeatable-read transaction. */
+export async function getJobReceiptPreview(
+  db: Kysely<KyselyDatabase>,
+  jobId: string,
+  companyId: string
+) {
+  const result = await sql<{
+    tracking: JobReceiptTracking;
+    receiptPreview: string;
+  }>`
+    WITH preview AS MATERIALIZED (
+      SELECT util.job_receipt_preview_state(${jobId}, ${companyId}) AS state
+    )
+    SELECT state AS tracking, md5(state::text) AS "receiptPreview"
+    FROM preview WHERE state IS NOT NULL
+  `.execute(db);
+  const preview = result.rows[0];
+  if (!preview) return undefined;
+  const { trackedEntities, quantityReceived } = preview.tracking;
+  return {
+    ...preview,
+    quantityReceivedToInventory: quantityReceived,
+    trackedEntityIds: trackedEntities
+      .filter((unit) => unit.received !== null || unit.fixedAsset)
+      .map((unit) => unit.id),
+    issuedTrackedEntityIds: trackedEntities
+      .filter((unit) => unit.issued && unit.quantity === 1)
+      .map((unit) => unit.id)
+  };
+}
+
+/** Outstanding serials a job receipt must leave with Quality. */
+export async function getJobReceiptHolds(
+  db: Kysely<KyselyDatabase>,
+  jobId: string,
+  companyId: string
+) {
+  return db
+    .selectFrom("jobMakeMethod as method")
+    .innerJoin("trackedEntity as unit", (join) =>
+      join
+        .onRef("unit.companyId", "=", "method.companyId")
+        .on((eb) =>
+          eb(
+            sql<string>`"unit".attributes->>'Job Make Method'`,
+            "=",
+            eb.ref("method.id")
+          )
+        )
+    )
+    .innerJoin("unitQualityHold as hold", (join) =>
+      join
+        .onRef("hold.trackedEntityId", "=", "unit.id")
+        .onRef("hold.companyId", "=", "unit.companyId")
+    )
+    .select(["unit.id", "unit.readableId as serial"])
+    .select([
+      sql<
+        string[]
+      >`array_agg(DISTINCT concat_ws(' · ', hold."issueNumber", hold.disposition) ORDER BY concat_ws(' · ', hold."issueNumber", hold.disposition))`.as(
+        "issues"
+      ),
+      sql<boolean>`bool_or(hold.disposition IS NOT NULL)`.as("rejected")
+    ])
+    .where("method.jobId", "=", jobId)
+    .where("method.companyId", "=", companyId)
+    .where("method.parentMaterialId", "is", null)
+    .where("method.requiresSerialTracking", "=", true)
+    .where("unit.quantity", ">", 0)
+    .where(sql<boolean>`NOT ("unit".attributes ? 'Fixed Asset')`)
+    .where("unit.status", "!=", "Scrapped")
+    .where((eb) =>
+      eb.or([
+        eb("unit.status", "!=", "Consumed"),
+        eb.exists(
+          eb
+            .selectFrom("itemLedger as issued")
+            .select("issued.id")
+            .whereRef("issued.trackedEntityId", "=", "unit.id")
+            .whereRef("issued.companyId", "=", "unit.companyId")
+            .where("issued.quantity", "<", 0)
+        )
+      ])
+    )
+    .where((eb) =>
+      eb(
+        "unit.quantity",
+        ">",
+        eb
+          .selectFrom("itemLedger as receipt")
+          .select((qb) =>
+            qb.fn
+              .coalesce(qb.fn.sum<number>("receipt.quantity"), qb.lit(0))
+              .as("received")
+          )
+          .whereRef("receipt.trackedEntityId", "=", "unit.id")
+          .whereRef("receipt.companyId", "=", "method.companyId")
+          .whereRef("receipt.documentId", "=", "method.jobId")
+          .where("receipt.documentType", "=", "Job Receipt")
+      )
+    )
+    .groupBy(["unit.id", "unit.readableId"])
+    .orderBy("unit.readableId")
+    .orderBy("unit.id")
+    .execute();
+}
+
 /**
  * What a job has already received to inventory: its received quantity and the
  * tracked entities its receipts posted. One statement, so both come from the
@@ -3621,22 +3743,95 @@ export async function runMRP(
   }
 }
 
+/**
+ * Re-plan after a person changes what MRP plans from: an item's planning
+ * settings, or a planned order (firm, unfirm, edit, an applied action). The
+ * planning pages list MRP's stored suggestions, so without a run they kept
+ * the old ones until the next scheduled run. Every run is company-wide.
+ * `reason` (what changed) is only logged. A failed run is logged and never
+ * fails the change.
+ */
+export async function replanAfterChange(ctx: ServiceContext, reason?: string) {
+  const mrp = await runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
+    type: "company",
+    id: ctx.company.id,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId
+  });
+  if (mrp.error) {
+    logger.error("MRP failed after a planning input changed", {
+      companyId: ctx.company.id,
+      reason,
+      error: mrp.error
+    });
+  }
+}
+
+/**
+ * Run an Apply and re-plan once afterwards when it changed a planned order.
+ * `apply` adds the ids of the planned orders it changed (edited or deleted)
+ * to `changed`. The run follows whatever `apply` returns or throws, so no
+ * early return in it can skip the re-plan, and it comes before the answer so
+ * the page reads the new actions.
+ */
+export async function replanAfterPlannedOrderChanges<T>(
+  ctx: ServiceContext,
+  apply: (changed: Set<string>) => Promise<T>
+): Promise<T> {
+  const changed = new Set<string>();
+  try {
+    return await apply(changed);
+  } finally {
+    if (changed.size > 0) {
+      await replanAfterChange(
+        ctx,
+        `planning actions applied to ${changed.size} planned order(s)`
+      );
+    }
+  }
+}
+
+/**
+ * Set the serial or batch number of a unit of a job: one of its own units or a
+ * sub-assembly's (`attributes ->> Job Make Method` names one of the job's make
+ * methods). The caller passes the service role, so the job and the company are
+ * the write's only scope. `locked` when the job is Completed, Closed or
+ * Cancelled; `notUnit` when the job is not the company's or the unit is not
+ * the job's.
+ */
 export async function updateJobBatchNumber(
   client: SupabaseClient<Database>,
   companyId: string,
-  trackedEntityId: string,
-  value: string | null
-) {
-  return requireAffected(
-    client
-      .from("trackedEntity")
-      .update({
-        readableId: value
-      })
-      .eq("id", trackedEntityId)
-      .eq("companyId", companyId)
-      .select("id, readableId")
-  );
+  unit: { jobId: string; trackedEntityId: string; value: string | null }
+): Promise<
+  | { status: "locked" }
+  | { status: "notUnit" }
+  | { status: "renamed"; unit: { id: string; readableId: string | null } }
+  | { error: PostgrestError }
+> {
+  const job = await client
+    .from("job")
+    .select("status, jobMakeMethod(id)")
+    .eq("id", unit.jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (job.error) return { error: job.error };
+  if (!job.data) return { status: "notUnit" };
+  if (isJobLocked(job.data.status)) return { status: "locked" };
+  const renamed = await client
+    .from("trackedEntity")
+    .update({ readableId: unit.value })
+    .eq("id", unit.trackedEntityId)
+    .eq("companyId", companyId)
+    .in(
+      "attributes->>Job Make Method",
+      job.data.jobMakeMethod.map((makeMethod) => makeMethod.id)
+    )
+    .select("id, readableId");
+  if (renamed.error) return { error: renamed.error };
+  const [renamedUnit] = renamed.data;
+  if (!renamedUnit) return { status: "notUnit" };
+  return { status: "renamed", unit: renamedUnit };
 }
 
 export type JobReleaseReadiness = {
@@ -6010,7 +6205,6 @@ export async function upsertProcedure(
         attributes.length > 0
           ? client.from("procedureStep").insert(
               attributes.map((attribute) => {
-                // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
                 const { id, procedureId, ...rest } = attribute;
                 return {
                   ...rest,
@@ -6023,7 +6217,6 @@ export async function upsertProcedure(
         parameters.length > 0
           ? client.from("procedureParameter").insert(
               parameters.map((parameter) => {
-                // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
                 const { id, procedureId, ...rest } = parameter;
                 return {
                   ...rest,
@@ -6126,221 +6319,6 @@ export async function upsertScrapReason(
         .eq("id", scrapReason.id)
         .select("id")
     );
-  }
-}
-
-export async function upsertFailureMode(
-  client: SupabaseClient<Database>,
-  failureMode:
-    | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  // maintenanceFailureMode has no customFields column.
-  const { customFields: _customFields, ...mode } = failureMode;
-  if ("createdBy" in mode) {
-    return client.from("maintenanceFailureMode").insert([mode]).select("id");
-  }
-  return requireAffected(
-    client
-      .from("maintenanceFailureMode")
-      .update(sanitize(mode))
-      .eq("id", mode.id)
-      .select("id")
-  );
-}
-
-export async function upsertMaintenanceDispatch(
-  client: SupabaseClient<Database>,
-  dispatch:
-    | (Omit<z.infer<typeof maintenanceDispatchValidator>, "id"> & {
-        maintenanceDispatchId: string;
-        companyId: string;
-        createdBy: string;
-        content?: Json;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        content?: Json;
-      })
-) {
-  if ("createdBy" in dispatch) {
-    return client
-      .from("maintenanceDispatch")
-      .insert([
-        { ...dispatch, severity: dispatch.severity ?? "Support Required" }
-      ])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatch")
-      .update(sanitize(dispatch))
-      .eq("id", dispatch.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchComment(
-  client: SupabaseClient<Database>,
-  comment:
-    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in comment) {
-    return client
-      .from("maintenanceDispatchComment")
-      .insert([comment])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchComment")
-      .update(sanitize(comment))
-      .eq("id", comment.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchEvent(
-  client: SupabaseClient<Database>,
-  event:
-    | (Omit<z.infer<typeof maintenanceDispatchEventValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchEventValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in event) {
-    return client
-      .from("maintenanceDispatchEvent")
-      .insert([event])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchEvent")
-      .update(sanitize(event))
-      .eq("id", event.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchItem(
-  client: SupabaseClient<Database>,
-  item:
-    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in item) {
-    return client
-      .from("maintenanceDispatchItem")
-      .insert([item])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchItem")
-      .update(sanitize(item))
-      .eq("id", item.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchWorkCenter(
-  client: SupabaseClient<Database>,
-  workCenter:
-    | (Omit<z.infer<typeof maintenanceDispatchWorkCenterValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchWorkCenterValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in workCenter) {
-    return client
-      .from("maintenanceDispatchWorkCenter")
-      .insert([workCenter])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchWorkCenter")
-      .update(sanitize(workCenter))
-      .eq("id", workCenter.id);
-  }
-}
-
-export async function upsertMaintenanceSchedule(
-  client: SupabaseClient<Database>,
-  schedule:
-    | (Omit<z.infer<typeof maintenanceScheduleValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceScheduleValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in schedule) {
-    return client
-      .from("maintenanceSchedule")
-      .insert([schedule])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceSchedule")
-      .update(sanitize(schedule))
-      .eq("id", schedule.id);
-  }
-}
-
-export async function upsertMaintenanceScheduleItem(
-  client: SupabaseClient<Database>,
-  item:
-    | (Omit<z.infer<typeof maintenanceScheduleItemValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceScheduleItemValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in item) {
-    return client
-      .from("maintenanceScheduleItem")
-      .insert([item])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceScheduleItem")
-      .update(sanitize(item))
-      .eq("id", item.id);
   }
 }
 
@@ -8192,17 +8170,23 @@ export async function getWorkCenterDayEvents(
     dayEnd: string;
   }
 ) {
-  return client
-    .from("productionEvent")
-    .select(
-      "jobOperationId, startTime, endTime, jobOperation(id, description, status, job(id, jobId, status, item(readableIdWithRevision)))"
-    )
-    .eq("companyId", args.companyId)
-    .eq("workCenterId", args.workCenterId)
-    .lt("startTime", args.dayEnd)
-    .or(`endTime.is.null,endTime.gt."${args.dayStart}"`)
-    .order("startTime", { ascending: true })
-    .limit(1000);
+  return (
+    client
+      .from("productionEvent")
+      // TS5114 — supabase select-string instantiation depth sits on
+      // TypeScript's limit; the cliff shifts as unrelated tables join the
+      // types. ts-ignore, not ts-expect-error, since the error comes and goes.
+      // @ts-ignore TS5114
+      .select(
+        "jobOperationId, startTime, endTime, jobOperation(id, description, status, job(id, jobId, status, item(readableIdWithRevision)))"
+      )
+      .eq("companyId", args.companyId)
+      .eq("workCenterId", args.workCenterId)
+      .lt("startTime", args.dayEnd)
+      .or(`endTime.is.null,endTime.gt."${args.dayStart}"`)
+      .order("startTime", { ascending: true })
+      .limit(1000)
+  );
 }
 
 // The operations a supervisor can search to assign machine time to: open
@@ -8977,7 +8961,6 @@ export async function copyAssemblyInstructionAsVersion(
   if ((sourceSteps.data?.length ?? 0) > 0) {
     const stepRows = sourceSteps.data.map((step) => {
       // Strip identity/audit columns; keep every authored field verbatim.
-      // biome-ignore lint/correctness/noUnusedVariables: destructure omits identity/audit columns before re-insert
       const { id, createdAt, updatedAt, updatedBy, ...rest } = step;
       return {
         ...rest,
@@ -9019,7 +9002,6 @@ export async function copyAssemblyInstructionAsVersion(
       if (rows.error) return rows;
       if (!rows.data?.length) return rows;
       const inserts = rows.data.map((row: any) => {
-        // biome-ignore lint/correctness/noUnusedVariables: destructure omits identity/audit columns before re-insert
         const { id, createdAt, updatedAt, updatedBy, ...rest } = row;
         return {
           ...rest,
@@ -12286,7 +12268,7 @@ export async function getPlanningActions(
         const query = client
           .from("planningAction")
           .select(
-            "*, item!planningAction_itemId_fkey(readableIdWithRevision, name), purchaseOrderLine!planningAction_purchaseOrderLineId_fkey(purchaseOrderId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job!planningAction_jobId_fkey(jobId, status)"
+            "*, item!planningAction_itemId_fkey(readableIdWithRevision, name), purchaseOrderLine!planningAction_purchaseOrderLineId_fkey(purchaseOrderId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job!planningAction_jobId_fkey(jobId, status), plannedOrder!planningAction_plannedOrderId_fkey(orderType, status)"
           )
           .eq("companyId", companyId)
           .eq("locationId", locationId)
@@ -12297,12 +12279,16 @@ export async function getPlanningActions(
         // Make worklist = new job suggestions + change actions on jobs.
         // Transfer and Borrow move stock between owners; each page lists
         // only its own kind's items, so they show on the item's own page.
+        // A change on a planned order is read here and kept below only when
+        // the planned order is of this kind (`orderType`).
         return (
           kind === "Buy"
             ? query.or(
-                "type.in.(Order,Transfer,Borrow),purchaseOrderLineId.not.is.null"
+                "type.in.(Order,Transfer,Borrow),purchaseOrderLineId.not.is.null,plannedOrderId.not.is.null"
               )
-            : query.or("type.in.(Make,Transfer,Borrow),jobId.not.is.null")
+            : query.or(
+                "type.in.(Make,Transfer,Borrow),jobId.not.is.null,plannedOrderId.not.is.null"
+              )
         )
           .order("suggestedDate", { ascending: true })
           .order("id", { ascending: true });
@@ -12319,7 +12305,11 @@ export async function getPlanningActions(
 
   const enriched = chunks
     .flatMap((chunk) => chunk.data ?? [])
-    .map(({ item, purchaseOrderLine, job, ...row }) => ({
+    // a change on the other worklist's planned order
+    .filter(
+      (row) => !row.plannedOrderId || row.plannedOrder?.orderType === kind
+    )
+    .map(({ item, purchaseOrderLine, job, plannedOrder, ...row }) => ({
       ...row,
       itemReadableId: item?.readableIdWithRevision ?? null,
       itemName: item?.name ?? null,
@@ -12343,7 +12333,8 @@ export async function getPlanningActions(
           ?.receiptPromisedDate ??
         null,
       jobReadableId: job?.jobId ?? null,
-      jobStatus: job?.status ?? null
+      jobStatus: job?.status ?? null,
+      plannedOrderStatus: plannedOrder?.status ?? null
     }))
     // the chunks are each in order; the page as a whole is not
     .sort(
@@ -12388,21 +12379,36 @@ async function planningActionIdList<Row>(
 /**
  * The worklist a page may write, the same split `getPlanningActions` reads:
  * Buy = new purchase suggestions and changes on PO lines, Make = new job
- * suggestions and changes on jobs. The writes below go through Kysely, past
+ * suggestions and changes on jobs. A change on a planned order belongs to the
+ * worklist of its `orderType`. The writes below go through Kysely, past
  * row-level security, so without it a user with purchasing rights could
  * dismiss or reassign production's actions by posting their ids.
  */
 function inPlanningWorklist(kind: PlanningActionKind) {
-  return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) =>
-    kind === "Buy"
+  return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) => {
+    const onPlannedOrderOfKind = eb.and([
+      eb("planningAction.plannedOrderId", "is not", null),
+      eb.exists(
+        eb
+          .selectFrom("plannedOrder")
+          .select("plannedOrder.id")
+          .whereRef("plannedOrder.id", "=", "planningAction.plannedOrderId")
+          .whereRef("plannedOrder.companyId", "=", "planningAction.companyId")
+          .where("plannedOrder.orderType", "=", kind)
+      )
+    ]);
+    return kind === "Buy"
       ? eb.or([
           eb("type", "in", ["Order", "Transfer", "Borrow"]),
-          eb("purchaseOrderLineId", "is not", null)
+          eb("purchaseOrderLineId", "is not", null),
+          onPlannedOrderOfKind
         ])
       : eb.or([
           eb("type", "in", ["Make", "Transfer", "Borrow"]),
-          eb("jobId", "is not", null)
+          eb("jobId", "is not", null),
+          onPlannedOrderOfKind
         ]);
+  };
 }
 
 export async function dismissPlanningActions(
@@ -12477,6 +12483,11 @@ export async function markPlanningActionsActioned(
  * type, location and company match. Runs under MRP's advisory lock
  * (`planning-actions:<companyId>`) and returns the rows it changed, each with
  * the indexes (in `ordered`) of the orders that answered it.
+ *
+ * In the same transaction, under the same lock, it converts the planned
+ * orders the new jobs (Make) or PO lines (Order) stand for
+ * (`convertPlannedOrdersForActions`): an order's own `plannedOrderId`, else a
+ * planned order of the week of the action it settled.
  */
 export async function settleNewSupplyPlanningActions(
   db: Kysely<KyselyDatabase>,
@@ -12485,14 +12496,23 @@ export async function settleNewSupplyPlanningActions(
     locationId: string;
     userId: string;
     type: "Order" | "Make";
+    /** Today on the location's calendar: the current week's action also
+     *  converts the overdue planned orders, as MRP sizes them there
+     *  (`plannedOrderWeekIndex`). */
+    asOf?: string;
     /** One per order placed, in the action's units (inventory units for an
-     *  Order); the segment defaults to common (''). */
+     *  Order); the segment defaults to common (''). `jobId` (Make) or
+     *  `purchaseOrderLineId` (Order) is the document the order created. */
     ordered: {
       itemId: string;
       periodId: string;
       planningSegmentId?: string;
       quantity: number;
       planningActionId?: string | null;
+      /** The planned order this order was suggested from, which it converts. */
+      plannedOrderId?: string | null;
+      jobId?: string | null;
+      purchaseOrderLineId?: string | null;
     }[];
   }
 ) {
@@ -12504,9 +12524,7 @@ export async function settleNewSupplyPlanningActions(
     ordered.map((order) => order.itemId),
     () =>
       withTransaction(db, async (trx) => {
-        await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`planning-actions:${args.companyId}`}, 0))`.execute(
-          trx
-        );
+        await lockCompanyPlanning(trx, args.companyId);
         const values = sql.join(
           ordered.map(
             (order) =>
@@ -12581,12 +12599,1329 @@ export async function settleNewSupplyPlanningActions(
           RETURNING pa.id, pa."itemId", pa."periodId", pa."planningSegmentId",
             pa."status", pa."suggestedQuantity", a."orderIndexes"
         `.execute(trx);
+
+        // The planned orders the documents stand for. An order that names
+        // its planned order converts that one, whatever it settled; one that
+        // names none converts a planned order of the week it settled.
+        const orderType = args.type === "Make" ? "Make" : "Buy";
+        const settledWeekByIndex = new Map(
+          result.rows.flatMap((row) =>
+            row.orderIndexes.map((index) => [index, row.periodId] as const)
+          )
+        );
+        await convertPlannedOrdersForActions(trx, {
+          companyId: args.companyId,
+          userId: args.userId,
+          asOf: args.asOf,
+          documents: ordered.flatMap((order) => {
+            const documentId =
+              args.type === "Make" ? order.jobId : order.purchaseOrderLineId;
+            const periodId = settledWeekByIndex.get(order.index);
+            if (!documentId || (!order.plannedOrderId && !periodId)) return [];
+            return [
+              {
+                documentId,
+                quantity: order.quantity,
+                plannedOrderId: order.plannedOrderId ?? null,
+                itemId: order.itemId,
+                locationId: args.locationId,
+                planningSegmentId: order.planningSegmentId ?? "",
+                periodId: periodId ?? order.periodId,
+                orderType
+              }
+            ];
+          })
+        });
+
         return result.rows.map((row) => ({
           ...row,
           suggestedQuantity: Number(row.suggestedQuantity)
         }));
       })
   );
+}
+
+/** A job or PO line placed from planning, as it converts a planned order. */
+export type PlannedOrderConversion = {
+  /** The job (Make) or PO line (Buy). */
+  documentId: string;
+  /** In inventory units, as the planned order counts. */
+  quantity: number;
+  /** The planned order the order was suggested from, when it names one. */
+  plannedOrderId: string | null;
+  itemId: string;
+  locationId: string;
+  planningSegmentId: string;
+  /** The week of the action the order settled. */
+  periodId: string;
+  orderType: "Make" | "Buy";
+};
+
+/** A Planned or Firm planned order a document may convert. */
+export type ConvertiblePlannedOrder = {
+  id: string;
+  itemId: string;
+  locationId: string;
+  planningSegmentId: string;
+  periodId: string;
+  orderType: "Make" | "Buy" | "Transfer";
+  status: "Planned" | "Firm";
+  quantity: number;
+  splitIndex: number;
+  dueDate: string;
+};
+
+const conversionKey = (
+  row: Pick<
+    PlannedOrderConversion,
+    "itemId" | "locationId" | "planningSegmentId" | "periodId" | "orderType"
+  >
+) =>
+  [
+    row.itemId,
+    row.locationId,
+    row.planningSegmentId,
+    row.periodId,
+    row.orderType
+  ].join("\u001f");
+
+/** The order MRP split a week's planned orders in, and the suggestions list
+ *  them in (`plannedOrdersFromActions`): due date, then `splitIndex`, then
+ *  id. An overdue order of an earlier week comes first. */
+const bySplit = (a: ConvertiblePlannedOrder, b: ConvertiblePlannedOrder) =>
+  // ISO dates order as strings
+  a.dueDate.localeCompare(b.dueDate) ||
+  a.splitIndex - b.splitIndex ||
+  a.id.localeCompare(b.id);
+
+/** The planning row a planned order or document belongs to. */
+type ConversionRow = Pick<
+  PlannedOrderConversion,
+  "itemId" | "locationId" | "planningSegmentId" | "orderType"
+>;
+
+const conversionRowKey = (row: ConversionRow) =>
+  [row.itemId, row.locationId, row.planningSegmentId, row.orderType].join(
+    "\u001f"
+  );
+
+/** One weekly period, as the convert reads it. */
+type ConversionWeek = { id: string; startDate: string; endDate: string };
+
+/**
+ * The weeks a convert sorts planned orders into: the first holds `today`
+ * when there is one. Without `today` no planned order is overdue.
+ */
+type ConversionCalendar = {
+  weeks: ConversionWeek[];
+  today: string | null;
+  /** Settled actions' weeks before the current one: an action MRP has not
+   *  rolled forward since the week turned. Its documents convert in the
+   *  current week, which now holds what it counted as overdue. */
+  earlierWeekIds: string[];
+  /** Rows with an Open or Dismissed Order / Make of a week before the
+   *  current one. That action counted the overdue planned orders, so the
+   *  current week's documents of the row take only the current week's. */
+  pastWeekActionRows?: ConversionRow[];
+};
+
+/**
+ * The (item, location, segment, week, type) a document converts in: the week
+ * of the action it settled, or the current week when that action's week is
+ * already past.
+ */
+function documentConversionKey(
+  document: PlannedOrderConversion,
+  calendar: ConversionCalendar | null | undefined
+) {
+  return conversionKey({
+    ...document,
+    periodId: conversionWeekOfDocument(document.periodId, calendar)
+  });
+}
+
+/**
+ * The week holding today, which also holds every overdue planned order. None
+ * without today: then no planned order is overdue.
+ */
+function currentWeekOf(
+  calendar: ConversionCalendar | null | undefined
+): ConversionWeek | undefined {
+  return calendar?.today ? calendar.weeks[0] : undefined;
+}
+
+function conversionWeekOfDocument(
+  periodId: string,
+  calendar: ConversionCalendar | null | undefined
+): string {
+  const current = currentWeekOf(calendar)?.id;
+  return current && calendar?.earlierWeekIds.includes(periodId)
+    ? current
+    : periodId;
+}
+
+/**
+ * The week a planned order counts in for the convert: MRP's own rule,
+ * `plannedOrderWeekIndex` — an overdue order in the current week, else the
+ * week holding its due date. Null when no week of the calendar holds it.
+ */
+function conversionWeekOf(
+  dueDate: string,
+  calendar: ConversionCalendar
+): string | null {
+  // without today, judge it on its own due date: never overdue
+  const index = plannedOrderWeekIndex(
+    dueDate,
+    calendar.weeks,
+    calendar.today ?? dueDate
+  );
+  return index === null ? null : (calendar.weeks[index]?.id ?? null);
+}
+
+/**
+ * Which planned order each document converts, which it only reduces, and
+ * which it covers whole. Pure; no planned order is converted twice.
+ *
+ * 1. A document that names its planned order converts that one, while it is
+ *    still Planned or Firm, of the same item, location, segment and type. A
+ *    document SMALLER than the order it names converts nothing: it takes its
+ *    quantity off the order (`reductions`, the quantity left), which keeps
+ *    its status. Several documents naming one order count together; the one
+ *    that reaches its quantity converts it; one LARGER than what is left of
+ *    it also takes the excess off its week's next Planned orders, as in 2. A
+ *    document whose id is stale (the order is gone, no longer Planned or
+ *    Firm, or of another item, location, segment or type) or names an order
+ *    an earlier document of the batch converted goes on as one that names
+ *    none.
+ * 2. The other documents convert the planned orders of their week left over,
+ *    per (item, location, segment, week, type): first each to one of equal
+ *    quantity (Planned before Firm, then by due date and `splitIndex`), then
+ *    each one left to the next Planned order by due date, then `splitIndex`
+ *    — by the rule of 1: a document smaller than what is left of that order
+ *    only reduces it. One LARGER than it converts it and takes the excess
+ *    off the week's next Planned orders in the same order: each drops by
+ *    what is left of the excess, and
+ *    one the excess covers whole is deleted (`deletions`). A Firm order is
+ *    the planner's number, so only its id or its quantity converts it, and an
+ *    excess never touches it. A planned order counts in the week
+ *    `conversionWeekOf` gives it, so the current week also holds every
+ *    overdue one: MRP sizes it, and sums it into the action, there. Without a
+ *    calendar, its stored week. A document whose action's week is already
+ *    past (`earlierWeekIds`) counts in the current week, and takes only the
+ *    overdue orders (due before the current week's start): that action
+ *    counted them. A document of the current week then takes only the
+ *    current week's orders, as it does when the row has an Open or
+ *    Dismissed action of a past week (`pastWeekActionRows`). Which of its
+ *    week's orders a document draws on is `plannedOrderDrawScope`, the
+ *    drawer's rule, except that every past week's document takes the overdue
+ *    ones (the drawer offers them to the latest Open one only). Orders are
+ *    taken by due date, then `splitIndex`, as the suggestions list them.
+ */
+export function matchPlannedOrdersToDocuments(
+  documents: PlannedOrderConversion[],
+  candidates: ConvertiblePlannedOrder[],
+  calendar?: ConversionCalendar | null
+): {
+  conversions: { plannedOrderId: string; documentId: string }[];
+  reductions: { plannedOrderId: string; quantity: number }[];
+  deletions: string[];
+} {
+  const byId = new Map(candidates.map((row) => [row.id, row]));
+  // converted or deleted: no later document takes it
+  const claimed = new Set<string>();
+  const conversions: { plannedOrderId: string; documentId: string }[] = [];
+  const deletions: string[] = [];
+  const claim = (row: ConvertiblePlannedOrder, documentId: string) => {
+    claimed.add(row.id);
+    conversions.push({ plannedOrderId: row.id, documentId });
+  };
+
+  // the quantity of a planned order its documents have not covered
+  const left = new Map<string, number>();
+
+  const candidatesByKey = new Map<string, ConvertiblePlannedOrder[]>();
+  for (const row of candidates) {
+    if (row.orderType === "Transfer") continue;
+    const periodId = calendar
+      ? conversionWeekOf(row.dueDate, calendar)
+      : row.periodId;
+    if (!periodId) continue;
+    const key = conversionKey({ ...row, periodId, orderType: row.orderType });
+    const list = candidatesByKey.get(key);
+    if (list) list.push(row);
+    else candidatesByKey.set(key, [row]);
+  }
+  // The planned orders a document may draw on, as the suggestions offer
+  // them: a document of a past week's action only the overdue ones; one of
+  // the current week only the current week's when its row has a past week's
+  // action (that action counted the overdue ones), else both.
+  const currentWeek = currentWeekOf(calendar);
+  const isPastWeekDocument = (document: PlannedOrderConversion) =>
+    !!currentWeek && !!calendar?.earlierWeekIds.includes(document.periodId);
+  const rowsWithPastWeekAction = new Set(
+    [
+      ...(calendar?.pastWeekActionRows ?? []),
+      ...documents.filter(isPastWeekDocument)
+    ].map(conversionRowKey)
+  );
+  // ISO dates order as strings
+  const isOverdue = (row: ConvertiblePlannedOrder) =>
+    !!currentWeek && row.dueDate < currentWeek.startDate;
+  const weekOf = (document: PlannedOrderConversion) => {
+    const rows =
+      candidatesByKey.get(documentConversionKey(document, calendar)) ?? [];
+    if (!currentWeek) return rows;
+    const scope = plannedOrderDrawScope({
+      pastWeek: isPastWeekDocument(document),
+      // every past week's document: the drawer offers the overdue orders to
+      // the latest Open one only, but a document of another past week that
+      // converted none would leave its planned order counted beside it
+      takesOverdue: true,
+      currentWeek: document.periodId === currentWeek.id,
+      rowHasPastWeekAction: rowsWithPastWeekAction.has(
+        conversionRowKey(document)
+      )
+    });
+    return rows.filter((row) => isInDrawScope(scope, isOverdue(row)));
+  };
+  // the document's week's Planned orders not yet converted, in split order
+  const plannedOfWeek = (document: PlannedOrderConversion) =>
+    weekOf(document)
+      .filter((row) => !claimed.has(row.id) && row.status === "Planned")
+      .sort(bySplit);
+  // A document larger than the order it converts is also the supply of the
+  // week's next Planned orders: MRP would count it there, so they shrink or
+  // go. Only Planned rows are passed: a Firm order is the planner's number.
+  const takeExcess = (excess: number, rows: ConvertiblePlannedOrder[]) => {
+    for (const row of rows) {
+      if (excess <= 0) break;
+      const quantity = left.get(row.id) ?? row.quantity;
+      const rest = round(quantity - excess);
+      if (rest > 0) {
+        left.set(row.id, rest);
+        break;
+      }
+      left.delete(row.id);
+      claimed.add(row.id);
+      deletions.push(row.id);
+      excess = round(excess - quantity);
+    }
+  };
+
+  // named documents whose planned order they cannot convert
+  const unconvertible = new Set<PlannedOrderConversion>();
+  for (const document of documents) {
+    if (!document.plannedOrderId) continue;
+    const row = byId.get(document.plannedOrderId);
+    if (
+      !row ||
+      claimed.has(row.id) ||
+      row.orderType !== document.orderType ||
+      row.itemId !== document.itemId ||
+      row.locationId !== document.locationId ||
+      row.planningSegmentId !== document.planningSegmentId
+    ) {
+      unconvertible.add(document);
+      continue;
+    }
+    const remainder = round(
+      (left.get(row.id) ?? row.quantity) - document.quantity
+    );
+    if (remainder > 0) {
+      left.set(row.id, remainder);
+      continue;
+    }
+    left.delete(row.id);
+    claim(row, document.documentId);
+    takeExcess(-remainder, plannedOfWeek(document));
+  }
+  const isTaken = (row: ConvertiblePlannedOrder) =>
+    claimed.has(row.id) || left.has(row.id);
+
+  const unnamed = documents.filter(
+    (document) => !document.plannedOrderId || unconvertible.has(document)
+  );
+  const unmatched: PlannedOrderConversion[] = [];
+  for (const document of unnamed) {
+    const equal = weekOf(document)
+      .filter((row) => !isTaken(row) && equals(row.quantity, document.quantity))
+      .sort(
+        (a, b) =>
+          Number(a.status === "Firm") - Number(b.status === "Firm") ||
+          bySplit(a, b)
+      )[0];
+    if (equal) claim(equal, document.documentId);
+    else unmatched.push(document);
+  }
+  // The fallback holds the named documents' rule: a document smaller than
+  // what is left of the order takes its quantity off and leaves the order as
+  // it is; one that reaches it converts it. Later documents count against
+  // what the earlier ones left.
+  for (const document of unmatched) {
+    const [next, ...following] = plannedOfWeek(document);
+    if (!next) continue;
+    const remainder = round(
+      (left.get(next.id) ?? next.quantity) - document.quantity
+    );
+    if (remainder > 0) {
+      left.set(next.id, remainder);
+      continue;
+    }
+    left.delete(next.id);
+    claim(next, document.documentId);
+    takeExcess(-remainder, following);
+  }
+  return {
+    conversions,
+    reductions: [...left].map(([plannedOrderId, quantity]) => ({
+      plannedOrderId,
+      quantity
+    })),
+    deletions
+  };
+}
+
+/**
+ * The scrap of a Make planned order at a new quantity, from the item's scrap
+ * rate, as `insertJob` derives a job's; a Buy order carries none. `quantity`
+ * is the SQL of the new quantity.
+ */
+function restatedPlannedOrderScrap(quantity: RawBuilder<unknown>) {
+  return sql`CASE
+    WHEN po."orderType" = 'Make' THEN CEIL(${quantity} * COALESCE((
+      SELECT ir."scrapPercentage" FROM "itemReplenishment" ir
+      WHERE ir."itemId" = po."itemId" AND ir."companyId" = po."companyId"
+    ), 0))
+    ELSE 0
+  END`;
+}
+
+/**
+ * Converts the planned orders that the jobs (Make) or PO lines (Buy) placed
+ * from planning stand for (`matchPlannedOrdersToDocuments`). A converted row
+ * becomes Converted with its `jobId` or `purchaseOrderLineId`, and loses
+ * `firmedBy` / `firmedAt` (the `plannedOrder_firm_chk` CHECK ties them to
+ * Firm). Its Open and Dismissed change actions are deleted: the job or PO
+ * line is the order now, and MRP raises its actions on that.
+ *
+ * A document smaller than the planned order it names, or (naming none) the
+ * Planned order it falls back to, does not convert it: the order keeps its
+ * status (a Firm one stays Firm) and drops to the quantity left, its Make
+ * scrap restated as `updatePlannedOrders` does. Its Open and Dismissed change
+ * actions are deleted too: they were sized for the old quantity, and an
+ * Increase applied later would put back what the document already covers.
+ * A document larger than the planned order it names or falls back to
+ * reduces the week's next Planned orders the same way, and deletes one it
+ * covers whole (its actions cascade).
+ *
+ * A planned order no document stands for stays as it is, and the next MRP run
+ * sizes it again. Two orders merged into one PO line are two documents, so
+ * both planned orders point at that line.
+ *
+ * One read of the weeks, one read of the rows' past-week Order / Make
+ * actions (`pastWeekActionRows`), one read (`FOR UPDATE`), one statement per
+ * kind of change and one delete of actions for the batch. Throws on failure; call it
+ * inside the transaction that settles the actions (`withTransaction` joins
+ * one), under the planning lock.
+ */
+export async function convertPlannedOrdersForActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    /** Today on the location's calendar: the week holding it also holds
+     *  every overdue planned order. */
+    asOf?: string;
+    documents: PlannedOrderConversion[];
+  }
+): Promise<
+  { id: string; jobId: string | null; purchaseOrderLineId: string | null }[]
+> {
+  if (args.documents.length === 0) return [];
+  const namedIds = [
+    ...new Set(
+      args.documents.flatMap((document) =>
+        document.plannedOrderId ? [document.plannedOrderId] : []
+      )
+    )
+  ];
+  // every document's week: one whose planned order is stale converts there
+  const keys = [
+    ...new Map(
+      args.documents.map((document) => [conversionKey(document), document])
+    ).values()
+  ];
+
+  return withTransaction(db, async (trx) => {
+    const calendar = await readConversionCalendar(trx, {
+      periodIds: [...new Set(keys.map((key) => key.periodId))],
+      asOf: args.asOf
+    });
+    const weekById = new Map(calendar.weeks.map((week) => [week.id, week]));
+    const currentWeek = currentWeekOf(calendar);
+    const currentWeekId = currentWeek?.id;
+    // The rows with an Open or Dismissed Order / Make of a week already past
+    // (the week turned before MRP ran again): that action counted the
+    // overdue planned orders, not the current week's.
+    const orderTypes = [...new Set(keys.map((key) => key.orderType))];
+    const pastWeekActions = currentWeek
+      ? await trx
+          .selectFrom("planningAction as pa")
+          .innerJoin("period as p", "p.id", "pa.periodId")
+          .select([
+            "pa.itemId",
+            "pa.locationId",
+            "pa.planningSegmentId",
+            "pa.type"
+          ])
+          .distinct()
+          .where("pa.companyId", "=", args.companyId)
+          .where("pa.status", "in", ["Open", "Dismissed"])
+          .where(
+            "pa.type",
+            "in",
+            orderTypes.map((type) =>
+              type === "Make" ? ("Make" as const) : ("Order" as const)
+            )
+          )
+          .where("pa.itemId", "in", [...new Set(keys.map((k) => k.itemId))])
+          .where("pa.locationId", "in", [
+            ...new Set(keys.map((k) => k.locationId))
+          ])
+          .where("p.startDate", "<", currentWeek.startDate)
+          .execute()
+      : [];
+    calendar.pastWeekActionRows = pastWeekActions.map((row): ConversionRow => ({
+      itemId: row.itemId,
+      locationId: row.locationId,
+      planningSegmentId: row.planningSegmentId,
+      orderType: row.type === "Make" ? "Make" : "Buy"
+    }));
+    // each key's week, by due date: the current one from the first day of
+    // time, as it holds every overdue planned order; a past action week
+    // reads as the current one
+    const keyFilters = keys.flatMap((key) => {
+      const week = weekById.get(
+        conversionWeekOfDocument(key.periodId, calendar)
+      );
+      return week ? [{ key, week }] : [];
+    });
+
+    const candidates =
+      namedIds.length === 0 && keyFilters.length === 0
+        ? []
+        : await trx
+            .selectFrom("plannedOrder")
+            .select([
+              "id",
+              "itemId",
+              "locationId",
+              "planningSegmentId",
+              "periodId",
+              "orderType",
+              "status",
+              "quantity",
+              "splitIndex",
+              "dueDate"
+            ])
+            .where("companyId", "=", args.companyId)
+            .where("status", "in", ["Planned", "Firm"])
+            .where((eb) =>
+              eb.or([
+                ...(namedIds.length > 0 ? [eb("id", "in", namedIds)] : []),
+                ...keyFilters.map(({ key, week }) =>
+                  eb.and([
+                    eb("itemId", "=", key.itemId),
+                    eb("locationId", "=", key.locationId),
+                    eb("planningSegmentId", "=", key.planningSegmentId),
+                    eb("orderType", "=", key.orderType),
+                    eb("dueDate", "<=", week.endDate),
+                    ...(week.id === currentWeekId
+                      ? []
+                      : [eb("dueDate", ">=", week.startDate)])
+                  ])
+                )
+              ])
+            )
+            .forUpdate()
+            .execute();
+
+    const { conversions, reductions, deletions } =
+      matchPlannedOrdersToDocuments(
+        args.documents,
+        candidates.map((row) => ({
+          ...row,
+          status: row.status as ConvertiblePlannedOrder["status"],
+          quantity: Number(row.quantity),
+          splitIndex: Number(row.splitIndex),
+          dueDate: String(row.dueDate)
+        })),
+        calendar
+      );
+    const now = datetime.timestamp();
+    // the planned orders whose change actions no longer hold
+    const changedIds: string[] = [];
+
+    if (reductions.length > 0) {
+      const values = sql.join(
+        reductions.map(
+          (reduction) =>
+            sql`(${reduction.plannedOrderId}::text, ${reduction.quantity}::numeric)`
+        )
+      );
+      const reduced = await sql<{ id: string }>`
+        UPDATE "plannedOrder" po
+        SET
+          "quantity" = v."quantity",
+          "scrapQuantity" = ${restatedPlannedOrderScrap(sql`v."quantity"`)},
+          "updatedBy" = ${args.userId},
+          "updatedAt" = ${now}
+        FROM (VALUES ${values}) v ("id", "quantity")
+        WHERE po.id = v.id
+          AND po."companyId" = ${args.companyId}
+          AND po."status" IN ('Planned', 'Firm')
+        RETURNING po.id
+      `.execute(trx);
+      changedIds.push(...reduced.rows.map((row) => row.id));
+    }
+
+    if (deletions.length > 0) {
+      // a document covers these whole; their actions cascade
+      await trx
+        .deleteFrom("plannedOrder")
+        .where("companyId", "=", args.companyId)
+        .where("id", "in", deletions)
+        .where("status", "=", "Planned")
+        .execute();
+    }
+
+    let converted: {
+      id: string;
+      jobId: string | null;
+      purchaseOrderLineId: string | null;
+    }[] = [];
+    if (conversions.length > 0) {
+      const values = sql.join(
+        conversions.map(
+          (match) =>
+            sql`(${match.plannedOrderId}::text, ${match.documentId}::text)`
+        )
+      );
+      const result = await sql<{
+        id: string;
+        jobId: string | null;
+        purchaseOrderLineId: string | null;
+      }>`
+        UPDATE "plannedOrder" po
+        SET
+          "status" = 'Converted',
+          "jobId" = CASE WHEN po."orderType" = 'Make' THEN v."documentId" END,
+          "purchaseOrderLineId" = CASE WHEN po."orderType" = 'Buy' THEN v."documentId" END,
+          "firmedBy" = NULL,
+          "firmedAt" = NULL,
+          "updatedBy" = ${args.userId},
+          "updatedAt" = ${now}
+        FROM (VALUES ${values}) v ("id", "documentId")
+        WHERE po.id = v.id
+          AND po."companyId" = ${args.companyId}
+          AND po."status" IN ('Planned', 'Firm')
+        RETURNING po.id, po."jobId", po."purchaseOrderLineId"
+      `.execute(trx);
+      converted = result.rows;
+      changedIds.push(...converted.map((row) => row.id));
+    }
+
+    if (changedIds.length > 0) {
+      await trx
+        .deleteFrom("planningAction")
+        .where("companyId", "=", args.companyId)
+        .where("plannedOrderId", "in", changedIds)
+        .where("status", "in", ["Open", "Dismissed"])
+        .execute();
+    }
+    return converted;
+  });
+}
+
+/**
+ * The weeks a convert sorts planned orders into, in date order: given
+ * `asOf`, the weekly period holding it first (it holds every overdue planned
+ * order), then the settled actions' later weeks. A settled action's week
+ * before it is named in `earlierWeekIds`, so its documents convert in the
+ * current week. Without a period holding `asOf`, the settled actions' weeks
+ * and no planned order is overdue.
+ */
+async function readConversionCalendar(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  args: { periodIds: string[]; asOf?: string }
+): Promise<ConversionCalendar> {
+  if (args.periodIds.length === 0) {
+    return { weeks: [], today: null, earlierWeekIds: [] };
+  }
+  const asOf = args.asOf;
+  const rows = await db
+    .selectFrom("period")
+    .select(["id", "startDate", "endDate"])
+    .where("periodType", "=", "Week")
+    .where((eb) =>
+      eb.or([
+        eb("id", "in", args.periodIds),
+        ...(asOf
+          ? [eb.and([eb("startDate", "<=", asOf), eb("endDate", ">=", asOf)])]
+          : [])
+      ])
+    )
+    .orderBy("startDate")
+    .orderBy("id")
+    .execute();
+  const all = rows.map((row) => ({
+    id: row.id,
+    startDate: String(row.startDate),
+    endDate: String(row.endDate)
+  }));
+  const holdsToday = (week: ConversionWeek) =>
+    !!asOf && week.startDate <= asOf && week.endDate >= asOf;
+  // one current week: a settled action's own if it holds today
+  const current =
+    all.find((week) => holdsToday(week) && args.periodIds.includes(week.id)) ??
+    all.find(holdsToday);
+  if (!current) {
+    return {
+      weeks: all.filter((week) => args.periodIds.includes(week.id)),
+      today: null,
+      earlierWeekIds: []
+    };
+  }
+  // a week before the current one holds nothing: what was due then is
+  // overdue, and counts in the current week. A settled action still on
+  // such a week (the week turned before MRP ran again) converts there too.
+  const settled = all.filter(
+    (week) => week !== current && args.periodIds.includes(week.id)
+  );
+  return {
+    // ISO dates order as strings
+    weeks: [
+      current,
+      ...settled.filter((week) => week.startDate > current.startDate)
+    ],
+    today: asOf ?? null,
+    earlierWeekIds: settled
+      .filter((week) => week.startDate < current.startDate)
+      .map((week) => week.id)
+  };
+}
+
+/** A planned order as a person's change reads it. */
+type PlannedOrderForChange = {
+  id: string;
+  locationId: string;
+  orderType: "Make" | "Buy" | "Transfer";
+  status: "Planned" | "Firm" | "Converted";
+};
+
+/**
+ * Read one planned order of this company at `locationId` for a person's
+ * change (firm, unfirm, edit) and check that the caller may change it. An
+ * order at another location is a conflict, as `readPlanningJob`. The order type
+ * decides the page: a Make planned order needs Edit on production's Material
+ * Planning, a Buy planned order Edit on purchasing's (`plannedOrderChangePages`). A Converted row is refused, because
+ * its job or PO line is the order now.
+ */
+export async function readPlannedOrderForChange(
+  ctx: ServiceContext,
+  id: string,
+  locationId: string
+): Promise<PlannedOrderForChange | CarbonError> {
+  let row: PlannedOrderForChange | undefined;
+  try {
+    row = await ctx.asSystem.pg
+      .selectFrom("plannedOrder")
+      .select(["id", "locationId", "orderType", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", ctx.company.id)
+      .executeTakeFirst();
+  } catch (err) {
+    return ctx.error("internal", "Failed to read the planned order", err);
+  }
+  if (!row) return ctx.error("notFound", "Planned order not found");
+  // The drawer lists one location's planned orders.
+  if (row.locationId !== locationId) {
+    return ctx.error("conflict", "This planned order is for another location.");
+  }
+  if (row.orderType === "Transfer") {
+    return ctx.error("rule", "A Transfer planned order cannot be changed");
+  }
+  if (!ctx.can(plannedOrderChangePages[row.orderType])) {
+    return ctx.error(
+      "forbidden",
+      `Changing a ${row.orderType} planned order needs Edit on ${
+        row.orderType === "Make" ? "Production" : "Purchasing"
+      } → Material Planning`
+    );
+  }
+  if (!isPlannedOrderEditable(row.status)) {
+    return ctx.error(
+      "rule",
+      `This planned order is ${row.status}: change its ${
+        row.orderType === "Make" ? "job" : "purchase order line"
+      } instead`
+    );
+  }
+  return row;
+}
+
+const editablePlannedOrderStatuses = sql.join(
+  PLANNED_ORDER_EDITABLE_STATUSES.map(
+    (status) => sql`${status}::"plannedOrderStatus"`
+  )
+);
+
+/**
+ * Firm a Planned order: a person now holds it, and MRP no longer changes its
+ * quantity or dates. Only a Planned row changes; returns whether it did.
+ */
+export async function firmPlannedOrder(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<boolean> {
+  const now = datetime.timestamp();
+  return withTransaction(db, async (trx) => {
+    await lockCompanyPlanning(trx, args.companyId);
+    const rows = await trx
+      .updateTable("plannedOrder")
+      .set({
+        status: "Firm",
+        firmedBy: args.userId,
+        firmedAt: now,
+        updatedBy: args.userId,
+        updatedAt: now
+      })
+      .where("id", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Planned")
+      .returning("id")
+      .execute();
+    return rows.length > 0;
+  });
+}
+
+/**
+ * Give a Firm order back to MRP: Planned, with no firm stamp. Only a Firm row
+ * changes; returns whether it did.
+ *
+ * A Planned row is unique on its natural key (item, location, segment, type,
+ * week, `splitIndex`). MRP may have planned another order on the same key
+ * while this one was Firm, so the row then takes the next free `splitIndex`
+ * of its week. The next run matches it to no order it plans, and deletes it
+ * unless the time fence holds it.
+ */
+export async function unfirmPlannedOrder(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<boolean> {
+  const now = datetime.timestamp();
+  const sameKey = sql`
+    o."companyId" = po."companyId"
+    AND o."itemId" = po."itemId"
+    AND o."locationId" = po."locationId"
+    AND o."planningSegmentId" = po."planningSegmentId"
+    AND o."orderType" = po."orderType"
+    AND o."periodId" = po."periodId"
+    AND o."status" = 'Planned'
+  `;
+  const query = sql<{ id: string }>`
+    UPDATE "plannedOrder" po
+    SET "status" = 'Planned',
+        "firmedBy" = NULL,
+        "firmedAt" = NULL,
+        "splitIndex" = CASE
+          WHEN EXISTS (
+            SELECT 1 FROM "plannedOrder" o
+            WHERE ${sameKey} AND o."splitIndex" = po."splitIndex"
+          )
+          THEN (SELECT MAX(o."splitIndex") + 1 FROM "plannedOrder" o WHERE ${sameKey})
+          ELSE po."splitIndex"
+        END,
+        "updatedBy" = ${args.userId},
+        "updatedAt" = ${now}
+    WHERE po."id" = ${args.id}
+      AND po."companyId" = ${args.companyId}
+      AND po."status" = 'Firm'
+    RETURNING po."id"
+  `;
+  return withTransaction(db, async (trx) => {
+    await lockCompanyPlanning(trx, args.companyId);
+    const result = await query.execute(trx);
+    return result.rows.length > 0;
+  });
+}
+
+/** A person's edit of one planned order: a new quantity, a new due date, or both. */
+type PlannedOrderEdit = {
+  id: string;
+  quantity?: number | null;
+  dueDate?: string | null;
+};
+
+/** The refusal of a planned order due date no planning week holds. */
+const PLANNED_ORDER_OUTSIDE_HORIZON_MESSAGE =
+  "Pick a due date inside the planning horizon";
+
+/** A planned order edit to a due date no weekly period holds. */
+export class PlannedOrderOutsideHorizonError extends Error {
+  constructor(readonly dueDates: string[]) {
+    super(PLANNED_ORDER_OUTSIDE_HORIZON_MESSAGE);
+    this.name = "PlannedOrderOutsideHorizonError";
+  }
+}
+
+/**
+ * The due dates no weekly `period` holds. A planned order belongs to the week
+ * of its due date, so it cannot move to one of these.
+ */
+async function plannedOrderDueDatesWithoutWeek(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  dueDates: string[]
+): Promise<string[]> {
+  const dates = [...new Set(dueDates)];
+  if (dates.length === 0) return [];
+  const result = await sql<{ dueDate: string }>`
+    SELECT d::text AS "dueDate"
+    FROM unnest(${dates}::date[]) AS d
+    WHERE NOT EXISTS (
+      SELECT 1 FROM "period" p
+      WHERE p."periodType" = 'Week'
+        AND p."startDate" <= d
+        AND p."endDate" >= d
+    )
+  `.execute(db);
+  return result.rows.map((row) => String(row.dueDate));
+}
+
+/**
+ * Edit planned orders in ONE statement. Each edit firms its row (a person now
+ * holds it); a row already Firm keeps who firmed it. A moved due date moves
+ * the release date by the same number of days, so the lead time between them
+ * stays, and moves the row to the weekly period that holds the new due date;
+ * a due date no weekly period holds is refused
+ * (`PlannedOrderOutsideHorizonError`) and nothing changes. A new quantity of
+ * a Make order restates `scrapQuantity` from the item's scrap rate, as
+ * `updatePlanningJob` does for a job; a Buy order carries no scrap. Only
+ * Planned and Firm rows change. Returns the ids it changed. Throws on
+ * failure; call it inside the caller's transaction.
+ */
+export async function updatePlannedOrders(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  args: { companyId: string; userId: string; edits: PlannedOrderEdit[] }
+): Promise<string[]> {
+  if (args.edits.length === 0) return [];
+  const now = datetime.timestamp();
+  const values = sql.join(
+    args.edits.map(
+      (edit) =>
+        sql`(${edit.id}::text, ${edit.quantity ?? null}::numeric, ${edit.dueDate ?? null}::date)`
+    )
+  );
+  const query = sql<{ id: string }>`
+    UPDATE "plannedOrder" po
+    SET "quantity" = COALESCE(v."quantity", po."quantity"),
+        "scrapQuantity" = CASE
+          WHEN v."quantity" IS NULL THEN po."scrapQuantity"
+          ELSE ${restatedPlannedOrderScrap(sql`v."quantity"`)}
+        END,
+        "dueDate" = COALESCE(v."dueDate", po."dueDate"),
+        -- the week of the new due date (checked to exist before the write)
+        "periodId" = CASE
+          WHEN v."dueDate" IS NULL THEN po."periodId"
+          ELSE (
+            SELECT p."id" FROM "period" p
+            WHERE p."periodType" = 'Week'
+              AND p."startDate" <= v."dueDate"
+              AND p."endDate" >= v."dueDate"
+            ORDER BY p."startDate" DESC, p."id"
+            LIMIT 1
+          )
+        END,
+        "releaseDate" = po."releaseDate"
+          + (COALESCE(v."dueDate", po."dueDate") - po."dueDate"),
+        "status" = 'Firm',
+        "firmedBy" = COALESCE(po."firmedBy", ${args.userId}),
+        "firmedAt" = COALESCE(po."firmedAt", ${now}::timestamptz),
+        "updatedBy" = ${args.userId},
+        "updatedAt" = ${now}
+    FROM (VALUES ${values}) AS v("id", "quantity", "dueDate")
+    WHERE po."id" = v."id"
+      AND po."companyId" = ${args.companyId}
+      AND po."status" IN (${editablePlannedOrderStatuses})
+    RETURNING po."id"
+  `;
+  // joins the caller's transaction when there is one (the apply path)
+  return withTransaction(db, async (trx) => {
+    await lockCompanyPlanning(trx, args.companyId);
+    const outside = await plannedOrderDueDatesWithoutWeek(
+      trx,
+      args.edits.flatMap((edit) => (edit.dueDate ? [edit.dueDate] : []))
+    );
+    if (outside.length > 0) throw new PlannedOrderOutsideHorizonError(outside);
+    const result = await query.execute(trx);
+    return result.rows.map((row) => row.id);
+  });
+}
+
+/** A change action on a planned order, as Apply reads it. */
+export type PlannedOrderPlanningAction = {
+  planningActionId: string;
+  plannedOrderId: string;
+  type: PlanningChangeActionType;
+  suggestedDate: string | null;
+  suggestedQuantity: number | null;
+};
+
+/** The change actions Apply batches, on a job, a PO line or a planned order. */
+const PLANNING_CHANGE_ACTION_TYPES = [
+  "Expedite",
+  "Defer",
+  "Increase",
+  "Decrease",
+  "Cancel"
+] as const;
+
+type PlanningChangeActionType = (typeof PLANNING_CHANGE_ACTION_TYPES)[number];
+
+function isPlanningChangeActionType(
+  type: string
+): type is PlanningChangeActionType {
+  return (PLANNING_CHANGE_ACTION_TYPES as readonly string[]).includes(type);
+}
+
+/** A stored suggested quantity (NUMERIC may arrive as text), or null. */
+export function planningActionQuantity(
+  value: number | string | null | undefined
+): number | null {
+  return value === null || value === undefined ? null : Number(value);
+}
+
+/**
+ * The planned-order change a stored planning action stands for: null when it
+ * targets no planned order or is not a change action (Order, Make, Release,
+ * Transfer, Borrow). The type, date and quantity come from the stored row,
+ * never the caller.
+ */
+export function plannedOrderTargetOf(row: {
+  id: string;
+  plannedOrderId: string | null;
+  type: string;
+  suggestedDate?: string | null;
+  suggestedQuantity?: number | string | null;
+}): PlannedOrderPlanningAction | null {
+  if (!row.plannedOrderId || !isPlanningChangeActionType(row.type)) return null;
+  return {
+    planningActionId: row.id,
+    plannedOrderId: row.plannedOrderId,
+    type: row.type,
+    suggestedDate: row.suggestedDate ?? null,
+    suggestedQuantity: planningActionQuantity(row.suggestedQuantity)
+  };
+}
+
+/**
+ * Apply's planned-order half, for both worklists: runs
+ * `applyPlannedOrderPlanningActions` on `targets` and turns its outcome into
+ * the Apply answer's lists — what was `applied`, one `errors` line per
+ * action already applied or refused, and the planned orders changed (the
+ * caller re-plans for them). Never throws: the apply is one transaction, so
+ * a failure rolls back every target, which is reported as one error. The
+ * caller may have committed other writes already (transfers), so the answer
+ * must still go out.
+ */
+export async function applyPlannedOrderTargets(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    orderType: "Make" | "Buy";
+    targets: PlannedOrderPlanningAction[];
+  }
+): Promise<{
+  applied: string[];
+  errors: string[];
+  changedPlannedOrderIds: string[];
+}> {
+  if (args.targets.length === 0) {
+    return { applied: [], errors: [], changedPlannedOrderIds: [] };
+  }
+  let outcome: PlannedOrderPlanningApplyResult;
+  try {
+    outcome = await applyPlannedOrderPlanningActions(db, {
+      companyId: args.companyId,
+      userId: args.userId,
+      orderType: args.orderType,
+      actions: args.targets
+    });
+  } catch (err) {
+    logger.error("Failed to apply planning actions to planned orders", {
+      companyId: args.companyId,
+      orderType: args.orderType,
+      planningActionIds: args.targets.map((t) => t.planningActionId),
+      error: err
+    });
+    return {
+      applied: [],
+      errors: [
+        `Failed to apply planning actions to planned orders: ${getErrorMessage(err, "unknown error")}`
+      ],
+      changedPlannedOrderIds: []
+    };
+  }
+  return {
+    applied: outcome.applied,
+    errors: [
+      ...outcome.alreadyApplied.map(
+        (id) => `Planning action ${id} was already applied`
+      ),
+      ...outcome.refused.map(
+        (refusal) => `Planning action ${refusal.id}: ${refusal.message}`
+      )
+    ],
+    changedPlannedOrderIds: outcome.changedPlannedOrderIds
+  };
+}
+
+type PlannedOrderPlanningApplyResult = {
+  /** changed (or deleted, for a Cancel) and marked Actioned */
+  applied: string[];
+  /** marked Actioned by another apply since the page loaded; nothing changed */
+  alreadyApplied: string[];
+  /** not applied, and left Open: the reason is for the planner */
+  refused: { id: string; message: string }[];
+  /** the planned orders an applied action edited or deleted */
+  changedPlannedOrderIds: string[];
+};
+
+/**
+ * Apply a batch of change actions to their planned orders in ONE transaction,
+ * set-based, as `applyPurchasingPlanningActions` does for PO lines:
+ *   1. lock the planned orders, and refuse an action whose order is of the
+ *      other worklist (`orderType`), Converted, or gone;
+ *   2. claim the rest (`claimPlanningActions`, the lock against a second apply);
+ *   3. one UPDATE for every Expedite / Defer / Increase / Decrease
+ *      (`updatePlannedOrders`: the due date or the quantity, and the row is
+ *      firmed), then one DELETE for every Cancel;
+ *   4. give the claim of a refused action back.
+ *
+ * A Cancel deletes the planned order. The FK from `planningAction` cascades,
+ * so the Cancel action and every other action on that order go with it. The
+ * claim comes first all the same: it is what stops two applies from both
+ * acting, and the action is reported in `applied`.
+ *
+ * Two actions on one order that set the same field (an Expedite and a Defer)
+ * cannot both apply: the first is applied, the second refused.
+ */
+async function applyPlannedOrderPlanningActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    orderType: "Make" | "Buy";
+    actions: PlannedOrderPlanningAction[];
+  }
+): Promise<PlannedOrderPlanningApplyResult> {
+  const { companyId, userId, orderType, actions } = args;
+  const result: PlannedOrderPlanningApplyResult = {
+    applied: [],
+    alreadyApplied: [],
+    refused: [],
+    changedPlannedOrderIds: []
+  };
+  if (actions.length === 0) return result;
+  const now = datetime.timestamp();
+
+  await withTransaction(db, async (trx) => {
+    // 1. lock the targets: a convert or an MRP run waits for this apply, and
+    // the reverse
+    await lockCompanyPlanning(trx, companyId);
+    const orders = await trx
+      .selectFrom("plannedOrder")
+      .select(["id", "orderType", "status"])
+      .where("id", "in", [...new Set(actions.map((a) => a.plannedOrderId))])
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+    const orderById = new Map(orders.map((order) => [order.id, order]));
+    const eligible: PlannedOrderPlanningAction[] = [];
+    for (const action of actions) {
+      const order = orderById.get(action.plannedOrderId);
+      if (!order) {
+        result.refused.push({
+          id: action.planningActionId,
+          message: "Its planned order no longer exists"
+        });
+      } else if (order.orderType !== orderType) {
+        result.refused.push({
+          id: action.planningActionId,
+          message: `It targets a ${order.orderType} planned order`
+        });
+      } else if (!isPlannedOrderEditable(order.status)) {
+        result.refused.push({
+          id: action.planningActionId,
+          message: `Its planned order is ${order.status}: review its ${
+            orderType === "Make" ? "job" : "purchase order line"
+          }`
+        });
+      } else {
+        eligible.push(action);
+      }
+    }
+
+    // 2. claim
+    const claimed = await claimPlanningActions(trx, {
+      ids: eligible.map((a) => a.planningActionId),
+      companyId,
+      userId,
+      now
+    });
+    const toRelease: string[] = [];
+    const edits = new Map<
+      string,
+      PlannedOrderEdit & { actionIds: string[]; dateActionId?: string }
+    >();
+    const cancels = new Map<string, string[]>();
+    for (const action of eligible) {
+      const claim = claimed.get(action.planningActionId);
+      if (!claim) {
+        result.alreadyApplied.push(action.planningActionId);
+        continue;
+      }
+      // The suggestion comes from the claim (see claimPlanningActions).
+      const suggestedDate = claim.suggestedDate ?? action.suggestedDate;
+      const suggestedQuantity =
+        claim.suggestedQuantity ?? action.suggestedQuantity;
+      const refuse = (message: string) => {
+        toRelease.push(action.planningActionId);
+        result.refused.push({ id: action.planningActionId, message });
+      };
+
+      if (action.type === "Cancel") {
+        const ids = cancels.get(action.plannedOrderId) ?? [];
+        ids.push(action.planningActionId);
+        cancels.set(action.plannedOrderId, ids);
+        continue;
+      }
+      const edit = edits.get(action.plannedOrderId) ?? {
+        id: action.plannedOrderId,
+        actionIds: []
+      };
+      if (action.type === "Expedite" || action.type === "Defer") {
+        if (!suggestedDate) {
+          refuse("It suggests no date");
+          continue;
+        }
+        if (edit.dueDate) {
+          refuse("Another action in this batch already moves its date");
+          continue;
+        }
+        edit.dueDate = suggestedDate;
+        edit.dateActionId = action.planningActionId;
+      } else {
+        if (suggestedQuantity === null || !(suggestedQuantity > 0)) {
+          refuse("It suggests no quantity");
+          continue;
+        }
+        if (edit.quantity !== undefined && edit.quantity !== null) {
+          refuse("Another action in this batch already changes its quantity");
+          continue;
+        }
+        edit.quantity = suggestedQuantity;
+      }
+      edit.actionIds.push(action.planningActionId);
+      edits.set(action.plannedOrderId, edit);
+    }
+
+    // a date no planning week holds is refused, the order's other edit stays
+    const outside = new Set(
+      await plannedOrderDueDatesWithoutWeek(
+        trx,
+        [...edits.values()].flatMap((edit) =>
+          edit.dueDate ? [edit.dueDate] : []
+        )
+      )
+    );
+    for (const [plannedOrderId, edit] of edits) {
+      if (!edit.dueDate || !outside.has(edit.dueDate) || !edit.dateActionId) {
+        continue;
+      }
+      const actionId = edit.dateActionId;
+      toRelease.push(actionId);
+      result.refused.push({
+        id: actionId,
+        message: PLANNED_ORDER_OUTSIDE_HORIZON_MESSAGE
+      });
+      edit.dueDate = undefined;
+      edit.actionIds = edit.actionIds.filter((id) => id !== actionId);
+      if (edit.actionIds.length === 0) edits.delete(plannedOrderId);
+    }
+
+    // 3. write: the edits, then the cancels (a Cancel wins over an edit of
+    // the same order in the batch: the order is gone either way)
+    const changed = new Set(
+      await updatePlannedOrders(trx, {
+        companyId,
+        userId,
+        edits: [...edits.values()].map(({ id, quantity, dueDate }) => ({
+          id,
+          quantity,
+          dueDate
+        }))
+      })
+    );
+    const deleted = new Set<string>();
+    if (cancels.size > 0) {
+      const rows = await trx
+        .deleteFrom("plannedOrder")
+        .where("id", "in", [...cancels.keys()])
+        .where("companyId", "=", companyId)
+        .where("status", "in", [...PLANNED_ORDER_EDITABLE_STATUSES])
+        .returning("id")
+        .execute();
+      for (const row of rows) deleted.add(row.id);
+    }
+    result.changedPlannedOrderIds = [...new Set([...changed, ...deleted])];
+
+    for (const [plannedOrderId, edit] of edits) {
+      for (const id of edit.actionIds) {
+        if (changed.has(plannedOrderId)) result.applied.push(id);
+        else {
+          toRelease.push(id);
+          result.refused.push({
+            id,
+            message: "Its planned order changed since it was read"
+          });
+        }
+      }
+    }
+    for (const [plannedOrderId, ids] of cancels) {
+      for (const id of ids) {
+        if (deleted.has(plannedOrderId)) result.applied.push(id);
+        else {
+          toRelease.push(id);
+          result.refused.push({
+            id,
+            message: "Its planned order changed since it was read"
+          });
+        }
+      }
+    }
+
+    // 4. give the refused claims back (a cancelled order's actions are gone)
+    await releasePlanningActionClaims(trx, {
+      ids: toRelease,
+      companyId,
+      userId,
+      now
+    });
+  });
+
+  return result;
 }
 
 /** Compensation for a failed apply: release a claimed (Actioned) row back to Open. */
@@ -14897,7 +16232,8 @@ export async function assignSerialNumbers(
       .where(sql<boolean>`attributes->>'Job Material' IS NULL`)
       .where(sql<boolean>`attributes->>'Split Entity ID' IS NULL`)
       .where(sql<boolean>`attributes->>'Split From Entity ID' IS NULL`)
-      .orderBy("createdAt", "asc")
+      .orderBy("id")
+      // Use the receipt's lock order when the job already has several units.
       // Lock the seed row for the duration of the transaction so concurrent
       // runs for the same job serialize here: the second waits, then sees
       // the readableId the first assigned and no-ops the idempotency guard
@@ -14914,6 +16250,22 @@ export async function assignSerialNumbers(
     const count =
       trackingType === "Batch" ? 1 : Math.round(Number(job.quantity));
     if (count < 1) return { assigned: 0 };
+
+    // The issue identifies the seed itself. Splitting it would leave its
+    // children outside that hold. Read after acquiring the row lock so a
+    // concurrent Quality decision is visible before any numbers are drawn.
+    if (
+      trackingType === "Serial" &&
+      (count > 1 || Number(seed.quantity) !== 1)
+    ) {
+      const hold = await trx
+        .selectFrom("unitQualityHold")
+        .select("issueId")
+        .where("companyId", "=", companyId)
+        .where("trackedEntityId", "=", seed.id)
+        .executeTakeFirst();
+      if (hold) return { assigned: 0 };
+    }
 
     // 7. Atomically reserve + format the next `count` serial numbers.
     const serials = await getNextSerialNumbers(trx, {
@@ -17888,7 +19240,7 @@ export async function getMethod(
       // FIXME: hydrated here but never applied — this make-method path does
       // not run configuration rules (itemToJob does). Applying them is a
       // behavior change for its own PR.
-      // biome-ignore lint/correctness/noUnusedVariables: see FIXME above
+      // oxlint-disable-next-line no-unused-vars -- see FIXME above
       const hydratedConfiguration = await hydrateConfiguration(
         db,
         configuration,
@@ -17952,7 +19304,7 @@ export async function getMethod(
       );
 
       // Get configuration code by field
-      // biome-ignore lint/correctness/noUnusedVariables: unapplied configuration, see FIXME above
+      // oxlint-disable-next-line no-unused-vars -- unapplied configuration, see FIXME above
       const configurationCodeByField = configurationRules.data?.reduce<
         Record<string, string>
       >((acc, rule) => {
@@ -19516,7 +20868,7 @@ export async function getMethod(
 
         // FIXME: never called — configuration rules are not applied on this
         // make-method path.
-        // biome-ignore lint/correctness/noUnusedVariables: see FIXME above
+        // oxlint-disable-next-line no-unused-vars -- see FIXME above
         async function getConfiguredValue<T>({
           id,
           field,
@@ -27627,14 +28979,6 @@ export async function triggerRework(
     body.companyId,
     "Tracked entity"
   );
-  await assertUnitsOfMakeMethod(db, {
-    trackedEntityIds: body.trackedEntityIds ?? [],
-    jobMakeMethodId: operations.find(
-      (operation) => operation.id === body.triggeredAtJobOperationId
-    )?.jobMakeMethodId,
-    jobOperationId: body.triggeredAtJobOperationId,
-    companyId: body.companyId
-  });
 
   // Written as productionQuantity.inspectionId, whose FK accepts any company's
   // inspection.
@@ -27653,6 +28997,16 @@ export async function triggerRework(
   });
 
   const result = await db.transaction().execute(async (trx) => {
+    await assertUnitsOfMakeMethod(trx, {
+      jobId: body.jobId,
+      trackedEntityIds: body.trackedEntityIds ?? [],
+      quantity: body.quantity,
+      jobMakeMethodId: operations.find(
+        (operation) => operation.id === body.triggeredAtJobOperationId
+      )?.jobMakeMethodId,
+      jobOperationId: body.triggeredAtJobOperationId,
+      companyId: body.companyId
+    });
     return await cloneReworkOperations(trx, body);
   });
 
@@ -27679,9 +29033,11 @@ export async function triggerRework(
  * another job would leave an operation no unit of this job can complete.
  */
 async function assertUnitsOfMakeMethod(
-  db: Kysely<KyselyDatabase>,
+  db: Transaction<KyselyDatabase>,
   args: {
+    jobId: string;
     trackedEntityIds: string[];
+    quantity: number;
     jobMakeMethodId: string | null | undefined;
     /** The operation the units are sent on from; its scope, if it has one. */
     jobOperationId?: string;
@@ -27689,7 +29045,32 @@ async function assertUnitsOfMakeMethod(
   }
 ) {
   const ids = [...new Set(args.trackedEntityIds)];
+  const requiresHeldUnitCheck =
+    args.jobMakeMethodId &&
+    (await db
+      .selectFrom("jobMakeMethod as method")
+      .innerJoin(
+        "companySettings as settings",
+        "settings.id",
+        "method.companyId"
+      )
+      .select("method.id")
+      .where("method.id", "=", args.jobMakeMethodId)
+      .where("method.companyId", "=", args.companyId)
+      .where("method.requiresSerialTracking", "=", true)
+      .where("settings.holdUnitsWithOpenIssues", "=", true)
+      .executeTakeFirst());
+  if (
+    requiresHeldUnitCheck &&
+    (ids.length !== args.quantity ||
+      ids.length !== args.trackedEntityIds.length)
+  ) {
+    throw new InvalidInputError(
+      "Select one serial unit for each unit sent to rework"
+    );
+  }
   if (ids.length === 0) return;
+  await inventoryPostings.lockProductionJob(db, args.jobId, args.companyId);
   const units = args.jobMakeMethodId
     ? await db
         .selectFrom("trackedEntity")
@@ -27697,11 +29078,22 @@ async function assertUnitsOfMakeMethod(
         .where("id", "in", ids)
         .where("companyId", "=", args.companyId)
         .where(sql`"attributes"->>'Job Make Method'`, "=", args.jobMakeMethodId)
+        .orderBy("id")
+        .forUpdate()
         .execute()
     : [];
   if (units.length !== ids.length) {
     throw new InvalidInputError(
       "A unit is not a unit of this operation's part on this job"
+    );
+  }
+  // Dispatch credits the source operation immediately, including a correction
+  // requested during inspection. Check each selected unit before that credit.
+  if (requiresHeldUnitCheck) {
+    await inventoryPostings.assertSerialsOffQualityHold(
+      db,
+      args.companyId,
+      ids
     );
   }
   // A rework or correction operation works only the units sent into it, so
@@ -27795,12 +29187,6 @@ export async function triggerCorrection(
     companyId,
     "Tracked entity"
   );
-  await assertUnitsOfMakeMethod(db, {
-    trackedEntityIds,
-    jobMakeMethodId: triggeringOperation.jobMakeMethodId,
-    jobOperationId: triggeringOperation.id,
-    companyId
-  });
   await assertCompanyRecords(
     db,
     "inspection",
@@ -27816,6 +29202,14 @@ export async function triggerCorrection(
   }
 
   const result = await db.transaction().execute(async (trx) => {
+    await assertUnitsOfMakeMethod(trx, {
+      jobId: input.jobId,
+      trackedEntityIds,
+      quantity: input.quantity,
+      jobMakeMethodId: triggeringOperation.jobMakeMethodId,
+      jobOperationId: triggeringOperation.id,
+      companyId
+    });
     // Two operators who confirm at the same moment must not both pass the
     // limit: lock the correction, then count the uses under the lock.
     await trx
@@ -28658,6 +30052,552 @@ async function assertMaterialCompatible(
   }
 }
 
+// Both manual receipt and MES serial completion lock the job before its units.
+async function lockBatchJobs(
+  trx: Transaction<KyselyDatabase>,
+  batchId: string,
+  companyId: string
+) {
+  return await trx
+    .selectFrom("job")
+    .innerJoin("jobOperation as member", "member.jobId", "job.id")
+    .select(["job.status", "job.jobId", "member.id as operationId"])
+    .where("job.companyId", "=", companyId)
+    .where("member.companyId", "=", companyId)
+    .where("member.jobOperationBatchId", "=", batchId)
+    .orderBy("job.id")
+    .forUpdate("job")
+    .execute();
+}
+
+/**
+ * The first member of the run whose job is already Completed, Closed or
+ * Cancelled, when the company holds units with open issues. A held company's
+ * job can be Completed with serials still to receive, and crediting its
+ * operation would mark them worked with no receipt to take them. Without
+ * holds the batch completes as it always has: sync_finish_job_operation skips
+ * the receipt of a finished job.
+ */
+export function findClosedBatchJob(
+  jobs: { status: string; jobId: string; operationId: string }[],
+  memberIds: string[],
+  holdUnitsWithOpenIssues: boolean
+) {
+  if (!holdUnitsWithOpenIssues) return undefined;
+  const included = new Set(memberIds);
+  return jobs.find(
+    (job) =>
+      included.has(job.operationId) &&
+      ["Completed", "Closed", "Cancelled"].includes(job.status)
+  );
+}
+
+type BatchSerialUnit = {
+  id: string;
+  quantity: number;
+  status: Database["public"]["Enums"]["trackedEntityStatus"];
+  attributes: unknown;
+  received: boolean;
+};
+
+type BatchSerialHold = {
+  trackedEntityId: string | null;
+  issueNumber: string | null;
+  // Set only when a closed issue dispositioned the unit Scrap or Return to
+  // Supplier. An open issue's hold has none.
+  disposition: string | null;
+};
+
+/**
+ * Which serials of one batch member the submitted quantity completes. Null
+ * when no unit is held, received or worked: the quantity then posts as it does
+ * for an untracked member. Throws when the quantity cannot name its units.
+ */
+export function planBatchSerialRun(args: {
+  operation: {
+    id: string;
+    targetQuantity: number | null;
+    operationQuantity: number | null;
+    quantityComplete: number | null;
+    quantityReworked: number | null;
+  };
+  member: { quantity: number; scrapQuantity?: number };
+  /** The operation's units, in lock order. */
+  units: BatchSerialUnit[];
+  outputs: { trackedEntityId: string; single: boolean }[];
+  /** The holds on those units, by issue number. */
+  holds: BatchSerialHold[];
+}) {
+  const { operation: op, member, units, outputs, holds } = args;
+  const marker = `Operation ${op.id}`;
+  // Pre-marker Complete and Produce activities are also worked-unit evidence
+  // for final receipt. Each output must identify a single unit exactly once.
+  const worked = new Set(
+    units
+      .filter(
+        (unit) => marker in ((unit.attributes as Record<string, unknown>) ?? {})
+      )
+      .map((unit) => unit.id)
+  );
+  const scopedIds = new Set(units.map((unit) => unit.id));
+  const ambiguousHistory = () =>
+    new InvalidInputError(
+      "Earlier production does not identify one serial for each completed unit. Review this operation's production and traceability before completing the batch."
+    );
+  for (const output of outputs) {
+    if (!output.single || !scopedIds.has(output.trackedEntityId))
+      throw ambiguousHistory();
+    worked.add(output.trackedEntityId);
+  }
+  if (!units.length) return null;
+  const hasReceived = units.some((u) => u.received);
+  if (!holds.length && !hasReceived && !worked.size) return null;
+  if (worked.size !== (op.quantityComplete ?? 0)) throw ambiguousHistory();
+  const held = new Set(holds.map((h) => h.trackedEntityId));
+  const openIssue = new Set(
+    holds.filter((h) => h.disposition === null).map((h) => h.trackedEntityId)
+  );
+  const disposed = new Set(
+    holds.filter((h) => h.disposition !== null).map((h) => h.trackedEntityId)
+  );
+  // The units this operation may still work after this run. A closed Scrap or
+  // Return to Supplier disposition blocks a unit for good, and a Rejected unit
+  // comes back only through an open issue's Use As Is or Rework. Receipt never
+  // takes either, so neither keeps the operation open.
+  const remaining = units.filter(
+    (u) =>
+      !u.received &&
+      u.status !== "Consumed" &&
+      u.status !== "Scrapped" &&
+      !worked.has(u.id) &&
+      !disposed.has(u.id) &&
+      (u.status !== "Rejected" || openIssue.has(u.id))
+  );
+  const eligible = remaining.filter(
+    (u) =>
+      !held.has(u.id) &&
+      u.quantity === 1 &&
+      (u.status === "Reserved" || u.status === "Available")
+  );
+  // The quantity trigger closes this operation at its target. Existing
+  // quantity-only credits cannot be attributed to any more serials than
+  // the operation has left to run.
+  const target = op.targetQuantity || op.operationQuantity;
+  const balance =
+    target == null
+      ? Infinity
+      : target - (op.quantityComplete ?? 0) - (op.quantityReworked ?? 0);
+  if (
+    !eligible.length ||
+    member.quantity !== eligible.length ||
+    member.quantity > balance ||
+    member.scrapQuantity
+  ) {
+    throw new InvalidInputError(
+      (holds[0]
+        ? `Serial units are on hold for issue ${holds[0].issueNumber}. `
+        : hasReceived
+          ? "Serials on this job have already been received. "
+          : "Serials have already completed this operation. ") +
+        (eligible.length && eligible.length <= balance
+          ? `Enter ${eligible.length} with zero scrap to complete all eligible serials. For a smaller run, leave this operation out of the batch and complete the serials individually.`
+          : "Review the remaining units before completing this operation.")
+    );
+  }
+  return {
+    eligibleIds: eligible.map((u) => u.id),
+    partial: remaining.length > eligible.length && member.quantity < balance,
+    workedCount: worked.size
+  };
+}
+
+/**
+ * The serial number draws for units numbered at their first touch, in the
+ * order the units are completed. One draw takes a run of consecutive units of
+ * one item and location: `get_next_serial_numbers` returns a count's numbers
+ * in sequence order, so the units get the numbers one draw per unit gave them.
+ */
+export function planSerialNumberDraws(
+  units: {
+    id: string;
+    itemId: string | null;
+    readableId: string | null;
+    locationCode: string | null;
+    locationName: string | null;
+  }[]
+) {
+  const draws: {
+    itemId: string;
+    locationCode: string | null;
+    locationName: string | null;
+    trackedEntityIds: string[];
+  }[] = [];
+  const planned = new Set<string>();
+  for (const unit of units) {
+    // A unit an earlier member already numbers draws nothing more.
+    if (unit.readableId || !unit.itemId || planned.has(unit.id)) continue;
+    planned.add(unit.id);
+    const last = draws.at(-1);
+    if (
+      last?.itemId === unit.itemId &&
+      last.locationCode === unit.locationCode &&
+      last.locationName === unit.locationName
+    ) {
+      last.trackedEntityIds.push(unit.id);
+    } else {
+      draws.push({
+        itemId: unit.itemId,
+        locationCode: unit.locationCode,
+        locationName: unit.locationName,
+        trackedEntityIds: [unit.id]
+      });
+    }
+  }
+  return draws;
+}
+
+// A serial member submits quantities, with no lot/serial id. If serials are
+// held, already worked or received, a quantity identifies the output unambiguously
+// only when it covers all remaining eligible single units. Record those ids
+// before the production trigger runs. The batch activity also lets a retry
+// finish the run while leaving this operation open for its held siblings.
+// The caller runs it only for a company that holds units with open issues.
+// Every read and write covers all serial members at once.
+async function recordEligibleBatchSerials(
+  trx: Transaction<KyselyDatabase>,
+  ctx: { batchId: string; companyId: string; userId: string },
+  members: {
+    jobOperationId: string;
+    quantity: number;
+    scrapQuantity?: number;
+  }[]
+) {
+  const { companyId, batchId, userId } = ctx;
+  const serialOperations = await trx
+    .selectFrom("jobOperation as op")
+    .innerJoin("jobMakeMethod as m", "m.id", "op.jobMakeMethodId")
+    .select([
+      "op.id",
+      "op.jobId",
+      "op.targetQuantity",
+      "op.operationQuantity",
+      "op.quantityComplete",
+      "op.quantityReworked",
+      "m.id as methodId"
+    ])
+    .where("op.jobOperationBatchId", "=", batchId)
+    .where("op.companyId", "=", companyId)
+    .where(
+      "op.id",
+      "in",
+      members.map((m) => m.jobOperationId)
+    )
+    .where("m.requiresSerialTracking", "=", true)
+    .orderBy("op.id")
+    .forUpdate("op")
+    .execute();
+  if (!serialOperations.length) return [];
+  const operationIds = serialOperations.map((op) => op.id);
+
+  // Lock every member's units in one statement, member by member and each
+  // member's units by id: the order the members took when they ran one
+  // after another. A rework operation sees only the units sent into it.
+  const unitRows = await trx
+    .selectFrom("jobOperation as op")
+    .innerJoin("trackedEntity as unit", (join) =>
+      join
+        .onRef("unit.companyId", "=", "op.companyId")
+        .on((eb) =>
+          eb(
+            sql<string>`"unit".attributes->>'Job Make Method'`,
+            "=",
+            eb.ref("op.jobMakeMethodId")
+          )
+        )
+    )
+    .select([
+      "op.id as operationId",
+      "unit.id",
+      "unit.quantity",
+      "unit.status",
+      "unit.attributes",
+      "unit.readableId",
+      "unit.itemId"
+    ])
+    .where("op.companyId", "=", companyId)
+    .where("unit.companyId", "=", companyId)
+    .where("op.id", "in", operationIds)
+    .where((eb) =>
+      eb.or([
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom("jobOperationTrackedEntity as scope")
+              .select("scope.trackedEntityId")
+              .where("scope.companyId", "=", companyId)
+              .whereRef("scope.jobOperationId", "=", "op.id")
+          )
+        ),
+        eb.exists(
+          eb
+            .selectFrom("jobOperationTrackedEntity as scope")
+            .select("scope.trackedEntityId")
+            .where("scope.companyId", "=", companyId)
+            .whereRef("scope.jobOperationId", "=", "op.id")
+            .whereRef("scope.trackedEntityId", "=", "unit.id")
+        )
+      ])
+    )
+    .orderBy("op.id")
+    .orderBy("unit.id")
+    .forUpdate("unit")
+    .execute();
+  const unitIds = [...new Set(unitRows.map((unit) => unit.id))];
+
+  // The jobs are locked, and a receipt locks its job first, so nothing is
+  // received between the unit locks and this read.
+  const received = new Map<string, Set<string>>();
+  const jobIds = [...new Set(serialOperations.map((op) => op.jobId))];
+  const receivedRows = await sql<{ jobId: string; trackedEntityId: string }>`
+    SELECT member_job.id AS "jobId", received.id AS "trackedEntityId"
+    FROM unnest(${jobIds}::text[]) AS member_job(id)
+    CROSS JOIN LATERAL util.received_job_serials(member_job.id, ${companyId}) AS received(id)
+  `.execute(trx);
+  for (const row of receivedRows.rows) {
+    const ids = received.get(row.jobId) ?? new Set<string>();
+    ids.add(row.trackedEntityId);
+    received.set(row.jobId, ids);
+  }
+
+  // inventory's getOperationSerialOutputs, for every member at once.
+  const outputRows = await trx
+    .selectFrom("trackedActivity as a")
+    .innerJoin("trackedActivityOutput as output", (join) =>
+      join
+        .onRef("output.trackedActivityId", "=", "a.id")
+        .onRef("output.companyId", "=", "a.companyId")
+    )
+    .select([
+      "a.sourceDocumentId as operationId",
+      "output.trackedEntityId",
+      sql<boolean>`count(*) = 1 AND sum(output.quantity) = 1`.as("single")
+    ])
+    .where("a.companyId", "=", companyId)
+    .where("a.sourceDocument", "=", "Job Operation")
+    .where("a.sourceDocumentId", "in", operationIds)
+    .where("a.type", "in", ["Complete", "Produce"])
+    .groupBy(["a.sourceDocumentId", "output.trackedEntityId"])
+    .execute();
+
+  // Read after acquiring the locks, so an issue link which committed
+  // while the posting waited is visible in this statement's snapshot.
+  const holdRows = unitIds.length
+    ? await trx
+        .selectFrom("unitQualityHold")
+        .select(["trackedEntityId", "issueNumber", "disposition"])
+        .where("companyId", "=", companyId)
+        .where("trackedEntityId", "in", unitIds)
+        .orderBy("issueNumber")
+        .execute()
+    : [];
+
+  const submitted = new Map(
+    members.map((member) => [member.jobOperationId, member])
+  );
+  const unitsByOperation = Map.groupBy(unitRows, (unit) => unit.operationId);
+  const runs = serialOperations.flatMap((op) => {
+    const units = unitsByOperation.get(op.id) ?? [];
+    const ids = new Set(units.map((unit) => unit.id));
+    const plan = planBatchSerialRun({
+      operation: op,
+      member: submitted.get(op.id)!,
+      units: units.map((unit) => ({
+        ...unit,
+        received: received.get(op.jobId)?.has(unit.id) ?? false
+      })),
+      outputs: outputRows.filter((output) => output.operationId === op.id),
+      holds: holdRows.filter(
+        (hold) => hold.trackedEntityId && ids.has(hold.trackedEntityId)
+      )
+    });
+    return plan ? [{ op, ...plan }] : [];
+  });
+  if (!runs.length) return [];
+
+  // First-touch numbering, in the order the members complete their units.
+  const unitById = new Map(unitRows.map((unit) => [unit.id, unit]));
+  const toNumber = runs.flatMap((run) =>
+    run.eligibleIds.map((id) => {
+      const unit = unitById.get(id)!;
+      const job = (unit.attributes as Record<string, unknown> | null)?.Job;
+      return { ...unit, job: typeof job === "string" ? job : null };
+    })
+  );
+  const numberedJobIds = [
+    ...new Set(
+      toNumber.flatMap((unit) =>
+        !unit.readableId && unit.itemId && unit.job ? [unit.job] : []
+      )
+    )
+  ];
+  const locations = new Map(
+    (numberedJobIds.length
+      ? await trx
+          .selectFrom("job")
+          .innerJoin("location", "location.id", "job.locationId")
+          .select(["job.id", "location.code", "location.name"])
+          .where("job.id", "in", numberedJobIds)
+          .where("job.companyId", "=", companyId)
+          .execute()
+      : []
+    ).map((job) => [job.id, job])
+  );
+  const draws = planSerialNumberDraws(
+    toNumber.map((unit) => {
+      const location = unit.job ? locations.get(unit.job) : undefined;
+      return {
+        ...unit,
+        locationCode: location?.code ?? null,
+        locationName: location?.name ?? null
+      };
+    })
+  );
+  // One allocator call per run of one item and location, not per unit.
+  const serials = new Map<string, string>();
+  for (const draw of draws) {
+    const numbers = await getNextSerialNumbers(trx, {
+      itemId: draw.itemId,
+      companyId,
+      count: draw.trackedEntityIds.length,
+      locationCode: draw.locationCode,
+      locationName: draw.locationName
+    });
+    draw.trackedEntityIds.forEach((id, index) => {
+      if (numbers[index]) serials.set(id, numbers[index]);
+    });
+  }
+
+  // Step records use zero-based positions in the whole make method, even
+  // for a rework operation scoped to just a few of the serials. Freeze the
+  // output positions before first-touch numbering can change a tie break.
+  // A member sees the numbers members before it in this run drew, as it did
+  // when each member numbered its units before the next one read.
+  const numberedBy = new Map<string, number>();
+  runs.forEach((run, index) => {
+    for (const id of run.eligibleIds) {
+      if (serials.has(id) && !numberedBy.has(id)) numberedBy.set(id, index);
+    }
+  });
+  const axisRows = await sql<{
+    operationId: string;
+    trackedEntityId: string;
+    position: number;
+  }>`
+    SELECT op.id AS "operationId", unit.id AS "trackedEntityId",
+      (row_number() OVER (
+        PARTITION BY op.id
+        ORDER BY unit."createdAt", COALESCE(drawn."readableId", unit."readableId"), unit.id
+      ) - 1)::integer AS "position"
+    FROM jsonb_to_recordset(${JSON.stringify(
+      runs.map((run, index) => ({
+        id: run.op.id,
+        methodId: run.op.methodId,
+        run: index
+      }))
+    )}::jsonb) AS op(id text, "methodId" text, run integer)
+    JOIN "trackedEntity" unit
+      ON unit."companyId" = ${companyId}
+      AND unit.attributes->>'Job Make Method' = op."methodId"
+    LEFT JOIN jsonb_to_recordset(${JSON.stringify(
+      [...numberedBy].map(([id, run]) => ({
+        id,
+        readableId: serials.get(id),
+        run
+      }))
+    )}::jsonb) AS drawn(id text, "readableId" text, run integer)
+      ON drawn.id = unit.id AND drawn.run < op.run
+  `.execute(trx);
+
+  const activities = await trx
+    .insertInto("trackedActivity")
+    .values(
+      runs.map((run) => {
+        const outputIds = new Set(run.eligibleIds);
+        return {
+          type: "Produce",
+          sourceDocument: "Job Operation",
+          sourceDocumentId: run.op.id,
+          attributes: {
+            Job: run.op.jobId,
+            "Job Operation": run.op.id,
+            "Job Operation Batch": batchId,
+            "Output Unit Indices": Object.fromEntries(
+              axisRows.rows.flatMap((row) =>
+                row.operationId === run.op.id &&
+                outputIds.has(row.trackedEntityId)
+                  ? [[row.trackedEntityId, row.position] as const]
+                  : []
+              )
+            ),
+            "Partial Operation": run.partial
+          },
+          companyId,
+          createdBy: userId
+        };
+      })
+    )
+    .returning(["id", "sourceDocumentId"])
+    .execute();
+  const activityByOperation = new Map(
+    activities.map((activity) => [activity.sourceDocumentId, activity.id])
+  );
+  await trx
+    .insertInto("trackedActivityOutput")
+    .values(
+      runs.flatMap((run) =>
+        run.eligibleIds.map((id) => ({
+          trackedActivityId: activityByOperation.get(run.op.id)!,
+          trackedEntityId: id,
+          quantity: 1,
+          companyId,
+          createdBy: userId
+        }))
+      )
+    )
+    .execute();
+
+  // One row per unit: a unit two members complete carries both markers.
+  const markers = new Map<string, Record<string, number>>();
+  for (const run of runs) {
+    run.eligibleIds.forEach((id, index) => {
+      markers.set(id, {
+        ...markers.get(id),
+        [`Operation ${run.op.id}`]: run.workedCount + index + 1
+      });
+    });
+  }
+  const unitUpdates = [...markers].map(([id, marker]) => ({
+    id,
+    markers: marker,
+    readableId: serials.get(id) ?? null
+  }));
+  const updated = await sql<{ id: string }>`
+    UPDATE "trackedEntity" AS unit
+    SET status = 'Available',
+      attributes = unit.attributes || r.markers,
+      "readableId" = COALESCE(r."readableId", unit."readableId")
+    FROM jsonb_to_recordset(${JSON.stringify(unitUpdates)}::jsonb)
+      AS r(id text, markers jsonb, "readableId" text)
+    WHERE unit.id = r.id AND unit."companyId" = ${companyId}
+    RETURNING unit.id
+  `.execute(trx);
+  if (updated.rows.length !== unitUpdates.length) {
+    throw new Error("A completed serial unit was not found");
+  }
+
+  return runs.flatMap((run) => (run.partial ? [run.op.id] : []));
+}
+
 // Two-phase, resumable batch completion.
 //
 // Phase 1 (one Kysely transaction, runs once): FOR UPDATE the batch row to
@@ -28719,6 +30659,8 @@ async function completeBatch(
   // inside the transaction: freshly sliced on the first attempt, re-loaded on resume.
   let glEvents: { id: string; postedToGL: boolean }[] = [];
 
+  let partialOperations: string[] = [];
+
   // Strict backflush: refuse before phase 1 writes, since phase 2 issues after
   // it commits. Every member is checked in one dry run, so members sharing a
   // bin are held to their combined demand. A completed batch skips this, so a
@@ -28759,6 +30701,38 @@ async function completeBatch(
     // "resume" if the batch is already Completing (a prior phase-2 step failed);
     // "slice" if Active; throws for a terminal status.
     const phase = planBatchCompletion(batch.status);
+
+    const jobs = await lockBatchJobs(trx, batchId, companyId);
+    // The closed-job refusal and the serial recording apply only to a company
+    // that holds units; every other company completes the batch as before.
+    const settings =
+      phase === "slice"
+        ? await trx
+            .selectFrom("companySettings")
+            .select("holdUnitsWithOpenIssues")
+            .where("id", "=", companyId)
+            .executeTakeFirst()
+        : undefined;
+    const holdUnits = settings?.holdUnitsWithOpenIssues === true;
+    const closed = findClosedBatchJob(jobs, memberIds, holdUnits);
+    if (closed)
+      throw new InvalidInputError(
+        `Job ${closed.jobId} is ${closed.status}. Review the batch before completing it.`
+      );
+
+    // A member can name the serial its output belongs to. Check before
+    // phase 1 commits any quantity, timer split or status transition.
+    const outputIds = members.flatMap((member) =>
+      member.trackedEntityId &&
+      (member.quantity > 0 || (member.scrapQuantity ?? 0) > 0)
+        ? [member.trackedEntityId]
+        : []
+    );
+    await inventoryPostings.lockProductionOutputsForPosting(
+      trx,
+      companyId,
+      outputIds
+    );
 
     if (phase === "resume") {
       // The payload must cover EXACTLY the batch's membership — phase 2 flips
@@ -28803,6 +30777,38 @@ async function completeBatch(
         if (r.type === "Production") s.produced += Number(r.quantity);
         if (r.type === "Scrap") s.scrap += Number(r.quantity);
         sums.set(r.jobOperationId, s);
+      }
+      // A serial member may already have production rows from an earlier
+      // run. Its batch activity records exactly the serials credited in this
+      // run and whether the operation stays open for its remaining siblings.
+      const serialRuns = await trx
+        .selectFrom("trackedActivity as a")
+        .innerJoin("trackedActivityOutput as output", (join) =>
+          join
+            .onRef("output.trackedActivityId", "=", "a.id")
+            .onRef("output.companyId", "=", "a.companyId")
+        )
+        .select([
+          "a.sourceDocumentId",
+          sql<number>`sum(output.quantity)`.as("produced"),
+          sql<boolean>`a.attributes @> '{"Partial Operation":true}'::jsonb`.as(
+            "partial"
+          )
+        ])
+        .where("a.companyId", "=", companyId)
+        .where("a.sourceDocument", "=", "Job Operation")
+        .where("a.sourceDocumentId", "in", memberIds)
+        .where("a.type", "=", "Produce")
+        .where(sql<string>`a.attributes->>'Job Operation Batch'`, "=", batchId)
+        .where(sql<boolean>`a.attributes ? 'Partial Operation'`)
+        .groupBy(["a.id", "a.sourceDocumentId"])
+        .execute();
+      for (const run of serialRuns) {
+        sums.set(run.sourceDocumentId!, {
+          produced: Number(run.produced),
+          scrap: 0
+        });
+        if (run.partial) partialOperations.push(run.sourceDocumentId!);
       }
       const mismatches = members.filter((m) => {
         const s = sums.get(m.jobOperationId) ?? { produced: 0, scrap: 0 };
@@ -28852,6 +30858,14 @@ async function completeBatch(
       [...memberIds, ...excludedIds],
       operations.map((o: any) => o.id)
     );
+
+    partialOperations = holdUnits
+      ? await recordEligibleBatchSerials(
+          trx,
+          { companyId, userId, batchId },
+          members
+        )
+      : [];
 
     // Detach "not in this run" members inside the same transaction: back to the
     // schedule un-run — no time slice, no quantities, and phase 2's batch-wide
@@ -29093,17 +31107,22 @@ async function completeBatch(
     outputTrackedEntityIds.push(m.trackedEntityId);
   }
 
-  // Flip members Done — sync_finish_job_operation readies each member job's next
-  // operation and completes the job independently. Skip already-Done so a resume
-  // does not re-fire the trigger.
-  const done = await updateRows(
-    db,
-    "jobOperation",
-    { status: "Done", updatedBy: userId },
-    { jobOperationBatchId: batchId, companyId, status: neq("Done") }
-  );
-  if (done.error) {
-    throw new Error(`Failed to finish batch operations: ${done.error.message}`);
+  // A partial operation stays open for its held units. Preserve membership
+  // until GL posts so a resume sees exactly the operations in the original run.
+  const partialIds = new Set(partialOperations);
+  const finished = memberIds.filter((id) => !partialIds.has(id));
+  if (finished.length) {
+    await db.transaction().execute(async (trx) => {
+      await lockBatchJobs(trx, batchId, companyId);
+      await trx
+        .updateTable("jobOperation")
+        .set({ status: "Done", updatedBy: userId })
+        .where("id", "in", finished)
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .where("status", "!=", "Done")
+        .execute();
+    });
   }
 
   // Post GL per sliced event; skip events a prior attempt already posted, and
@@ -29130,18 +31149,26 @@ async function completeBatch(
     }
   }
 
-  // Finalize: Completing -> Completed now that every phase-2 effect succeeded.
-  const finalized = await updateRows(
-    db,
-    "jobOperationBatch",
-    { status: "Completed", updatedBy: userId, updatedAt: now },
-    { id: batchId, companyId, status: "Completing" }
-  );
-  if (finalized.error) {
-    throw new Error(
-      `Failed to finalize batch completion: ${finalized.error.message}`
-    );
-  }
+  // Finalize membership and batch status in one transaction. A retry
+  // cannot see a Completing batch with its partial members already detached.
+  await db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable("jobOperationBatch")
+      .set({ status: "Completed", updatedBy: userId, updatedAt: now })
+      .where("id", "=", batchId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Completing")
+      .execute();
+    if (partialOperations.length) {
+      await trx
+        .updateTable("jobOperation")
+        .set({ jobOperationBatchId: null, updatedBy: userId })
+        .where("companyId", "=", companyId)
+        .where("jobOperationBatchId", "=", batchId)
+        .where("id", "in", partialOperations)
+        .execute();
+    }
+  });
 
   return {
     completed: members.length,
@@ -29766,4 +31793,195 @@ export async function getJobCorrections(
     }),
     error: null
   };
+}
+
+// --- Demand projections -------------------------------------------------------
+
+/** The weeks a demand forecast form shows, from this week on. */
+const DEMAND_PROJECTION_WEEKS = 52;
+
+/**
+ * The weeks the demand forecast forms show, in date order: the new form
+ * counts its weeks from the company's today, the edit form from the
+ * location's, so both forms' weeks are here (one more when those weeks
+ * differ). A week a write takes is one of these, and a delete clears them.
+ */
+export async function demandProjectionFormWeeks(
+  ctx: ServiceContext,
+  locationId: string
+) {
+  const [companyToday, locationToday] = await Promise.all([
+    getCompanyTimeZone(ctx.asCaller.supabase, ctx.company.id).then((tz) =>
+      datetime.today(tz)
+    ),
+    getLocationTimeZone(ctx.asCaller.supabase, locationId, ctx.company.id).then(
+      (tz) => datetime.today(tz)
+    )
+  ]);
+  const sameWeek =
+    startOfWeek(companyToday, "en-US").compare(
+      startOfWeek(locationToday, "en-US")
+    ) === 0;
+  return getOrCreatePeriods(
+    ctx.asSystem.pg,
+    companyToday.compare(locationToday) <= 0 ? companyToday : locationToday,
+    DEMAND_PROJECTION_WEEKS + (sameWeek ? 0 : 1)
+  );
+}
+
+/**
+ * A demand projection write the plan refuses (`requireEntitlement` in
+ * `@carbon/ee/forecast.server`): the upgrade message the routes flashed.
+ */
+export function forecastEntitlementRefusal(ctx: ServiceContext, err: unknown) {
+  if (!(err instanceof EntitlementError)) throw err;
+  return ctx.error(
+    "entitlement",
+    defaultUpgradeMessage(resolveRequirement({ feature: "FORECAST" }))
+  );
+}
+
+/**
+ * An item's demand projections at a location, each with its week's start
+ * date. Without `periodIds`, the weeks the forms show
+ * (`demandProjectionFormWeeks`).
+ */
+export async function getDemandProjectionWeeks(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string; periodIds?: string[] }
+) {
+  const client = ctx.asCaller.supabase;
+  const weeks = input.periodIds
+    ? await client
+        .from("period")
+        .select("id, startDate")
+        .in("id", input.periodIds)
+    : {
+        data: await demandProjectionFormWeeks(ctx, input.locationId),
+        error: null
+      };
+  if (weeks.error) return { data: null, error: weeks.error };
+  // Every projection read is of one of these weeks: the read takes their ids.
+  const weekStartById: Record<string, string> = Object.fromEntries(
+    weeks.data.map((week) => [week.id, week.startDate])
+  );
+  const projections = await getDemandProjections(client, {
+    itemId: input.itemId,
+    locationId: input.locationId,
+    companyId: ctx.company.id,
+    periodIds: weeks.data.map((week) => week.id)
+  });
+  if (projections.error) return { data: null, error: projections.error };
+  return {
+    data: projections.data
+      .map((row) => ({ ...row, weekStart: weekStartById[row.periodId] }))
+      .sort((a, b) => a.weekStart.localeCompare(b.weekStart)),
+    error: null
+  };
+}
+
+/** A refusal unless the item and the location are both the company's. */
+export async function refuseUnlessItemAndLocationOwned(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string }
+) {
+  const itemRefused = await refuseUnlessOwned(ctx, "item", {
+    id: input.itemId
+  });
+  if (itemRefused) return itemRefused;
+  return refuseUnlessOwned(ctx, "location", { id: input.locationId });
+}
+
+/**
+ * The demand projection rows a create or update writes, or its refusal: the
+ * item and the location must be the company's, and each week one the forms
+ * show (`demandProjectionRows`).
+ */
+export async function planDemandProjections(
+  ctx: ServiceContext,
+  input: {
+    itemId: string;
+    locationId: string;
+    weeks: { weekStart: string; quantity: number }[];
+  }
+): Promise<DemandProjectionRow[] | CarbonError> {
+  const refused = await refuseUnlessItemAndLocationOwned(ctx, input);
+  if (refused) return refused;
+  const planned = demandProjectionRows(
+    await demandProjectionFormWeeks(ctx, input.locationId),
+    input,
+    { companyId: ctx.company.id, userId: ctx.auditUserId }
+  );
+  if ("refusal" in planned) return ctx.error("validation", planned.refusal);
+  return planned.rows;
+}
+
+/**
+ * Delete an item's demand projections at a location in `formWeeks`, in one
+ * DELETE; returns those weeks, each with a quantity of 0. The caller has
+ * checked that the item and the location are the company's.
+ */
+export async function clearDemandProjections(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string },
+  formWeeks: { id: string; startDate: string }[]
+) {
+  try {
+    const deleted = await deleteDemandProjections(ctx.asCaller.supabase, {
+      itemId: input.itemId,
+      locationId: input.locationId,
+      companyId: ctx.company.id,
+      futurePeriodIds: formWeeks.map((week) => week.id)
+    });
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete demand forecasts",
+        deleted.error
+      );
+    }
+    return {
+      itemId: input.itemId,
+      locationId: input.locationId,
+      weeks: formWeeks.map((week) => ({
+        weekStart: week.startDate,
+        periodId: week.id,
+        quantity: 0
+      }))
+    };
+  } catch (err) {
+    return forecastEntitlementRefusal(ctx, err);
+  }
+}
+
+/** Write demand projection rows; returns the weeks written. */
+export async function writeDemandProjections(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string },
+  rows: DemandProjectionRow[]
+) {
+  try {
+    const written = await upsertDemandProjections(
+      ctx.asCaller.supabase,
+      rows.map(({ weekStart: _weekStart, ...row }) => row)
+    );
+    if (written.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save demand forecasts",
+        written.error
+      );
+    }
+    return {
+      itemId: input.itemId,
+      locationId: input.locationId,
+      weeks: rows.map((row) => ({
+        weekStart: row.weekStart,
+        periodId: row.periodId,
+        quantity: row.forecastQuantity
+      }))
+    };
+  } catch (err) {
+    return forecastEntitlementRefusal(ctx, err);
+  }
 }

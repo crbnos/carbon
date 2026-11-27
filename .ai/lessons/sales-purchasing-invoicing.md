@@ -183,3 +183,19 @@ mean optional in the app.
 
 **Applies to:** `apps/erp/app/modules/sales/sales.service.ts`, any Kysely/server-function writer
 of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backfill.sql`.
+
+## An edit that empties a stored draft makes it read as unedited
+
+```scope
+id: an-edit-that-empties-a-stored-draft-makes-it-read-as-unedite
+paths: ["apps/erp/app/modules/sales/ui/Contracts/ContractInvoiceGrid.tsx", "packages/database/src/contract-schedule.ts"]
+triggers: ["validateScheduleEdit"]
+```
+
+**Context:** A Draft contract's invoice schedule is planned live until its first edit stores it.
+
+**Problem:** Deleting the last stored planned invoice left the same state as an unedited Draft, so the schedule returned to the live plan while the dialog said the amounts became residuals.
+
+**Rule:** A draft that is stored on its first edit refuses an edit that would leave nothing stored, or stores a state that says it was emptied.
+
+**Applies to:** Contract and revenue schedule editors, and any "stored once edited" draft.

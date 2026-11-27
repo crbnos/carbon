@@ -8,7 +8,7 @@ import useUserSelectContext from "../provider";
 const Combobox = ({ children }: PropsWithChildren) => {
   const { onKeyDown } = useUserSelectContext();
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: delegated keydown for the inner combobox input and listbox (arrow/enter/escape); the wrapper is not a control
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- delegated keydown for the inner combobox input and listbox (arrow/enter/escape); the wrapper is not a control
     <div onKeyDown={onKeyDown}>{children}</div>
   );
 };

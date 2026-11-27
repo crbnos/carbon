@@ -65,6 +65,7 @@ export const PAGES = [
     maxLevel: "Full",
     tables: [
       "planningAction",
+      "plannedOrder",
       "demandForecast",
       "demandForecastSource",
       "supplyForecast",

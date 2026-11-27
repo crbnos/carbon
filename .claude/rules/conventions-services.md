@@ -94,7 +94,9 @@ export const cancelJob = defineServiceFn({
   `refusalOf(ctx, rule, input)`.
   `permission: {}` is refused by `service-fn-file`: write `"employee"`. Any
   key holding a grant in the company passes `"employee"`, even a read-only
-  one, so a write on it also calls `refuseKeyWithout` (`shared/shared.service.ts`). The
+  one, so a write on it also calls `refuseKeyWithout` (`shared/shared.service.ts`); so
+  does a write gated narrower than what its writes need (it checks the wider gate
+  with `ctx.can` inside). The
   user actor carries `role` for this check: `requirePermissions` returns it,
   and a workflow runs only while its owner is an employee
   (`readOwnerPermissions`). A call made from inside another function's
@@ -115,6 +117,18 @@ export const cancelJob = defineServiceFn({
   orderId)`). In a route, the parent is the URL's `params`, never a second id
   in the body. A company-only check lets a same-company caller write another
   order's line.
+- **Request origin**: `ctx.origin` holds the request's `ip`, `city` and
+  `userAgent` (`RequestOrigin`). `originOf(request)` (`@carbon/utils`) reads
+  them from the headers: the IP through `getClientIp`, the city from
+  `X-Vercel-IP-City`, the user agent from `User-Agent`. Whatever authenticates
+  a request puts its origin on the caller it returns: `authorize(request)`,
+  the Onshape panel's caller, and the API-key and OAuth contexts of the HTTP
+  API route (`api+/v1+/$.ts`) and the MCP route (`api+/mcp+/_index.ts`).
+  `serviceContext(auth)` reads `auth.origin`. A job, a workflow or a posting
+  passes `NO_ORIGIN`. The
+  user agent, and the city off Vercel, are what the caller sent. An operation that emails or
+  audits where a request came from reads `ctx.origin`, never an input field:
+  an input field lets an API caller write any address into the audit log.
 - **Transactions**: `ctx.transaction(async (tx) => …)` on `asSystem.pg`. A
   returned `CarbonError` rolls back; a nested call joins the open
   transaction; `tx.asCaller` throws, because that client is outside it.
@@ -128,8 +142,8 @@ export const cancelJob = defineServiceFn({
 - **Published**: `@mcp` in the TSDoc publishes the const as the MCP tool
   `{module}_{name}` and `POST /api/v1/{module}/{name}`. The permission decides
   the classification (View alone → READ, Full → DESTRUCTIVE, else WRITE);
-  `@mcp read` forces READ (a read gated on `"employee"`), `@mcp destructive`
-  forces DESTRUCTIVE. `@param name - text` describes an input field. Publish
+  `@mcp read` forces READ (a read gated on `"employee"`; on a gate whose level
+  holds a write it fails generation), `@mcp destructive` forces DESTRUCTIVE. `@param name - text` describes an input field. Publish
   an operation only when it is safe with nothing but its input: the API runs
   the gate and `run`, nothing the route does around the call.
 - **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,
@@ -240,8 +254,10 @@ form. Supabase's native `.upsert(...)` is also used in places — all three are 
 Notes that match real code:
 - Use `.select("id")` (or `"id, name"`) + `.single()` after insert/update to return the
   written row.
-- Wrap update payloads in `sanitize(...)` to strip `undefined`/empty values before
-  sending (`upsertCustomer`, and the MES `clockOut`/`updateTimeCardEntry`).
+- `sanitize(...)` (`upsertCustomer`, the MES `clockOut`/`updateTimeCardEntry`)
+  sets every key whose value is `undefined` to `null`, except `id`. On an update
+  that clears the column: leave a field the caller did not send out of the
+  payload, or the stored value is lost (and a NOT NULL column fails).
 - Pure `insert{Thing}` functions exist where there's never an update path (e.g.
   `insertCustomerContact`, `insertManualInventoryAdjustment`).
 

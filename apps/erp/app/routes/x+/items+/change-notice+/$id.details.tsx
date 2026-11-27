@@ -11,7 +11,7 @@ import type {
   ChangeNotice,
   ChangeNoticeActionTask
 } from "~/modules/items/types";
-import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
+import type { AffectedItemListEntry } from "~/modules/items/ui/ChangeNotice";
 import {
   ChangeNoticeActions,
   ChangeNoticeChanges,
@@ -35,7 +35,7 @@ export default function ChangeNoticeDetailsRoute() {
   const routeData = useRouteData<{
     changeNotice: ChangeNotice;
     actions: ChangeNoticeActionTask[];
-    affectedItems: AffectedItemDraft[];
+    affectedItems: AffectedItemListEntry[];
   }>(path.to.changeNotice(id));
   const { isDisabled } = useChangeNoticeEngineeringLock(id);
   const changeNotice = routeData?.changeNotice;
@@ -52,7 +52,7 @@ export default function ChangeNoticeDetailsRoute() {
     label: a.affectedItem.item?.readableIdWithRevision ?? a.affectedItem.itemId,
     name: a.affectedItem.item?.name ?? null,
     changeType: a.affectedItem.changeType,
-    version: a.makeMethod?.version,
+    version: a.affectedItem.draftVersion,
     diff: a.diff
   }));
 

@@ -89,11 +89,11 @@ export function buildBriefIndex(root: string): BriefIndex {
   });
 
   const checks = FILE_SETS.flatMap((set) =>
-    set.checks(root).map((check) => ({
+    set.checks().map((check) => ({
       id: check.id,
       set: set.name,
       description: check.description,
-      replacedBy: check.provenance.replacedBy,
+      replacedBy: check.provenance?.replacedBy ?? check.description,
       triggers: check.triggers
     }))
   );

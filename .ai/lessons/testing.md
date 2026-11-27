@@ -156,3 +156,35 @@ triggers: ["SUPABASE_DB_URL","databaseTest"]
 
 **Applies to:** DB-backed tests (`apps/erp/test/database/fixtures/`, vitest `databaseTest`); any `pnpm db:check:*` or psql work inside
 a Conductor worktree.
+
+## A race test that relies on Promise.all can pass without the lock
+
+```scope
+id: a-race-test-that-relies-on-promise-all-can-pass-without-the
+paths: ["apps/erp/test/database/**"]
+triggers: ["raceBehindRowLock"]
+```
+
+**Context:** Database tests for postings that read a row, then write from that read (a lot split, a serial increase, a calibration update).
+
+**Problem:** Two posts run with `Promise.all` interleave by timing. Often one finishes before the other starts, so the test passes with the row lock removed.
+
+**Rule:** Hold `FOR UPDATE` on the row from a third connection. Start each post on its own connection. Release the row only once every post's backend waits on a lock (`pg_stat_activity.wait_event_type = 'Lock'` by pid). `raceBehindRowLock` (`apps/erp/test/database/fixtures/row-lock-race.ts`) does this. Check the test fails with the lock removed.
+
+**Applies to:** Concurrency tests under `apps/erp/test/database/`.
+
+## Database fixtures turn the interceptors off
+
+```scope
+id: database-fixtures-turn-the-interceptors-off
+paths: ["apps/erp/test/database/fixtures/local-database.ts"]
+triggers: ["connectLocalTestDatabase"]
+```
+
+**Context:** `connectLocalTestDatabase` sets `app.sync_in_progress`, so the event-system interceptors do not run.
+
+**Problem:** A test that needs a row an interceptor creates (an item insert's `itemCost`) finds none, and a guard that reads it looks broken.
+
+**Rule:** Set `app.sync_in_progress` to `false` around the call that needs the interceptor, inside the test's transaction.
+
+**Applies to:** Database tests of item creates, and any write whose side rows come from an interceptor.

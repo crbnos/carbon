@@ -14,7 +14,6 @@ type Tool = { name: string; schema: { required?: string[] } };
 // Creates where `id` is not the new row's key, so it must be sent.
 const ID_IS_NOT_THE_NEW_ROW: Record<string, string> = {
   items_createPart: "the part number",
-  items_createMaterial: "the material number",
   items_createTool: "the tool number",
   items_createConsumable: "the consumable number",
   people_insertEmployeeJob: "the employee's user",

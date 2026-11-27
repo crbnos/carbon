@@ -10,7 +10,6 @@ import { COLLECTIONS, PAGE_COPY } from "../content";
 import { DATA_GROUPS } from "../content/data";
 import { filterByModule, flagKey } from "../logic";
 import type { CustomDataPayload, ImplementationRowData } from "../types";
-import { ProgressPill } from "./ProgressPill";
 import {
   CustomRowSection,
   EditableInput,
@@ -19,6 +18,7 @@ import {
   SectionList,
   StatusToggle
 } from "./primitives";
+import { ProgressPill } from "./ProgressPill";
 import { useCanEdit, useCheckMap, useExclusions, useHubActions } from "./state";
 
 const DEF = COLLECTIONS.data;

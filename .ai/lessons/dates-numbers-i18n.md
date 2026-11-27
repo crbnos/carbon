@@ -44,7 +44,7 @@ triggers: ["plural(","@lingui/core/macro"]
 
 **Context:** The jobs table's bulk-release toast needed "Released 1 job" / "Released N jobs". The table is `memo((props) => { … })`, and the toast text was written as `` t`${plural(count, { one: "Released # job", other: "Released # jobs" })}` `` with `t` from `useLingui()` and `plural` from `@lingui/core/macro`.
 
-**Problem:** Lingui 6.9.0's macro transform folds a nested `plural()` into the surrounding `t` only when the component or hook is a function declaration or a plain `const X = () => …`. When the function is an inline ARGUMENT of a call (`memo((props) => …)`), the `plural()` is expanded on its own into `i18n._(…)` on the global `@lingui/core` instance, and the outer `t` becomes `{0}` with that call as its value. The global instance is never activated here (see `.claude/rules/i18n-lingui-system.md`), so the string throws "Attempted to call a translation function without setting a locale" the first time it is built. Typecheck, Biome and `lingui:extract` all pass: the catalog shows a normal ICU plural msgid. Only the compiled output shows it.
+**Problem:** Lingui 6.9.0's macro transform folds a nested `plural()` into the surrounding `t` only when the component or hook is a function declaration or a plain `const X = () => …`. When the function is an inline ARGUMENT of a call (`memo((props) => …)`), the `plural()` is expanded on its own into `i18n._(…)` on the global `@lingui/core` instance, and the outer `t` becomes `{0}` with that call as its value. The global instance is never activated here (see `.claude/rules/i18n-lingui-system.md`), so the string throws "Attempted to call a translation function without setting a locale" the first time it is built. Typecheck, oxlint and `lingui:extract` all pass: the catalog shows a normal ICU plural msgid. Only the compiled output shows it.
 
 **Rule:** `select()` from `@lingui/core/macro` inside a `memo(…)` component has the same defect as `plural()`. For a string (a toast), besides a function-declaration hook, you can choose between two whole `t` phrases (``n === 1 ? t`Released 1 job` : t`Released ${n} jobs` ``) — both phrases are extracted and translated, but a locale with more plural forms gets only two. The rest is in `.claude/rules/i18n-lingui-system.md` (Plurals).
 
@@ -76,7 +76,7 @@ triggers: ["{\"%{","%{yy}"]
 
 **Context:** The sequence forms' week year warning named the tokens in its text: `<Trans>On 1 January 2027 {"%{yy}%{ww}"} gives 2753.</Trans>`.
 
-**Problem:** Lingui inlines a string literal expression into the message, so the msgid became `On 1 January 2027 %{yy}%{ww} gives 2753.` The braces then parse as ICU placeholders `{yy}` and `{ww}` with no value, and the page showed "On 1 January 2027 %% gives 2753." Typecheck, Biome and `lingui:extract` all pass.
+**Problem:** Lingui inlines a string literal expression into the message, so the msgid became `On 1 January 2027 %{yy}%{ww} gives 2753.` The braces then parse as ICU placeholders `{yy}` and `{ww}` with no value, and the page showed "On 1 January 2027 %% gives 2753." Typecheck, oxlint and `lingui:extract` all pass.
 
 **Rule:** Text that contains `{` or `}` goes into `<Trans>` or `t` as a named variable (`const token = "%{yy}"; … {token}`), which Lingui keeps as a placeholder and fills at runtime. Read the rendered text once after adding such a string.
 

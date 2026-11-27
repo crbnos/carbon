@@ -6,8 +6,8 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { createElement, type ReactElement } from "react";
 import { extractText } from "unpdf";
 import { describe, expect, it } from "vitest";
-import PurchaseOrderPDF from "./PurchaseOrderPDF";
 import { SAMPLE_PURCHASE_ORDER } from "./purchaseOrder.samples";
+import PurchaseOrderPDF from "./PurchaseOrderPDF";
 
 /** The printed lines of a purchase order whose first line has `description`. */
 async function printedLines(description: string) {

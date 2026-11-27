@@ -62,7 +62,6 @@ export const MentionList = forwardRef<MentionListRef, MentionListProps>(
       selectItem(selectedIndex);
     };
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     useEffect(() => setSelectedIndex(0), [props.items]);
 
     useImperativeHandle(ref, () => ({

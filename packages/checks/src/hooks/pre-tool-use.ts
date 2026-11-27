@@ -21,6 +21,7 @@ import {
 import { type BriefIndex, buildBriefIndex } from "../brief/index-builder";
 import { appendSignal, inboxPath } from "../learn/inbox";
 import { repoRoot } from "../sources/migrations";
+import { loadSqlParser } from "../sources/sql";
 import { loadSeen, saveSeen } from "./session-state";
 
 type EditInput = {
@@ -175,6 +176,8 @@ function readStdin(): Promise<string> {
 
 async function main() {
   const input = JSON.parse((await readStdin()) || "{}") as HookInput;
+  // The SQL checks parse with libpg-query, whose WASM module loads once.
+  await loadSqlParser();
   const root = repoRoot();
   const sessionId = input.session_id ?? "no-session";
   const stateDir = input.scratchpad_dir ?? tmpdir();

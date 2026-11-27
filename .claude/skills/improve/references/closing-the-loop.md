@@ -55,7 +55,7 @@ Note on fresh worktrees: they share git history but not `node_modules` or build 
 
 Review like a tech lead reviewing a PR against the spec — never fix anything yourself:
 
-1. **Re-run every done criterion** in the worktree (scoped typecheck, package tests, biome lint). Don't trust the executor's report — verify.
+1. **Re-run every done criterion** in the worktree (scoped typecheck, package tests, oxlint). Don't trust the executor's report — verify.
 2. **Scope compliance**: `git -C <worktree> diff --stat` against the plan's in-scope list. Any file outside scope fails review, full stop. Watch for accidental edits to generated files (`packages/database` types, Lingui `*.mjs`).
 3. **Read the full diff.** Judge it against "Why this matters" (does it solve the actual problem?) and the Carbon conventions named in the plan (does it look like the rest of the codebase — `ValidatedForm`, `{ data, error }` services, RLS pattern, etc.?).
 4. **Audit the new tests.** Executors game criteria — a test that asserts nothing passes `vitest` and proves nothing. Read what the tests assert.

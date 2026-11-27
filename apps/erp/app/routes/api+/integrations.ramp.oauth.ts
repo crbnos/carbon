@@ -7,7 +7,6 @@ import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { Ramp } from "@carbon/ee";
-import { rampOnInstall } from "@carbon/ee/ramp/hooks.server";
 import {
   buildRampClient,
   exchangeRampOAuthCode,
@@ -15,6 +14,7 @@ import {
   patchRampOAuthCredentials,
   resolveConnectedProviderName
 } from "@carbon/ee/ramp.server";
+import { rampOnInstall } from "@carbon/ee/ramp/hooks.server";
 import { getLogger } from "@carbon/logger";
 import { isUniqueViolation, redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";

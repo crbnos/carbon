@@ -16,7 +16,7 @@ import { LuCalendarRange } from "react-icons/lu";
 import { useQuantityFormatter } from "~/hooks";
 import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { ProductionPlanningItem } from "~/modules/production/types";
-import { TimeFenceCell } from "~/modules/production/ui/Planning/PlanningFence";
+import { PlanningHorizonCell } from "~/modules/production/ui/Planning/PlanningFence";
 
 // What the production and purchasing order drawers share. They used to keep
 // a copy each, and the copies had already drifted (one drawer's labels were
@@ -67,21 +67,21 @@ export function PlanningSummaryRow({
 }
 
 /**
- * The drawer's policy card: the reorder policy, the row's time fence, then
+ * The drawer's policy card: the reorder policy, the row's planning horizon, then
  * `children` (the purchasing drawer's supplier and unit rows), then the
  * parameters of the policy in force.
  */
 export function PlanningPolicySummary({
   item,
-  fenceDate,
-  isFenceOverridden,
-  onFenceChange,
+  horizonDate,
+  isHorizonOverridden,
+  onHorizonChange,
   children
 }: {
   item: PolicyFields;
-  fenceDate: string | null;
-  isFenceOverridden: boolean;
-  onFenceChange: (date: string | null) => void;
+  horizonDate: string | null;
+  isHorizonOverridden: boolean;
+  onHorizonChange: (date: string | null) => void;
   children?: ReactNode;
 }) {
   const formatQuantity = useQuantityFormatter();
@@ -96,10 +96,10 @@ export function PlanningPolicySummary({
       </PlanningSummaryRow>
       <PlanningSummaryRow label={<Trans>Planning Horizon:</Trans>}>
         <div className="flex-none">
-          <TimeFenceCell
-            fenceDate={fenceDate}
-            isOverridden={isFenceOverridden}
-            onChange={onFenceChange}
+          <PlanningHorizonCell
+            horizonDate={horizonDate}
+            isOverridden={isHorizonOverridden}
+            onChange={onHorizonChange}
           />
         </div>
       </PlanningSummaryRow>
