@@ -5581,3 +5581,13 @@ A new stock-out path names which rule it follows in its code comment and has a d
 - A scripted multi-site edit can corrupt brackets; run the typecheck right after it.
 
 **Applies to:** Multi-path fixes run through the Agent tool or `/conductor`.
+
+## A clack spinner swallows SIGINT and SIGTERM
+
+**Context:** `crbn up`, `reset`, `migrate` and `prune` wait up to 120 s under a spinner for Docker to start. A code review found that a `kill` during the wait stopped only the spinner. The command carried on once Docker answered, and `crbn reset` with `CARBON_DEV_YES=1` would have gone on to delete the volumes.
+
+**Problem:** clack's `spinner()` adds its own SIGINT and SIGTERM listeners while it runs. A listener replaces Node's default exit, and clack's only draws "Canceled". A keyboard Ctrl+C still exits, because the spinner's raw-mode stdin handles it, so the bug shows only with a signal from a script or supervisor.
+
+**Rule:** A spinner that runs before a step that changes data, or that waits for a long time, passes `onCancel: () => process.exit(1)`. Give every subprocess inside a wait loop its own `timeout`; `waitUntil` checks its deadline only between probes.
+
+**Applies to:** `packages/dev` spinners (`ui.ts`) and `waitUntil` (`helpers.ts`); first case `startLocalDocker` (`services/docker-runtime.ts`).

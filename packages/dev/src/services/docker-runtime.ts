@@ -100,7 +100,7 @@ function readDefaultSocketLink(): string | null {
  * The runtime keeps running after crbn exits: other worktrees share it.
  */
 export async function startLocalDocker(
-  responds: () => Promise<boolean>
+  responds: (timeoutMs: number) => Promise<boolean>
 ): Promise<boolean> {
   const mode = dockerStartMode(process.env, process.stdin.isTTY === true);
   if (mode === "off") return false;
@@ -125,7 +125,9 @@ export async function startLocalDocker(
   }
 
   const command = [runtime.command, ...runtime.args].join(" ");
-  const s = spinner({ indicator: "timer" });
+  // clack's spinner takes SIGINT and SIGTERM and only stops itself; without the
+  // exit, a killed `crbn reset` would go on to its teardown once Docker answers.
+  const s = spinner({ indicator: "timer", onCancel: () => process.exit(1) });
   s.start(`starting ${runtime.name}`);
   const deadline = Date.now() + DOCKER_START_TIMEOUT_MS;
   // `open` and `systemctl` return at once; `orbctl` and `colima` return once
@@ -146,8 +148,10 @@ export async function startLocalDocker(
       `\`${command}\` failed (${detail}). Start ${runtime.name} yourself and re-run.`
     );
   }
-  const up = await waitUntil(responds, {
-    timeoutMs: Math.max(deadline - Date.now(), 5_000),
+  // A `docker info` that hangs on a half-started engine is killed at the end.
+  const end = Math.max(deadline, Date.now() + 5_000);
+  const up = await waitUntil(() => responds(Math.max(end - Date.now(), 1)), {
+    timeoutMs: end - Date.now(),
     intervalMs: 1000
   });
   if (!up) {

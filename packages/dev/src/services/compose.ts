@@ -108,8 +108,12 @@ export async function ensureDockerRunning() {
 
 const DOCKERD_LOG = join(homedir(), ".carbon", "dockerd.log");
 
-async function dockerResponds(): Promise<boolean> {
-  const r = await execa("docker", ["info"], { reject: false, stdio: "ignore" });
+async function dockerResponds(timeoutMs?: number): Promise<boolean> {
+  const r = await execa("docker", ["info"], {
+    reject: false,
+    stdio: "ignore",
+    timeout: timeoutMs
+  });
   return r.exitCode === 0;
 }
 
