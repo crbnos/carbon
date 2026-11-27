@@ -4,7 +4,7 @@
 
 import { useField } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { cachedApiQuery, RefreshRate } from "@carbon/query";
+import { cachedApiQuery, RefreshRate, useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   BadgeCloseButton,
@@ -33,7 +33,9 @@ import {
   useState
 } from "react";
 import { LuUsers } from "react-icons/lu";
+import type { getCustomerContacts } from "~/modules/sales/sales.service";
 import type { User, UserSelectGroup } from "~/modules/users/types";
+import { useCustomers } from "~/stores";
 import { isValidEmail } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -44,10 +46,13 @@ type EmailRecipientsProps = {
   label?: string;
   helperText?: string;
   type?: "employee" | "supplier" | "customer";
+  /** Also offer this customer's contacts, in a section under the team's. */
+  customerId?: string;
 };
 
 type UserOption = {
-  type: "user";
+  /** "contact" is one of the customer's own contacts. */
+  type: "user" | "contact";
   id: string;
   name: string;
   email: string;
@@ -69,9 +74,36 @@ const toGroupOption = (group: UserSelectGroup): GroupOption => ({
   memberCount: group.userCount
 });
 
+const useCustomerContactOptions = (
+  customerId: string | undefined,
+  search: string
+): UserOption[] => {
+  const contacts = useLoaderQuery<
+    Awaited<ReturnType<typeof getCustomerContacts>>
+  >(customerId ? path.to.api.customerContacts(customerId) : null);
+
+  return useMemo(() => {
+    const needle = search.toLowerCase();
+    return (contacts.data?.data ?? []).flatMap((c) => {
+      const email = c.contact?.email;
+      if (!email) return [];
+      const name = c.contact?.fullName ?? "";
+      if (
+        needle &&
+        !name.toLowerCase().includes(needle) &&
+        !email.toLowerCase().includes(needle)
+      ) {
+        return [];
+      }
+      return [{ type: "contact" as const, id: c.id, name, email }];
+    });
+  }, [contacts.data, search]);
+};
+
 const useEmailOptions = (
   type: "employee" | "supplier" | "customer",
-  inputValue: string
+  inputValue: string,
+  customerId?: string
 ) => {
   const [topGroups, setTopGroups] = useState<UserSelectGroup[]>([]);
   const [searchResults, setSearchResults] = useState<{
@@ -88,6 +120,7 @@ const useEmailOptions = (
   });
 
   const q = inputValue.trim();
+  const contactOptions = useCustomerContactOptions(customerId, q);
 
   useEffect(() => {
     if (q.length < 2) {
@@ -108,12 +141,14 @@ const useEmailOptions = (
   const options = useMemo<Option[]>(() => {
     const hasMembers = (g: UserSelectGroup) => g.userCount + g.groupCount > 0;
 
-    if (q.length >= 2 && searchResults) {
-      const opts: Option[] = searchResults.groups
-        .filter(hasMembers)
-        .map(toGroupOption);
+    const seenEmails = new Set(contactOptions.map((c) => c.email));
 
-      const seenEmails = new Set<string>();
+    if (q.length >= 2 && searchResults) {
+      const opts: Option[] = [
+        ...contactOptions,
+        ...searchResults.groups.filter(hasMembers).map(toGroupOption)
+      ];
+
       searchResults.users.forEach((user) => {
         if (user.email && !seenEmails.has(user.email)) {
           seenEmails.add(user.email);
@@ -129,8 +164,11 @@ const useEmailOptions = (
       return opts;
     }
 
-    return topGroups.filter(hasMembers).map(toGroupOption);
-  }, [topGroups, searchResults, q]);
+    return [
+      ...contactOptions,
+      ...topGroups.filter(hasMembers).map(toGroupOption)
+    ];
+  }, [topGroups, searchResults, q, contactOptions]);
 
   return options;
 };
@@ -139,7 +177,8 @@ export default function EmailRecipients({
   name,
   label,
   helperText,
-  type = "employee"
+  type = "employee",
+  customerId
 }: EmailRecipientsProps) {
   const { t } = useLingui();
   const {
@@ -154,7 +193,7 @@ export default function EmailRecipients({
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const options = useEmailOptions(type, inputValue);
+  const options = useEmailOptions(type, inputValue, customerId);
 
   // Server search covers >= 2 chars; filter the mounted groups for shorter input
   const filteredOptions = useMemo(() => {
@@ -162,6 +201,11 @@ export default function EmailRecipients({
     if (!search || search.length >= 2) return options;
     return options.filter((opt) => opt.name.toLowerCase().includes(search));
   }, [options, inputValue]);
+  const contactOptions = filteredOptions.filter((o) => o.type === "contact");
+  const otherOptions = filteredOptions.filter((o) => o.type !== "contact");
+
+  const [customers] = useCustomers();
+  const customerName = customers.find((c) => c.id === customerId)?.name;
 
   const addEmail = useCallback(
     (email: string) => {
@@ -221,7 +265,7 @@ export default function EmailRecipients({
   };
 
   const handleSelect = async (option: Option) => {
-    if (option.type === "user") {
+    if (option.type !== "group") {
       addEmail(option.email);
     } else {
       try {
@@ -350,51 +394,68 @@ export default function EmailRecipients({
                   </span>
                 )}
               </CommandEmpty>
-              {filteredOptions.length > 0 && (
-                <CommandGroup>
-                  {filteredOptions.map((option) => (
-                    <CommandItem
-                      key={
-                        option.type === "user"
-                          ? `user-${option.id}`
-                          : `group-${option.id}`
-                      }
-                      value={
-                        option.type === "user"
-                          ? `${option.name} ${option.email}`
-                          : option.name
-                      }
-                      onSelect={() => handleSelect(option)}
-                      className="cursor-pointer"
-                    >
-                      {option.type === "group" ? (
-                        <div className="flex items-center gap-2">
-                          <LuUsers className="h-4 w-4 text-muted-foreground" />
-                          <div className="flex flex-col">
-                            <span>{option.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {option.memberCount} member
-                              {option.memberCount !== 1 ? "s" : ""}
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col">
-                          <span>{option.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {option.email}
-                          </span>
-                        </div>
-                      )}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
+              {[
+                {
+                  key: "team",
+                  heading: contactOptions.length > 0 ? t`Your team` : undefined,
+                  options: otherOptions
+                },
+                {
+                  key: "contacts",
+                  heading: customerName
+                    ? t`${customerName} contacts`
+                    : t`Customer contacts`,
+                  options: contactOptions
+                }
+              ].map(
+                (section) =>
+                  section.options.length > 0 && (
+                    <CommandGroup key={section.key} heading={section.heading}>
+                      {section.options.map((option) => (
+                        <CommandItem
+                          key={`${option.type}-${option.id}`}
+                          value={
+                            option.type === "group"
+                              ? option.name
+                              : `${option.name} ${option.email}`
+                          }
+                          onSelect={() => handleSelect(option)}
+                          className="cursor-pointer"
+                        >
+                          {option.type === "group" ? (
+                            <div className="flex items-center gap-2">
+                              <LuUsers className="h-4 w-4 text-muted-foreground" />
+                              <div className="flex flex-col">
+                                <span>{option.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {option.memberCount} member
+                                  {option.memberCount !== 1 ? "s" : ""}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col">
+                              <span>{option.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {option.email}
+                              </span>
+                            </div>
+                          )}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  )
               )}
             </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
-      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+      {(helperText || customerId) && (
+        <FormHelperText>
+          {helperText ??
+            t`Pick a customer contact or teammate, or type an email and press Enter`}
+        </FormHelperText>
+      )}
       {error && <FormErrorMessage>{error}</FormErrorMessage>}
     </FormControl>
   );

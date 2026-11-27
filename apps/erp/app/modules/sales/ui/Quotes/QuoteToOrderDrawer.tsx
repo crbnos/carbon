@@ -1157,7 +1157,12 @@ function NotificationOptionsForm({
                 t`This will email the sales order to ${name}.`
               }
             />
-            <EmailRecipients name="cc" label={t`CC`} type="employee" />
+            <EmailRecipients
+              name="cc"
+              label={t`CC`}
+              type="employee"
+              customerId={quote.customerId ?? undefined}
+            />
           </>
         )}
       </VStack>

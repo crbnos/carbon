@@ -260,7 +260,12 @@ const QuotationFinalizeBody = ({
                   warnIfNoEmail
                   onMissingEmailChange={setContactMissingEmail}
                 />
-                <EmailRecipients name="cc" label={t`CC`} type="employee" />
+                <EmailRecipients
+                  name="cc"
+                  label={t`CC`}
+                  type="employee"
+                  customerId={quote?.customerId ?? undefined}
+                />
               </>
             )}
             {digitalQuoteEnabled ? (

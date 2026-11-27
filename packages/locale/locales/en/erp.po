@@ -1042,6 +1042,9 @@ msgstr "{created} created, {updated} updated."
 msgid "{created} created."
 msgstr "{created} created."
 
+msgid "{customerName} contacts"
+msgstr "{customerName} contacts"
+
 msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
 msgstr "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
 
@@ -23327,6 +23330,9 @@ msgstr "Pick a Carbon dimension and the provider target it posts to. Auto-create
 msgid "Pick a column to sort by"
 msgstr "Pick a column to sort by"
 
+msgid "Pick a customer contact or teammate, or type an email and press Enter"
+msgstr "Pick a customer contact or teammate, or type an email and press Enter"
+
 msgid "Pick a customer, a customer type, or All Customers to view their pricing."
 msgstr "Pick a customer, a customer type, or All Customers to view their pricing."
 
@@ -36816,6 +36822,9 @@ msgstr "Your signature"
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "Your source data is accessible and reasonably clean"
+
+msgid "Your team"
+msgstr "Your team"
 
 msgid "Your team can free up time to learn Carbon and load your data"
 msgstr "Your team can free up time to learn Carbon and load your data"

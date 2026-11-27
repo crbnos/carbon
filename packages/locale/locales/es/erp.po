@@ -1042,6 +1042,9 @@ msgstr "{created} creados, {updated} actualizados."
 msgid "{created} created."
 msgstr "{created} creados."
 
+msgid "{customerName} contacts"
+msgstr "Contactos de {customerName}"
+
 msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
 msgstr "{customersWithoutTaxCode, plural, one {# cliente tiene un porcentaje de impuesto y ningún código de impuesto. Seleccionarlo y elegir Asignar código de impuesto.} other {# clientes tienen un porcentaje de impuesto y ningún código de impuesto. Seleccionarlos y elegir Asignar código de impuesto.}}"
 
@@ -23327,6 +23330,9 @@ msgstr "Elige una Dimensión de Carbon y el destino del proveedor al que se cont
 msgid "Pick a column to sort by"
 msgstr "Elige una columna para ordenar"
 
+msgid "Pick a customer contact or teammate, or type an email and press Enter"
+msgstr "Elige un contacto del cliente o un compañero, o escribe un correo y pulsa Intro"
+
 msgid "Pick a customer, a customer type, or All Customers to view their pricing."
 msgstr "Seleccione un cliente, un tipo de cliente o Todos los clientes para ver sus precios."
 
@@ -36815,6 +36821,9 @@ msgstr "Su firma"
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "Sus datos de origen son accesibles y están razonablemente limpios"
+
+msgid "Your team"
+msgstr "Tu equipo"
 
 msgid "Your team can free up time to learn Carbon and load your data"
 msgstr "Tu equipo puede liberar tiempo para aprender Carbon y cargar tus datos"
