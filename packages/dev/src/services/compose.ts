@@ -959,9 +959,27 @@ async function removeStandaloneRedis(): Promise<void> {
   });
 }
 
-/** Shared mode: start every crbn-shared container, redis included. */
+/** `docker compose … up` for crbn-shared: every service, or only `services`
+ *  and what they depend on. Exported for tests. */
+export function buildSharedUpArgs(
+  composeArgs: string[],
+  services: string[] = []
+): string[] {
+  return [
+    ...composeArgs,
+    "up",
+    "-d",
+    "--wait",
+    "--remove-orphans",
+    ...services
+  ];
+}
+
+/** Shared mode: start every crbn-shared container, redis included, or only
+ *  `services` (pulling only their images). */
 export async function bootSharedServices(
-  jwt: JwtCreds
+  jwt: JwtCreds,
+  services: string[] = []
 ): Promise<string | null> {
   const dir = sharedDir();
   const { warning, dirs } = await prepareShared(jwt);
@@ -969,10 +987,10 @@ export async function bootSharedServices(
     SHARED_POSTGRES_VOLUME,
     `Drop it, and with it every worktree database, with \`docker compose -p ${SHARED_PROJECT} down -v\`, then \`crbn up\` again.`
   );
-  await pullSharedImages();
+  await pullSharedImages(services);
   await execStrict(
     "docker",
-    [...sharedComposeArgs(), "up", "-d", "--wait", "--remove-orphans"],
+    buildSharedUpArgs(sharedComposeArgs(), services),
     dir,
     sharedExec()
   );

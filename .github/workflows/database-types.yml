@@ -45,7 +45,8 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
-      - uses: actions/cache@v6
+      # Restore only: Dependency cache (dependency-cache.yml) saves it on main.
+      - uses: actions/cache/restore@v6
         with:
           path: |
             node_modules
@@ -53,6 +54,8 @@ jobs:
             docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            node-modules-
       - run: pnpm install --frozen-lockfile
 
       # Standalone `crbn migrate` boots the shared backend and migration services,

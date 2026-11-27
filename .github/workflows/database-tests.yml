@@ -10,8 +10,8 @@ name: Database tests
 #
 # Two runners each take half the test files (`vitest --shard`). The tests are
 # bound by the runner's CPUs, which Postgres shares, so a second runner about
-# halves the eight minutes they take; each pays the two minutes of install and
-# migration again.
+# halves the eight minutes they take; each pays the install and migration
+# again.
 on:
   pull_request:
     branches: [main]
@@ -58,7 +58,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
-      - uses: actions/cache@v6
+      # Restore only: Dependency cache (dependency-cache.yml) saves it on
+      # main, so the two shards never race to save one key.
+      - uses: actions/cache/restore@v6
         with:
           path: |
             node_modules
@@ -66,21 +68,17 @@ jobs:
             docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            node-modules-
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @carbon/config build
 
-      # Applies every migration to a fresh database in the shared Postgres.
-      # The types and swagger are Database types' to check.
-      - name: Migrate an empty database
-        run: packages/dev/bin/crbn migrate --no-regen
-
-      # `crbn migrate` stops the stack's services when it is done; the tests
-      # that read through PostgREST need it running. `up` asks for
-      # SESSION_SECRET, which nothing here uses.
-      - name: Start PostgREST
-        env:
-          SESSION_SECRET: ci-database-tests
-        run: packages/dev/bin/crbn up --no-apps --no-migrate --minimal
+      # Boots only the shared Postgres and Storage, GoTrue and Realtime,
+      # applies every migration to a fresh database, then starts PostgREST and
+      # the gateway and returns once they answer, leaving them running. The
+      # types and swagger are Database types' to check.
+      - name: Migrate an empty database and start PostgREST
+        run: packages/dev/bin/crbn migrate --no-regen --serve
 
       # Without a local database the suite skips every test and passes, so
       # this fails the job instead.
@@ -106,16 +104,13 @@ jobs:
             echo "::error::The database has no migrations applied" >&2
             exit 1
           fi
-          for attempt in $(seq 1 30); do
-            if curl -fsS -o /dev/null -H "apikey: $key" "http://localhost:$port/rest/v1/"; then
-              echo "$migrations migrations applied; PostgREST answers on port $port"
-              echo "SUPABASE_DB_URL=$db_url" >> "$GITHUB_ENV"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "::error::PostgREST does not answer on http://localhost:$port/rest/v1/" >&2
-          exit 1
+          # crbn waited for it; this holds the tests to the port they read.
+          if ! curl -fsS -o /dev/null -H "apikey: $key" "http://localhost:$port/rest/v1/"; then
+            echo "::error::PostgREST does not answer on http://localhost:$port/rest/v1/" >&2
+            exit 1
+          fi
+          echo "$migrations migrations applied; PostgREST answers on port $port"
+          echo "SUPABASE_DB_URL=$db_url" >> "$GITHUB_ENV"
 
       - name: Database tests
         working-directory: apps/erp

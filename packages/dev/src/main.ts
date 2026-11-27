@@ -187,10 +187,18 @@ const main = defineCommand({
           default: false,
           description:
             "Schema unreconcilable? Wipe the stack's volumes and re-provision from scratch (prompts to confirm)"
+        },
+        serve: {
+          type: "boolean",
+          default: false,
+          description:
+            "Boot only Postgres, Storage, GoTrue, Realtime, PostgREST and the gateway, and leave them running once the API answers (CI's database tests)"
         }
       },
       run: ({ args }) =>
-        args.force ? reset() : migrate({ regen: args.regen !== false })
+        args.force
+          ? reset()
+          : migrate({ regen: args.regen !== false, serve: args.serve === true })
     }),
     restore: defineCommand({
       meta: {

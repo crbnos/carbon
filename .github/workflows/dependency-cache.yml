@@ -1,0 +1,59 @@
+name: Dependency cache
+
+# The one place the node_modules cache is saved: on main, whose caches every
+# pull request can restore. A cache saved by a pull request is readable by
+# that pull request only, so each one used to save its own 530 MB copy and
+# the repository's 10 GB filled with copies of the same lockfile.
+#
+# Checks, Database types and Database tests only restore it. A pull request
+# that changes the lockfile restores the newest copy and lets
+# `pnpm install --frozen-lockfile` add and remove the difference.
+#
+# On every push to main, not only lockfile changes: when the cache for the
+# lockfile is there, the job ends after the lookup; when it was evicted, this
+# saves it again.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Two pushes in a row would both miss and race to save the same key.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  node-modules:
+    name: node_modules
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - id: lookup
+        uses: actions/cache/restore@v6
+        with:
+          path: &node-modules-path |
+            node_modules
+            apps/*/node_modules
+            docs/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+          lookup-only: true
+      - if: steps.lookup.outputs.cache-hit != 'true'
+        uses: pnpm/action-setup@v6
+      - if: steps.lookup.outputs.cache-hit != 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - if: steps.lookup.outputs.cache-hit != 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.lookup.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: *node-modules-path
+          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}

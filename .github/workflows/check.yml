@@ -36,8 +36,11 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
+      # Restore only: Dependency cache (dependency-cache.yml) saves it on
+      # main, where every pull request can read it. A changed lockfile
+      # restores the newest copy, and the install adds the difference.
       - &node-modules
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: |
             node_modules
@@ -45,6 +48,8 @@ jobs:
             docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            node-modules-
       # Turborepo's local cache, carried between runs: the postinstall
       # (fonts), the MCP manifest, typecheck and test restore instead of
       # re-running for packages whose inputs did not change. Keyed per job so
