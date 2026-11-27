@@ -5,6 +5,7 @@ paths:
   - "apps/erp/app/modules/inventory/{inventory.server,inventory.service,types}.ts"
   - "apps/erp/app/routes/x+/traceability+/**"
   - "apps/mes/app/services/operations.service.ts"
+  - "packages/lib/src/production/event-writes.ts"
   - "apps/erp/app/modules/projects/projects.service.ts"
 ---
 
@@ -69,7 +70,8 @@ and MES services — NOT a single `post-production`:
 
 - `post-picking`, `post-receipt`, `post-shipment`, `post-stock-transfer`, `issue`,
   `trigger-rework` insert `trackedActivity` + input/output link rows on posting.
-- MES `startProductionEvent` (`apps/mes/app/services/operations.service.ts`) inserts a
+- `startProductionEvent` (`packages/lib/src/production/event-writes.ts`, run by the
+  timer Start of the MES and the ERP API) inserts a
   `trackedActivity` and a `trackedActivityOutput` for the production event.
 - **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `issue` case
   `jobOperationScrap` scraps the serial being made — `type: 'Scrap'` activity,
@@ -148,7 +150,7 @@ graph view uses these, and so does projects Build from part (one call per level)
   `getTrackedInputs` (wraps the strict RPCs; **filters out `Scrapped` descendants** so a
   scrapped subcomponent no longer appears in the issue modal's Unconsume/Scrap lists — the
   scrap already relieved its WIP and reopened the requirement; the lineage graph still shows
-  it), `startProductionEvent`.
+  it).
 
 **Serial sibling clustering (display only).** A serial item at qty N produces N
 qty-1 entities by design, so one job fans out into N identical nodes. The graph

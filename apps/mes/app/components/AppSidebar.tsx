@@ -47,10 +47,17 @@ import {
   LuTruck,
   LuWrench
 } from "react-icons/lu";
-import { Await, Link, useLocation, useNavigate } from "react-router";
+import {
+  Await,
+  Link,
+  useLocation,
+  useMatches,
+  useNavigate
+} from "react-router";
 import type { Location } from "~/services/types";
 import { MES_NAV_SHORTCUTS } from "~/shortcuts";
 import type { PinnedInUser } from "~/types";
+import type { Handle } from "~/utils/handle";
 import { ERP_URL, path } from "~/utils/path";
 import { AdjustInventory } from "./AdjustInventory";
 import { EndShift } from "./EndShift";
@@ -332,6 +339,19 @@ function CompanySwitcher({
   );
 }
 
+/** The ERP page of the record on screen, else the ERP home. */
+function useErpLink() {
+  const matches = useMatches();
+  for (const match of [...matches].reverse()) {
+    const link = (match.handle as Handle | undefined)?.erpLink?.({
+      params: match.params,
+      data: match.data
+    });
+    if (link) return link;
+  }
+  return ERP_URL;
+}
+
 /** Leads back to the ERP; on phones, the More sheet's first row. */
 function CompanyLink({
   company,
@@ -340,6 +360,7 @@ function CompanyLink({
   company: Company;
   locationName?: string;
 }) {
+  const erpLink = useErpLink();
   return (
     <NavRailSwitcher
       asChild
@@ -349,7 +370,7 @@ function CompanyLink({
       logoDark={company.logoDarkIcon}
       trailing={<LuArrowUpRight className="md:hidden" />}
     >
-      <Link to={ERP_URL} />
+      <Link to={erpLink} />
     </NavRailSwitcher>
   );
 }
@@ -360,10 +381,11 @@ function CompanyLink({
  */
 function BackToErpLink() {
   const { t } = useLingui();
+  const erpLink = useErpLink();
 
   return (
     <NavRailLink
-      to={ERP_URL}
+      to={erpLink}
       icon={<LuArrowLeft />}
       label={t`Back to ERP`}
       external

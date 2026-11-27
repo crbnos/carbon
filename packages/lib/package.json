@@ -1,6 +1,7 @@
 {
   "name": "@carbon/lib",
   "dependencies": {
+    "@carbon/database": "workspace:*",
     "@carbon/documents": "workspace:*",
     "@carbon/env": "workspace:*",
     "@carbon/files": "workspace:*",
@@ -17,7 +18,6 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
-    "@carbon/database": "workspace:*",
     "@carbon/notifications": "workspace:*",
     "@carbon/workflows-core": "workspace:*",
     "@supabase/supabase-js": "catalog:",
@@ -42,6 +42,15 @@
     "./party-contact": "./src/party-contact.ts",
     "./packing-slip-document.server": "./src/packing-slip-document.server.tsx",
     "./party-contact.server": "./src/party-contact.server.ts",
+    "./production/ability": "./src/production/ability.ts",
+    "./production/event-writes": "./src/production/event-writes.ts",
+    "./production/floor": "./src/production/floor.ts",
+    "./production/serial-numbering": "./src/production/serial-numbering.ts",
+    "./production/shop-floor": "./src/production/shop-floor.ts",
+    "./production/timer": "./src/production/timer.ts",
+    "./production/unit-hold": "./src/production/unit-hold.ts",
+    "./production/unit-hold-read": "./src/production/unit-hold-read.ts",
+    "./production/work-unit-resolve": "./src/production/work-unit-resolve.ts",
     "./resend.server": "./src/resend.server.ts",
     "./sales-invoice-document.server": "./src/sales-invoice-document.server.tsx",
     "./shims": "./src/shims.ts",

@@ -280,7 +280,6 @@ export function StartStopButton({
   machineProductionEvent,
   isTrackedActivity,
   trackedEntityId,
-  batchId,
   startDisabled = false,
   ...props
 }: ComponentProps<"button"> & {
@@ -292,9 +291,6 @@ export function StartStopButton({
   machineProductionEvent: ProductionEvent | undefined;
   isTrackedActivity: boolean;
   trackedEntityId: string | undefined;
-  // When set, the start/stop event is tagged as part of this batch — sliced per
-  // member at batch completion, and cost posting is deferred until then.
-  batchId?: string;
   // Starting is refused (ability policy 'block'); a running timer can still
   // be paused.
   startDisabled?: boolean;
@@ -408,7 +404,6 @@ export function StartStopButton({
       {isTrackedActivity && (
         <Hidden name="trackedEntityId" value={trackedEntityId} />
       )}
-      {batchId && <Hidden name="jobOperationBatchId" value={batchId} />}
       <Hidden name="jobOperationId" value={operation.id} />
 
       <Hidden name="action" value={isActive ? "End" : "Start"} />

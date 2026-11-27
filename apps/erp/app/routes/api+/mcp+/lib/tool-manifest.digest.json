@@ -1,5 +1,5 @@
 {
-  "totalTools": 1875,
+  "totalTools": 1877,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting.accountingPeriods:create+update+view","paginates":false},
@@ -745,6 +745,7 @@
     {"name":"production_deleteScrapReason","classification":"DESTRUCTIVE","schema":"501347edfa8e","response":"8394fbabd845","permission":"production.scrapReasons:create+delete+update+view","paginates":false},
     {"name":"production_dismissProductionPlanningActions","classification":"WRITE","schema":"8c0c1ffe0fab","response":"2a69a1e7d58b","permission":"production.materialPlanning:create+update+view","paginates":false},
     {"name":"production_duplicateJobOperationStep","classification":"WRITE","schema":"7f8214d1083f","response":"3797626bd17e","permission":"production.jobs:create+view","paginates":false},
+    {"name":"production_endOperationTimer","classification":"WRITE","schema":"c3900c56da40","response":"a71c636fa299","permission":"production.jobs:create+update+view","paginates":false},
     {"name":"production_generateAssemblySteps","classification":"DESTRUCTIVE","schema":"47b83ea765a6","response":"ce107c5cf849","permission":"production.assemblies:create+update+view","paginates":false},
     {"name":"production_getActiveEmployeeAbilities","classification":"READ","schema":"31b84d65b2ac","response":"123f68c94eac","permission":"production:view one of production.jobs|production.batches|production.unattributedTime|production.demandForecasts|production.materialPlanning|production.resourcePlanning|production.forecast|production.priorities|production.outbound|production.assemblies|production.procedures|production.scrapReasons","paginates":false},
     {"name":"production_getActiveJobOperationByJobId","classification":"READ","schema":"36d5dd3462f8","response":"d1d76189e471","permission":"none","paginates":false},
@@ -876,6 +877,7 @@
     {"name":"production_setPersonDay","classification":"WRITE","schema":"a506a7f215eb","response":"3d90cb5d0437","permission":"production.resourcePlanning:create+update+view","paginates":false},
     {"name":"production_setPersonHours","classification":"WRITE","schema":"c99328071885","response":"3797626bd17e","permission":"production.resourcePlanning:create+update+view","paginates":false},
     {"name":"production_setProcedureFields","classification":"WRITE","schema":"c1c04698ecfa","response":"0eb0c2be01ed","permission":"production.procedures:create+update+view","paginates":false},
+    {"name":"production_startOperationTimer","classification":"WRITE","schema":"36f1a25437de","response":"40c45c335fe7","permission":"production.jobs:create+view","paginates":false},
     {"name":"production_syncAssemblyToOperation","classification":"DESTRUCTIVE","schema":"e96acb10683d","response":"4348d3bad80b","permission":"production:create+update+view","paginates":false},
     {"name":"production_syncJobOperationProcedure","classification":"WRITE","schema":"eb60f0c2e600","response":"c407a9edb930","permission":"production.jobs:create+update+view","paginates":false},
     {"name":"production_unassignPerson","classification":"DESTRUCTIVE","schema":"3797626bd17e","response":"3797626bd17e","permission":"production.resourcePlanning:create+update+view","paginates":false},

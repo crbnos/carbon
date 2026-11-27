@@ -6,7 +6,8 @@ import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { activeJobStatuses } from "@carbon/database";
+import { floorRule } from "@carbon/lib/production/floor";
+import { isSerialEntityIncompleteForOperation } from "@carbon/lib/production/shop-floor";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
@@ -34,8 +35,7 @@ import {
   getThumbnailPathByItemId,
   getTrackedEntitiesForOperation,
   getWorkCenter,
-  isFirstOpenOperationOfMakeMethod,
-  isSerialEntityIncompleteForOperation
+  isFirstOpenOperationOfMakeMethod
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
 import { readScreenUnitHolds } from "~/services/unit-hold.server";
@@ -47,7 +47,7 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 import { redirect } from "@carbon/utils";
 import { makeDurations } from "~/utils/durations";
-import type { Handle } from "~/utils/handle";
+import { type Handle, operationMaintenanceRealtime } from "~/utils/handle";
 import {
   OUTSIDE_PROCESSING_REFUSAL,
   resolveOperationView
@@ -56,6 +56,12 @@ import { path } from "~/utils/path";
 import { isUnitOnHold } from "~/utils/unitHold";
 
 export const handle: Handle = {
+  erpLink: ({ data }) =>
+    data?.batch?.id
+      ? path.to.batchDetail(data.batch.id)
+      : data?.job?.id
+        ? path.to.jobDetail(data.job.id)
+        : undefined,
   realtime: [
     // One operation of one job, unless it runs in a batch: a batch shows its
     // members' steps, materials and timers, which belong to other jobs.
@@ -102,7 +108,8 @@ export const handle: Handle = {
         const itemIds: string[] = data?.materialItemIds ?? [];
         return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
       }
-    }
+    },
+    operationMaintenanceRealtime
   ]
 };
 
@@ -223,7 +230,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     isFirstOperation,
     isFirstOpenOperation,
     materialItems,
-    unitHolds
+    unitHolds,
+    workCenterRead
   ] = await Promise.all([
     getProductionEventsForJobOperation(serviceRole, {
       operationId,
@@ -289,8 +297,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         serial: !!makeMethod?.data?.requiresSerialTracking,
         unitIds: (units?.data ?? []).map((unit) => unit.id)
       })
-    )
+    ),
+    // One read for the work center's name, the Maintenance button and Start.
+    operationPromise.then((result) => {
+      const workCenterId = result.data?.[0]?.workCenterId;
+      return workCenterId
+        ? getWorkCenter(serviceRole, workCenterId, companyId)
+        : null;
+    })
   ]);
+  // A failed read is not blocked, as the timer Start's own read (`maintenanceBlock`).
+  if (workCenterRead?.error) {
+    logger.warning("Could not read the operation's work center", {
+      companyId,
+      operationId,
+      error: workCenterRead.error
+    });
+  }
+  const workCenterRow = workCenterRead?.data;
+  const workCenter =
+    workCenterRow?.id && workCenterRow.name
+      ? { ...workCenterRow, id: workCenterRow.id, name: workCenterRow.name }
+      : null;
 
   if (job.error) {
     throw redirect(
@@ -351,60 +379,41 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let batch: Awaited<ReturnType<typeof getJobOperationBatch>>["data"] | null =
     null;
   let events = opEvents;
-  if (batchResult) {
-    // An unread batch cannot prove it was released: refuse rather than skip
-    // the floor rule below.
-    // A partial read (members or planned lots missing) refuses too: the
-    // completion form must not run on lots it could not read.
-    if (!batchResult.data || batchResult.error) {
-      throw redirect(
-        path.to.operations,
-        await flash(
-          request,
-          error(batchResult.error, "Failed to load the operation's batch", {
-            operationId,
-            batchId
-          })
-        )
-      );
-    }
-    // Floor rule: a batched operation is only floor-visible once its batch
-    // has been released (Active/Completing). A Planned batch stays off the
-    // floor regardless of its members' job statuses.
-    if (batchResult.data?.status === "Planned") {
-      throw redirect(
-        path.to.operations,
-        await flash(
-          request,
-          error(
-            null,
-            "This operation is part of a batch that has not been released to the floor"
-          )
-        )
-      );
-    }
-    if (
-      batchResult.data &&
-      (batchResult.data.status === "Active" ||
-        batchResult.data.status === "Completing")
-    ) {
-      batch = batchResult.data;
-      // The batch's events (all members' timers) instead of this op's.
-      if (batchEvents) events = batchEvents;
-    }
-  } else if (
-    !job.data.status ||
-    !(activeJobStatuses as readonly string[]).includes(job.data.status)
-  ) {
-    // Floor rule: an unbatched operation is only floor-visible while its job
-    // is released (Ready/In Progress/Paused).
+  // An unread batch cannot prove it was released: refuse rather than skip
+  // the floor rule below. A partial read (members or planned lots missing)
+  // refuses too: the completion form must not run on lots it could not read.
+  if (batchResult && (!batchResult.data || batchResult.error)) {
     throw redirect(
       path.to.operations,
       await flash(
         request,
-        error(null, "This operation's job has not been released to the floor")
+        error(batchResult.error, "Failed to load the operation's batch", {
+          operationId,
+          batchId
+        })
       )
     );
+  }
+  // The floor rule the timer Start runs, on the statuses read above.
+  const notOnFloor = floorRule({
+    jobOperationBatchId: batchId,
+    batchStatus: batchResult?.data?.status,
+    jobStatus: job.data.status
+  });
+  if (notOnFloor) {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, notOnFloor))
+    );
+  }
+  if (
+    batchResult?.data &&
+    (batchResult.data.status === "Active" ||
+      batchResult.data.status === "Completing")
+  ) {
+    batch = batchResult.data;
+    // The batch's events (all members' timers) instead of this op's.
+    if (batchEvents) events = batchEvents;
   }
 
   const inventoryShelfLife = (companySettings.data?.inventoryShelfLife ??
@@ -513,21 +522,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }),
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
     abilityWarning,
+    // The timer Start refuses a blocked work center; the view disables Start.
+    maintenanceBlock: workCenter?.isBlocked
+      ? { dispatchReadableId: workCenter.blockingDispatchReadableId }
+      : null,
     expiredEntityPolicy,
     autoSelectMaterialWithoutPickingList,
     procedure: getJobOperationProcedure(serviceRole, operation.data?.[0].id),
-    workCenter: getWorkCenter(
-      serviceRole,
-      operation.data?.[0].workCenterId
-    ) as Promise<
-      import("@supabase/supabase-js").PostgrestSingleResponse<{
-        name: string;
-        id: string;
-        isBlocked: boolean | null;
-        blockingDispatchId: string | null;
-        blockingDispatchReadableId: string | null;
-      }>
-    >,
+    workCenter,
     thumbnailPath,
     correctionName
   };
@@ -539,6 +541,7 @@ export default function OperationRoute() {
 
   const {
     abilityWarning,
+    maintenanceBlock: workCenterBlock,
     batch,
     batchMaterialTotals,
     batchWorkInstructions,
@@ -567,6 +570,7 @@ export default function OperationRoute() {
     <JobOperation
       key={`job-operation-${operationId}`}
       abilityWarning={abilityWarning}
+      maintenanceBlock={workCenterBlock}
       batch={batch}
       batchMaterialTotals={batchMaterialTotals}
       batchWorkInstructions={batchWorkInstructions}

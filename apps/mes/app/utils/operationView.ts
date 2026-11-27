@@ -43,7 +43,6 @@ export function resolveOperationView(
 /**
  * Subcontracted work runs at the supplier, never on the shop floor. The boards
  * hide it (get_active_job_operations_by_location); the operation view, the start
- * route and the production-event Start action refuse it with this message.
+ * route and the timer Start (`startOperationTimer`) refuse it with this message.
  */
-export const OUTSIDE_PROCESSING_REFUSAL =
-  "Outside processing is done by the supplier and can't be run on the shop floor";
+export { OUTSIDE_PROCESSING_REFUSAL } from "@carbon/lib/production/shop-floor";

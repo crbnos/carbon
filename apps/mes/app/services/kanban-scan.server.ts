@@ -10,22 +10,27 @@
 import { error, success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
-import { activeJobStatuses } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
+import {
+  startMachineProductionEvent,
+  startProductionEvent
+} from "@carbon/lib/production/event-writes";
+import {
+  floorCheck,
+  maintenanceBlock,
+  maintenanceRefusal
+} from "@carbon/lib/production/floor";
 import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { erpPosting } from "~/services/erp";
-import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service";
 import {
   abilityBlockRefusal,
   finishJobOperation,
   getRequiredScanShortfall,
   insertProductionQuantity,
-  postEndedProductionEvents,
-  startMachineProductionEvent,
-  startProductionEvent
+  postEndedProductionEvents
 } from "~/services/operations.service";
 import { autoPrintOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
@@ -98,44 +103,16 @@ export async function startOperationByScan(
   // op needs its batch released (not Planned); an unbatched op needs its job
   // released (Ready/In Progress/Paused). These guards must run BEFORE the
   // productionEvent re-open below so a not-released op never mutates timers.
-  if (jobOperation.data.jobOperationBatchId) {
-    const batch = await serviceRole
-      .from("jobOperationBatch")
-      .select("status")
-      .eq("id", jobOperation.data.jobOperationBatchId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (batch.data?.status === "Planned") {
-      throw redirect(
-        path.to.operations,
-        await flash(
-          request,
-          error(
-            null,
-            "This operation is part of a batch that has not been released to the floor"
-          )
-        )
-      );
-    }
-  } else {
-    const job = await serviceRole
-      .from("job")
-      .select("status")
-      .eq("id", jobOperation.data.jobId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (
-      !job.data?.status ||
-      !(activeJobStatuses as readonly string[]).includes(job.data.status)
-    ) {
-      throw redirect(
-        path.to.operations,
-        await flash(
-          request,
-          error(null, "This operation's job has not been released to the floor")
-        )
-      );
-    }
+  const floor = await floorCheck(serviceRole, {
+    companyId,
+    jobId: jobOperation.data.jobId,
+    jobOperationBatchId: jobOperation.data.jobOperationBatchId
+  });
+  if (floor.refusal) {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, floor.refusal))
+    );
   }
 
   // The unit the timer runs on, before any timer is touched. A later
@@ -169,20 +146,17 @@ export async function startOperationByScan(
 
   // Check if work center is blocked for maintenance
   if (jobOperation.data.workCenterId) {
-    const workCenterStatus = await getWorkCenterWithBlockingStatus(
-      serviceRole,
-      jobOperation.data.workCenterId
-    );
+    const blocked = await maintenanceBlock(serviceRole, {
+      companyId,
+      workCenterId: jobOperation.data.workCenterId
+    });
 
-    if (workCenterStatus.data?.isBlocked) {
+    if (blocked) {
       throw redirect(
         path.to.operation(operationId),
         await flash(
           request,
-          error(
-            `Work center is blocked for maintenance (${workCenterStatus.data.blockingDispatchReadableId})`,
-            "Work Center Blocked"
-          )
+          error(maintenanceRefusal(blocked), "Work Center Blocked")
         )
       );
     }
@@ -257,10 +231,16 @@ export async function startOperationByScan(
     await deps.requireMachinePermission();
   }
 
+  // A member of a running batch clocks the batch's shared timer, as the timer Start does.
+  const inRunningBatch =
+    floor.batchStatus === "Active" || floor.batchStatus === "Completing";
   const event = {
     type,
     jobOperationId: operationId,
     workCenterId: jobOperation.data.workCenterId!,
+    jobOperationBatchId: inRunningBatch
+      ? (jobOperation.data.jobOperationBatchId ?? undefined)
+      : undefined,
     startTime: datetime.timestamp(),
     employeeId: userId,
     companyId,

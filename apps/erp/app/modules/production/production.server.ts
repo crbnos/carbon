@@ -7,6 +7,7 @@ import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { fetchAllByIds, type Json } from "@carbon/database";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { batchTrigger, trigger } from "@carbon/jobs";
+import * as timer from "@carbon/lib/production/timer";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
@@ -1638,6 +1639,109 @@ export const updateProductionEvent = defineServiceFn({
     return { id, postingError };
   }
 });
+
+/** Shop-floor time belongs to a person: a key acts as its creator, who did not do the work. */
+const TIMER_NEEDS_SIGN_IN =
+  "Starting or ending a timer needs your own sign-in; API keys can't record shop-floor time";
+
+/**
+ * Start a shop-floor timer on a job operation.
+ *
+ * @remarks
+ * Runs what the MES Start button runs, with the same checks, and records the
+ * time against the signed-in caller. An API key is refused: it must be the
+ * caller's own sign-in (the MCP connector or a session). Refused for
+ * Outside Processing, an operation whose job (or batch) is not released to the
+ * floor, a work center that does not run the operation's process, a work
+ * center blocked for maintenance, a missing required ability, and a unit the
+ * operation cannot run. A Machine timer on a work center ends
+ * the work center's other Machine time; those events are posted to the GL, and
+ * a posting that is skipped or fails is returned in `postingErrors`.
+ *
+ * @param workCenterId - The work center the time runs on. Defaults to the operation's work center; another must run the operation's process.
+ * @param trackedEntityId - The serial unit to run the timer on. A unit not open at the operation is dropped; on the first operation the timer then runs on the next open unit.
+ * @returns `id`, the started event, and `unitId`, the unit it runs on.
+ *
+ * @mcp
+ */
+export const startOperationTimer = defineServiceFn({
+  input: z.object({
+    jobOperationId: z.string().min(1),
+    type: z.enum(["Setup", "Labor", "Machine"]),
+    workCenterId: z.string().optional(),
+    trackedEntityId: z.string().optional()
+  }),
+  permission: { "production.jobs": "Create" },
+
+  async run(ctx, input) {
+    if (ctx.actor.type !== "user") {
+      return ctx.error("forbidden", TIMER_NEEDS_SIGN_IN);
+    }
+    const { deps, postingErrors } = service.operationTimerDeps(ctx);
+    const started = await timer.startOperationTimer(deps, {
+      companyId: ctx.company.id,
+      employeeId: ctx.actor.userId,
+      jobOperationId: input.jobOperationId,
+      type: input.type,
+      workCenterId: input.workCenterId,
+      trackedEntityId: input.trackedEntityId
+    });
+    if (!started.ok) {
+      return ctx.error(
+        started.category,
+        started.reason ?? started.message,
+        started.cause
+      );
+    }
+    return { id: started.eventId, unitId: started.unitId, postingErrors };
+  }
+});
+
+/**
+ * End a running shop-floor timer.
+ *
+ * @remarks
+ * Runs what the MES pause button runs. Ends the event on its own work center
+ * and type; a Machine event is ended with a press, which ends every open
+ * Machine event on the work center. Needs the caller's own sign-in (the MCP
+ * connector or a session); an API key is refused. Refused when the event has
+ * already ended. Each event it ended is posted to the GL, and a posting that is
+ * skipped or fails is returned in `postingErrors`.
+ *
+ * @param productionEventId - The running event, as `production_startOperationTimer` returned it.
+ * @returns `id`, the event, and `endedEventIds`, every event the End ended.
+ *
+ * @mcp
+ */
+export const endOperationTimer = defineServiceFn({
+  input: z.object({ productionEventId: z.string().min(1) }),
+  permission: { "production.jobs": "Edit" },
+
+  async run(ctx, { productionEventId }) {
+    if (ctx.actor.type !== "user") {
+      return ctx.error("forbidden", TIMER_NEEDS_SIGN_IN);
+    }
+    const { deps, postingErrors } = service.operationTimerDeps(ctx);
+    const ended = await timer.endOperationTimer(deps, {
+      companyId: ctx.company.id,
+      userId: ctx.actor.userId,
+      eventId: productionEventId
+    });
+    if (!ended.ok) {
+      return ctx.error(
+        ended.category,
+        ended.reason ?? ended.message,
+        ended.cause
+      );
+    }
+    return {
+      id: productionEventId,
+      endedEventIds: ended.endedEventIds,
+      postingErrors
+    };
+  }
+});
+
 const jobIdsInput = z.array(z.string()).min(1);
 
 /**

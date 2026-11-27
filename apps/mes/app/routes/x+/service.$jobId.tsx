@@ -115,6 +115,8 @@ import type { Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
 export const handle: Handle = {
+  erpLink: ({ params }) =>
+    params.jobId ? path.to.serviceJobDetail(params.jobId) : undefined,
   realtime: [{ table: "serviceJob", column: "id", param: "jobId" }]
 };
 

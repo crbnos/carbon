@@ -7,6 +7,7 @@ import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { holdsGate } from "@carbon/database/access";
+import { floorRuleRefusal } from "@carbon/lib/production/floor";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ComponentProps } from "react";
@@ -15,7 +16,6 @@ import { useLoaderData, useParams } from "react-router";
 import { AssemblyView } from "~/components/AssemblyView";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
-  floorRefusal,
   getAbilityShortfall,
   getAssemblyPlaybackByOperationId,
   getJob,
@@ -41,7 +41,7 @@ import type { OperationWithDetails } from "~/services/types";
 import { readScreenUnitHolds } from "~/services/unit-hold.server";
 import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
 import { makeDurations } from "~/utils/durations";
-import type { Handle } from "~/utils/handle";
+import { type Handle, operationMaintenanceRealtime } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
@@ -52,6 +52,8 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 const logger = getLogger("mes", "assembly");
 
 export const handle: Handle = {
+  erpLink: ({ data }) =>
+    data?.job?.id ? path.to.jobDetail(data.job.id) : undefined,
   realtime: [
     {
       // Stock of this operation's parts placed in, or taken from, a bin while
@@ -67,7 +69,8 @@ export const handle: Handle = {
         ];
         return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
       }
-    }
+    },
+    operationMaintenanceRealtime
   ]
 };
 
@@ -201,7 +204,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getProductionQuantitiesForJobOperation(serviceRole, operationId),
     operationPromise.then((result) => {
       const row = result.data?.[0];
-      return row ? getWorkCenter(serviceRole, row.workCenterId) : null;
+      return row
+        ? getWorkCenter(serviceRole, row.workCenterId, companyId)
+        : null;
     }),
     getKanbanByJobId(serviceRole, jobId),
     // 3D model slides reference modelUpload rows; resolve their render
@@ -275,8 +280,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(operation.error, "Failed to fetch operation"))
     );
 
-  const notOnFloor = await floorRefusal(serviceRole, {
-    jobStatus: job.data?.status,
+  const notOnFloor = await floorRuleRefusal(serviceRole, {
+    jobId,
+    jobStatus: job.data?.status ?? null,
     jobOperationBatchId: ownedOperation.data.jobOperationBatchId,
     companyId
   });
