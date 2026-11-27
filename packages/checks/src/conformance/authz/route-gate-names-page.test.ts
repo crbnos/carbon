@@ -22,11 +22,15 @@ const LISTS = [
   }
 ];
 
-const scanRoute = (route: string, contents: string) =>
+const scanRoute = (
+  route: string,
+  contents: string,
+  { modules = MODULES, lists = LISTS } = {}
+) =>
   routeGateNamesPage.find({
     routes: [{ file: `${GATE_ROUTES}${route}`, contents }],
-    modules: MODULES,
-    lists: LISTS
+    modules,
+    lists
   });
 const gated = (gate: string) =>
   `export async function loader({ request }) {\n  await authorize(request, ${gate});\n}\n`;
@@ -139,6 +143,69 @@ describe("routeGateNamesPage", () => {
       scanRoute(
         "projects+/timesheets.$employeeId.tsx",
         gated(`{ "sales.quotes": "View" }`)
+      )
+    ).toHaveLength(1);
+  });
+
+  it("reads only the exported upper-case gate constants of the modules", () => {
+    const modules = [
+      {
+        file: "apps/erp/app/modules/sales/sales.models.ts",
+        contents: `export const CONTRACT_READ_GATE = anyOf(["sales.serviceContracts", "sales.projectContracts"], "View");\nexport const quoteGate = { "sales.quotes": "View" };\nconst HIDDEN = { "sales.quotes": "View" };`
+      }
+    ];
+    expect(
+      scanRoute("part+/$itemId.tsx", gated("CONTRACT_READ_GATE"), { modules })
+    ).toHaveLength(1);
+    for (const name of ["quoteGate", "HIDDEN"]) {
+      expect(
+        scanRoute("part+/$itemId.tsx", gated(name), { modules }),
+        name
+      ).toEqual([]);
+    }
+  });
+
+  it("reads the gate of each list, from searchList or an object", () => {
+    const lists = [
+      {
+        file: "apps/erp/app/utils/list-registry/inventory.server.ts",
+        contents: `export const paymentsList = { key: "payments", gate: { "invoicing.payments": "View" }, query } satisfies ListDefinition;
+export const itemsList = searchList({ key: "items", gate: anyOf(ITEM_PAGES, "View") });
+export const lists = { receipts: paymentsList };`
+      }
+    ];
+    const loads = (list: string) =>
+      `export async function loader({ request }) {\n  return loadListPage(request, ${list});\n}\n`;
+    const named = (list: string) =>
+      scanRoute("inventory+/shipments.tsx", loads(list), { lists }).map(
+        (v) => v.message.split(", but")[0]
+      );
+    expect(named("paymentsList")).toEqual([
+      "The gate names invoicing.payments"
+    ]);
+    expect(named("itemsList")[0]).toContain("parts.parts");
+    expect(named("lists")).toEqual([]);
+  });
+
+  it.each([
+    `import { searchList } from "./search-list";
+export function describeGate() {
+  return "gate: none";
+}`,
+    `const PAGE_SIZE = 50;
+const paging = defaultPaging();`
+  ])("reads a list beside other statements: %s", (before) => {
+    const lists = [
+      {
+        file: "apps/erp/app/utils/list-registry/inventory.server.ts",
+        contents: `${before}\nexport const receiptsList = searchList({ key: "receipts", gate: { "inventory.receipts": "View" } });`
+      }
+    ];
+    expect(
+      scanRoute(
+        "inventory+/shipments.tsx",
+        "export async function loader({ request }) {\n  return loadListPage(request, receiptsList);\n}\n",
+        { lists }
       )
     ).toHaveLength(1);
   });

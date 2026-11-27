@@ -5,9 +5,6 @@
 import { describe, expect, it } from "vitest";
 import { formFieldBudget } from "./form-field-budget";
 
-// The budget the check states in its description.
-const FORM_FIELD_BUDGET = 14;
-
 const FILE = "apps/erp/app/modules/sales/ui/Contracts/ContractLineForm.tsx";
 const fields = (count: number) =>
   Array.from(
@@ -21,25 +18,25 @@ const scanFieldBudget = (contents: string, file = FILE) =>
 
 describe("formFieldBudget", () => {
   it("flags a flat form over the budget, at its ValidatedForm", () => {
-    const violations = scanFieldBudget(form(fields(FORM_FIELD_BUDGET + 1)));
+    const violations = scanFieldBudget(form(fields(15)));
     expect(violations).toHaveLength(1);
     expect(violations[0]?.line).toBe(3);
     expect(violations[0]?.snippet).toBe("<ValidatedForm>");
   });
 
   it("accepts a form within the budget, and does not count hidden fields", () => {
-    expect(scanFieldBudget(form(fields(FORM_FIELD_BUDGET)))).toEqual([]);
+    expect(scanFieldBudget(form(fields(14)))).toEqual([]);
     expect(
       scanFieldBudget(
         form(
-          `${fields(FORM_FIELD_BUDGET)}\n      <Hidden name="id" />\n      <Hidden name="type" />`
+          `${fields(14)}\n      <Hidden name="id" />\n      <Hidden name="type" />`
         )
       )
     ).toEqual([]);
   });
 
   it("accepts a long form that is grouped or stepped", () => {
-    const long = fields(FORM_FIELD_BUDGET + 6);
+    const long = fields(20);
     expect(
       scanFieldBudget(
         form(`      <FormGroup title="What">\n${long}\n      </FormGroup>`)

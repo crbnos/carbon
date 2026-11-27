@@ -4,7 +4,6 @@
 
 import { defineCheck, eachFile, type Violation } from "../../check";
 import { loadDbTableColumnTypes } from "../../sources/db-columns";
-import { statusColumns } from "../../sources/guarded-columns";
 import { typescript } from "../../sources/inputs";
 import {
   lockedRead,
@@ -98,6 +97,53 @@ export const statusWriteGuarded = defineCheck({
 
     const statusMessage = (table: string, column: string) =>
       `This UPDATE sets ${table}.${column} with no predicate on ${column}, so a request that moved the row after you read it is overwritten. Check the status in the UPDATE (\`.eq("${column}", <expected>)\` / \`.where("${column}", "=", <expected>)\`) and refuse when no row changed, or lock the row FOR UPDATE and re-check it before the UPDATE.`;
+
+    /**
+     * Enums named like a status that are not a lifecycle: a classification or
+     * a measured result that is set to whatever is true now, never moved from
+     * one expected state to the next, and the progress of a single background
+     * job.
+     */
+    const NOT_LIFECYCLE_ENUMS = new Set([
+      // Classification, edited freely.
+      "flsaStatus",
+      "itemRevisionStatus",
+      // An on/off switch.
+      "accountingPeriodStatus",
+      "gaugeStatus",
+      // A measured result.
+      "inspectionStatus",
+      "gaugeCalibrationStatus",
+      // One job's own progress, written only by that job.
+      "modelProcessingStatus",
+      "documentExtractionStatus"
+    ]);
+
+    /**
+     * The enum-typed lifecycle columns per table: `status` and `…Status`, less
+     * `NOT_LIFECYCLE_ENUMS`. A `…History` table is an append-only log, so it
+     * is left out.
+     */
+    const statusColumns = (
+      columnTypes: Map<string, Map<string, string>>
+    ): Map<string, Set<string>> => {
+      const out = new Map<string, Set<string>>();
+      for (const [table, columns] of columnTypes) {
+        if (/History$/.test(table)) continue;
+        const status = [...columns]
+          .filter(([name, type]) => {
+            if (!/^(?:status|\w+Status)$/.test(name)) return false;
+            const enumName =
+              /^Database\["public"\]\["Enums"\]\["(\w+)"\](?: \| null)?$/.exec(
+                type
+              )?.[1];
+            return enumName !== undefined && !NOT_LIFECYCLE_ENUMS.has(enumName);
+          })
+          .map(([name]) => name);
+        if (status.length > 0) out.set(table, new Set(status));
+      }
+      return out;
+    };
 
     const auditColumns = new Set([
       "id",

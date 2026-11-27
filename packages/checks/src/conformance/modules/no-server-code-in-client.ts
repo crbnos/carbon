@@ -89,7 +89,6 @@ export const noServerCodeInClient = defineCheck({
         `\\b(?:const|let|var)\\s+(?:${name}\\b|[[{][^=]*\\b${name}\\b[^=]*[\\]}]\\s*=)`
       ).test(code);
 
-    /** Server-file imports a route uses in its browser half. */
     function scanRoute(file: string, contents: string): Violation[] {
       const client = browserCode(contents);
       if (!client.trim()) return [];

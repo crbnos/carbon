@@ -88,19 +88,15 @@ function blankRanges(src: string, ranges: Range[]): string {
 
 /**
  * Blank the INTERIOR of comments and string/template literals, preserving every
- * character position and newline so reported line numbers stay exact.
+ * character position and newline so reported line numbers stay exact. Regex
+ * literals are not tracked: telling `/` division from a regex needs a parser.
  *
- * Two failures this fixes, both demonstrated by tests below:
+ * Two failures this fixes for `no-default-on-effects` (its tests show both):
  * - A `.transform(f).default(x)` written inside a string or a doc comment was
  *   reported as a real violation.
  * - A comment BETWEEN the effect and `.default()` hid a genuine violation:
  *   `receiverBefore` stops at `/`, so the receiver never reached the
- *   `.transform(` and the site was silently skipped. That direction is the
- *   dangerous one — a missed violation looks identical to a clean file.
- *
- * Regex literals are deliberately not tracked: telling `/` division from a
- * regex needs real parsing, and a regex containing `.default(` preceded by an
- * effect is not a shape that occurs here.
+ *   `.transform(` and the site was silently skipped.
  */
 export function maskCommentsAndStrings(contents: string): string {
   let known = masked.get(contents);
@@ -143,8 +139,7 @@ function maskText(contents: string): string {
         if (contents[j] === quote) break;
         j++;
       }
-      // Keep the quotes themselves so the receiver walk still sees a literal
-      // boundary rather than bare whitespace.
+      // The quotes stay, so a scan still sees where a literal was.
       interiors.push([i + 1, j]);
       i = j + 1;
       continue;

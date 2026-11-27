@@ -44,7 +44,6 @@ export const serviceFnFile = defineCheck({
       init.callee.type === "Identifier" &&
       init.callee.name === "defineServiceFn";
 
-    /** The `permission: {}` of a service function's definition, if it has one. */
     const emptyPermission = (call: CallExpression) => {
       const definition = call.arguments[0];
       if (definition?.type !== "ObjectExpression") return null;

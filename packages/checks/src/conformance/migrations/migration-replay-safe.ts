@@ -18,14 +18,12 @@ import {
   tokensFrom
 } from "../../sources/sql";
 
-// The deploy runner re-runs a failed migration over what it already committed
-// (a migration may `COMMIT` part way), so a statement that errors on an object
-// already there, or already gone, fails every later deploy (`cb75027fc2`).
-//
-// The runner is `ci/src/migrations.ts` (`supabase db push --include-all`). A
-// migration may commit part way, for example after `ALTER TYPE … ADD VALUE`.
-// An unguarded statement then fails every deploy until someone edits the
-// applied file (`cb75027fc2`, `25243520b4`, `11a7a60999`, `f47e4a25bf`).
+// The deploy runner (`ci/src/migrations.ts`, `supabase db push --include-all`)
+// re-runs a failed migration over what it already committed: a migration may
+// commit part way, for example after `ALTER TYPE … ADD VALUE`. A statement that
+// errors on an object already there, or already gone, then fails every deploy
+// until someone edits the applied file (`cb75027fc2`, `25243520b4`,
+// `11a7a60999`, `f47e4a25bf`).
 //
 // The check reads the parsed statements that run when the migration is
 // applied (`migrationSteps`). A `DROP` without `IF EXISTS` is reported once,
@@ -50,19 +48,24 @@ export const migrationReplaySafe = defineCheck({
     deprecates: 'CREATE TABLE "x" / ADD COLUMN "y" / DROP CONSTRAINT "z"',
     replacedBy:
       'CREATE TABLE IF NOT EXISTS "x" / ADD COLUMN IF NOT EXISTS "y" / DROP CONSTRAINT IF EXISTS "z"',
-    // LAST_UNCHECKED, below.
     since: "after 20261119125737_job-wip-balance.sql",
     incidents: ["f47e4a25bf", "cb75027fc2"]
   },
   rule() {
     /**
-     * Migrations up to here are applied history and cannot be edited. This was
-     * the newest migration when the rule was written. After the 2026-06
-     * idempotency pass (`c64c3be9a5`), many older migrations still broke the
-     * rule, and a sample of them had no false positives. Applied history cannot
-     * change, so they are not checked and have no baseline entries.
+     * Migrations up to the one `since` names are applied history and cannot be
+     * edited. It was the newest migration when the rule was written. After the
+     * 2026-06 idempotency pass (`c64c3be9a5`), many older migrations still broke
+     * the rule, and a sample of them had no false positives. Applied history
+     * cannot change, so they are not checked and have no baseline entries.
      */
-    const LAST_UNCHECKED = "20261119125737";
+    const lastUnchecked = /\d{14}/.exec(
+      migrationReplaySafe.provenance?.since ?? ""
+    )?.[0];
+    if (lastUnchecked === undefined)
+      throw new Error(
+        "migration-replay-safe: provenance.since must contain the 14-digit migration timestamp"
+      );
 
     /** `"public".x` and `x` are one object. */
     function objectName(parts: string[]): string {
@@ -113,7 +116,6 @@ export const migrationReplaySafe = defineCheck({
       });
     }
 
-    /** The DROP kinds this check asks IF EXISTS of. */
     const DROP_KINDS = new Map([
       ["TABLE", "TABLE"],
       ["VIEW", "VIEW"],
@@ -458,7 +460,6 @@ export const migrationReplaySafe = defineCheck({
         .map(({ step }) => step);
     }
 
-    /** An ALTER TABLE as one statement per command; any other node as itself. */
     function alterCommands(node: Node): Node[] {
       if (!("AlterTableStmt" in node)) return [node];
       return (node.AlterTableStmt.cmds ?? []).map((cmd) => ({
@@ -599,7 +600,7 @@ export const migrationReplaySafe = defineCheck({
 
     return (file, contents) => {
       const timestamp = /^(\d{14})_/.exec(file)?.[1];
-      if (!timestamp || timestamp <= LAST_UNCHECKED) return [];
+      if (!timestamp || timestamp <= lastUnchecked) return [];
       return scanReplaySafety(file, contents);
     };
   }

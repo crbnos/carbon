@@ -2,8 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it } from "vitest";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyLicenseHeader, LICENSE_HEADERS } from "../../license-headers";
+import { openRepo } from "../../repo";
 import { spdxLicenseHeader } from "./spdx-license-header";
 
 const scan = (file: string, contents: string) =>
@@ -63,4 +69,43 @@ describe("spdxLicenseHeader", () => {
     expect(v?.snippet).toMatch(/^foreign:/);
     expect(v?.message).toMatch(/PATH_EXCLUSIONS/);
   });
+});
+
+describe("spdxLicenseHeader.run", () => {
+  const packageDir = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../.."
+  );
+  let root: string;
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), "spdx-license-header-"));
+    // The same headerless content in an excluded path and an included one.
+    for (const file of ["apps/erp/sst-env.d.ts", "apps/erp/app/env.d.ts"]) {
+      mkdirSync(dirname(join(root, file)), { recursive: true });
+      writeFileSync(join(root, file), "export {};\n");
+    }
+    execFileSync("git", ["init", "-q"], { cwd: root });
+    execFileSync("git", ["add", "-A"], { cwd: root });
+  });
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it("reports the included file and not the path-excluded one", () => {
+    expect(spdxLicenseHeader.run(openRepo(root)).map((v) => v.file)).toEqual([
+      "apps/erp/app/env.d.ts"
+    ]);
+  });
+
+  it("finds nothing once the fixer has run", () => {
+    const fixer = spawnSync(
+      join(packageDir, "node_modules/.bin/tsx"),
+      [join(packageDir, "src/scripts/license-headers.ts"), "--root", root],
+      { encoding: "utf8", env: { ...process.env, INIT_CWD: root } }
+    );
+    expect(fixer.status).toBe(0);
+    expect(spdxLicenseHeader.run(openRepo(root))).toEqual([]);
+  }, 30_000);
 });

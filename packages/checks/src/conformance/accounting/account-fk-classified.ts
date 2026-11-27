@@ -2,10 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  REFERENCE_POLICY,
+  UNCLASSIFIED_ACCOUNT_REFERENCES
+} from "@carbon/database/account-import";
 import { defineCheck, eachFile, type Violation } from "../../check";
 import {
-  accountReferences,
-  loadAccountReferencePolicy
+  ACCOUNT_DELETE_RESTRICT,
+  accountReferences
 } from "../../sources/account-references";
 import { migrations } from "../../sources/inputs";
 
@@ -22,18 +26,27 @@ import { migrations } from "../../sources/inputs";
  * live test still covers it.
  */
 export const accountFkClassified = defineCheck({
-  reads: { files: migrations, policy: loadAccountReferencePolicy },
+  reads: {
+    files: migrations,
+    policy: (): {
+      references: readonly { table: string; column: string }[];
+      /** A table, or a `table.column`, no policy needs to classify. */
+      unclassified: readonly string[];
+    } => ({
+      references: REFERENCE_POLICY,
+      unclassified: UNCLASSIFIED_ACCOUNT_REFERENCES
+    })
+  },
   id: "account-fk-classified",
   description:
     "A column with a foreign key to account must be classified in REFERENCE_POLICY.",
-  provenance: {
-    deprecates: 'REFERENCES "account"("id") ON DELETE SET NULL',
-    replacedBy: 'REFERENCES "account"("id") ON DELETE RESTRICT',
-    since: "20261013005642_account-delete-restrict.sql"
-  },
+  provenance: ACCOUNT_DELETE_RESTRICT,
   rule() {
-    return ({ files, policy: { classified, unclassified } }) =>
-      eachFile(files, (file, contents) => {
+    return ({ files, policy }) => {
+      const classified = new Set(
+        policy.references.map(({ table, column }) => `${table}.${column}`)
+      );
+      return eachFile(files, (file, contents) => {
         const violations: Violation[] = [];
         for (const { line, snippet, ref } of accountReferences(
           file,
@@ -42,7 +55,9 @@ export const accountFkClassified = defineCheck({
           if (
             !ref ||
             classified.has(ref) ||
-            unclassified.some((u) => ref === u || ref.startsWith(`${u}.`))
+            policy.unclassified.some(
+              (u) => ref === u || ref.startsWith(`${u}.`)
+            )
           ) {
             continue;
           }
@@ -55,5 +70,6 @@ export const accountFkClassified = defineCheck({
         }
         return violations;
       });
+    };
   }
 });

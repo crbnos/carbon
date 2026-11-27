@@ -5,14 +5,12 @@
 import { describe, expect, it } from "vitest";
 import { journalStatusFilter } from "./journal-status-filter";
 
-// The check reads the migrations and the TypeScript alike, and tells a
-// migration by its `.sql` name.
-const scanJournalStatusFilter = (file: string, contents: string) => {
-  const files = [{ file, contents }];
-  return file.endsWith(".sql")
-    ? journalStatusFilter.find({ migrations: files, typescript: [] })
-    : journalStatusFilter.find({ migrations: [], typescript: files });
-};
+// The check tells a migration from TypeScript by its `.sql` name.
+const scanJournalStatusFilter = (file: string, contents: string) =>
+  journalStatusFilter.find({
+    migrations: [{ file, contents }],
+    typescript: []
+  });
 
 describe("journal-status-filter", () => {
   it("flags a not-Draft journal filter in a new migration", () => {

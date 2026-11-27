@@ -2,70 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { read } from "./cross-file";
 import { ancestorsOf, nameParts, relationName, sqlNodes } from "./sql";
 
-// The foreign keys to `account` a migration writes, and the policy that
-// classifies them for the chart of accounts import (REFERENCE_POLICY in
-// `packages/database/src/account-import.ts`).
-
-/** The migration that made every foreign key to `account` RESTRICT. Older ones are history. */
-const SINCE = "20261013005642";
-
-const ACCOUNT_REFERENCE_POLICY_FILE = "packages/database/src/account-import.ts";
-
-export type AccountReferencePolicy = {
-  /** `table.column` pairs REFERENCE_POLICY lists. */
-  classified: ReadonlySet<string>;
-  /** UNCLASSIFIED_ACCOUNT_REFERENCES: each a table or a `table.column`. */
-  unclassified: readonly string[];
+/** The change that made every foreign key to `account` RESTRICT. Older migrations are history. */
+export const ACCOUNT_DELETE_RESTRICT = {
+  deprecates: 'REFERENCES "account"("id") ON DELETE SET NULL',
+  replacedBy: 'REFERENCES "account"("id") ON DELETE RESTRICT',
+  since: "20261013005642_account-delete-restrict.sql"
 };
 
-function exportedArray(source: string, name: string): string {
-  const start = source.indexOf(`export const ${name}`);
-  const end = source.indexOf("\n];", start);
-  if (start === -1 || end === -1) {
-    throw new Error(
-      `${name} not found in ${ACCOUNT_REFERENCE_POLICY_FILE}; update account-fk-classified to read where it moved.`
-    );
-  }
-  return source.slice(start, end);
-}
-
-/**
- * Read from the source of `account-import.ts` so this package does not depend
- * on `@carbon/database`.
- */
-export function parseReferencePolicy(source: string): AccountReferencePolicy {
-  const classified = new Set(
-    [
-      ...exportedArray(source, "REFERENCE_POLICY").matchAll(
-        /\btable:\s*"([^"]+)",\s*column:\s*"([^"]+)"/g
-      )
-    ].map(([, table, column]) => `${table}.${column}`)
-  );
-  const unclassified: string[] = [];
-  for (const [, ref] of exportedArray(
-    source,
-    "UNCLASSIFIED_ACCOUNT_REFERENCES"
-  ).matchAll(/"([^"]+)"/g)) {
-    if (ref !== undefined) unclassified.push(ref);
-  }
-  return { classified, unclassified };
-}
-
-export function loadAccountReferencePolicy(
-  root: string
-): AccountReferencePolicy {
-  return parseReferencePolicy(
-    read(root, ACCOUNT_REFERENCE_POLICY_FILE).contents
-  );
-}
-
-export type AccountReference = {
+type AccountReference = {
   line: number;
   snippet: string;
-  /** Whether the key is ON DELETE RESTRICT. */
   restricts: boolean;
   /** `table.column`; undefined when the statement names no column. */
   ref: string | undefined;
@@ -73,14 +21,13 @@ export type AccountReference = {
 
 /**
  * Every foreign key to `account` a migration writes, in a table or a column.
- * Migrations before 20261013005642, which made every such key RESTRICT, are
- * history and give none.
+ * A migration before `ACCOUNT_DELETE_RESTRICT` gives none.
  */
 export function accountReferences(
   file: string,
   contents: string
 ): AccountReference[] {
-  if (file < SINCE) return [];
+  if (file < ACCOUNT_DELETE_RESTRICT.since.slice(0, 14)) return [];
   const references: AccountReference[] = [];
   for (const found of sqlNodes(contents)) {
     const { node, fragment } = found;

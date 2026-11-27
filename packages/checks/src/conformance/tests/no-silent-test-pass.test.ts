@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { noSilentTestPass } from "./no-silent-test-pass";
 
 // Stands in for apps/erp/test/database/fixtures: it exports the two shared
-// wrappers, as the real fixtures do (sources/test-cases.test.ts).
+// wrappers, as the real fixtures do.
 const FIXTURES = [
   {
     file: "apps/erp/test/database/fixtures/index.ts",
@@ -227,5 +227,38 @@ test("b", async () => {
       [4, "if (!b) return;"],
       [8, "if (!c) return;"]
     ]);
+  });
+
+  it("finds the wrappers the fixtures export, a wrapper of another file's wrapper among them", () => {
+    const fixtures = [
+      {
+        file: "apps/erp/test/database/fixtures/b.ts",
+        contents: `export const fooTest = (name: string, fn: () => Promise<void>) =>
+  barTest(name, fn);`
+      },
+      {
+        file: "apps/erp/test/database/fixtures/a.ts",
+        contents: `export function barTest(name: string, fn: () => void) {
+  it.skipIf(!db)(name, fn, 60_000);
+}
+function localTest(name: string, fn: () => void) {
+  it(name, fn);
+}
+export function helper(f: Fixture) {
+  return f.db;
+}`
+      }
+    ];
+    const contents = ["fooTest", "barTest", "localTest", "helper"]
+      .map((name) => `${name}("x", async () => {\n  if (!${name}) return;\n});`)
+      .join("\n");
+    expect(
+      noSilentTestPass
+        .find({
+          files: [{ file: "apps/erp/test/database/x.test.ts", contents }],
+          fixtures
+        })
+        .map((v) => v.snippet)
+    ).toEqual(["if (!fooTest) return;", "if (!barTest) return;"]);
   });
 });

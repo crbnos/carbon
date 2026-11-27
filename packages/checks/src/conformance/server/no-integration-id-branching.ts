@@ -4,6 +4,7 @@
 
 import { defineCheck } from "../../check";
 import { typescript } from "../../sources/inputs";
+import { type Bans, findBanned } from "../../sources/matches";
 
 // Integration ids are DATA, not control flow. Which integrations are accounting
 // providers was answered five different ways before `providerRole` existed —
@@ -24,10 +25,8 @@ export const noIntegrationIdBranching = defineCheck({
       "providerRole + getIntegrationsByRole/getIntegrationIdsByRole (@carbon/ee) or IntegrationTopology",
     since: "20260924133915_integration-provider-role.sql"
   },
-  // The patterns are built from the list of ids, so `bans()` builds them when
-  // the check first runs.
-  bans() {
-    const quoted = [
+  rule() {
+    const ids = [
       "xero",
       "quickbooks",
       "rillet",
@@ -43,12 +42,11 @@ export const noIntegrationIdBranching = defineCheck({
       "email",
       "sage",
       "stripe-connect"
-    ]
-      .map((id) => `["']${id}["']`)
-      .join("|");
+    ];
+    const quoted = ids.map((id) => `["']${id}["']`).join("|");
     const message =
       "Branching on an integration id excludes every provider added later — ask the registry for the role instead (getIntegrationIdsByRole / IntegrationTopology).";
-    return {
+    const bans: Bans = {
       within: "line",
       snippet: "match",
       banned: [
@@ -60,7 +58,6 @@ export const noIntegrationIdBranching = defineCheck({
           message
         }
       ],
-      // Both patterns need a quoted id, so a file or line without one is skipped.
       mayContain: new RegExp(quoted),
       // Files that are legitimately id-keyed: the registry itself, a provider
       // naming ITSELF, and the maps whose whole purpose is per-id data (secret
@@ -75,8 +72,9 @@ export const noIntegrationIdBranching = defineCheck({
         /^packages\/ee\/src\/issue-sync\//,
         "apps/erp/app/modules/settings/integration-errors.ts",
         // A provider's own directory may name itself.
-        /^packages\/ee\/src\/(xero|quickbooks|rillet|ramp|slack|jira|linear|onshape|paperless-parts|email|sage|stripe-connect|sense)\//
+        new RegExp(`^packages/ee/src/(?:${ids.join("|")})/`)
       ]
     };
+    return (file, contents) => findBanned(file, contents, bans);
   }
 });

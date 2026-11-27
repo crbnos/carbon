@@ -47,7 +47,6 @@ export const stampMatchesColumns = defineCheck({
       return inner.start >= outer.start && inner.end <= outer.end;
     }
 
-    /** Every function declared at the top level of the file, exported or not. */
     function topLevelFunctions(program: Program): Map<string, FunctionNode> {
       const out = new Map<string, FunctionNode>();
       for (const statement of program.body) {

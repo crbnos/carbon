@@ -33,10 +33,8 @@ export const noDefaultOnEffects = defineCheck({
 
     const defaultCall = /\.default\s*\(/g;
 
-    // Walk backwards from the `.` of `.default(` over the receiver expression:
-    // balanced (...)/[...]/{...} groups plus identifier chars, dots, and
-    // whitespace. Stops at anything else (an operator, `=`, the enclosing call's
-    // open paren), which bounds the receiver to the chain `.default` is called on.
+    // The chain `.default` is called on: it ends at an operator, `=` or the
+    // enclosing call's open paren.
     const receiverBefore = (text: string, dotIndex: number): string => {
       let i = dotIndex - 1;
       while (i >= 0) {

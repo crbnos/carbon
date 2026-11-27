@@ -19,15 +19,9 @@ export const noZeroConcurrency = defineCheck({
   snippet: "collapsed-match",
   banned: [
     {
-      // `[^{}]*?` cannot cross a brace, so the match is confined to the
-      // concurrency object itself — an unrelated `limit: 0` after it closes (a
-      // query limit, a pagination default) is not flagged. A bounded `[\s\S]`
-      // span would reach past the `}` and match
-      // `concurrency: {}, const q = { limit: 0 }`.
-      //
-      // The concurrency object contains no nested braces in practice (`limit`,
-      // `key`, `scope` are all scalars), so excluding braces entirely is exact
-      // rather than approximate.
+      // The concurrency object holds only scalars (`limit`, `key`, `scope`),
+      // so a match that cannot cross a brace stays inside it: a `limit: 0`
+      // after it closes (a query limit) is not flagged.
       pattern: /concurrency\s*:\s*\{[^{}]*?\blimit\s*:\s*0\b/g,
       message:
         "concurrency.limit 0 is no capacity, not unlimited — every run parks in QUEUED forever. Use >= 1, or omit the concurrency block."

@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineCheck } from "../../check";
-import { accountReferences } from "../../sources/account-references";
+import {
+  ACCOUNT_DELETE_RESTRICT,
+  accountReferences
+} from "../../sources/account-references";
 import { migrations } from "../../sources/inputs";
 
 /**
@@ -15,8 +18,8 @@ import { migrations } from "../../sources/inputs";
  *
  * Only the table `account` matches, with or without `public.`.
  * `accountingPeriod`, `accountDefault`, a quoted `"Account"` and another
- * schema's `account` do not. Migrations before 20261013005642 are history
- * (`accountReferences`, `sources/account-references.ts`).
+ * schema's `account` do not. Migrations before `ACCOUNT_DELETE_RESTRICT` are
+ * history (`sources/account-references.ts`).
  *
  * The baselined keys (`project.costAccountId`, `projectElement.costAccountId`,
  * `purchaseOrderLineVersion.accountId`, all `ON DELETE SET NULL`) were reviewed
@@ -27,11 +30,7 @@ export const accountFkRestrict = defineCheck({
   files: migrations,
   id: "account-fk-restrict",
   description: "A foreign key to account must be ON DELETE RESTRICT.",
-  provenance: {
-    deprecates: 'REFERENCES "account"("id") ON DELETE SET NULL',
-    replacedBy: 'REFERENCES "account"("id") ON DELETE RESTRICT',
-    since: "20261013005642_account-delete-restrict.sql"
-  },
+  provenance: ACCOUNT_DELETE_RESTRICT,
   rule() {
     return (file, contents) =>
       accountReferences(file, contents)

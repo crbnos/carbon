@@ -2,17 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { SourceFile } from "../../check";
-import { LIST_TABLES } from "../../sources/list-tables";
+import { openRepo } from "../../repo";
 import { listSelectCoversColumns } from "./list-select-covers-columns";
+
+const PARTS_TABLE = "apps/erp/app/modules/items/ui/Parts/PartsTable.tsx";
 
 const findUnselectedListColumns = (
   services: SourceFile[],
   tables: SourceFile[]
-) => listSelectCoversColumns.find({ sources: { services, tables } });
-
-const PARTS_TABLE = LIST_TABLES.PARTS_LIST_COLUMNS ?? "";
+) =>
+  listSelectCoversColumns.find({
+    sources: {
+      listTables: { PARTS_LIST_COLUMNS: PARTS_TABLE },
+      services,
+      tables
+    }
+  });
 
 const ID_PAGING = `{ defaultSorts: [{ column: "id", ascending: true }] }`;
 
@@ -33,29 +43,13 @@ const service = (
 
 const table = (body: string) => ({ file: PARTS_TABLE, contents: body });
 
-// Every other mapped constant, defined and with an empty table, so a case
-// only reports what it is about.
-const others = () => {
-  const rest = Object.entries(LIST_TABLES).filter(
-    ([name]) => name !== "PARTS_LIST_COLUMNS"
-  );
-  return {
-    services: [service(Object.fromEntries(rest.map(([name]) => [name, "id"])))],
-    tables: rest.map(([, file]) => ({ file, contents: "" }))
-  };
-};
-
-const snippets = (partsList: string | null, partsTable: string) => {
-  const { services, tables } = others();
-  const constants: Record<string, string> =
-    partsList === null ? {} : { PARTS_LIST_COLUMNS: partsList };
-  return findUnselectedListColumns(
-    [...services, service(constants)],
-    [...tables, table(partsTable)]
+const snippets = (partsList: string | null, partsTable: string) =>
+  findUnselectedListColumns(
+    [service(partsList === null ? {} : { PARTS_LIST_COLUMNS: partsList })],
+    [table(partsTable)]
   ).map((v) => v.snippet);
-};
 
-describe("findUnselectedListColumns", () => {
+describe("listSelectCoversColumns", () => {
   it("accepts a table whose accessorKeys are all selected", () => {
     expect(
       snippets(
@@ -78,14 +72,10 @@ describe("findUnselectedListColumns", () => {
   });
 
   it("flags a new list constant with no table mapped", () => {
-    const { services, tables } = others();
     expect(
       findUnselectedListColumns(
-        [
-          ...services,
-          service({ PARTS_LIST_COLUMNS: "id", KITS_LIST_COLUMNS: "id" })
-        ],
-        [...tables, table("")]
+        [service({ PARTS_LIST_COLUMNS: "id", KITS_LIST_COLUMNS: "id" })],
+        [table("")]
       ).map((v) => v.snippet)
     ).toEqual(["KITS_LIST_COLUMNS"]);
   });
@@ -95,11 +85,9 @@ describe("findUnselectedListColumns", () => {
   });
 
   it("flags a sort or id column of X_PAGING the select dropped", () => {
-    const { services, tables } = others();
     expect(
       findUnselectedListColumns(
         [
-          ...services,
           service(
             { PARTS_LIST_COLUMNS: "id,name" },
             {
@@ -113,7 +101,7 @@ describe("findUnselectedListColumns", () => {
             }
           )
         ],
-        [...tables, table("")]
+        [table("")]
       ).map((v) => v.snippet)
     ).toEqual([
       "PARTS_LIST_COLUMNS lacks cursor column createdAt",
@@ -122,27 +110,23 @@ describe("findUnselectedListColumns", () => {
   });
 
   it("flags a list constant with no X_PAGING beside it", () => {
-    const { services, tables } = others();
     expect(
       findUnselectedListColumns(
         [
-          ...services,
           {
             file: "apps/erp/app/modules/items/items.service.ts",
             contents: `const PARTS_LIST_COLUMNS = "id" as const;`
           }
         ],
-        [...tables, table("")]
+        [table("")]
       ).map((v) => v.snippet)
     ).toEqual(["PARTS_LIST_COLUMNS has no PARTS_PAGING"]);
   });
 
   it("checks a sort-only list for its cursor columns but not its table", () => {
-    const { services, tables } = others();
     expect(
       findUnselectedListColumns(
         [
-          ...services,
           service(
             { PARTS_LIST_COLUMNS: "id", FIXED_ASSETS_LIST_COLUMNS: "id" },
             {
@@ -150,8 +134,25 @@ describe("findUnselectedListColumns", () => {
             }
           )
         ],
-        [...tables, table("")]
+        [table("")]
       ).map((v) => v.snippet)
     ).toEqual(["FIXED_ASSETS_LIST_COLUMNS lacks cursor column fixedAssetId"]);
+  });
+
+  it("reads each module's service file and the list tables that exist", () => {
+    const root = mkdtempSync(join(tmpdir(), "lists-"));
+    const write = (path: string, contents: string) => {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      writeFileSync(join(root, path), contents);
+    };
+    write(
+      "apps/erp/app/modules/items/items.service.ts",
+      service({ PARTS_LIST_COLUMNS: "id" }).contents
+    );
+    mkdirSync(join(root, "apps/erp/app/modules/shared"));
+    write(PARTS_TABLE, `accessorKey: "id", accessorKey: "mpn"`);
+    expect(
+      listSelectCoversColumns.run(openRepo(root)).map((v) => v.snippet)
+    ).toContain("PARTS_LIST_COLUMNS lacks mpn");
   });
 });

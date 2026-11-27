@@ -72,25 +72,4 @@ describe("defineCheck with bans", () => {
     ]);
     expect(check.scan("b.ts", "x").map((v) => v.file)).toEqual(["b.ts"]);
   });
-
-  it("computes bans() on its first use, once", () => {
-    let builds = 0;
-    const check = defineCheck({
-      id: "no-x",
-      description: "",
-      files: () => [{ file: "a.ts", contents: "x" }],
-      bans() {
-        builds++;
-        return {
-          within: "file",
-          snippet: "match",
-          banned: [{ pattern: new RegExp("x", "g"), message: "no x" }]
-        };
-      }
-    });
-    expect(builds).toBe(0);
-    expect(check.scan("b.ts", "x").map((v) => v.file)).toEqual(["b.ts"]);
-    expect(check.run(openRepo("/repo")).map((v) => v.file)).toEqual(["a.ts"]);
-    expect(builds).toBe(1);
-  });
 });

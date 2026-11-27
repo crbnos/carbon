@@ -38,8 +38,6 @@ export const noDbClientInService = defineCheck({
       /\b(?:getProcessPool|getPostgresConnectionPool)\s*\(|getPostgresClient\s*\(|new Pool\s*\(|\bPostgresDriver\b|\b(?:getDatabaseClient|getJobDatabaseClient)\s*\(/g;
     const commentLine = /^\s*(?:\/\/|\/?\*)/;
     return (file, contents) => {
-      // Only `*.service.ts`. A `.server.ts` is the sanctioned home for a DB
-      // client, and route actions legitimately call `getDatabaseClient()`.
       if (!file.endsWith(".service.ts")) return [];
       const violations: Violation[] = [];
       contents.split("\n").forEach((text, i) => {

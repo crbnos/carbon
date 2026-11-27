@@ -7,8 +7,8 @@ import { join } from "node:path";
 import type { SourceFile } from "../check";
 import { readSource } from "./read-source";
 
-// Directories the numeric-precision checks cover: everywhere app code does
-// arithmetic or builds number formatters.
+// The default roots: the ERP's components, hooks, modules and routes, the MES
+// app, and the source folders of the packages listed.
 const TYPESCRIPT_ROOTS = [
   "apps/erp/app/components",
   "apps/erp/app/hooks",
@@ -30,7 +30,6 @@ const TYPESCRIPT_ROOTS = [
   "packages/react/src",
   "packages/query/src",
   "packages/printing/src"
-  // (workflows source now lives under packages/ee/src, already scanned above)
 ];
 
 const EXCLUDED_DIRS = new Set(["node_modules"]);
@@ -64,29 +63,6 @@ function walk(dir: string, out: SourceFile[], repoRootDir: string) {
     }
   }
 }
-
-// Every app and every package that handles a request: no-raw-forwarded-headers
-// covers auth and the smaller apps, which the numeric checks do not.
-export const REQUEST_HANDLING_ROOTS = [
-  "apps/erp/app",
-  "apps/mes/app",
-  "apps/academy/app",
-  "apps/starter/app",
-  "packages/auth/src",
-  "packages/database/supabase/functions",
-  "packages/ee/src",
-  "packages/jobs/src",
-  "packages/lib/src",
-  "packages/utils/src"
-];
-
-// The route trees of every React Router app: index-redirect-before-loaders.
-export const ROUTE_ROOTS = [
-  "apps/erp/app/routes",
-  "apps/mes/app/routes",
-  "apps/academy/app/routes",
-  "apps/starter/app/routes"
-];
 
 export function loadTypescriptFiles(
   root: string,

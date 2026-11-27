@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineCheck } from "../../check";
-import { pluginFindings } from "../../sources/inputs";
+import { loadPluginFindings } from "../../sources/oxlint";
 
 /**
  * The rule itself is a rule of the `carbon` oxlint plugin,
@@ -34,9 +34,13 @@ export const routeActionShape = defineCheck({
       "one `defineServiceFn` per operation, called through `authorize(request)`",
     since: "2026-10-15"
   },
-  reads: { findings: pluginFindings },
-  find: ({ findings }) =>
-    findings
-      .filter((finding) => finding.checkId === "route-action-shape")
-      .map((finding) => finding.violation)
+  reads: {
+    findings: (root) => loadPluginFindings(root, ["apps/erp/app/routes"])
+  },
+  rule() {
+    return ({ findings }) =>
+      findings
+        .filter((finding) => finding.checkId === "route-action-shape")
+        .map((finding) => finding.violation);
+  }
 });

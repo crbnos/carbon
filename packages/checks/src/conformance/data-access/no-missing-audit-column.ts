@@ -47,9 +47,8 @@ import { lineOf } from "../../sources/text";
 //    (`update({ name: createdBy })`), flagged the keys of nested value objects,
 //    and missed a quoted key (`{ "createdBy": userId }`) entirely.
 //
-// The check reads each table's columns, which `loadDbTableColumns` reads
-// from the generated `Row:` blocks. The one site it found was fixed when the
-// check landed, so any finding is new.
+// The one site it found was fixed when the check landed, so any finding is
+// new.
 export const noMissingAuditColumn = defineCheck({
   id: "no-missing-audit-column",
   description:
@@ -163,7 +162,6 @@ export const noMissingAuditColumn = defineCheck({
 
     return ({ files, columns }) =>
       eachFile(files, (file, contents) => {
-        // Parse only a file that could hold a finding.
         if (!auditTarget.test(contents) || !auditField.test(contents)) {
           return [];
         }

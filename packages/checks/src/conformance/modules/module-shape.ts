@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineCheck, type ModuleDir, type Violation } from "../../check";
-import { erpModules } from "../../sources/inputs";
+import { loadModules, modulesDir } from "../../sources/modules";
 
 // An ERP module has one service, models and server file and no barrel:
 // everything is imported from the file that defines it. See
@@ -18,11 +18,10 @@ export const moduleShape = defineCheck({
     replacedBy:
       "one <module>.service.ts + one <module>.models.ts; <module>.server.ts for the service functions; imports from the defining file"
   },
-  reads: { modules: erpModules },
+  reads: { modules: (root) => loadModules(modulesDir(root)) },
   rule() {
     /** Literal entries every module must contain. Edit this to grow the rule. */
     const requiredEntries = ["types.ts", "ui"];
-    /** A module has no barrel: everything is imported from the file that defines it. */
     const barrels = ["index.ts", "index.server.ts"];
     const isTest = (entry: string) => /\.(test|spec)\.tsx?$/.test(entry);
 

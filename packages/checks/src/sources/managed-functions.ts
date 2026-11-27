@@ -24,8 +24,7 @@ const EVENT_SYSTEM_SINCE = "20261002114954";
  */
 export const ATTACHMENTS_SINCE = "20261004194527";
 
-/** The directories of managed function files, and the migration each set is checked from. */
-export const MANAGED_FUNCTION_SETS = [
+const MANAGED_FUNCTION_SETS = [
   { dir: REGISTRY_HELPERS_DIR, since: MANIFEST_SINCE },
   {
     dir: "packages/database/src/event-system/functions",
@@ -38,7 +37,7 @@ export const MANAGED_FUNCTION_SETS = [
 ];
 
 /** `file` is `<name>.sql` for public, `<schema>.<name>.sql` otherwise. */
-export type ManagedFunction = {
+type ManagedFunction = {
   schema: string;
   name: string;
   /** Repo-relative path of the file that defines it. */
@@ -66,7 +65,6 @@ export function loadManagedFunctions(root: string): ManagedFunction[] {
   );
 }
 
-/** The managed function files, read with their repo paths. */
 export function loadManagedFunctionFiles(root: string): SourceFile[] {
   return MANAGED_FUNCTION_SETS.flatMap(({ dir }) =>
     loadSqlFiles(join(root, dir)).map(({ file, contents }) => ({

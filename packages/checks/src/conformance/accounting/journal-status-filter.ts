@@ -38,11 +38,16 @@ export const journalStatusFilter = defineCheck({
   // check runs on the worker that has already parsed their SQL.
   reads: { migrations, typescript },
   rule() {
-    // Migrations older than the one that changed the GL readers hold the old
-    // `status <> 'Draft'` readers, which later migrations replace. They are
-    // history, so the SQL side starts there. Migration filenames start with a
-    // 14-digit timestamp, so string order is chronological.
-    const sinceMigration = "20261009005144";
+    // Migrations older than `since`, the one that changed the GL readers, hold
+    // the old `status <> 'Draft'` readers, which later migrations replace. They
+    // are history, so the SQL side starts there.
+    const sinceMigration = /\d{14}/.exec(
+      journalStatusFilter.provenance?.since ?? ""
+    )?.[0];
+    if (sinceMigration === undefined)
+      throw new Error(
+        "journal-status-filter: provenance.since must contain the 14-digit migration timestamp"
+      );
 
     // `status`, quoted or not, qualified or not. The qualifier is captured as
     // `q`: a qualified status counts only when `q` is the journal table or one
@@ -147,7 +152,6 @@ export const journalStatusFilter = defineCheck({
       return names;
     };
 
-    // The [start, end) offsets of the text between consecutive semicolons.
     const statements = (text: string): Array<[number, number]> => {
       const out: Array<[number, number]> = [];
       let start = 0;
@@ -161,7 +165,6 @@ export const journalStatusFilter = defineCheck({
       return out;
     };
 
-    // A TypeScript file, one semicolon-separated statement at a time.
     const scanStatements = (file: string, contents: string): Violation[] => {
       const text = blankComments(contents);
       const notDraft = [...tsNotDraft, ...sqlNotDraft];

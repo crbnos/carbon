@@ -186,5 +186,3 @@ $$;`
     ).toEqual([]);
   });
 });
-
-// Any migration after the cutoff.

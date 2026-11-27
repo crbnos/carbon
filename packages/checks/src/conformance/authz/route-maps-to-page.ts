@@ -2,21 +2,50 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { PAGES } from "@carbon/database/access";
-import { defineCheck } from "../../check";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import {
-  findRoutePageGaps,
-  loadErpRouteFiles
-} from "../../sources/route-pages";
+  PAGES,
+  pagesOfUrl,
+  routeUrl,
+  urlCoverage,
+  urlSegments
+} from "@carbon/database/access";
+import { defineCheck, type Violation } from "../../check";
 
 // Every ERP route under `x+` belongs to one page of the access registry, so a
 // gate, the sidebar and `pageOfUrl` agree on whose screen it is, or is listed
-// in UNPAGED_ROUTES below with the reason (`findRoutePageGaps`).
+// in UNPAGED_ROUTES below with the reason.
+//
+// It fails:
+// - a route no page covers and UNPAGED_ROUTES does not list, one that two
+//   pages cover equally (where `pageOfUrl` would pick by order), and one that
+//   is both on a page and listed;
+// - an UNPAGED_ROUTES entry that matches no route;
+// - a page path that matches no route.
 export const routeMapsToPage = defineCheck({
   id: "route-maps-to-page",
   description:
     "Every ERP route under `x+` belongs to one page of the access registry, so a gate, the sidebar and `pageOfUrl` agree on whose screen it is, or is listed in `UNPAGED_ROUTES` with the reason.",
-  reads: { routes: loadErpRouteFiles },
+  reads: {
+    // The route files relative to `x+` (`inventory+/receipts.tsx`) that
+    // remix-flat-routes builds routes from: `apps/erp/app/routes.ts` ignores
+    // dot folders, `__` names and `.server`/`.client`/`.test` files.
+    routes: (root: string) =>
+      readdirSync(join(root, "apps/erp/app/routes/x+"), {
+        encoding: "utf8",
+        recursive: true
+      })
+        .map((file) => file.split("\\").join("/"))
+        .filter(
+          (file) =>
+            /\.(tsx?|jsx?)$/.test(file) &&
+            !file.split("/").some((part) => part.startsWith(".")) &&
+            !/(^|\/)__|\.(server|client|test)\./.test(file)
+        )
+        .sort(),
+    pages: (): readonly { id: string; paths: readonly string[] }[] => PAGES
+  },
   rule() {
     // The finding for a stale UNPAGED_ROUTES entry points here.
     const thisFile =
@@ -98,11 +127,58 @@ export const routeMapsToPage = defineCheck({
       "/x/change-order/": "Redirects to a new change notice."
     };
 
-    return ({ routes }) =>
-      findRoutePageGaps(
-        routes,
-        { pages: PAGES },
-        { file: thisFile, routes: UNPAGED_ROUTES }
-      );
+    /** Whether an UNPAGED_ROUTES key lists the URL (plain text: no `$param`). */
+    const unpaged = (key: string, url: string) => {
+      if (!key.endsWith("/")) return url === key;
+      const path = key.slice(0, -1);
+      return url === path || url.startsWith(key);
+    };
+
+    return ({ routes, pages }) => {
+      const violations: Violation[] = [];
+      const push = (file: string, snippet: string, message: string) =>
+        violations.push({ file, line: 0, snippet, message });
+      const urls = routes.map((route) => ({ route, url: routeUrl(route) }));
+      const keys = Object.keys(UNPAGED_ROUTES);
+
+      for (const { route, url } of urls) {
+        const file = `apps/erp/app/routes/x+/${route}`;
+        const on = pagesOfUrl(url, pages);
+        const listed = keys.some((key) => unpaged(key, url));
+        if (on.length > 1)
+          push(file, url, `${url} is on more than one page: ${on.join(", ")}`);
+        else if (on.length === 1 && listed)
+          push(
+            file,
+            url,
+            `${url} is on ${on[0]} and in UNPAGED_ROUTES; remove one`
+          );
+        else if (!on.length && !listed)
+          push(
+            file,
+            url,
+            `${url} is on no page: add it to a page's \`paths\`, or to UNPAGED_ROUTES with the reason`
+          );
+      }
+
+      for (const key of keys)
+        if (!urls.some(({ url }) => unpaged(key, url)))
+          push(
+            thisFile,
+            key,
+            `UNPAGED_ROUTES lists ${key}, which no route has`
+          );
+
+      for (const page of pages)
+        for (const path of page.paths)
+          if (!urls.some(({ url }) => urlCoverage(path, urlSegments(url)) > 0))
+            push(
+              `packages/database/src/access/pages/${page.id.split(".")[0]}.ts`,
+              path,
+              `${page.id}: no route has the path ${path}`
+            );
+
+      return violations;
+    };
   }
 });

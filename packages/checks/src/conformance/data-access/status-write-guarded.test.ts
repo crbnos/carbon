@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { loadDbTableColumnTypes } from "../../sources/db-columns";
+import { repoRoot } from "../../sources/migrations";
 import { statusWriteGuarded } from "./status-write-guarded";
 
 const STATUS_SERVICE = "apps/erp/app/modules/accounting/accounting.service.ts";
@@ -525,4 +527,45 @@ export async function voidReceipt(trx, id) {
 }`;
     expect(statusScan(ts)).toEqual([]);
   });
+});
+
+describe("statusWriteGuarded over the generated types", () => {
+  const columnTypes = loadDbTableColumnTypes(repoRoot());
+  const unguarded = (table: string, column: string) =>
+    statusWriteGuarded
+      .find({
+        files: [
+          {
+            file: STATUS_SERVICE,
+            contents: `export async function move(trx, id) {
+  await trx.updateTable("${table}").set({ ${column}: "Next" }).where("id", "=", id).execute();
+}`
+          }
+        ],
+        columnTypes
+      })
+      .map((v) => v.snippet);
+
+  it.each([
+    ["accountingPeriod", "closeStatus"],
+    ["quote", "status"],
+    ["receipt", "status"],
+    ["salesInvoice", "status"]
+  ])(
+    "reads %s.%s, a column a shipped bug wrote, as a lifecycle",
+    (table, column) => {
+      expect(unguarded(table, column)).toEqual([`move: ${table}.${column}`]);
+    }
+  );
+
+  it.each([
+    ["employeeJob", "flsaStatus"],
+    ["gauge", "gaugeStatus"],
+    ["salesOrderStatusHistory", "status"]
+  ])(
+    "leaves out %s.%s: a classification, a switch or a history log",
+    (table, column) => {
+      expect(unguarded(table, column)).toEqual([]);
+    }
+  );
 });

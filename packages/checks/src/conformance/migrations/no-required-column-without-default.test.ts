@@ -38,9 +38,6 @@ describe("no-required-column-without-default", () => {
   });
 
   it("does not let a LATER column's DEFAULT excuse an earlier one", () => {
-    // The bounded span is what makes this work: without it, the DEFAULT on
-    // "b" would satisfy the lookahead for "a" and the real violation would
-    // pass silently.
     const violations = scanRequired(
       `ALTER TABLE "item" ADD COLUMN "a" TEXT NOT NULL, ADD COLUMN "b" TEXT NOT NULL DEFAULT '';`
     );

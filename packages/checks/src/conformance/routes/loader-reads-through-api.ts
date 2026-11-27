@@ -3,12 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Program } from "oxc-parser";
-import { defineCheck, eachFile, type Violation } from "../../check";
-import { routeTypescript } from "../../sources/inputs";
 import {
-  loadModuleServerFiles,
-  wrappedBuildingBlocks
-} from "../../sources/modules";
+  defineCheck,
+  eachFile,
+  type SourceFile,
+  type Violation
+} from "../../check";
+import { routeTypescript } from "../../sources/inputs";
+import { loadModuleServerFiles } from "../../sources/modules";
 import { type Node, parseTypescript, walk } from "../../sources/syntax";
 import { lineOf } from "../../sources/text";
 
@@ -37,8 +39,23 @@ export const loaderReadsThroughApi = defineCheck({
   rule() {
     const erpRoutes = /^apps\/erp\/app\/routes\//;
     const serviceImport = /modules\/([a-z-]+)\/\1(?:\.ee)?\.service$/;
+    const serverFile =
+      /^apps\/erp\/app\/modules\/([a-z-]+)\/\1(?:\.ee)?\.server\.ts$/;
 
-    /** The `loader` the route declares at its top level, exported or not. */
+    // A building block no service function calls is a helper, and a loader
+    // may call it directly.
+    const wrappedBuildingBlocks = (serverFiles: SourceFile[]): Set<string> => {
+      const wrapped = new Set<string>();
+      for (const { file, contents } of serverFiles) {
+        const module = serverFile.exec(file)?.[1];
+        if (!module) continue;
+        for (const m of contents.matchAll(/\bservice\.(\w+)\(/g)) {
+          wrapped.add(`${module}.${m[1]}`);
+        }
+      }
+      return wrapped;
+    };
+
     const loaderBody = (program: Program): Node | null | undefined => {
       for (const topLevel of program.body) {
         const statement =

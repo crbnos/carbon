@@ -26,28 +26,32 @@ fails on any violation the committed baseline does not list.
   - **Data.** The rule bans patterns in each file: `files`, `within`,
     `snippet`, `banned`, and `except` / `mayContain` when needed (`Bans` in
     `src/sources/matches.ts`). Example: `server/no-zero-concurrency.ts`.
-  - **`bans()`.** The same data, computed on first use. Example:
-    `server/no-integration-id-branching.ts`.
   - **`rule()` with `files`.** Logic over one file at a time. `rule()` declares
     what the rule needs and returns the `scan`; it runs the first time the
     check runs, so importing a check builds nothing. Tests call
     `check.scan(file, contents)`. Example: `migrations/no-numeric-precision.ts`.
   - **`rule()` with `reads`.** Logic over several inputs:
     `reads: { name: loader, … }`, and `rule()` returns `find({ name, … })`.
-    Tests call `check.find({ … })` with their own values. Examples:
-    `drift/provider-role-backfilled.ts`, and `accounting/account-fk-classified.ts`
-    for a per-file scan that needs data from the repo.
-- **Put shared logic in `src/sources/`.** A function moves to a named file
-  there, with its own test, when two checks use it, when it is generic (text,
-  SQL, syntax tree), or when a test must call it with a stand-in (a fake
-  registry, a pinned hash). The check that uses it is then a short `find` that
-  calls it: `drift/offline-page-cache-bumped.ts`. Look in `src/sources/` before
-  you write a helper. A file there does not import a check.
-- **A list a developer edits has one home.** A list that a check's message
-  tells you to edit is inside that check's `rule()` (`UNPAGED_ROUTES` in
-  `authz/route-maps-to-page.ts`), or in `src/sources/` when a loader needs it
-  too (`LIST_TABLES` in `sources/list-tables.ts`, `OFFLINE_PAGE` in
-  `sources/offline-page.ts`). The message names the file.
+    Tests call `check.find({ … })` with their own values. Example:
+    `drift/provider-role-backfilled.ts`.
+- **What one check uses is in that check.** Its logic and its constants are
+  inside `rule()`. A loader only it uses is an inline arrow in `files` or
+  `reads`. `src/sources/` holds only what two or more checks share, what a
+  script or another package uses, and the generic reading primitives (text,
+  comments, banned patterns, SQL, syntax tree, JSX tags, file loading). Look
+  there before you write a helper. A file there does not import a check, and
+  neither does its test.
+- **Repo data a rule needs is an input.** A repo file, a JSON list, a pinned
+  value, another package's data that a test must replace: each is a loader in
+  `reads`, never a read inside `rule()`. Then a test passes its own value
+  through `check.find({ … })` and no function is exported for a test.
+  Example: `pinned` and `apps` in `drift/offline-page-cache-bumped.ts`.
+  Calling a pure function of another package is an import, not an input.
+- **A list a developer edits is in its check.** It is inside `rule()`, or in
+  the loader when the loader needs it (`UNPAGED_ROUTES` in
+  `authz/route-maps-to-page.ts`, `LIST_TABLES` in
+  `ui/list-select-covers-columns.ts`). A message that says to edit a list
+  names the file; `src/checks.test.ts` fails a named path that does not exist.
 - **Keep a check self-contained.** The gate runs the checks on worker threads,
   each taking the next check when it finishes one, so two checks may run in
   different threads in any order. A check shares nothing with another check but
@@ -56,10 +60,10 @@ fails on any violation the committed baseline does not list.
   the migrations declares them first and shares the worker that parsed them.
 - **Name every input as a loader.** A loader is a function `(root) => T`. The
   repo runs each loader once and shares the result, and the gate groups checks
-  by it, so a loader is one module-level function in `src/sources/`, never
-  inside a check: `src/sources/inputs.ts` for a plain set of files
-  (`migrations`, `typescript`, `routeTypescript`, …), or the `sources/` file
-  of the thing it reads.
+  by the first one each declares. So an input several checks read is one
+  named function they all pass: `src/sources/inputs.ts` (`migrations`,
+  `typescript`, `routeTypescript`, …) or the `sources/` file of the thing
+  read. An input one check reads is an inline arrow in that check.
 - **A rule about what SQL does reads parsed SQL, not a regex.**
   `src/sources/sql.ts` gives the statements Postgres's own parser returns
   (`libpg-query`, the version `@carbon/database` uses). Its header explains the
@@ -148,10 +152,11 @@ The gate runs in four places with the same command
 |---|---|
 | `src/check.ts` | The types (`Check`, `Loader`, `Repo`, `Violation`, `Provenance`) and `defineCheck`, `eachFile` |
 | `src/checks.ts` | `CHECKS`: every check, by name, subject by subject |
+| `src/checks.test.ts` | A package path a check names in a message exists |
 | `src/run.ts`, `src/run.worker.ts` | `collectFindings` (runs `CHECKS` on up to 4 worker threads, each with its own `repo`), `runChecks` (one `repo`, in process) and `newViolations` (minus the baseline) |
 | `src/repo.ts` | `openRepo`: reads each input once |
 | `src/conformance/<subject>/` | One file per check, `<check-id>.ts`, with its tests in `<check-id>.test.ts` |
-| `src/sources/` | The loaders, and the logic checks share: `matches.ts` (banned patterns), `sql.ts` (parsed SQL), `syntax.ts` (parsed TypeScript), `oxlint.ts` (plugin findings), and a file per thing read (`rls-policies.ts`, `route-pages.ts`, `row-writes.ts`, …) |
+| `src/sources/` | What checks share: the loaders in `inputs.ts`, `matches.ts` (banned patterns), `sql.ts` (parsed SQL), `syntax.ts` (parsed TypeScript), `oxlint.ts` (plugin findings), `row-writes.ts` (Kysely row writes), `comments.ts`, `text.ts`, … |
 | `oxlint-plugins/carbon.mjs` | The oxlint plugin rules |
 | `src/baseline.ts`, `src/conformance/baseline.json` | The grandfathered violations |
 | `src/provenance.ts` | The rule that a check replays its past fix |

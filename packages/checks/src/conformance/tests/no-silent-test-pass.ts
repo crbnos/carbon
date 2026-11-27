@@ -2,21 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { BlockStatement, IfStatement, Program } from "oxc-parser";
-import { defineCheck, eachFile, type Violation } from "../../check";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+import type {
+  BlockStatement,
+  CallExpression,
+  IfStatement,
+  Program
+} from "oxc-parser";
+import {
+  defineCheck,
+  eachFile,
+  type SourceFile,
+  type Violation
+} from "../../check";
+import { read } from "../../sources/read-source";
 import {
   type Node,
   isNamedMember,
   parseTypescript,
   walk
 } from "../../sources/syntax";
-import {
-  caseCalls,
-  loadSharedTestFixtures,
-  namedFunctions,
-  sharedTestWrappers,
-  withWrappers
-} from "../../sources/test-cases";
 import { loadTestFiles } from "../../sources/test-files";
 import { lineOf } from "../../sources/text";
 
@@ -40,8 +46,8 @@ import { lineOf } from "../../sources/text";
  * - `it(` or `test(` with any modifier chain (`.only`, `.concurrent`,
  *   `.each(…)(`, `.skipIf(…)(`).
  * - A `(name, fn)` wrapper that `apps/erp/test/database/fixtures/` exports
- *   (`databaseTest`, `postgrestTest`). `sharedTestWrappers` finds them, so a new
- *   wrapper needs no list entry.
+ *   (`databaseTest`, `postgrestTest`), found the same way, so a new wrapper
+ *   needs no list entry.
  * - A `(name, fn)` wrapper declared in the same file whose body declares a
  *   case. The search repeats until nothing new is found, so a wrapper of a
  *   wrapper counts.
@@ -49,7 +55,16 @@ import { lineOf } from "../../sources/text";
  * Hooks, `describe` and functions nested inside the callback are not read.
  */
 export const noSilentTestPass = defineCheck({
-  reads: { files: loadTestFiles, fixtures: loadSharedTestFixtures },
+  reads: {
+    files: loadTestFiles,
+    fixtures: (root): SourceFile[] => {
+      const dir = "apps/erp/test/database/fixtures";
+      return readdirSync(join(root, dir))
+        .filter((name) => /\.tsx?$/.test(name))
+        .sort()
+        .map((name) => read(root, `${dir}/${name}`));
+    }
+  },
   id: "no-silent-test-pass",
   description:
     "A test case does not return early when what it needs is missing; it skips",
@@ -64,13 +79,125 @@ export const noSilentTestPass = defineCheck({
     const message =
       "A test that returns early passes without running: use `it.skipIf(!x)(…)` / `databaseTest` so it reports skipped, or assert the value exists (.claude/rules/testing.md → Database tests)";
 
+    // Modifiers chained onto `it`/`test` that still declare a case. The ones in
+    // argModifiers take their own arguments before the case's
+    // (`it.each(rows)(…)`, `it.each\`table\`(…)`, `it.skipIf(c)(…)`).
+    const modifiers = new Set([
+      "only",
+      "skip",
+      "todo",
+      "fails",
+      "concurrent",
+      "sequential"
+    ]);
+    const argModifiers = new Set(["each", "for", "skipIf", "runIf"]);
+
+    // `it.extend(…)`, `test.describe` and `regex.test` declare no case.
+    const declaresCase = (
+      callee: Node,
+      names: ReadonlySet<string>
+    ): boolean => {
+      if (callee.type === "Identifier") return names.has(callee.name);
+      if (isNamedMember(callee)) {
+        return (
+          modifiers.has(callee.property.name) &&
+          declaresCase(callee.object, names)
+        );
+      }
+      let configured: Node | undefined;
+      if (callee.type === "CallExpression") configured = callee.callee;
+      if (callee.type === "TaggedTemplateExpression") configured = callee.tag;
+      return (
+        configured !== undefined &&
+        isNamedMember(configured) &&
+        argModifiers.has(configured.property.name) &&
+        declaresCase(configured.object, names)
+      );
+    };
+
+    const caseCalls = (
+      node: Node,
+      names: ReadonlySet<string>
+    ): CallExpression[] => {
+      const out: CallExpression[] = [];
+      walk(node, (child) => {
+        if (
+          child.type === "CallExpression" &&
+          declaresCase(child.callee, names)
+        ) {
+          out.push(child);
+        }
+      });
+      return out;
+    };
+
+    type NamedFunction = { name: string; node: Node; exported: boolean };
+
+    const namedFunctions = (program: Program): NamedFunction[] => {
+      const out: NamedFunction[] = [];
+      walk(program, (node, ancestors) => {
+        const parent = ancestors.at(-1);
+        const exported =
+          parent?.type === "ExportNamedDeclaration" ||
+          parent?.type === "ExportDefaultDeclaration";
+        if (node.type === "FunctionDeclaration" && node.id) {
+          out.push({ name: node.id.name, node, exported });
+        }
+        if (node.type !== "VariableDeclaration") return;
+        for (const { id, init } of node.declarations) {
+          if (
+            id.type === "Identifier" &&
+            (init?.type === "ArrowFunctionExpression" ||
+              init?.type === "FunctionExpression")
+          ) {
+            out.push({ name: id.name, node: init, exported });
+          }
+        }
+      });
+      return out;
+    };
+
+    const withWrappers = (
+      names: Iterable<string>,
+      functions: NamedFunction[]
+    ): Set<string> => {
+      const out = new Set(names);
+      for (let grew = true; grew;) {
+        grew = false;
+        for (const { name, node } of functions) {
+          if (!out.has(name) && caseCalls(node, out).length > 0) {
+            out.add(name);
+            grew = true;
+          }
+        }
+      }
+      return out;
+    };
+
+    const sharedTestWrappers = (fixtures: SourceFile[]): string[] => {
+      const files = fixtures.map(({ file, contents }) =>
+        namedFunctions(parseTypescript(file, contents).program)
+      );
+      const found = new Set<string>();
+      for (let grew = true; grew;) {
+        grew = false;
+        for (const functions of files) {
+          const wrappers = withWrappers(["it", "test", ...found], functions);
+          for (const { name, exported } of functions) {
+            if (exported && wrappers.has(name) && !found.has(name)) {
+              found.add(name);
+              grew = true;
+            }
+          }
+        }
+      }
+      return [...found];
+    };
+
     const isNullish = (e: Node) =>
       (e.type === "Literal" && e.value === null && e.raw === "null") ||
       (e.type === "Identifier" && e.name === "undefined");
 
-    // Whether `condition` tests that the thing a case needs is missing: `!x`,
-    // `x == null`, `x === undefined`, `typeof x === "undefined"`,
-    // `x.length === 0`, alone or in an `||`/`&&` chain.
     const testsMissing = (condition: Node): boolean => {
       if (condition.type === "UnaryExpression") {
         return condition.operator === "!";
@@ -108,7 +235,6 @@ export const noSilentTestPass = defineCheck({
       }
     };
 
-    // `return;` or `{ return; }`.
     const returnsNothing = (statement: Node): boolean => {
       const only =
         statement.type === "BlockStatement" && statement.body.length === 1
@@ -161,9 +287,8 @@ export const noSilentTestPass = defineCheck({
       );
     };
 
-    // The silent guards at the top level of a function's body, or nested only
-    // in `try` / `catch` / `finally` blocks (a database test that releases its
-    // connection). An `else if` is at the level of its `if`.
+    // A guard may sit in a `try` / `catch` / `finally` block: a database test
+    // that releases its connection.
     const guardsIn = (
       body: BlockStatement,
       contents: string
@@ -198,7 +323,6 @@ export const noSilentTestPass = defineCheck({
       return out;
     };
 
-    // The silent guards of each function expression in the file that has one.
     const silentGuards = (
       program: Program,
       contents: string

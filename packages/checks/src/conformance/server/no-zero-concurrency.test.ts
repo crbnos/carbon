@@ -22,7 +22,7 @@ describe("noZeroConcurrency", () => {
   },
 );`);
     expect(v).toHaveLength(1);
-    expect(v[0]!.line).toBe(4);
+    expect(v[0]?.line).toBe(4);
   });
 
   it("accepts a real limit", () => {

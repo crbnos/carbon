@@ -54,11 +54,8 @@ export const noUnguardedSubmit = defineCheck({
     const inFlightSignal =
       /\bisLoading\b|\bisSubmitting\b|\bisPending\b|\bisSaving\b|\buseIsSubmitting\b|\b\w*(?:fetcher|navigation|transition)\w*\.(?:state|formAction)\b/i;
 
-    // Props that actually disable the button. All three are checked the same way —
-    // the bound expression must name an in-flight signal. Presence alone is not
-    // enough: `isLoading={false}` spins nothing and disables nothing, and
-    // `isDisabled={loading}` bound to a data-fetch flag is the exact bug this
-    // check exists to catch.
+    // Props that actually disable the button. Presence alone is not enough:
+    // `isLoading={false}` spins nothing and disables nothing.
     const disablingProps = ["disabled", "isDisabled", "isLoading"];
 
     // A bare `isLoading` with no expression is `true` — permanently disabled, so

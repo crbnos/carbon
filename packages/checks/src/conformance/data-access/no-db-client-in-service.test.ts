@@ -18,9 +18,9 @@ describe("noDbClientInService", () => {
 
   it("flags getPostgresClient() in a service file", () => {
     const ts = "return getPostgresClient(pool, PostgresDriver);";
-    // getPostgresClient( and PostgresDriver both match
-    const v = noDbClientInService.scan(DB_CLIENT_SERVICE, ts);
-    expect(v).toHaveLength(2);
+    expect(
+      noDbClientInService.scan(DB_CLIENT_SERVICE, ts).map((v) => v.snippet)
+    ).toEqual(["getPostgresClient(", "PostgresDriver"]);
   });
 
   it("flags a raw new Pool()", () => {

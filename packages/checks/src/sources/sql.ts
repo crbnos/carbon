@@ -57,7 +57,7 @@ export type SqlFragment = {
 };
 
 /** A parse tree node (`{ SelectStmt: {…} }`) and where it sits. */
-export type SqlNode = {
+type SqlNode = {
   node: Node;
   /** The node that contains it; undefined for a statement. */
   parent: SqlNode | undefined;
@@ -470,7 +470,7 @@ function bodiesOf(fragment: SqlFragment): SqlFragment[] {
   return out;
 }
 
-// Every SQL check reads the same files, and the cross-file ones read every
+// Every SQL check reads the same files, and the ones that read several files read every
 // migration again, so each file is parsed once.
 const parsed = new Map<string, SqlFragment[]>();
 

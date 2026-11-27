@@ -7,18 +7,17 @@ import { accountFkClassified } from "./account-fk-classified";
 
 const FILE = "20261201000000_x.sql";
 
-describe("accountFkClassified", () => {
-  const classified = (sql: string) =>
-    accountFkClassified
-      .find({
-        files: [{ file: FILE, contents: sql }],
-        policy: {
-          classified: new Set(["listed.accountId"]),
-          unclassified: ["accountDefault", "account.parentId"]
-        }
-      })
-      .map((v) => v.message.split(" ")[0]);
+const POLICY = {
+  references: [{ table: "listed", column: "accountId" }],
+  unclassified: ["accountDefault", "account.parentId"]
+};
 
+const unlisted = (sql: string, policy = POLICY) =>
+  accountFkClassified
+    .find({ files: [{ file: FILE, contents: sql }], policy })
+    .map((v) => v.message.split(" ")[0]);
+
+describe("accountFkClassified", () => {
   it("names the column of an inline, an added and a table-level foreign key", () => {
     const sql = [
       'CREATE TABLE "pool" (',
@@ -35,7 +34,7 @@ describe("accountFkClassified", () => {
       "  END IF;",
       "END $x$;"
     ].join("\n");
-    expect(classified(sql)).toEqual([
+    expect(unlisted(sql)).toEqual([
       "pool.appliedAccountId",
       "line.a",
       "line.b",
@@ -49,7 +48,7 @@ describe("accountFkClassified", () => {
       'ALTER TABLE "accountDefault" ADD COLUMN "x" TEXT REFERENCES "account"("id") ON DELETE RESTRICT;',
       'ALTER TABLE "account" ADD COLUMN "parentId" TEXT REFERENCES "account"("id") ON DELETE RESTRICT;'
     ].join("\n");
-    expect(classified(sql)).toEqual([]);
+    expect(unlisted(sql)).toEqual([]);
   });
 
   it("does not stretch an unclassified column to its table, or a table to a longer name", () => {
@@ -57,7 +56,7 @@ describe("accountFkClassified", () => {
       'ALTER TABLE "account" ADD COLUMN "otherId" TEXT REFERENCES "account"("id") ON DELETE RESTRICT;',
       'ALTER TABLE "accountDefaultHistory" ADD COLUMN "x" TEXT REFERENCES "account"("id") ON DELETE RESTRICT;'
     ].join("\n");
-    expect(classified(sql)).toEqual([
+    expect(unlisted(sql)).toEqual([
       "account.otherId",
       "accountDefaultHistory.x"
     ]);

@@ -2,23 +2,36 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { REGISTRY_HELPERS_DIR } from "@carbon/database/authz-registry-sql";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import {
+  REGISTRY_HELPERS_DIR,
+  renderRegistryHelpers
+} from "@carbon/database/authz-registry-sql";
 import { defineCheck, type Violation } from "../../check";
-import { loadRegistryHelpers } from "../../sources/authz-registry";
 
 // The managed helpers whose bodies are the registry (every file
 // `renderRegistryHelpers()` renders) are written from `access/pages` by
 // `authz sync`. A page edit without a sync leaves the database answering from
 // the old registry.
-//
-// `rendered` is what each file must hold (`renderRegistryHelpers()` in
-// `@carbon/database/authz-registry-sql`); `files` is what the repo holds, a
-// missing file passed as `undefined` contents. Each file that differs fails.
 export const registryHelpersFresh = defineCheck({
   id: "registry-helpers-fresh",
   description:
     "The managed helpers whose bodies are the registry (every file `renderRegistryHelpers()` renders) are written from `access/pages` by `authz sync`.",
-  reads: { helpers: loadRegistryHelpers },
+  reads: {
+    helpers: (root: string) => {
+      const rendered = renderRegistryHelpers();
+      const files = rendered.map(({ name }) => {
+        const file = `${REGISTRY_HELPERS_DIR}/${name}`;
+        const path = join(root, file);
+        return {
+          file,
+          contents: existsSync(path) ? readFileSync(path, "utf-8") : undefined
+        };
+      });
+      return { rendered, files };
+    }
+  },
   rule() {
     const fix = "pnpm --filter @carbon/database authz sync";
     return ({ helpers }) => {

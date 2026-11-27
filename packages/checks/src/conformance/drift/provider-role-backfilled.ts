@@ -2,10 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import type { Node } from "libpg-query";
 import { defineCheck, type Violation } from "../../check";
-import { loadIntegrationConfigs } from "../../sources/cross-file";
 import { migrations } from "../../sources/inputs";
+import { readIfPresent } from "../../sources/read-source";
 import { nameParts, nodesIn, relationName, sqlNodes } from "../../sources/sql";
 import { lineOf } from "../../sources/text";
 
@@ -25,7 +27,20 @@ export const providerRoleBackfilled = defineCheck({
     "An integration's providerRole in its config matches the role the migrations set on its row.",
   // Migrations first: the runner groups a check by its first input, so this
   // check runs on the worker that has already parsed their SQL.
-  reads: { migrations, configs: loadIntegrationConfigs },
+  reads: {
+    migrations,
+    configs: (root) => {
+      const dir = "packages/ee/src";
+      return readdirSync(join(root, dir), { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .flatMap(({ name }) =>
+          readIfPresent(root, [
+            `${dir}/${name}/config.tsx`,
+            `${dir}/${name}/config.ts`
+          ])
+        );
+    }
+  },
   rule() {
     function stringOf(node: Node | undefined): string | undefined {
       return node && "A_Const" in node ? node.A_Const.sval?.sval : undefined;

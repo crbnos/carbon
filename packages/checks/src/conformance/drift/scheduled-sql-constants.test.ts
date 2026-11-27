@@ -3,24 +3,39 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { SCHEDULED_WORK_CHECKS } from "../../sources/cross-file";
 import { scheduledSqlConstants } from "./scheduled-sql-constants";
 
-const constantsOf = (fn: string) =>
-  SCHEDULED_WORK_CHECKS.find((check) => check.fn === fn)?.constants ?? "";
-
-const scheduledSources = (threshold = 5) => [
+const pairs = (threshold = 5) => [
   {
-    file: constantsOf("util.notification_digest_has_work"),
-    contents: `export const DIGEST_THRESHOLD = ${threshold};\nexport const DIGEST_MIN_AGE_MIN = 60;`
+    fn: "util.notification_digest_has_work",
+    constants: "notification-digest.ts",
+    expected: [
+      "c.total >= {DIGEST_THRESHOLD}",
+      "interval '{DIGEST_MIN_AGE_MIN} minutes'"
+    ],
+    source: {
+      file: "notification-digest.ts",
+      contents: `export const DIGEST_THRESHOLD = ${threshold};\nexport const DIGEST_MIN_AGE_MIN = 60;`
+    }
   },
   {
-    file: constantsOf("util.workflow_run_retention_has_work"),
-    contents: `export const STALE_RUN_HOURS = 24;
+    fn: "util.workflow_run_retention_has_work",
+    constants: "workflow-run-retention.ts",
+    expected: [
+      "interval '{STALE_RUN_HOURS} hours'",
+      "interval '{FULL_DETAIL_DAYS} days'",
+      "interval '{COMPACT_DETAIL_DAYS} days'",
+      "interval '{RUN_HEADER_DAYS} days'",
+      "IN ({TERMINAL})"
+    ],
+    source: {
+      file: "workflow-run-retention.ts",
+      contents: `export const STALE_RUN_HOURS = 24;
 export const FULL_DETAIL_DAYS = 7;
 export const COMPACT_DETAIL_DAYS = 30;
 export const RUN_HEADER_DAYS = 90;
 export const TERMINAL = ["Succeeded", "Failed"] as const;`
+    }
   }
 ];
 
@@ -44,7 +59,7 @@ const scheduledSqlDrift = (migrations: string[], threshold?: number) =>
         file: `${i}.sql`,
         contents
       })),
-      constants: scheduledSources(threshold)
+      pairs: pairs(threshold)
     })
     .map((v) => v.snippet);
 

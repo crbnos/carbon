@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { loadDbTableColumnTypes } from "../../sources/db-columns";
+import { repoRoot } from "../../sources/migrations";
 import { counterWriteRelative } from "./counter-write-relative";
 
 const COUNTER_SERVICE = "apps/erp/app/modules/inventory/inventory.service.ts";
@@ -26,11 +28,15 @@ const COUNTER_TYPES = new Map<string, Map<string, string>>([
   ]
 ]);
 
+// Every COUNTER_COLUMNS entry the stand-in types do not have is stale, and
+// its finding is left out here.
 const counterScan = (ts: string) =>
-  counterWriteRelative.find({
-    files: [{ file: COUNTER_SERVICE, contents: ts }],
-    columnTypes: COUNTER_TYPES
-  });
+  counterWriteRelative
+    .find({
+      files: [{ file: COUNTER_SERVICE, contents: ts }],
+      columnTypes: COUNTER_TYPES
+    })
+    .filter((v) => v.file === COUNTER_SERVICE);
 const counterSnippets = (ts: string) => counterScan(ts).map((v) => v.snippet);
 
 // The function head both parents share, from `git show
@@ -334,5 +340,21 @@ describe("counterWriteRelative", () => {
   await updateRowsById(trx, "purchaseOrderLine", companyId, Object.entries(updates).map(([id, { purchaseOrderId: _p, ...data }]) => ({ id, data })));
 }`;
     expect(counterScan(ts)).toEqual([]);
+  });
+});
+
+describe("counterWriteRelative: COUNTER_COLUMNS", () => {
+  const stale = (columnTypes: Map<string, Map<string, string>>) =>
+    counterWriteRelative.find({ files: [], columnTypes }).map((v) => v.snippet);
+
+  it("flags an entry no table has as a number column", () => {
+    const found = stale(COUNTER_TYPES);
+    expect(found).toContain("quantityShipped");
+    expect(found).not.toContain("quantityIssued");
+    expect(found).not.toContain("quantityReceived");
+  });
+
+  it("names only numeric columns the generated types really have", () => {
+    expect(stale(loadDbTableColumnTypes(repoRoot()))).toEqual([]);
   });
 });

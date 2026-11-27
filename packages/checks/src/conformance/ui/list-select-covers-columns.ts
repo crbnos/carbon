@@ -3,17 +3,56 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineCheck, type Violation } from "../../check";
-import { LIST_TABLES, loadListSources } from "../../sources/list-tables";
+import { loadModules, modulesDir } from "../../sources/modules";
+import { readIfPresent } from "../../sources/read-source";
 import { lineOf } from "../../sources/text";
 
-// Each list table's columns against the columns its endpoint selects, and each
-// endpoint's select against the columns its cursor reads. Why, and the tables
-// it compares: `LIST_TABLES` (`sources/list-tables.ts`).
+// The view-backed list endpoints select an explicit column list (so Postgres
+// prunes the views' unused computed columns), and each list table exports the
+// columns it declares. The narrowed select narrows the row type, but the CSV
+// export (`Table/components/Download.tsx`) reads `row[accessorKey]` untyped:
+// an accessorKey the select dropped exports blank, and nothing else fails.
+// Not covered: `meta.exportValue` / `exportOnlyColumn` read arbitrary fields.
+//
+// Every constant must also select the columns its cursor reads: `toPage`
+// reads each sort column of the list's `X_PAGING` and its id from the last
+// row of a page, so a column missing from the select ends the list after
+// page 1.
 export const listSelectCoversColumns = defineCheck({
   id: "list-select-covers-columns",
   description:
     "Every list table's accessorKeys, and the columns its cursor reads, are in the columns its endpoint selects.",
-  reads: { sources: loadListSources },
+  reads: {
+    sources: (root) => {
+      const ui = "apps/erp/app/modules";
+      // Each `*_LIST_COLUMNS` constant and the table that renders its rows.
+      const LIST_TABLES: Record<string, string> = {
+        PARTS_LIST_COLUMNS: `${ui}/items/ui/Parts/PartsTable.tsx`,
+        MATERIALS_LIST_COLUMNS: `${ui}/items/ui/Materials/MaterialsTable.tsx`,
+        TOOLS_LIST_COLUMNS: `${ui}/items/ui/Tools/ToolsTable.tsx`,
+        CONSUMABLES_LIST_COLUMNS: `${ui}/items/ui/Consumables/ConsumablesTable.tsx`,
+        SERVICES_LIST_COLUMNS: `${ui}/items/ui/Services/ServicesTable.tsx`,
+        PURCHASE_ORDERS_LIST_COLUMNS: `${ui}/purchasing/ui/PurchaseOrder/PurchaseOrdersTable.tsx`,
+        QUOTES_LIST_COLUMNS: `${ui}/sales/ui/Quotes/QuotesTable.tsx`,
+        SALES_ORDERS_LIST_COLUMNS: `${ui}/sales/ui/SalesOrder/SalesOrdersTable.tsx`,
+        PURCHASE_INVOICES_LIST_COLUMNS: `${ui}/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx`,
+        SALES_INVOICES_LIST_COLUMNS: `${ui}/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx`,
+        CUSTOMERS_LIST_COLUMNS: `${ui}/sales/ui/Customers/CustomersTable.tsx`,
+        SUPPLIERS_LIST_COLUMNS: `${ui}/purchasing/ui/Supplier/SuppliersTable.tsx`,
+        CONTRACTS_LIST_COLUMNS: `${ui}/sales/ui/Contracts/ContractsTable.tsx`
+      };
+      return {
+        listTables: LIST_TABLES,
+        services: readIfPresent(
+          root,
+          loadModules(modulesDir(root)).map(
+            ({ name }) => `${ui}/${name}/${name}.service.ts`
+          )
+        ),
+        tables: readIfPresent(root, Object.values(LIST_TABLES))
+      };
+    }
+  },
   rule() {
     const listConstant = /const ([A-Z_]+_LIST_COLUMNS) =\s*"([^"]*)"/g;
 
@@ -38,7 +77,7 @@ export const listSelectCoversColumns = defineCheck({
     };
 
     return ({ sources }) => {
-      const { services, tables } = sources;
+      const { listTables, services, tables } = sources;
       const out: Violation[] = [];
       const tableByFile = new Map(tables.map((t) => [t.file, t]));
       const found = new Set<string>();
@@ -70,7 +109,7 @@ export const listSelectCoversColumns = defineCheck({
           // Checked for its cursor columns only: its table reads embedded records
           // (`location.name`), not flat accessors.
           if (constant === "FIXED_ASSETS_LIST_COLUMNS") continue;
-          const tablePath = LIST_TABLES[constant];
+          const tablePath = listTables[constant];
           const table = tablePath ? tableByFile.get(tablePath) : undefined;
           if (!table) {
             out.push({
@@ -78,8 +117,8 @@ export const listSelectCoversColumns = defineCheck({
               line: lineOf(service.contents, match.index),
               snippet: constant,
               message: tablePath
-                ? `${tablePath} not found; update LIST_TABLES in list-tables.ts`
-                : `Add ${constant} and the table that renders it to LIST_TABLES in list-tables.ts`
+                ? `${tablePath} not found; update LIST_TABLES in list-select-covers-columns.ts`
+                : `Add ${constant} and the table that renders it to LIST_TABLES in list-select-covers-columns.ts`
             });
             continue;
           }
@@ -115,10 +154,10 @@ export const listSelectCoversColumns = defineCheck({
         }
       }
 
-      for (const constant of Object.keys(LIST_TABLES)) {
+      for (const constant of Object.keys(listTables)) {
         if (found.has(constant)) continue;
         out.push({
-          file: "packages/checks/src/sources/list-tables.ts",
+          file: "packages/checks/src/conformance/ui/list-select-covers-columns.ts",
           line: 0,
           snippet: constant,
           message: `${constant} is not defined in any module service; update LIST_TABLES`

@@ -3,23 +3,54 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineCheck, type SourceFile, type Violation } from "../../check";
-import {
-  loadScheduledConstantSources,
-  SCHEDULED_WORK_CHECKS
-} from "../../sources/cross-file";
 import { migrations } from "../../sources/inputs";
+import { readIfPresent } from "../../sources/read-source";
 import { nameParts, sqlNodes } from "../../sources/sql";
 
 // pg_cron wakes a scheduled function only when its `util.*_has_work()` says a
-// run would do something, and that SQL repeats the function's constants. The
-// pairs compared are `SCHEDULED_WORK_CHECKS` in `src/sources/cross-file.ts`.
+// run would do something, and that SQL repeats the function's constants. A
+// constant changed on one side only either wakes the function for nothing or
+// leaves work undone.
 export const scheduledSqlConstants = defineCheck({
   id: "scheduled-sql-constants",
   description:
     "pg_cron wakes a scheduled function only when its `util.*_has_work()` says a run would do something, and that SQL repeats the function's constants.",
   // Migrations first: the runner groups a check by its first input, so this
   // check runs on the worker that has already parsed their SQL.
-  reads: { migrations, constants: loadScheduledConstantSources },
+  reads: {
+    migrations,
+    // Each function, the file of its constants, and the SQL that must repeat
+    // them: `{NAME}` is the constant's value, and a string array is written as
+    // SQL literals, `'a', 'b'`.
+    pairs: (root) => {
+      const dir = "packages/jobs/src/inngest/functions/scheduled";
+      const SCHEDULED_WORK_CHECKS = [
+        {
+          fn: "util.notification_digest_has_work",
+          constants: `${dir}/notification-digest.ts`,
+          expected: [
+            "c.total >= {DIGEST_THRESHOLD}",
+            "interval '{DIGEST_MIN_AGE_MIN} minutes'"
+          ]
+        },
+        {
+          fn: "util.workflow_run_retention_has_work",
+          constants: `${dir}/workflow-run-retention.ts`,
+          expected: [
+            "interval '{STALE_RUN_HOURS} hours'",
+            "interval '{FULL_DETAIL_DAYS} days'",
+            "interval '{COMPACT_DETAIL_DAYS} days'",
+            "interval '{RUN_HEADER_DAYS} days'",
+            "IN ({TERMINAL})"
+          ]
+        }
+      ];
+      return SCHEDULED_WORK_CHECKS.map((pair) => ({
+        ...pair,
+        source: readIfPresent(root, [pair.constants])[0]
+      }));
+    }
+  },
   rule() {
     /** `export const NAME = 5` and `export const NAME = ["a", "b"] as const`. */
     function constantsOf(contents: string): Map<string, string> {
@@ -40,7 +71,6 @@ export const scheduledSqlConstants = defineCheck({
       return out;
     }
 
-    /** The newest `CREATE FUNCTION <fn>` in migration order, as it is written. */
     function newestDefinition(fn: string, migrations: SourceFile[]) {
       for (const { file, contents } of [...migrations].reverse()) {
         const definitions = [...sqlNodes(contents)].filter(
@@ -54,10 +84,9 @@ export const scheduledSqlConstants = defineCheck({
       return null;
     }
 
-    return ({ migrations, constants: sources }) => {
+    return ({ migrations, pairs }) => {
       const out: Violation[] = [];
-      for (const { fn, constants, expected } of SCHEDULED_WORK_CHECKS) {
-        const source = sources.find((s) => s.file === constants);
+      for (const { fn, constants, expected, source } of pairs) {
         const definition = newestDefinition(fn, migrations);
         if (!source || !definition) {
           out.push({
@@ -66,7 +95,7 @@ export const scheduledSqlConstants = defineCheck({
             snippet: fn,
             message: source
               ? `No migration defines ${fn}`
-              : `${constants} not found; update SCHEDULED_WORK_CHECKS`
+              : `${constants} not found; update SCHEDULED_WORK_CHECKS in packages/checks/src/conformance/drift/scheduled-sql-constants.ts`
           });
           continue;
         }

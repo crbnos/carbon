@@ -51,7 +51,6 @@ export const noBareOutlet = defineCheck({
     const outletRoutes = /^apps\/(?:erp|mes)\/app\/routes\/x\+\//;
     const outlet = /<Outlet(?=[\s/>])([^>]*)>/g;
 
-    /** An outlet a route file renders itself. */
     const scanBareOutlets = (file: string, contents: string): Violation[] => {
       if (!outletRoutes.test(file)) return [];
       const violations: Violation[] = [];

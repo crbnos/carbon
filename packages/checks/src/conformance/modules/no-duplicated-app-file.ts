@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineCheck, type SourceFile, type Violation } from "../../check";
-import { sharedAppTypescript } from "../../sources/inputs";
+import { loadTypescriptFiles } from "../../sources/typescript";
 
 // ERP and MES grew the same components and hooks by copying them, so a fix
 // landed in one app and not the other — the login route's lost redirect was
@@ -14,7 +14,15 @@ export const noDuplicatedAppFile = defineCheck({
   id: "no-duplicated-app-file",
   description:
     "A component or hook needed by both ERP and MES lives in a package; each app may keep a file of that name that only re-exports it.",
-  reads: { files: sharedAppTypescript },
+  reads: {
+    files: (root) =>
+      loadTypescriptFiles(root, [
+        "apps/erp/app/components",
+        "apps/erp/app/hooks",
+        "apps/mes/app/components",
+        "apps/mes/app/hooks"
+      ])
+  },
   rule() {
     // Names every folder has; they hold different things in each app.
     const generic = new Set(["index.ts", "index.tsx", "types.ts", "utils.ts"]);

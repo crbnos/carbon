@@ -79,7 +79,6 @@ export const noLocalTimezone = defineCheck({
       banned,
       mayContain
     };
-    // A local assigned the current instant: `const now = new Date();`.
     const nowLocal = /\b(?:const|let|var)\s+(\w+)\s*=\s*new Date\(\s*\)\s*;/g;
     return (file, contents) => {
       if (!mayContain.test(contents)) return [];

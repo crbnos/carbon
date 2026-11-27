@@ -6,11 +6,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  loadModuleServerFiles,
-  loadModules,
-  wrappedBuildingBlocks
-} from "./modules";
+import { loadModuleServerFiles, loadModules } from "./modules";
 
 describe("loadModules", () => {
   it("returns one entry per subdirectory with its top-level names", () => {
@@ -51,21 +47,5 @@ describe("loadModuleServerFiles", () => {
         }
       }
     ]);
-  });
-});
-
-describe("wrappedBuildingBlocks", () => {
-  it("reads the wrapped building blocks off the server files", () => {
-    const wrapped = wrappedBuildingBlocks([
-      {
-        file: "apps/erp/app/modules/sales/sales.server.ts",
-        contents: `export const getCustomer = defineServiceFn({
-  async run(ctx, input) {
-    return unwrap(ctx, await service.getCustomer(ctx.asCaller.supabase, input.customerId));
-  }
-});`
-      }
-    ]);
-    expect([...wrapped]).toEqual(["sales.getCustomer"]);
   });
 });

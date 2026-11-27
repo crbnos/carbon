@@ -3,15 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { ACTIONS, MODULES, pageById } from "@carbon/database/access";
 import { defineCheck, eachFile, type Violation } from "../../check";
 import { blankComments } from "../../sources/comments";
-import { migrations, moduleKeyTypescript } from "../../sources/inputs";
+import { migrations } from "../../sources/inputs";
 import { loadManagedFunctionFiles } from "../../sources/managed-functions";
 import { nameParts, sqlFragments } from "../../sources/sql";
 import { lineOf } from "../../sources/text";
+import { loadTypescriptFiles } from "../../sources/typescript";
 
 /*
  * Phase 3 of page-level permissions: no module key decides access. A module
@@ -28,8 +28,8 @@ import { lineOf } from "../../sources/text";
  *   whose permissions are `{ page, action }`). That covers `{ inventory:
  *   "Edit" }`, the old `{ view: "inventory" }` and `{ module: "inventory" }`.
  * In SQL, it fails a `<module>_<action>` token in a managed function file and
- * in every migration not in `module-key-migrations.json` (see the note in
- * `rule()`). The SQL is parsed: it reads every string constant and every name
+ * in every migration not in `module-key-migrations.json` (see the note on
+ * its loader). The SQL is parsed: it reads every string constant and every name
  * (a policy may be named after its key), with a name cut at 63 bytes as
  * Postgres stores it. A list, not a date: a branch opened earlier can land a
  * migration dated before the cutoff, and it is checked.
@@ -63,9 +63,20 @@ export const noModulePermissionKey = defineCheck({
   reads: {
     migrations,
     functions: loadManagedFunctionFiles,
-    typescript: moduleKeyTypescript
-  },
-  rule() {
+    // Every gate and client check, and the workflow engine.
+    typescript: (root: string) =>
+      loadTypescriptFiles(root, [
+        "apps/erp/app/components",
+        "apps/erp/app/hooks",
+        "apps/erp/app/modules",
+        "apps/erp/app/routes",
+        "apps/mes/app",
+        "apps/academy/app",
+        "apps/starter/app",
+        "packages/database/src/authz",
+        "packages/ee/src/workflows",
+        "packages/jobs/src/workflows"
+      ]),
     /*
      * Every migration that existed when the cutoff was set (all dated at or
      * before it), plus migrations merged from main later that the generated
@@ -83,17 +94,18 @@ export const noModulePermissionKey = defineCheck({
      * first migrations added this way came from main #2179 (two dated before
      * the cutoff, from a branch opened earlier) and main #2190.
      */
-    const listed: string[] = JSON.parse(
-      readFileSync(
-        join(
-          dirname(fileURLToPath(import.meta.url)),
-          "../module-key-migrations.json"
-        ),
-        "utf8"
+    moduleKeyMigrations: (root: string): string[] =>
+      JSON.parse(
+        readFileSync(
+          join(
+            root,
+            "packages/checks/src/conformance/authz/module-key-migrations.json"
+          ),
+          "utf8"
+        )
       )
-    );
-    const moduleKeyMigrations = new Set(listed);
-
+  },
+  rule() {
     const names = MODULES.map((module) => module.id)
       .filter((id) => !pageById(id))
       .join("|");
@@ -230,10 +242,14 @@ export const noModulePermissionKey = defineCheck({
       return out;
     };
 
-    const scanSql = (file: string, contents: string): Violation[] => {
+    const scanSql = (
+      file: string,
+      contents: string,
+      listed: ReadonlySet<string>
+    ): Violation[] => {
       const base = file.split("/").pop() ?? file;
       const migration = /^\d{14}_/.test(base);
-      if (migration && moduleKeyMigrations.has(base)) return [];
+      if (migration && listed.has(base)) return [];
       if (!migration && !file.startsWith("packages/database/src/")) return [];
       const violations: Violation[] = [];
       for (const fragment of sqlFragments(contents)) {
@@ -258,11 +274,15 @@ export const noModulePermissionKey = defineCheck({
       return violations;
     };
 
-    return ({ migrations, functions, typescript }) =>
-      eachFile([...migrations, ...functions, ...typescript], (file, contents) =>
-        file.endsWith(".sql")
-          ? scanSql(file, contents)
-          : scanTypescript(file, contents)
+    return ({ migrations, functions, typescript, moduleKeyMigrations }) => {
+      const listed = new Set(moduleKeyMigrations);
+      return eachFile(
+        [...migrations, ...functions, ...typescript],
+        (file, contents) =>
+          file.endsWith(".sql")
+            ? scanSql(file, contents, listed)
+            : scanTypescript(file, contents)
       );
+    };
   }
 });

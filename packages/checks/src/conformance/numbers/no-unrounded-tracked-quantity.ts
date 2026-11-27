@@ -67,7 +67,6 @@ export const noUnroundedTrackedQuantity = defineCheck({
     // The helpers that satisfy the standard. `equals`/`isFullDraw` are compare-side.
     const sanctioned =
       /\bround\s*\(|\bsettleQuantity\s*\(|\bresolveCountedEntity\s*\(/;
-    // Helper NAMES (no trailing paren) used for the enclosure scan below.
     const sanctionedCall = /(?:round|settleQuantity|resolveCountedEntity)$/;
     const sanctionedCompareCall = /(?:round|equals|isFullDraw)$/;
 
@@ -84,7 +83,6 @@ export const noUnroundedTrackedQuantity = defineCheck({
     // NOT matched: they are also cost-ledger and BOM-line shapes.
     const entityQuantity = String.raw`\w*[Ee]ntity\w*\.quantity`;
     const comparator = String.raw`===|!==|<=|>=|<|>`;
-    // Anything that is not a number literal, `undefined` or `null`.
     const notALiteral = String.raw`(?!\s*(?:-?\d|undefined|null)\b)`;
     // `=>` ends in `>`, so an arrow function reads as "compared against
     // whatever the body starts with". Require the operator not to continue one.
@@ -114,9 +112,7 @@ export const noUnroundedTrackedQuantity = defineCheck({
     //
     // This is what scopes the exemption to the operand instead of the whole
     // line: `round(Number(entity.quantity))` encloses its read, while
-    // `round(onHand) < entity.quantity` does not. Walks the (string-blanked)
-    // text keeping a stack of open parens, each tagged with whether the
-    // identifier immediately before it is a sanctioned helper.
+    // `round(onHand) < entity.quantity` does not.
     const enclosedBySanctioned = (
       text: string,
       index: number,
@@ -183,7 +179,6 @@ export const noUnroundedTrackedQuantity = defineCheck({
             .join("\n");
           for (const match of bare.matchAll(/\bquantity:/g)) {
             const at = match.index ?? 0;
-            // Inside `settleQuantity({ … })` / `round( … )` opened earlier?
             if (
               enclosedBySanctioned(
                 prefix + "\n" + bare,

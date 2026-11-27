@@ -23,9 +23,7 @@ $$;`
 });
 
 const ignoredColumnDrift = (...functions: ReturnType<typeof fn>[]) =>
-  eventIgnoredColumns
-    .find({ sources: { functions, auditConfig } })
-    .map((v) => v.file);
+  eventIgnoredColumns.find({ functions, auditConfig }).map((v) => v.file);
 
 describe("eventIgnoredColumns", () => {
   it("accepts the same columns in any order, and functions without the list", () => {

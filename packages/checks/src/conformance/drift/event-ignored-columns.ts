@@ -2,8 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { defineCheck, type Violation } from "../../check";
-import { loadEventFunctionSources } from "../../sources/cross-file";
+import { read } from "../../sources/read-source";
 import { nodesIn, sqlFragments } from "../../sources/sql";
 
 /**
@@ -16,9 +18,18 @@ export const eventIgnoredColumns = defineCheck({
   id: "event-ignored-columns",
   description:
     "The event triggers drop an UPDATE that changes only bookkeeping columns before it is queued, broadcast or logged, because the audit diff would discard it anyway (`auditConfig.skipFields`).",
-  reads: { sources: loadEventFunctionSources },
+  reads: {
+    functions: (root) => {
+      const dir = "packages/database/src/event-system/functions";
+      return readdirSync(join(root, dir))
+        .filter((file) => file.endsWith(".sql"))
+        .sort()
+        .map((file) => read(root, `${dir}/${file}`));
+    },
+    auditConfig: (root) => read(root, "packages/database/src/audit.config.ts")
+  },
   rule() {
-    return ({ sources: { functions, auditConfig } }) => {
+    return ({ functions, auditConfig }) => {
       const skip = /skipFields:\s*\[([^\]]*)\]/.exec(auditConfig.contents)?.[1];
       if (skip === undefined) {
         return [

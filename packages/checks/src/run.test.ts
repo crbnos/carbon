@@ -16,8 +16,8 @@ describe("runChecks", () => {
       id,
       description: "",
       reads: { words },
-      find: ({ words }) =>
-        words.flatMap((text, index) =>
+      rule: () => (inputs) =>
+        inputs.words.flatMap((text, index) =>
           text.includes(word)
             ? [{ file: `${index}.sql`, line: 1, snippet: word, message: "" }]
             : []
@@ -43,7 +43,12 @@ describe("runChecks", () => {
       return [root];
     };
     const reader = (id: string) =>
-      defineCheck({ id, description: "", reads: { input }, find: () => [] });
+      defineCheck({
+        id,
+        description: "",
+        reads: { input },
+        rule: () => () => []
+      });
     runChecks([reader("a"), reader("b")], openRepo("/repo"));
     expect(reads).toBe(1);
   });

@@ -3,12 +3,23 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import type { Violation } from "../../check";
 import { mesUnitWriteResolvesUnit } from "./mes-unit-write-resolves-unit";
 
 const ROUTE = "apps/mes/app/routes/x+/complete.tsx";
+
+/** A stale allow-list entry's finding as `LIST entry`; undefined for any other finding. */
+const staleEntry = (v: Violation) => {
+  const list = /^(UNIT_\w+_ALLOW_LIST) lists /.exec(v.message)?.[1];
+  return list && `${list} ${v.snippet}`;
+};
+
+// Each allow-list entry the fixture does not write from is stale, and its
+// finding is left out here.
 const unitScan = (contents: string, file = ROUTE) =>
   mesUnitWriteResolvesUnit
-    .scan(file, contents)
+    .find({ files: [{ file, contents }] })
+    .filter((v) => staleEntry(v) === undefined)
     .map((v) => `${v.line}:${v.snippet}`);
 
 /** A top-level function with the given body lines, as oxfmt formats it. */
@@ -168,5 +179,26 @@ describe("mes-unit-write-resolves-unit", () => {
         "apps/erp/app/modules/production/production.service.ts"
       )
     ).toEqual([]);
+  });
+
+  it("flags an allow-list entry whose function no longer writes or picks a unit", () => {
+    const stale = (files: { file: string; contents: string }[]) =>
+      mesUnitWriteResolvesUnit
+        .find({ files })
+        .flatMap((v) => staleEntry(v) ?? []);
+    const writer = "apps/mes/app/routes/x+/trigger-rework.tsx";
+    const picker = "apps/mes/app/routes/x+/operation.$operationId.tsx";
+    const pick = "const next = getNextIncompleteSerialEntity(units, id);";
+    expect(stale([])).toContain(`UNIT_WRITE_ALLOW_LIST ${writer}#action`);
+    expect(stale([])).toContain(`UNIT_PICK_ALLOW_LIST ${picker}#loader`);
+    const found = stale([
+      { file: writer, contents: fn("action", SCRAP) },
+      { file: picker, contents: fn("loader", pick) }
+    ]);
+    expect(found).not.toContain(`UNIT_WRITE_ALLOW_LIST ${writer}#action`);
+    expect(found).not.toContain(`UNIT_PICK_ALLOW_LIST ${picker}#loader`);
+    expect(found).toContain(
+      "UNIT_WRITE_ALLOW_LIST apps/mes/app/services/quality.server.ts#postSerialCompletions"
+    );
   });
 });

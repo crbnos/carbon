@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { DocumentSequenceSources } from "../../sources/cross-file";
+import type { SourceFile } from "../../check";
 import { documentSequenceSynced } from "./document-sequence-synced";
 
 const seedData = (...tables: string[]) => ({
@@ -30,10 +30,11 @@ const interceptor = (...tables: string[]) => ({
     .join("\n")}\n    ELSE NULL\n  END;\nEND $$;\n`
 });
 
-const messages = (sources: DocumentSequenceSources) =>
-  documentSequenceSynced
-    .find({ sources })
-    .map((v) => `${v.file}: ${v.snippet}`);
+const messages = (inputs: {
+  seedData: SourceFile;
+  attachments: SourceFile;
+  interceptor: SourceFile;
+}) => documentSequenceSynced.find(inputs).map((v) => `${v.file}: ${v.snippet}`);
 
 describe("documentSequenceSynced", () => {
   it("accepts a counter whose table is attached and in the CASE", () => {

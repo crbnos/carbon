@@ -81,90 +81,50 @@ type Find<T> = (inputs: T) => Violation[];
 
 type Loaders<T> = { [K in keyof T]: Loader<T[K]> };
 
-type FileRule = About & { files: Loader<SourceFile[]>; scan: Scan };
-
-/** A file rule whose `Scan`, and everything it needs, `rule()` builds on first use. */
-type LazyFileRule = About & { files: Loader<SourceFile[]>; rule(): Scan };
-
 /** A file rule that is data: what it bans in each file (`Bans`). */
 type BansRule = About & { files: Loader<SourceFile[]> } & Bans;
 
-/** A bans rule whose data `bans()` computes on first use. */
-type LazyBansRule = About & { files: Loader<SourceFile[]>; bans(): Bans };
+/** A file rule with logic: `rule()` builds its `Scan`, and what that needs. */
+type FileRule = About & { files: Loader<SourceFile[]>; rule(): Scan };
 
-type InputsRule<T> = About & {
-  reads: Loaders<T>;
-  find(inputs: T): Violation[];
-};
-
-/** An inputs rule whose `find`, and everything it needs, `rule()` builds on first use. */
-type LazyInputsRule<T> = About & { reads: Loaders<T>; rule(): Find<T> };
+/** A rule over several inputs: `rule()` builds its `find`, and what that needs. */
+type InputsRule<T> = About & { reads: Loaders<T>; rule(): Find<T> };
 
 /**
- * A check, from the inputs it reads and its rule over them. The common rule
- * bans patterns in some files: it names its `files` and gives the bans as
- * data (`banned`, `within`, `snippet`, `except`, `mayContain`), or `bans()`
- * when that data is computed. A rule with real logic over one file at a time
- * names its `files` and a `scan`; a rule over several inputs names them in
- * `reads` and gets them loaded in `find`. Either may instead give `rule()`,
- * which builds that `scan` or `find` the first time the check runs. So
- * importing a check builds nothing. No rule sees the repo, so a check reads
- * only what it declares, and a test calls `scan` or `find` with its own
- * values.
+ * A check, from the inputs it reads and its rule over them. A rule that only
+ * bans patterns in some files names its `files` and gives the bans as data
+ * (`banned`, `within`, `snippet`, `except`, `mayContain`). A rule with logic
+ * gives `rule()`, which declares what the rule needs and returns it: a `Scan`
+ * of one file for `files`, a `find` over the loaded inputs for `reads`.
+ * `rule()` runs the first time the check does, so importing a check builds
+ * nothing. No rule sees the repo, so a check reads only what it declares, and
+ * a test calls `scan` or `find` with its own values.
  */
-// First: checked against another overload before this one, `bans()` would
-// have its literal `within` and `snippet` widened to string, and fail here.
-export function defineCheck(rule: LazyBansRule): Check & { scan: Scan };
-export function defineCheck(rule: FileRule): Check & { scan: Scan };
-export function defineCheck(rule: LazyFileRule): Check & { scan: Scan };
 export function defineCheck(rule: BansRule): Check & { scan: Scan };
+export function defineCheck(rule: FileRule): Check & { scan: Scan };
 export function defineCheck<T extends Record<string, unknown>>(
   rule: InputsRule<T>
 ): Check & { find(inputs: T): Violation[] };
-export function defineCheck<T extends Record<string, unknown>>(
-  rule: LazyInputsRule<T>
-): Check & { find(inputs: T): Violation[] };
 export function defineCheck(
-  rule:
-    | FileRule
-    | LazyFileRule
-    | BansRule
-    | LazyBansRule
-    | InputsRule<Record<string, unknown>>
-    | LazyInputsRule<Record<string, unknown>>
+  rule: BansRule | FileRule | InputsRule<Record<string, unknown>>
 ): Check & {
   scan?: Scan;
   find?(inputs: Record<string, unknown>): Violation[];
 } {
-  if ("files" in rule) {
-    if ("banned" in rule) {
-      const { id, description, provenance, files, ...bans } = rule;
-      return fileCheck(
-        { id, description, provenance },
-        files,
-        () => (file, contents) => findBanned(file, contents, bans)
-      );
-    }
-    if ("bans" in rule) {
-      const { files, bans: build, ...about } = rule;
-      return fileCheck(about, files, () => {
-        const bans = build();
-        return (file, contents) => findBanned(file, contents, bans);
-      });
-    }
-    if ("scan" in rule) {
-      const { files, scan, ...about } = rule;
-      return fileCheck(about, files, () => scan);
-    }
-    const { files, rule: build, ...about } = rule;
-    return fileCheck(about, files, build);
+  if ("reads" in rule) {
+    const { reads, rule: build, ...about } = rule;
+    return inputsCheck(about, reads, build);
   }
-  if ("find" in rule) {
-    const { reads, find, ...about } = rule;
-    return inputsCheck(about, reads, () => find);
+  if ("banned" in rule) {
+    const { id, description, provenance, files, ...bans } = rule;
+    return fileCheck(
+      { id, description, provenance },
+      files,
+      () => (file, contents) => findBanned(file, contents, bans)
+    );
   }
-  const { reads, rule: build, ...about } = rule;
-  return inputsCheck(about, reads, build);
+  const { files, rule: build, ...about } = rule;
+  return fileCheck(about, files, build);
 }
 
 function fileCheck(

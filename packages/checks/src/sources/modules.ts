@@ -45,23 +45,3 @@ export function loadModuleServerFiles(
     ];
   });
 }
-
-const SERVER_FILE =
-  /^apps\/erp\/app\/modules\/([a-z-]+)\/\1(?:\.ee)?\.server\.ts$/;
-
-/**
- * `<module>.<name>` for every building block a service function calls
- * (`service.<name>(…)` in `<module>.server.ts`). A building block no service
- * function calls is a helper, and a loader may call it directly.
- */
-export function wrappedBuildingBlocks(serverFiles: SourceFile[]): Set<string> {
-  const wrapped = new Set<string>();
-  for (const { file, contents } of serverFiles) {
-    const module = SERVER_FILE.exec(file)?.[1];
-    if (!module) continue;
-    for (const m of contents.matchAll(/\bservice\.(\w+)\(/g)) {
-      wrapped.add(`${module}.${m[1]}`);
-    }
-  }
-  return wrapped;
-}

@@ -15,14 +15,19 @@ import { noModulePermissionKey } from "./no-module-permission-key";
 const LAST_MODULE_KEY_MIGRATION = noModulePermissionKey.provenance?.since ?? "";
 
 const MODULE_KEY_MIGRATIONS: string[] = JSON.parse(
-  readFileSync(join(__dirname, "../module-key-migrations.json"), "utf8")
+  readFileSync(join(__dirname, "module-key-migrations.json"), "utf8")
 );
 
 const ROUTE = "apps/erp/app/routes/x+/inventory+/receipts.tsx";
 
 const scanKeys = (contents: string, file = ROUTE) =>
   noModulePermissionKey
-    .find({ migrations: [], functions: [], typescript: [{ file, contents }] })
+    .find({
+      migrations: [],
+      functions: [],
+      typescript: [{ file, contents }],
+      moduleKeyMigrations: MODULE_KEY_MIGRATIONS
+    })
     .map((v) => v.snippet);
 
 describe("no-module-permission-key — TypeScript", () => {

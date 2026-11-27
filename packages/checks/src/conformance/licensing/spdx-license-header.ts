@@ -2,23 +2,33 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { join } from "node:path";
 import { defineCheck } from "../../check";
 import {
   classifyFile,
+  classifyPath,
   type HeaderStatus,
   inspectLicenseHeader,
   LICENSE_HEADERS
 } from "../../license-headers";
-import { loadLicenseFiles } from "../../sources/license-files";
+import { listLicenseCandidates } from "../../sources/license-files";
+import { readSourceWithoutKeeping } from "../../sources/read-source";
 
 // Every first-party source file opens with an SPDX header naming its license:
 // AGPL-3.0-only, or LicenseRef-Carbon-Commercial for the Enterprise files
 // (packages/ee/ and any `.ee.` file name). Which files need which header, the
 // exclusions and the insertion rules all live in ../../license-headers.ts, shared
 // with the fixer — this check fails exactly the files the fixer would change.
-// Its source is sources/license-files.ts (git-tracked files only).
+// A file excluded by its path alone is never read: the generated DB types alone
+// are several MB.
 export const spdxLicenseHeader = defineCheck({
-  files: loadLicenseFiles,
+  files: (root) =>
+    listLicenseCandidates(root)
+      .filter((path) => !("excluded" in classifyPath(path)))
+      .map((path) => ({
+        file: path,
+        contents: readSourceWithoutKeeping(join(root, path))
+      })),
   id: "spdx-license-header",
   description:
     "Every first-party source file starts with its SPDX license header",

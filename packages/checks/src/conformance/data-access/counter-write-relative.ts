@@ -4,7 +4,6 @@
 
 import { defineCheck, eachFile, type Violation } from "../../check";
 import { loadDbTableColumnTypes } from "../../sources/db-columns";
-import { COUNTER_COLUMNS } from "../../sources/guarded-columns";
 import { typescript } from "../../sources/inputs";
 import {
   chainCalls,
@@ -33,7 +32,7 @@ import { lineOf } from "../../sources/text";
 // pass this check.
 //
 // A write is flagged when its row (read as `row-writes.ts` says) sets a counter
-// column of that table (`COUNTER_COLUMNS` in `sources/guarded-columns.ts`, numeric in the generated types) to a
+// column of that table (`COUNTER_COLUMNS` below, numeric in the generated types) to a
 // value that reads the same column back from JavaScript — `x.quantityIssued`,
 // directly or through up to `LOCAL_HOPS` locals (`const issued =
 // line.quantityIssued + q;` … `{ quantityIssued: issued }`). A value built with
@@ -70,6 +69,28 @@ export const counterWriteRelative = defineCheck({
   },
   reads: { files: typescript, columnTypes: loadDbTableColumnTypes },
   rule() {
+    // A stale COUNTER_COLUMNS entry's finding points here.
+    const thisFile =
+      "packages/checks/src/conformance/data-access/counter-write-relative.ts";
+
+    /** The running totals: added to by many writers, so never set to a total computed in JavaScript. */
+    const COUNTER_COLUMNS: ReadonlySet<string> = new Set([
+      "quantityIssued",
+      "quantityReceived",
+      "quantityReceivedToInventory",
+      "quantityInvoiced",
+      "quantityShipped",
+      "quantitySent",
+      "quantityPicked",
+      "quantityComplete",
+      "quantityReturned",
+      "quantityScrapped",
+      "quantityReworked",
+      "quantityPaidBack",
+      "consumedQuantity",
+      "appliedAmount"
+    ]);
+
     const counterMessage = (table: string, column: string) =>
       `This sets ${table}.${column} to a total computed in JavaScript from an earlier read, so a writer that committed after the read is lost (counted twice, or overwritten). Write it relatively in SQL (sql\`"${column}" + \${delta}\`) or read it under the row lock (.selectFrom("${table}")…forUpdate()) before computing it.`;
 
@@ -162,8 +183,8 @@ export const counterWriteRelative = defineCheck({
       return false;
     }
 
-    return ({ files, columnTypes }) =>
-      eachFile(files, (file, contents) => {
+    return ({ files, columnTypes }) => {
+      const found = eachFile(files, (file, contents) => {
         const { text, regions, locks, writes } = readRowWrites(contents);
         const violations: Violation[] = [];
         const seen = new Set<string>();
@@ -214,5 +235,24 @@ export const counterWriteRelative = defineCheck({
         }
         return violations;
       });
+      // A counter no table has as a number column checks nothing.
+      const numeric = new Set(
+        [...columnTypes.values()].flatMap((columns) =>
+          [...columns]
+            .filter(([, type]) => /^number\b/.test(type))
+            .map(([name]) => name)
+        )
+      );
+      for (const column of COUNTER_COLUMNS) {
+        if (numeric.has(column)) continue;
+        found.push({
+          file: thisFile,
+          line: 0,
+          snippet: column,
+          message: `COUNTER_COLUMNS lists ${column}, which no table has as a number column: rename or remove the entry`
+        });
+      }
+      return found;
+    };
   }
 });
