@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { type PageId, pageOfTable } from "@carbon/database/access";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
@@ -51,16 +52,8 @@ export type CreatableLookup = (typeof creatableLookups)[number];
 
 // Rich lookups need more than a name (Net days, carrier, ...), so during a CSV
 // import they are created through their existing form modal, pre-filled with
-// the typed value. Client-only: maps a field to the form it opens and the
-// module whose create permission gates it.
+// the typed value. Each is the table its form writes, whose page gates it.
 export type CreatableForm = "paymentTerm" | "shippingMethod";
-export const creatableFormPermissions: Record<
-  CreatableForm,
-  "accounting" | "inventory"
-> = {
-  paymentTerm: "accounting",
-  shippingMethod: "inventory"
-};
 
 // Shared supplier-part import fields. Spread into every item-type entry
 // (part / material / tool / fixture / consumable) so a single CSV row can
@@ -910,6 +903,25 @@ export const fieldMappings = {
         }
       }
     },
+    taxCodeId: {
+      label: "Tax Code",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "The customer's tax code (from your active tax codes)",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("taxCode")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .eq("active", true)
+            .order("name");
+        }
+      }
+    },
     fax: {
       label: "Fax",
       required: false,
@@ -1047,6 +1059,25 @@ export const fieldMappings = {
             .from("supplierType")
             .select("id, name")
             .eq("companyId", companyId)
+            .order("name");
+        }
+      }
+    },
+    taxCodeId: {
+      label: "Tax Code",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "The supplier's tax code (from your active tax codes)",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("taxCode")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .eq("active", true)
             .order("name");
         }
       }
@@ -2186,57 +2217,59 @@ export const fieldMappings = {
   }
 } as const;
 
-export const importPermissions: Record<keyof typeof fieldMappings, string> = {
-  customer: "sales",
-  customerContact: "sales",
-  supplier: "purchasing",
-  supplierContact: "purchasing",
-  part: "parts",
-  material: "parts",
-  bom: "parts",
-  operations: "parts",
-  partWithMethod: "parts",
-  tool: "parts",
-  fixture: "parts",
-  consumable: "parts",
-  workCenter: "production",
-  process: "production",
-  storageUnit: "inventory",
-  service: "parts",
-  unitOfMeasure: "parts",
-  itemPostingGroup: "accounting",
-  storageType: "parts",
-  scrapReason: "production",
-  department: "people",
-  payrollPeriodTotal: "people",
-  journalEntry: "accounting",
-  fixedAsset: "accounting",
-  materialSubstance: "parts",
-  materialForm: "parts",
-  materialFinish: "parts",
-  materialGrade: "parts",
-  materialType: "parts",
-  materialDimension: "parts",
-  quote: "sales",
-  quoteLine: "sales",
-  quoteWithLines: "sales",
-  inventoryQuantity: "inventory",
-  batchQuantity: "inventory",
-  serialQuantity: "inventory"
+type ImportTarget = readonly [table: string, row?: Record<string, string>];
+
+const item = (type: string): ImportTarget => ["item", { type }];
+
+// The table (and for a shared table, the row) each import writes.
+const importTargets: Record<keyof typeof fieldMappings, ImportTarget> = {
+  customer: ["customer"],
+  customerContact: ["customerContact"],
+  supplier: ["supplier"],
+  supplierContact: ["supplierContact"],
+  part: item("Part"),
+  material: item("Material"),
+  bom: item("Part"),
+  operations: item("Part"),
+  partWithMethod: item("Part"),
+  tool: item("Tool"),
+  // Fixtures sit on the Tools page.
+  fixture: item("Tool"),
+  consumable: item("Consumable"),
+  workCenter: ["workCenter"],
+  process: ["process"],
+  storageUnit: ["storageUnit"],
+  service: item("Service"),
+  unitOfMeasure: ["unitOfMeasure"],
+  itemPostingGroup: ["itemPostingGroup"],
+  storageType: ["storageType"],
+  scrapReason: ["scrapReason"],
+  department: ["department"],
+  payrollPeriodTotal: ["payrollPeriodTotal"],
+  journalEntry: ["journal"],
+  fixedAsset: ["fixedAsset"],
+  materialSubstance: ["materialSubstance"],
+  materialForm: ["materialForm"],
+  materialFinish: ["materialFinish"],
+  materialGrade: ["materialGrade"],
+  materialType: ["materialType"],
+  materialDimension: ["materialDimension"],
+  quote: ["quote"],
+  quoteLine: ["quoteLine"],
+  quoteWithLines: ["quote"],
+  inventoryQuantity: ["itemLedger"],
+  batchQuantity: ["itemLedger"],
+  serialQuantity: ["itemLedger"]
 };
 
-// Imports that post stock also require `create` on their module: the
-// single-record inventory adjustment route requires `create: inventory`, and
-// its Save button requires `update: inventory`, so an import of the same rows
-// requires both. A journal entry import needs what a manual entry does:
-// `create: accounting` to create it, `update: accounting` to save and post it.
-export const importRequiresCreate: ReadonlySet<keyof typeof fieldMappings> =
-  new Set([
-    "inventoryQuantity",
-    "batchQuantity",
-    "serialQuantity",
-    "journalEntry"
-  ]);
+// The page whose Edit level an import needs: the registry's owner of what it
+// writes (`pageOfTable`). Its RLS insert policy names the same page.
+export const importPermissions = Object.fromEntries(
+  Object.entries(importTargets).map(([key, [table, row]]) => [
+    key,
+    pageOfTable(table, row)
+  ])
+) as Record<keyof typeof fieldMappings, PageId>;
 
 // Quote import validation is intentionally permissive at the mapping layer (every
 // cell an optional string); the app-side importer (`sales.import.server.ts`) does
@@ -2401,6 +2434,10 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The id of the customer's type/category"),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe("The id of the customer's tax code"),
     phone: z.string().optional().describe("The phone number of the customer"),
     fax: z.string().optional().describe("The fax number of the customer"),
     taxId: z
@@ -2490,6 +2527,10 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The id of the supplier's type/category"),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe("The id of the supplier's tax code"),
     phone: z.string().optional().describe("The phone number of the supplier"),
     fax: z.string().optional().describe("The fax number of the supplier"),
     taxId: z

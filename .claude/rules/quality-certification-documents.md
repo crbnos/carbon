@@ -30,8 +30,8 @@ uploaded file) and exactly one target — CHECK `certificate_one_target`
 (`num_nonnulls("receiptLineId", "jobOperationId") = 1`):
 
 - **Receipt line** — `x+/receipt+/lines.$lineId.certificates.tsx`, opened from
-  `ReceiptLines.tsx` (`CertificatesDrawer`). Permission per intent: loader
-  `inventory_view`, add `inventory_create`, `intent=delete` `inventory_delete`.
+  `ReceiptLines.tsx` (`CertificatesDrawer`). Permission per intent (page
+  `inventory.receipts`): loader View, add Create, `intent=delete` Full.
   The writes are `addReceiptLineCertificate` / `deleteReceiptLineCertificate`
   (`quality/quality.service.ts`): the `document` and `certificate` rows go
   in ONE Kysely transaction (the browser-uploaded file is removed on failure,
@@ -66,11 +66,17 @@ uploaded file) and exactly one target — CHECK `certificate_one_target`
   FAI's make method, then runs `refreshFirstArticleProducts`.
 
 RLS lives in the authz manifest (`packages/database/src/authz/manifest.ts`,
-shipped by the generated `20260928012744_cofc-fai-rls.sql`), not in the feature
-migration: `certificate` accepts `inventory_*` OR `quality_*`;
-`certificateOfConformance` is `inventory_*` (shipments are inventory) and its
-INSERT takes `inventory_update` — issuing is an update of the posted shipment;
-the compliance and FAI tables are `quality_*`.
+shipped by the generated `20261127153358_first-article-compliance-pages.sql`),
+not in the feature migration. Each table belongs to a page
+(`packages/database/src/access/pages/`): `certificate` to `inventory.receipts`,
+which lists `quality.firstArticles` in `alsoWrittenBy` (an FAI attaches its
+certificates), and `quality.firstArticles` lists it in `readers` (Form 2); `certificateOfConformance` to
+`inventory.shipments`, whose INSERT takes `inventory.shipments_update` — issuing
+is an update of the posted shipment; `firstArticleInspection` /
+`firstArticleInspectionProduct` to `quality.firstArticles` (paths
+`/x/quality/first-articles`, `/x/first-article/`); `complianceStatement` /
+`complianceStatementAssignment` to `quality.complianceStatements`. Routes and
+screens gate on the same pages.
 
 `complianceStatement` (+ `complianceStatementAssignment`, one of `customerId` /
 `itemId`) holds the boilerplate a certificate prints. `upsertComplianceStatement`

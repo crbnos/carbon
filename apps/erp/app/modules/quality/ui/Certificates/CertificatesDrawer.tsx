@@ -29,7 +29,8 @@ import { useFetcher } from "react-router";
 import { Empty } from "~/components";
 import { path } from "~/utils/path";
 import type { Certificate } from "../../types";
-import CertificateForm, { getCertificateTypeLabel } from "./CertificateForm";
+import CertificateForm from "./CertificateForm";
+import { getCertificateTypeLabel } from "./certificateTypeLabels";
 
 type CertificatesDrawerProps = {
   receiptLineId: string;

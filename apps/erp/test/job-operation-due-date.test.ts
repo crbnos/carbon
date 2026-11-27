@@ -15,6 +15,7 @@ vi.mock("@carbon/jobs", () => ({ trigger, batchTrigger: vi.fn() }));
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { createClient } from "@supabase/supabase-js";
 import { setJobOperationDueDate } from "../app/modules/production/production.server";
+import { pageClaims } from "./page-claims";
 
 /** A caller whose PATCH matches `rows`. */
 function callerMatching(rows: { id: string }[]) {
@@ -39,10 +40,11 @@ function callerMatching(rows: { id: string }[]) {
   const ctx = createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "u1",
-      permissions: {
+      permissions: pageClaims({
         production: { view: [], create: [], update: ["c1"], delete: [] }
-      }
+      })
     },
     company: { id: "c1", groupId: "g1" },
     caller: client as never,

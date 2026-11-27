@@ -414,7 +414,7 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
                 ? MENU_ITEM_SHORTCUTS.view
                 : MENU_ITEM_SHORTCUTS.edit
             }
-            disabled={!permissions.can("update", "inventory")}
+            disabled={!permissions.has({ "inventory.receipts": "Edit" })}
             onClick={() => {
               navigate(
                 `${path.to.receiptDetails(row.id!)}?${params.toString()}`
@@ -427,7 +427,7 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
-              !permissions.can("delete", "inventory") ||
+              !permissions.has({ "inventory.receipts": "Full" }) ||
               !!row.postingDate ||
               row.status === "Pending"
             }
@@ -464,7 +464,9 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
           updatedAt: false,
           updatedBy: false
         }}
-        primaryAction={permissions.can("create", "inventory") && <NewReceipt />}
+        primaryAction={
+          permissions.has({ "inventory.receipts": "Create" }) && <NewReceipt />
+        }
         renderContextMenu={renderContextMenu}
         title={t`Receipts`}
         table="receipt"

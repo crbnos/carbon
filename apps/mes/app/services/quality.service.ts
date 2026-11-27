@@ -8,9 +8,11 @@ import type { JSONContent } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getJobMakeMethod,
-  getTrackedEntitiesByMakeMethodId
+  getTrackedEntitiesByMakeMethodId,
+  getTrackedEntitiesForOperation
 } from "./operations.service";
 import type { InspectionSample } from "./types";
+import { readUnitHolds } from "./unit-hold.server";
 
 // Reads for the MES inspection execution view. Copied from the ERP quality
 // module's service reads (apps/erp/app/modules/quality/quality.service.ts) —
@@ -172,8 +174,11 @@ export async function getInspectionDocumentWithBalloons(
 // Everything the MES InspectionView needs about a lot that does not depend on
 // an operation: its per-feature plans, readings, samples (in the engine's
 // column order), the make method's WIP entities and tracking flags, and the
-// plan's drawing and the active gauges. Shared by the job-operation and
-// first-article routes.
+// plan's drawing, the active gauges and the units on a quality hold. Shared by
+// the job-operation and first-article routes. A job-operation lot passes its
+// `operation`, so its units are read as that operation sees them (a rework
+// copy applies only to the units sent into it); a First Article lot has no
+// operation and reads every unit of its make method.
 export async function getInspectionViewData(
   client: SupabaseClient<Database>,
   args: {
@@ -184,9 +189,14 @@ export async function getInspectionViewData(
     };
     jobMakeMethodId: string;
     companyId: string;
+    operation?: {
+      operationId: string;
+      jobId: string;
+      includeSerialOutputs: boolean;
+    };
   }
 ) {
-  const { inspection, jobMakeMethodId, companyId } = args;
+  const { inspection, jobMakeMethodId, companyId, operation } = args;
 
   const [
     features,
@@ -200,7 +210,13 @@ export async function getInspectionViewData(
     getInspectionSamplingPlans(client, inspection.id, companyId),
     getInspectionMeasurements(client, inspection.id, companyId),
     getIssueTypesList(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, jobMakeMethodId, companyId),
+    operation
+      ? getTrackedEntitiesForOperation(client, {
+          ...operation,
+          jobMakeMethodId,
+          companyId
+        })
+      : getTrackedEntitiesByMakeMethodId(client, jobMakeMethodId, companyId),
     getJobMakeMethod(client, jobMakeMethodId),
     inspection.inspectionDocumentId
       ? getInspectionDocumentWithBalloons(
@@ -219,23 +235,53 @@ export async function getInspectionViewData(
       a.id.localeCompare(b.id)
   );
 
+  // The units decide what Accept completes and what Reject condemns, so a
+  // failed read is an error, never "no units".
+  if (trackedEntities.error || jobMakeMethod.error) {
+    return {
+      data: null,
+      error: trackedEntities.error ?? jobMakeMethod.error,
+      message: "Failed to read the inspection's production units"
+    } as const;
+  }
+  const requiresSerialTracking =
+    jobMakeMethod.data?.requiresSerialTracking ?? false;
+  const holds = requiresSerialTracking
+    ? await readUnitHolds(client, {
+        companyId,
+        unitIds: (trackedEntities.data ?? []).map((unit) => unit.id)
+      })
+    : { data: {}, error: null };
+  if (holds.error) {
+    return {
+      data: null,
+      error: holds.error,
+      message: "Failed to check the units on hold"
+    } as const;
+  }
+
   return {
-    samples,
-    features: features.data ?? [],
-    measurements: measurements.data ?? [],
-    gauges: gauges.data ?? [],
-    issueTypes: issueTypes.data ?? [],
-    trackedEntities: trackedEntities.data ?? [],
-    requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
-    requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
-    balloons: document?.data?.balloons ?? [],
-    documentName: document?.data?.name ?? null,
-    parameters: document?.data?.parameters ?? [],
-    workInstruction: (document?.data?.workInstruction ??
-      null) as JSONContent | null,
-    pdfUrl: document?.data?.pdfUrl ?? null,
-    model: document?.data?.model ?? null
-  };
+    data: {
+      samples,
+      features: features.data ?? [],
+      measurements: measurements.data ?? [],
+      gauges: gauges.data ?? [],
+      issueTypes: issueTypes.data ?? [],
+      trackedEntities: trackedEntities.data ?? [],
+      unitHolds: holds.data,
+      requiresSerialTracking,
+      requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
+      balloons: document?.data?.balloons ?? [],
+      documentName: document?.data?.name ?? null,
+      parameters: document?.data?.parameters ?? [],
+      workInstruction: (document?.data?.workInstruction ??
+        null) as JSONContent | null,
+      pdfUrl: document?.data?.pdfUrl ?? null,
+      model: document?.data?.model ?? null
+    },
+    error: null,
+    message: null
+  } as const;
 }
 
 // The job's First Article lots that are still open (not dispositioned). One

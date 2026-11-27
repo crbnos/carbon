@@ -17,7 +17,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { useCallback, useMemo } from "react";
 import { LuPencil, LuPlus, LuReceipt, LuTrash } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { useFetcher, useNavigate } from "react-router";
 import { Empty, Table } from "~/components";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import {
@@ -47,14 +47,14 @@ import {
   contractRevenueMethodsFor,
   isProjectBillingMethod
 } from "../../sales.models";
-import { useBillingMethodLabels } from "./ContractLineBillingFields";
-import ContractLineForm from "./ContractLineForm";
-import ContractMoney from "./ContractMoney";
 import {
   contractLineFormValues,
   contractLineName,
   newContractLineFormValues
 } from "./contractGrid";
+import { useBillingMethodLabels } from "./ContractLineBillingFields";
+import ContractLineForm from "./ContractLineForm";
+import ContractMoney from "./ContractMoney";
 import type { Contract, ContractLine } from "./types";
 
 type BillingMethod = (typeof contractBillingMethods)[number];
@@ -124,13 +124,22 @@ const ProjectContractLinesGrid = ({
   const contractId = contract.id!;
   const { currencyCode } = contract;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
-  const canEdit = permissions.can("update", "sales");
+  const canEdit = permissions.has({ "sales.serviceContracts": "Edit" });
   // In DCAA mode the funding actions own a line's funded amount.
   const fundedByActions = settings.timekeepingControls === "DCAA";
   // The CLIN column shows only to a company that does government contracting.
   const isGovernmentContracting = useGovernmentContracting();
 
   const addLine = useDisclosure();
+  // The new line's default tax, from the line route's own loader, so a line
+  // added here takes the customer's code as one added on its page does.
+  const lineDefaults = useFetcher<{
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
+  }>();
+  const openAddLine = () => {
+    lineDefaults.load(path.to.newContractLine(contractId));
+    addLine.onOpen();
+  };
   const editing = useDrawerItem<ContractLine>();
   const { open: openEdit } = editing;
   const {
@@ -496,7 +505,7 @@ const ProjectContractLinesGrid = ({
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "sales")}
+            disabled={!permissions.has({ "sales.serviceContracts": "Full" })}
             onClick={() => openDelete(line)}
           >
             <MenuIcon icon={<LuTrash />} />
@@ -536,8 +545,10 @@ const ProjectContractLinesGrid = ({
           <Button
             className="mt-4"
             leftIcon={<LuPlus />}
-            isDisabled={!permissions.can("create", "sales")}
-            onClick={addLine.onOpen}
+            isDisabled={
+              !permissions.has({ "sales.serviceContracts": "Create" })
+            }
+            onClick={openAddLine}
           >
             <Trans>Add Line</Trans>
           </Button>
@@ -569,8 +580,10 @@ const ProjectContractLinesGrid = ({
             <Button
               variant="secondary"
               leftIcon={<LuPlus />}
-              isDisabled={!permissions.can("create", "sales")}
-              onClick={addLine.onOpen}
+              isDisabled={
+                !permissions.has({ "sales.serviceContracts": "Create" })
+              }
+              onClick={openAddLine}
             >
               <Trans>Add Line</Trans>
             </Button>
@@ -578,17 +591,26 @@ const ProjectContractLinesGrid = ({
         </>
       )}
 
-      {addLine.openCount > 0 && (
-        <ContractLineForm
-          key={`addLine-${addLine.openCount}`}
-          open={addLine.isOpen}
-          type="modal"
-          initialValues={newContractLineFormValues(contract)}
-          currencyCode={currencyCode}
-          billingBasis="Project"
-          onClose={addLine.onClose}
-        />
-      )}
+      {addLine.openCount > 0 &&
+        lineDefaults.state === "idle" &&
+        lineDefaults.data && (
+          <ContractLineForm
+            key={`addLine-${addLine.openCount}`}
+            open={addLine.isOpen}
+            type="modal"
+            initialValues={{
+              ...newContractLineFormValues(contract),
+              // The form types percent points.
+              taxPercent: round(
+                (lineDefaults.data.resolvedTax?.taxPercent ?? 0) * 100
+              ),
+              taxCodeId: lineDefaults.data.resolvedTax?.taxCodeId ?? undefined
+            }}
+            currencyCode={currencyCode}
+            billingBasis="Project"
+            onClose={addLine.onClose}
+          />
+        )}
 
       {editing.item && (
         <ContractLineForm

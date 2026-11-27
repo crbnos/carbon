@@ -115,7 +115,9 @@ const ComplianceStatementsTable = memo(
             </MenuItem>
             <MenuItem
               destructive
-              disabled={!permissions.can("delete", "quality")}
+              disabled={
+                !permissions.has({ "quality.complianceStatements": "Full" })
+              }
               onClick={() => {
                 navigate(
                   `${path.to.deleteComplianceStatement(
@@ -151,7 +153,7 @@ const ComplianceStatementsTable = memo(
         count={count}
         emptyState={emptyState}
         primaryAction={
-          permissions.can("create", "quality") && (
+          permissions.has({ "quality.complianceStatements": "Create" }) && (
             <New
               label={t`Compliance Statement`}
               to={`${path.to.newComplianceStatement}?${params.toString()}`}

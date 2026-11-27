@@ -44,13 +44,15 @@ export async function runTier5(ctx: Ctx): Promise<void> {
       status: spec.status,
       supplierId,
       supplierInteractionId: interactionId,
-      // exchangeRateUpdatedAt = the order date, as insertPurchaseOrder stamps it.
+      // Rate 1 in the base currency, and exchangeRateUpdatedAt = the order
+      // date, as insertPurchaseOrder writes them.
       currencyCode: spec.currencyCode,
-      exchangeRate: spec.exchangeRate,
-      exchangeRateUpdatedAt:
-        spec.exchangeRate === undefined
-          ? undefined
-          : resolveTimestamp(ctx.anchor, spec.orderDateOffset, "08:00:00"),
+      exchangeRate: spec.exchangeRate ?? 1,
+      exchangeRateUpdatedAt: resolveTimestamp(
+        ctx.anchor,
+        spec.orderDateOffset,
+        "08:00:00"
+      ),
       orderDate: resolveDate(ctx.anchor, spec.orderDateOffset),
       assignee: spec.assignee === "self" ? userId : undefined
     });

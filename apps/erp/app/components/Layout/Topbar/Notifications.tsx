@@ -517,11 +517,11 @@ export function NotificationsPanel({
     (notification) => notification.read
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (isOpen && hasUnseenNotifications) {
       markAllMessagesAsSeen();
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [hasUnseenNotifications, isOpen]);
 
   const outstandingTrainings = trainingsFetcher.data?.data ?? [];

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { certificateValidator } from "~/modules/quality/quality.models";
@@ -15,7 +15,7 @@ import {
 import { getDatabaseClient } from "~/services/database.server";
 
 async function getReceiptLine(
-  client: Awaited<ReturnType<typeof requirePermissions>>["client"],
+  client: Awaited<ReturnType<typeof authorize>>["client"],
   lineId: string,
   companyId: string
 ) {
@@ -28,8 +28,8 @@ async function getReceiptLine(
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId } = await authorize(request, {
+    "inventory.receipts": "View"
   });
 
   const { lineId } = params;
@@ -57,9 +57,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Adding and deleting are different permissions; the intent picks which.
   const formData = await request.formData();
   const isDelete = formData.get("intent") === "delete";
-  const { client, companyId, userId } = await requirePermissions(
+  const { client, companyId, userId } = await authorize(
     request,
-    isDelete ? { delete: "inventory" } : { create: "inventory" }
+    isDelete
+      ? { "inventory.receipts": "Full" }
+      : { "inventory.receipts": "Create" }
   );
 
   const line = await getReceiptLine(client, lineId, companyId);

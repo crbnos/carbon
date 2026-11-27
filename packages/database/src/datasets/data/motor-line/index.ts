@@ -11,6 +11,7 @@ import {
   HOLIDAYS,
   ITEM_POSTING_GROUPS,
   MATERIAL_TAXONOMY,
+  motorFoundation,
   NO_QUOTE_REASONS,
   PLANT,
   PRINTER_ROUTE,
@@ -62,6 +63,7 @@ export const motorLine: Dataset = {
   assetIndustryId: "automotive_precision",
   foundation: {
     departments: ["Assembly"],
+    roles: motorFoundation.roles,
     abilities: ["Precision Assembly"],
     processes: AJ3_PROCESSES,
     workCenters: AJ3_WORK_CENTERS,
@@ -72,6 +74,9 @@ export const motorLine: Dataset = {
       laborRate: 60,
       machineRate: 0
     },
+    // No customers, so no tax codes: the walkthrough sells nothing.
+    taxAuthorities: [],
+    taxCodes: [],
     customers: [],
     customerContacts: [],
     suppliers: SUPPLIERS.filter((s) => AJ3_SUPPLIERS.has(s.name)),

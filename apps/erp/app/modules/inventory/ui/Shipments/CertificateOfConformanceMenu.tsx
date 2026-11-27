@@ -89,7 +89,8 @@ const CertificateOfConformanceMenu = ({
   const customerId = fetcher.data?.customerId ?? null;
   const defaultContactId = fetcher.data?.defaultContactId ?? null;
   const canUpdate =
-    permissions.can("update", "inventory") && permissions.is("employee");
+    permissions.has({ "inventory.shipments": "Edit" }) &&
+    permissions.is("employee");
   const canSend = canUpdate && integrations.has("email") && !!customerId;
 
   // Hidden until the loader says whether the customer requires a certificate

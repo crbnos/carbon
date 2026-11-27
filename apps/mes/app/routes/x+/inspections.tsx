@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import {
@@ -69,7 +69,7 @@ function filterValues(filters: string[], key: string): string[] {
 }
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await authorize(request, {});
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
   const locationId = context.get(userContext)?.locationId;
 
@@ -368,7 +368,6 @@ export default function InspectionsRoute() {
   const [activeTab, setActiveTab] = useState("all");
   // Phones: the tab row scrolls sideways; keep the active tab in view.
   const tabsListRef = useRef<HTMLDivElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when the active tab changes
   useEffect(() => {
     tabsListRef.current
       ?.querySelector<HTMLElement>('[data-state="active"]')

@@ -19,7 +19,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
@@ -48,6 +48,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { itemType } from "~/modules/shared/shared.models";
 import type { ItemType } from "~/modules/shared/types";
@@ -69,6 +70,7 @@ export default function PurchaseOrderExplorer() {
     purchaseOrder: PurchaseOrder;
     lines: PurchaseOrderLine[];
     supplier: Supplier;
+    resolvedTax: LineTaxDecision | null;
   }>(path.to.purchaseOrder(orderId));
   const permissions = usePermissions();
 
@@ -84,7 +86,9 @@ export default function PurchaseOrderExplorer() {
     locationId:
       purchaseOrderData?.purchaseOrder?.locationId ?? defaults.locationId ?? "",
     supplierTaxAmount: 0,
-    taxPercent: 0,
+    // The supplier's tax code, else its bare percent.
+    taxCodeId: purchaseOrderData?.resolvedTax?.taxCodeId ?? undefined,
+    taxPercent: round(purchaseOrderData?.resolvedTax?.taxPercent ?? 0),
     supplierShippingCost: 0,
     exchangeRate: purchaseOrderData?.purchaseOrder?.exchangeRate ?? 1,
     requiredDate:
@@ -115,7 +119,9 @@ export default function PurchaseOrderExplorer() {
   );
 
   const canReorder =
-    !isDisabled && permissions.can("update", "purchasing") && lines.length > 1;
+    !isDisabled &&
+    permissions.has({ "purchasing.purchaseOrders": "Edit" }) &&
+    lines.length > 1;
 
   const editMode = useLineOrderEditMode<PurchaseOrderLine>({
     actionPath: path.to.purchaseOrderLineOrder(orderId),
@@ -166,7 +172,7 @@ export default function PurchaseOrderExplorer() {
             )
           ) : (
             <Empty>
-              {permissions.can("update", "sales") && (
+              {permissions.has({ "purchasing.purchaseOrders": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -192,7 +198,10 @@ export default function PurchaseOrderExplorer() {
               <Button
                 className="flex-1"
                 shortcut={EXPLORER_SHORTCUTS.addLine}
-                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                isDisabled={
+                  isDisabled ||
+                  !permissions.has({ "purchasing.purchaseOrders": "Edit" })
+                }
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newPurchaseOrderLineDisclosure.onOpen}
@@ -359,7 +368,7 @@ function PurchaseOrderLineItem({
     line.purchaseOrderLineType !== "G/L Account";
   const hasOutstandingQuantity = (line.quantityToReceive ?? 0) > 0;
   const orderStatus = orderData?.purchaseOrder?.status ?? "";
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.purchaseOrders": "Edit" });
   const canStopReceiving =
     canUpdate &&
     isReceivableLineType &&
@@ -439,7 +448,7 @@ function PurchaseOrderLineItem({
                 shortcut={MENU_ITEM_SHORTCUTS.duplicate}
                 disabled={
                   isDuplicateDisabled ||
-                  !permissions.can("create", "purchasing")
+                  !permissions.has({ "purchasing.purchaseOrders": "Create" })
                 }
                 onClick={(e) => {
                   e.stopPropagation();
@@ -454,7 +463,8 @@ function PurchaseOrderLineItem({
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={
-                  isDeleteDisabled || !permissions.can("delete", "purchasing")
+                  isDeleteDisabled ||
+                  !permissions.has({ "purchasing.purchaseOrders": "Full" })
                 }
                 onClick={(e) => {
                   e.stopPropagation();

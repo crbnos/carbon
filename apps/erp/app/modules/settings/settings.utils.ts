@@ -2,17 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { type PageGate, pageOfTable } from "@carbon/database/access";
 import type {
   DocumentEditType,
   DocumentTemplateType
 } from "@carbon/documents/template";
+import type { PartNumberParty } from "@carbon/documents/utils";
 import { isJobLocked } from "@carbon/utils";
 import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
 import { isSalesInvoiceLocked } from "~/modules/invoicing/invoicing.models";
 import {
   isPurchaseOrderLocked,
   isPurchaseReturnOrderLocked,
-  isRfqLocked
+  isRfqLocked,
+  purchaseOrderPartNumberRefusal
 } from "~/modules/purchasing/purchasing.models";
 import { isIssueLocked } from "~/modules/quality/quality.models";
 import {
@@ -35,7 +38,7 @@ export function totalScopeRows(rowsByTable: RowsByTable[]): number {
 
 /**
  * Where each editable document lives: the record it prints, its readable number,
- * the record's own lock, the module whose update permission edits it, and the
+ * the record's own lock, the page whose Edit level edits it, and the
  * column its Notes block prints (null: the document has no Notes block).
  */
 export interface DocumentEditRecord {
@@ -53,14 +56,31 @@ export interface DocumentEditRecord {
     | "nonConformance";
   readableId: string;
   isLocked: (status: string | null | undefined) => boolean;
-  module:
-    | "purchasing"
-    | "sales"
-    | "invoicing"
-    | "inventory"
-    | "production"
-    | "quality";
   notesColumn: "externalNotes" | "notes" | "content" | null;
+  /**
+   * The lines that store a part number display choice: their table, the column
+   * that names the document, whose part number "theirs" is, and why the choice
+   * cannot change in a status the record's own lock allows (a purchase order
+   * waiting for approval). Absent: the document has no part number choice.
+   */
+  partNumberLines?: {
+    table:
+      | "quoteLine"
+      | "salesOrderLine"
+      | "salesInvoiceLine"
+      | "shipmentLine"
+      | "purchaseOrderLine";
+    documentColumn:
+      | "quoteId"
+      | "salesOrderId"
+      | "invoiceId"
+      | "shipmentId"
+      | "purchaseOrderId";
+    party: PartNumberParty;
+    refusal?: (status: string | null | undefined) => string | null;
+    /** A record column whose values mean the document prints no lines. */
+    noLinesWhen?: { column: "sourceDocument"; values: readonly string[] };
+  };
 }
 
 export const DOCUMENT_EDIT_RECORDS: Record<
@@ -71,80 +91,116 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     table: "purchaseOrder",
     readableId: "purchaseOrderId",
     isLocked: isPurchaseOrderLocked,
-    module: "purchasing",
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "purchaseOrderLine",
+      documentColumn: "purchaseOrderId",
+      party: "supplier",
+      refusal: purchaseOrderPartNumberRefusal
+    }
   },
   purchaseReturnOrder: {
     table: "purchaseReturnOrder",
     readableId: "purchaseReturnOrderId",
     isLocked: isPurchaseReturnOrderLocked,
-    module: "purchasing",
     notesColumn: "externalNotes"
   },
   purchasingRfq: {
     table: "purchasingRfq",
     readableId: "rfqId",
     isLocked: isRfqLocked,
-    module: "purchasing",
     notesColumn: "notes"
   },
   quote: {
     table: "quote",
     readableId: "quoteId",
     isLocked: isQuoteLocked,
-    module: "sales",
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "quoteLine",
+      documentColumn: "quoteId",
+      party: "customer"
+    }
   },
   salesOrder: {
     table: "salesOrder",
     readableId: "salesOrderId",
     isLocked: isSalesOrderLocked,
-    module: "sales",
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "salesOrderLine",
+      documentColumn: "salesOrderId",
+      party: "customer"
+    }
   },
   salesReturnOrder: {
     table: "salesReturnOrder",
     readableId: "salesReturnOrderId",
     isLocked: isSalesReturnOrderLocked,
-    module: "sales",
     notesColumn: "externalNotes"
   },
   salesInvoice: {
     table: "salesInvoice",
     readableId: "invoiceId",
     isLocked: isSalesInvoiceLocked,
-    module: "invoicing",
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "salesInvoiceLine",
+      documentColumn: "invoiceId",
+      party: "customer"
+    }
   },
   packingSlip: {
     table: "shipment",
     readableId: "shipmentId",
     isLocked: (status) => status === "Posted" || status === "Voided",
-    module: "inventory",
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "shipmentLine",
+      documentColumn: "shipmentId",
+      party: "customer",
+      // A Delivery Ticket and a Receiving Report print rental units and
+      // contract lines, not the shipment's lines.
+      noLinesWhen: {
+        column: "sourceDocument",
+        values: ["Rental Agreement", "Customer Contract"]
+      }
+    }
   },
   stockTransfer: {
     table: "stockTransfer",
     readableId: "stockTransferId",
     isLocked: isStockTransferLocked,
-    module: "inventory",
     notesColumn: null
   },
   jobTraveler: {
     table: "job",
     readableId: "jobId",
     isLocked: isJobLocked,
-    module: "production",
     notesColumn: "notes"
   },
   issue: {
     table: "nonConformance",
     readableId: "nonConformanceId",
     isLocked: isIssueLocked,
-    module: "quality",
     notesColumn: "content"
   }
 };
+
+/**
+ * Why a document's lines cannot change which part numbers they print, else
+ * null: the record's lock, or a rule of the lines' own.
+ */
+export function partNumberLinesRefusal(
+  documentType: DocumentEditType,
+  status: string | null | undefined
+): string | null {
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+  return (
+    record.partNumberLines?.refusal?.(status) ??
+    (record.isLocked(status) ? "This document is locked." : null)
+  );
+}
 
 /**
  * The company terms setting a document's Terms block falls back to when it has
@@ -163,10 +219,21 @@ export const DOCUMENT_TERMS_FIELD: Partial<
   purchasingRfq: "purchasingTerms"
 };
 
-/** Editing how a document prints needs the update permission of its record. */
+/** Editing how a document prints needs Edit on the page that owns its record's table. */
 export const documentEditPermissions = Object.fromEntries(
   Object.entries(DOCUMENT_EDIT_RECORDS).map(([type, record]) => [
     type,
-    { update: record.module }
+    { [pageOfTable(record.table)]: "Edit" }
   ])
-) as Record<DocumentEditType, { update: DocumentEditRecord["module"] }>;
+) as Record<DocumentEditType, PageGate>;
+
+/** The custom fields a document's table defines, as a custom field block's
+ *  panel names them. */
+export function customFieldNames(
+  schemas: { table: string | null; fields: unknown }[],
+  table: string
+): { id: string; name: string }[] {
+  const fields = (schemas.find((schema) => schema.table === table)?.fields ??
+    []) as { id: string; name: string }[];
+  return fields.map(({ id, name }) => ({ id, name }));
+}

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { upsertWebhook } from "@carbon/ee/webhooks.server";
@@ -17,17 +17,15 @@ import { WebhookForm } from "~/modules/settings/ui/Webhooks";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    view: "settings"
-  });
+  await authorize(request, { "settings.webhooks": "View" });
 
   return null;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId, userId } = await authorize(request, {
+    "settings.webhooks": "View"
   });
 
   await requireFeature({

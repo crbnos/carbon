@@ -7,24 +7,21 @@ import {
   QUICKBOOKS_CLIENT_ID,
   QUICKBOOKS_CLIENT_SECRET
 } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { QuickBooks } from "@carbon/ee";
 import {
-  DEFAULT_SYNC_CONFIG,
   getProviderIntegration,
+  metadataOnConnect,
   ProviderID,
-  syncEnabledOnConnect
+  type ProviderIntegrationMetadata
 } from "@carbon/ee/accounting";
 import { quickbooksOnInstall } from "@carbon/ee/quickbooks/hooks.server";
 import { getLogger } from "@carbon/logger";
 import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  getIntegration,
-  upsertCompanyIntegration
-} from "~/modules/settings/settings.service";
+import { upsertCompanyIntegration } from "~/modules/settings/settings.service";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
@@ -35,9 +32,8 @@ export const config = {
 const logger = getLogger("erp", "quickbooks", "oauth");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+  const caller = await authorize(request, { "settings.integrations": "Edit" });
+  const { client, userId, companyId } = caller;
 
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
@@ -85,10 +81,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   try {
+    // Read the stored row BEFORE the code exchange: the exchange saves the new
+    // tokens through the provider, and without the stored metadata that save
+    // overwrote the organization and every setting.
+    const existing = await caller.api.settings.getIntegration({
+      id: QuickBooks.id
+    });
     const provider = getProviderIntegration(
       client,
       companyId,
-      ProviderID.QUICKBOOKS
+      ProviderID.QUICKBOOKS,
+      (existing.data?.metadata ?? undefined) as
+        | ProviderIntegrationMetadata
+        | undefined
     );
 
     // Exchange the authorization code for tokens. The redirect_uri must match
@@ -110,9 +115,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     // Sync starts off on a new connection so accounts can be mapped first; a
-    // reconnect to the same organization keeps the switch where it was.
-    const existing = await getIntegration(client, QuickBooks.id, companyId);
-    const syncEnabled = syncEnabledOnConnect(existing.data?.metadata, realmId);
+    // reconnect to the same organization keeps the switch and every setting.
 
     const createdQuickBooksIntegration = await upsertCompanyIntegration(
       client,
@@ -120,18 +123,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
         id: QuickBooks.id,
         active: true,
         // @ts-expect-error
-        metadata: {
-          syncConfig: DEFAULT_SYNC_CONFIG,
-          settings: { syncEnabled },
+        metadata: metadataOnConnect(existing.data?.metadata, realmId, {
+          ...auth,
           // Provider-specific fields live under providerMetadata (new
           // credential shape) — legacy rows are upgraded on read
-          credentials: {
-            ...auth,
-            providerMetadata: {
-              realmId
-            }
+          providerMetadata: {
+            realmId
           }
-        },
+        }),
         updatedBy: userId,
         companyId: companyId
       }

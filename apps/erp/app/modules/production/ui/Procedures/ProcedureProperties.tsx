@@ -45,7 +45,6 @@ const ProcedureProperties = () => {
       toastServiceError(data);
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (field: "name" | "processId" | "status", value: string | null) => {
       const formData = new FormData();
@@ -60,6 +59,7 @@ const ProcedureProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [id]
   );
 
@@ -148,7 +148,7 @@ const ProcedureProperties = () => {
         table="procedure"
         value={assignee ?? ""}
         variant="inline"
-        isReadOnly={!permissions.can("update", "production")}
+        isReadOnly={!permissions.has({ "production.procedures": "Edit" })}
       />
 
       <ValidatedForm

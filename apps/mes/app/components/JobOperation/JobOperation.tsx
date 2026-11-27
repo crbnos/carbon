@@ -29,6 +29,7 @@ import {
   CardHeader,
   CardTitle,
   Copy,
+  Count,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -129,6 +130,7 @@ import {
 import { AbilityWarning } from "~/components/AbilityWarning";
 import { MethodItemTypeIcon } from "~/components/Icons";
 import { ReworkBadge } from "~/components/ReworkBadge";
+import { UnitHoldBanner } from "~/components/UnitHoldBanner";
 import { useDateFormatter, useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import type {
@@ -163,12 +165,13 @@ import {
 } from "~/utils/kanban";
 import { useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
+import { holdingIssues, isUnitOnHold, type UnitHolds } from "~/utils/unitHold";
 import { operationUnits, shownRecordIndex } from "~/utils/workUnit";
 import ItemThumbnail from "../ItemThumbnail";
 import { MesAppBar } from "../MesAppBar";
 import { BatchCompleteModal } from "./components/BatchCompleteModal";
 import { BatchOverview } from "./components/BatchOverview";
-import { OperationChat } from "./components/Chat";
+import { OperationChat, useOperationNotes } from "./components/Chat";
 import {
   Controls,
   IconButtonWithTooltip,
@@ -252,6 +255,8 @@ type JobOperationProps = {
   /** The correction this rework operation belongs to, if any. */
   correctionName?: string | null;
   trackedEntities: TrackedEntity[];
+  /** The units on hold for an open quality issue (`readUnitHolds`). */
+  unitHolds?: UnitHolds;
   isFirstOperation: boolean;
   isFirstOpenOperation?: boolean;
   requireTrackedMaterialsIssued?: boolean;
@@ -292,6 +297,7 @@ export const JobOperation = ({
   thumbnailPath,
   correctionName,
   trackedEntities,
+  unitHolds,
   isFirstOperation,
   isFirstOpenOperation = false,
   requireTrackedMaterialsIssued = false,
@@ -317,12 +323,22 @@ export const JobOperation = ({
   // Serial work names the unit in hand (`useWorkUnit`, shared with the
   // assembly view); a batch parent's lot entity is the default.
   const isSerialOperation = !!parentIsSerial && !isBatched;
+  const units = operationUnits(
+    trackedEntities,
+    originalOperation.operationQuantity,
+    isSerialOperation
+      ? { operationId: originalOperation.id, holds: unitHolds }
+      : undefined
+  );
+  // A unit on hold for an open quality issue is not open here: no work names
+  // it and the screen moves past it, as the server does (`resolveWorkUnit`).
   const workUnit = useWorkUnit({
     serial: isSerialOperation,
     isFirstOperation,
-    units: operationUnits(trackedEntities, originalOperation.operationQuantity),
+    units,
     isOpen: (entity) =>
-      isSerialEntityIncompleteForOperation(entity, originalOperation.id)
+      isSerialEntityIncompleteForOperation(entity, originalOperation.id),
+    isOnHold: (entity) => isUnitOnHold(unitHolds, entity.id)
   });
   const heldUnit = workUnit.unit;
   const writesBlocked = workUnit.writesBlocked;
@@ -334,6 +350,10 @@ export const JobOperation = ({
     : (trackedEntityParam ?? trackedEntities[0]?.id);
   // The unit a write that needs an open unit names (and a timer).
   const trackedEntityId = isSerialOperation ? workUnit.workUnitId : shownUnitId;
+  // The open issues that hold the unit on screen.
+  const shownUnitHolds = isSerialOperation
+    ? holdingIssues(unitHolds, shownUnitId)
+    : [];
   const stepUnitId = isSerialOperation ? trackedEntityId : undefined;
   // A batched operation opens on the whole batch; "?scope=job" narrows to this
   // job's own details. Kept in the URL so a member link can land on either.
@@ -402,9 +422,7 @@ export const JobOperation = ({
   // The "N of M" heading counts only the units this operation works: a
   // correction or rework operation works the units sent into it.
   const unitPosition = Math.max(
-    trackedEntities
-      .filter((entity) => entity.inOperationScope !== false)
-      .findIndex((entity) => entity.id === shownUnitId),
+    units.findIndex((entity) => entity.id === shownUnitId),
     0
   );
 
@@ -596,7 +614,7 @@ export const JobOperation = ({
           ? (["setup", "machine", "labor"] as const)
           : (["setup", "labor", "machine"] as const)
         ).find((type) => active[type]);
-  // Chat is one job's thread, so a Chat tab left open in the job scope falls
+  // Notes are one job's thread, so a Notes tab left open in the job scope falls
   // back to Details on the batch.
   const tab = scope === "batch" && activeTab === "chat" ? "details" : activeTab;
   // Phones on Details show the context row and meters in the scrolling pane.
@@ -656,7 +674,6 @@ export const JobOperation = ({
   const fetcher = useFetcher<Result>();
 
   // Lazy creation of Inspection steps for non-conformance actions
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     async function createInspectionStepsForNonConformanceActions() {
       if (!carbon || !operationId) return;
@@ -717,6 +734,7 @@ export const JobOperation = ({
     }
 
     createInspectionStepsForNonConformanceActions();
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [
     carbon,
     operationId,
@@ -803,6 +821,7 @@ export const JobOperation = ({
   const item = items.find((it) => it.id === operation.itemId);
 
   const scrapParts = useScrapParts(operation.id);
+  const notes = useOperationNotes(operation.id);
 
   const openIssueModal = (material: JobMaterial | null) => {
     flushSync(() => {
@@ -861,6 +880,7 @@ export const JobOperation = ({
       // Unconsume may name a finished unit; Issue waits for an open one.
       parentId={shownUnitId ?? ""}
       issueBlocked={writesBlocked}
+      parentOnHold={shownUnitHolds.length > 0}
       parentIdIsSerialized={method?.requiresSerialTracking ?? false}
       trackedInputs={resolvedMaterials?.trackedInputs ?? []}
       onClose={issueModal.onClose}
@@ -1357,9 +1377,14 @@ export const JobOperation = ({
                     <Trans>Instructions</Trans>
                   </TabsTrigger>
                   {/* Notes are kept per job operation — on the batch there is no
-                    one thread to show, so Chat opens from a job. */}
+                    one thread to show, so Notes opens from a job. */}
                   <TabsTrigger value="chat" disabled={scope === "batch"}>
-                    <Trans>Chat</Trans>
+                    <span className="flex items-center gap-1.5">
+                      <Trans>Notes</Trans>
+                      {notes.messages.length > 0 && (
+                        <Count count={notes.messages.length} />
+                      )}
+                    </span>
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -1453,6 +1478,14 @@ export const JobOperation = ({
             {abilityWarning && (
               <div className="px-4 pt-4 lg:px-6">
                 <AbilityWarning warning={abilityWarning} />
+              </div>
+            )}
+            {shownUnitHolds.length > 0 && (
+              <div className="px-4 pt-4 lg:px-6">
+                <UnitHoldBanner
+                  serialNumber={heldUnit?.readableId}
+                  issues={shownUnitHolds}
+                />
               </div>
             )}
             {scope === "job" && batch && (
@@ -1979,9 +2012,11 @@ export const JobOperation = ({
                                                     ) : (
                                                       <Trans>
                                                         {unitPosition + 1} of{" "}
-                                                        {
-                                                          operation.operationQuantity
-                                                        }
+                                                        {Math.max(
+                                                          units.length,
+                                                          operation.operationQuantity ??
+                                                            0
+                                                        )}
                                                       </Trans>
                                                     )}
                                                   </Heading>
@@ -2828,7 +2863,7 @@ export const JobOperation = ({
           value="chat"
           className="[grid-area:main] mt-0 h-full min-h-0"
         >
-          <OperationChat operation={operation} />
+          <OperationChat operation={operation} notes={notes} />
         </TabsContent>
         {showControls && (
           <Controls
@@ -3191,11 +3226,8 @@ export const JobOperation = ({
           jobId={job.id!}
           isOpen={reworkModal.isOpen}
           onClose={reworkModal.onClose}
-          trackedEntities={trackedEntities.filter(
-            // A scoped (rework or correction) operation sends on only its
-            // own units.
-            (entity) => entity.inOperationScope !== false
-          )}
+          unitHolds={unitHolds}
+          trackedEntities={trackedEntities}
           parentIsSerial={parentIsSerial}
           parentIsBatch={parentIsBatch}
           returnFocusRef={actionsSheetOpenerRef}
@@ -3292,6 +3324,8 @@ export const JobOperation = ({
       <SerialSelectorModal
         open={workUnit.pickerOpen}
         availableEntities={workUnit.openUnits}
+        onHoldEntities={workUnit.onHoldUnits}
+        unitHolds={unitHolds}
         onClose={workUnit.closePicker}
         onCancel={() => navigate(path.to.operations)}
         onSelect={(entity) => workUnit.pick(entity.id)}

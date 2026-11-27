@@ -222,7 +222,9 @@ parent ids server-side from the batch's membership (see `mes-job-operation-ui.md
 `trackedEntitiesToOperation`) posts a negative Consumption row and, on partial use, **splits**
 the entity — the CONSUMED portion becomes the NEW `child` (`status: 'Consumed'`), the survivor
 keeps its id at lineside. Consumption/split rows are booked against the entity's actual on-hand
-bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. Before it consumes, `trackedEntitiesToOperation` (and each batch member of
+bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. An **unconsume**
+(`unconsumeTrackedEntities`) returns the unit to the bin and stripe of its newest negative
+Consumption row: after a consumption no bin nets positive, so it reads the row it reverses. Before it consumes, `trackedEntitiesToOperation` (and each batch member of
 `trackedEntitiesToBatch`) refuses a serial unit that its own job is still building
 (`assertUnitsNotInProduction`, `inventory.service.ts`): an operation of the unit's
 `Job Make Method` that is not Done or Canceled, applies to the unit (an operation with

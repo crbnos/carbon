@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   IconButton,
@@ -34,11 +35,11 @@ import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { Table as DataTable, DateTime } from "~/components";
 import { setupGridHeight } from "~/components/Setup";
 import { useDateFormatter } from "~/hooks";
+import { contractLineName, lineColumnKey } from "./contractGrid";
 import ContractMoney from "./ContractMoney";
 import ContractRevenueGrid, {
   ContractRecognitionGrid
 } from "./ContractRevenueGrid";
-import { contractLineName, lineColumnKey } from "./contractGrid";
 import type { ContractLine, ContractRouteData } from "./types";
 
 type ContractRevenueProps = Pick<
@@ -102,6 +103,7 @@ const ContractRevenue = ({
           <CardTitle>
             <Trans>Revenue</Trans>
           </CardTitle>
+          <RevenueByCalendarMonth />
         </CardHeader>
         <CardContent>
           <VStack spacing={8} className="w-full">
@@ -176,6 +178,7 @@ const ContractRevenue = ({
         <CardTitle>
           <Trans>Revenue</Trans>
         </CardTitle>
+        <RevenueByCalendarMonth />
       </CardHeader>
       <CardContent>
         {lines.length === 0 ? (
@@ -593,7 +596,6 @@ function useProjectNames(lines: ContractLine[]): Record<string, string> {
   ].sort();
   const key = projectIds.join(",");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the id list, not the array identity
   useEffect(() => {
     if (!carbon || projectIds.length === 0) return;
     let cancelled = false;
@@ -612,9 +614,24 @@ function useProjectNames(lines: ContractLine[]): Record<string, string> {
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed on the id list, not the array identity
   }, [carbon, key]);
 
   return names;
 }
 
 export default ContractRevenue;
+
+// Revenue is earned per calendar month while invoices bill whole billing
+// periods, so without this a part month reads as a mistake.
+function RevenueByCalendarMonth() {
+  return (
+    <CardDescription>
+      <Trans>
+        Revenue is counted per calendar month, so a month the contract starts or
+        ends part-way through gets part of it. Invoices still bill the full
+        amount of each billing period.
+      </Trans>
+    </CardDescription>
+  );
+}

@@ -31,7 +31,12 @@ import type {
 } from "~/components/Editable";
 import { useVirtualRows } from "~/components/Table/useVirtualRows";
 import { Row } from "./components";
-import { getAccessorKey, updateNestedProperty } from "./utils";
+import {
+  getAccessorKey,
+  gridKeyCode,
+  takesKeyFromEditor,
+  updateNestedProperty
+} from "./utils";
 
 // Used until a row is measured: a body cell is `h-11`.
 const ESTIMATED_ROW_HEIGHT = 44;
@@ -40,6 +45,9 @@ const ESTIMATED_ROW_HEIGHT = 44;
 // cell.
 const HEADER_HEIGHT = 44;
 const OVERSCAN = 3;
+// Portaled overlays (a combobox list, a calendar, a row menu) own their keys.
+const OVERLAY_SELECTOR =
+  "[data-radix-popper-content-wrapper],[role=menu],[role=listbox],[role=dialog]";
 
 interface GridProps<T extends object> {
   canEdit?: boolean;
@@ -64,6 +72,11 @@ interface GridProps<T extends object> {
    * row is rendered and the grid is as tall as its rows.
    */
   maxHeight?: number;
+  /**
+   * Select a row the moment one is added: it scrolls into view with its first
+   * editable cell ringed. For grids whose add button sits outside the rows.
+   */
+  selectAddedRow?: boolean;
 
   withNewRow?: boolean;
   withSimpleSorting?: boolean;
@@ -80,6 +93,7 @@ const Grid = <T extends object>({
   editableComponents,
   isRowEditable,
   maxHeight,
+  selectAddedRow = false,
   defaultColumnOrder,
   defaultColumnVisibility,
   withSimpleSorting = true,
@@ -151,7 +165,6 @@ const Grid = <T extends object>({
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCell, setSelectedCell] = useState<Position>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const focusOnSelectedCell = useCallback(() => {
     if (selectedCell == null) return;
     const cell = tableContainerRef.current?.querySelector(
@@ -234,9 +247,11 @@ const Grid = <T extends object>({
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!selectedCell) return;
+      // The Enter or Tab that ends an IME composition belongs to it.
+      if (!selectedCell || event.nativeEvent.isComposing) return;
 
-      const { code, shiftKey } = event;
+      const { shiftKey } = event;
+      const code = gridKeyCode(event);
 
       const commandCodes: {
         [key: string]: [number, number];
@@ -367,8 +382,23 @@ const Grid = <T extends object>({
     [canEdit, isCellEditable, isEditing, selectedCell, table]
   );
 
+  // Only Tab and Enter while editing: other keys reach the editor first.
+  const onKeyDownCapture = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!selectedCell || !takesKeyFromEditor(event.nativeEvent, isEditing))
+        return;
+      const overlay =
+        event.target instanceof Element
+          ? event.target.closest(OVERLAY_SELECTOR)
+          : null;
+      if (overlay && !overlay.contains(event.currentTarget)) return;
+      event.stopPropagation();
+      onKeyDown(event);
+    },
+    [isEditing, onKeyDown, selectedCell]
+  );
+
   // reset the selected cell when the table data changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     setSelectedCell(null);
   }, [columnOrder, columnVisibility]);
@@ -378,6 +408,23 @@ const Grid = <T extends object>({
   });
 
   const rows = table.getRowModel().rows;
+
+  // Rows keep the order of `data`, so an added row is the last one.
+  const lastRowCount = useRef(data.length);
+  useEffect(() => {
+    const added = data.length === lastRowCount.current + 1;
+    lastRowCount.current = data.length;
+    if (!selectAddedRow || !added) return;
+    const row = data.length - 1;
+    const columnCount =
+      table.getLeftVisibleLeafColumns().length +
+      table.getCenterVisibleLeafColumns().length;
+    const column = Array.from({ length: columnCount }, (_, c) => c).find((c) =>
+      isCellEditable(row, c)
+    );
+    setIsEditing(false);
+    setSelectedCell({ row, column: column ?? 0 });
+  }, [data.length, selectAddedRow, table, isCellEditable]);
 
   /* Row virtualization (only with `maxHeight`) */
   const isVirtual = maxHeight !== undefined;
@@ -473,7 +520,7 @@ const Grid = <T extends object>({
         isVirtual && !contained && "overflow-hidden rounded-md border"
       )}
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: delegated keydown for cell navigation/editing of the focused cell inside; the scroller itself is not a control */}
+      {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- delegated keydown for cell navigation/editing of the focused cell inside; the scroller itself is not a control */}
       <div
         className={cn(
           "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-md:scroll-fade-x",
@@ -485,6 +532,7 @@ const Grid = <T extends object>({
         }
         ref={tableContainerRef}
         onKeyDown={onKeyDown}
+        onKeyDownCapture={onKeyDownCapture}
       >
         <Table
           full={contained || isVirtual}

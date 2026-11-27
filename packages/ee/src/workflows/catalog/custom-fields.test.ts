@@ -121,7 +121,7 @@ describe("resolveCustomFieldEvent", () => {
       operation: "UPDATE",
       field: "customFields.cf_1"
     });
-    expect(event?.permission).toBe("sales");
+    expect(event?.permission).toBe("sales.salesOrders");
     expect(event?.outputs).toEqual({
       record: t.entity("salesOrder"),
       before: t.entity("salesOrder"),

@@ -16,7 +16,6 @@ import { GUIDED_CONTACT, SUPPORT_BOOKING_URL } from "../content/support";
 import { checkKey } from "../logic";
 import type { ImplementationRowData } from "../types";
 import { EditableField } from "./EditableField";
-import { ProgressPill } from "./ProgressPill";
 import {
   EditableInput,
   PageHeader,
@@ -24,6 +23,7 @@ import {
   Section,
   SectionList
 } from "./primitives";
+import { ProgressPill } from "./ProgressPill";
 import {
   useCanEdit,
   useCheckMap,

@@ -58,9 +58,9 @@ export const LinkIssue = (props: Props) => {
         `?actionId=${props.taskId}&entityType=${props.entityType}&search=${encodeURIComponent(term.trim())}`
     );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: load once, on open
   useEffect(() => {
     search("");
+    // oxlint-disable-next-line react/exhaustive-deps -- load once, on open
   }, []);
 
   const onSearch = useDebounce((e: React.ChangeEvent<HTMLInputElement>) => {

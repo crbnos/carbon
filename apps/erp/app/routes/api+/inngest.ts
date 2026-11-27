@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NO_ORIGIN } from "@carbon/api/service-fn.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   functions,
@@ -15,7 +16,6 @@ import { annotateRequestSpan } from "@carbon/logger/span";
 import { serve } from "inngest/remix";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { tableJobHandlers } from "~/utils/table-jobs.server";
-import { scopesFromPermissions } from "./v1+/lib/base.server";
 
 const logger = getLogger("erp", "inngest");
 
@@ -56,7 +56,11 @@ function wireWorkflowDispatch() {
       {
         ...context,
         authKind: "session",
-        scopes: scopesFromPermissions(permissions, context.companyId)
+        permissions,
+        // A workflow acts only as an owner who is an employee
+        // (`readOwnerPermissions`).
+        role: "employee",
+        origin: NO_ORIGIN
       },
       args
     );

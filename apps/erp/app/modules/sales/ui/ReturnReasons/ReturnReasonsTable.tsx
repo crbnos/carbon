@@ -98,7 +98,7 @@ const ReturnReasonsTable = memo((props: ReturnReasonsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "sales")}
+            disabled={!permissions.has({ "sales.returnReasons": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteReturnReason(row.id)}?${params.toString()}`
@@ -121,7 +121,7 @@ const ReturnReasonsTable = memo((props: ReturnReasonsTableProps) => {
       count={count}
       infinite={infinite}
       primaryAction={
-        permissions.can("create", "sales") && (
+        permissions.has({ "sales.returnReasons": "Create" }) && (
           <New
             label={t`Reason`}
             to={`${path.to.newReturnReason}?${params.toString()}`}

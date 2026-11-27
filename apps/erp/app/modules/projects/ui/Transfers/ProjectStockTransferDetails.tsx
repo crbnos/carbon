@@ -64,7 +64,8 @@ export default function ProjectStockTransferDetails({
   const [items] = useItems();
   const formatQuantity = useQuantityFormatter();
   const isEditable =
-    transfer.status === "Draft" && permissions.can("update", "projects");
+    transfer.status === "Draft" &&
+    permissions.has({ "projects.projects": "Edit" });
 
   // The transfer's own owners stay listed even when a project no longer
   // keeps project stock, so the form never loses its value.

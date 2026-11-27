@@ -27,7 +27,7 @@ import {
   customerApprovalVerifications,
   firstArticleInspectionProductValidator
 } from "../../quality.models";
-import { getCertificateTypeLabel } from "../Certificates/CertificateForm";
+import { getCertificateTypeLabel } from "../Certificates/certificateTypeLabels";
 import { useFirstArticleLabels } from "./useFirstArticleLabels";
 
 type FirstArticleProductFormProps = {
@@ -131,7 +131,11 @@ const FirstArticleProductForm = ({
                 <Button variant="solid" onClick={onClose}>
                   <Trans>Cancel</Trans>
                 </Button>
-                <Submit isDisabled={!permissions.can("update", "quality")}>
+                <Submit
+                  isDisabled={
+                    !permissions.has({ "quality.firstArticles": "Edit" })
+                  }
+                >
                   <Trans>Save</Trans>
                 </Submit>
               </HStack>

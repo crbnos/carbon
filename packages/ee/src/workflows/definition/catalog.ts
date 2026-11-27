@@ -2,6 +2,13 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import {
+  anyOf,
+  type Gate,
+  type GateLevel,
+  type PageGate,
+  type PageId
+} from "@carbon/database/access";
 import { t, type ValueType } from "./types";
 
 /** How the matcher recognises this event. Only the matcher reads it. */
@@ -9,20 +16,35 @@ export type EventMatch =
   | { table: string; operation: "INSERT" | "UPDATE" | "DELETE"; field?: string }
   | { moment: string };
 
-export type PermissionAction = "view" | "create" | "update" | "delete";
+/** A page, or the pages of which any one is enough (an item: one page per item type). */
+export type EventPermission = PageId | readonly PageId[];
 
-/** What the owner must hold for a node to run. */
-export interface RequiredPermission {
-  /** Lowercase permission module, e.g. "purchasing". */
-  module: string;
-  action: PermissionAction;
+/** The level on a page, or on any one of several pages. */
+export function gateOn(pages: EventPermission, level: GateLevel): Gate {
+  return typeof pages === "string"
+    ? ({ [pages]: level } as PageGate)
+    : anyOf(pages as readonly PageId[], level);
+}
+
+/**
+ * What a subscribing workflow's owner must hold for an event: View on the
+ * page of its table. The engine and the builder's test run both check this.
+ */
+export function eventGate(permission: EventPermission): Gate {
+  return gateOn(permission, "View");
+}
+
+/** The pages a gate names, in order. */
+export function gatePages(gate: Gate): PageId[] {
+  const alternatives = (Array.isArray(gate) ? gate : [gate]) as PageGate[];
+  return alternatives.flatMap((one) => Object.keys(one) as PageId[]);
 }
 
 export interface CatalogEvent {
   id: string;
   outputs: Record<string, ValueType>;
-  /** Lowercase permission module the subscribing workflow's owner must hold. */
-  permission?: string;
+  /** The page of the event's table the subscribing workflow's owner must view. */
+  permission?: EventPermission;
   match?: EventMatch;
 }
 
@@ -110,7 +132,7 @@ export interface CatalogAction {
   inputs: Record<string, CatalogInput>;
   outputs: Record<string, ValueType>;
   batchable: boolean;
-  permission: RequiredPermission;
+  permission: Gate;
   /** Each group needs at least one of its input names supplied. */
   requireOneOf?: string[][];
 }
@@ -149,7 +171,7 @@ export interface CatalogIntegration {
   /** Always false: the engine runs an integration step once (`execute.ts` batches
    * actions only), so a list wired into a single-value input is a type error. */
   batchable: false;
-  permission: RequiredPermission;
+  permission: Gate;
   piece: { name: string; action: string };
 }
 
@@ -158,14 +180,14 @@ export interface CatalogOperation {
   entity: string;
   inputs: Record<string, CatalogInput>;
   output: ValueType;
-  permission: RequiredPermission;
+  permission: Gate;
 }
 
 export interface CatalogEntity {
   name: string;
   properties: Record<string, ValueType>;
   /** What the owner must hold to read one; a lookup gates on this. */
-  permission?: RequiredPermission;
+  permission?: Gate;
   /** Plain-English per-column description, keyed by column name.
    * Only present for columns the registry explicitly describes. */
   descriptions?: Record<string, string>;
@@ -232,28 +254,28 @@ const FIXTURE_ENTITIES: CatalogEntity[] = [
       status: t.string,
       assignee: t.entity("user")
     },
-    permission: { module: "purchasing", action: "view" },
+    permission: { "purchasing.purchaseOrders": "View" },
     display: ["purchaseOrderId"]
   },
   {
     name: "user",
     properties: { email: t.string, manager: t.entity("user") },
-    permission: { module: "users", action: "view" }
+    permission: { "users.accounts": "View" }
   },
   {
     name: "part",
     properties: { name: t.string, unitPrice: t.number },
-    permission: { module: "parts", action: "view" }
+    permission: { "parts.parts": "View" }
   },
   {
     name: "job",
     properties: { name: t.string, dueDate: t.date },
-    permission: { module: "production", action: "view" }
+    permission: { "production.jobs": "View" }
   },
   {
     name: "issue",
     properties: { title: t.string },
-    permission: { module: "quality", action: "view" }
+    permission: { "quality.issues": "View" }
   }
 ];
 
@@ -266,7 +288,7 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     },
     outputs: {},
     batchable: true,
-    permission: { module: "users", action: "view" }
+    permission: { "users.accounts": "View" }
   },
   {
     id: "updatePart",
@@ -276,7 +298,7 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     },
     outputs: { part: t.entity("part") },
     batchable: true,
-    permission: { module: "parts", action: "update" }
+    permission: { "parts.parts": "Edit" }
   },
   {
     // Two entity inputs, so a list can be wired to each — the shape that makes
@@ -288,14 +310,14 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     },
     outputs: { part: t.entity("part") },
     batchable: true,
-    permission: { module: "parts", action: "update" }
+    permission: { "parts.parts": "Edit" }
   },
   {
     id: "createIssue",
     inputs: { title: { type: t.string, required: true } },
     outputs: { issue: t.entity("issue") },
     batchable: false,
-    permission: { module: "quality", action: "create" }
+    permission: { "quality.issues": "Create" }
   },
   {
     id: "alertSomeone",
@@ -315,7 +337,7 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     },
     outputs: {},
     batchable: false,
-    permission: { module: "users", action: "view" },
+    permission: { "users.accounts": "View" },
     requireOneOf: [["user", "role"]]
   },
   {
@@ -338,7 +360,7 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     },
     outputs: { status: t.number },
     batchable: true,
-    permission: { module: "workflows", action: "update" }
+    permission: { "workflows.workflows": "Edit" }
   }
 ];
 
@@ -348,7 +370,7 @@ const FIXTURE_OPERATIONS: CatalogOperation[] = [
     entity: "job",
     inputs: { job: { type: t.entity("job"), required: true } },
     output: t.number,
-    permission: { module: "production", action: "view" }
+    permission: { "production.jobs": "View" }
   }
 ];
 

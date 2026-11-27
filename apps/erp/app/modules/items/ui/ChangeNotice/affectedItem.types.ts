@@ -73,9 +73,17 @@ export type DraftOperationMapped = Omit<
   workInstruction: JSONContent | null;
 };
 
-// v2: one affected item plus its CO-owned Draft make method (real rows shaped
-// for the embedded BillOfMaterial / BillOfProcess editors), the change type, and
-// the read-only authoring diff. The $id loader assembles this per affected item.
+// One row of the change notice's affected-item list: what the explorer, the
+// overview and the release dialog read. The $id loader returns one per item.
+export type AffectedItemListEntry = {
+  affectedItem: ChangeNoticeAffectedItemWithLabel;
+  diff?: ChangeNoticeItemDiff;
+};
+
+// One affected item plus its CO-owned Draft make method (real rows shaped for
+// the embedded BillOfMaterial / BillOfProcess editors), the change type, and
+// the read-only authoring diff. The $id.$affectedId.details loader assembles it
+// for the open item only.
 export type AffectedItemDraft = {
   affectedItem: ChangeNoticeAffectedItemWithLabel;
   // The item the draft edits — the same item for a Version, the new item for

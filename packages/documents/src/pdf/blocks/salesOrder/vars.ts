@@ -3,15 +3,22 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { formatDate, formatPercent } from "@carbon/utils";
-import type { LineMergeToken, MergeToken } from "../../../template";
+import type { MergeToken, RowVars } from "../../../template";
 import {
   getLineDescription,
   getLineDescriptionDetails,
   getLineTaxableSubtotal,
   getLineTotal,
-  getTotal
+  getTotal,
+  lineCustomerPart
 } from "../../../utils/sales-order";
-import { addressVars, companyVars, incotermText, str } from "../textVars";
+import {
+  addressVars,
+  companyVars,
+  incotermText,
+  linePartNumberVars,
+  str
+} from "../textVars";
 import type { SalesOrderData } from "./types";
 
 /**
@@ -109,6 +116,15 @@ export function buildSalesOrderVars(
       postalCode: loc?.paymentPostalCode,
       country: loc?.paymentCountryName
     }),
+    ...addressVars("shipTo", {
+      name: loc?.shipToCustomerName,
+      addressLine1: loc?.shipToAddressLine1,
+      addressLine2: loc?.shipToAddressLine2,
+      city: loc?.shipToCity,
+      stateProvince: loc?.shipToStateProvince,
+      postalCode: loc?.shipToPostalCode,
+      country: loc?.shipToCountryName
+    }),
 
     ...companyVars(data.company)
   };
@@ -118,14 +134,26 @@ export function buildSalesOrderVars(
 export function buildSalesOrderLineVars(
   line: SalesOrderData["salesOrderLines"][number],
   rowNumber: number,
-  data: Pick<SalesOrderData, "numberFormatter" | "rateFormatter" | "locale">
-): Record<LineMergeToken<"salesOrder">, string> {
+  data: Pick<
+    SalesOrderData,
+    "numberFormatter" | "rateFormatter" | "locale" | "partNumberDisplayDraft"
+  >
+): RowVars<"salesOrder", "line"> {
   const money = (v: number) => data.numberFormatter.format(v);
   const positive = (v: number) => (v > 0 ? money(v) : "");
   const taxPercent = line.taxPercent ?? 0;
+  const customerPart = lineCustomerPart(line);
   const common = {
-    "line.description": str(getLineDescription(line)),
-    "line.details": str(getLineDescriptionDetails(line))
+    // The part numbers per the line's display choice.
+    "line.description": str(
+      getLineDescription(line, data.partNumberDisplayDraft, customerPart)
+    ),
+    "line.details": str(getLineDescriptionDetails(line)),
+    ...linePartNumberVars({
+      ours: line.itemReadableId,
+      theirs: customerPart.id,
+      theirsRevision: customerPart.revision
+    })
   };
 
   if (line.salesOrderLineType === "Comment") {

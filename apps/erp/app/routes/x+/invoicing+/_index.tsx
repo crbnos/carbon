@@ -2,21 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
-import {
-  getApAging,
-  getApTieOut,
-  getArAging,
-  getArTieOut,
-  getPayments
-} from "~/modules/invoicing/invoicing.service";
 import type { AgingTotals, RecentPayment } from "~/modules/invoicing/ui";
 import { InvoicingDashboard } from "~/modules/invoicing/ui";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -64,9 +57,30 @@ function sumAging(rows: AgingRow[]): AgingTotals {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing"
-  });
+  const { client, companyId, api, permissions } = await authorize(
+    request,
+    anyOf(pagesOf("invoicing"), "View")
+  );
+
+  // RLS reads the whole module, so each section checks its own page.
+  const can = {
+    receivables: holdsGate(
+      permissions,
+      { "invoicing.receivables": "View" },
+      companyId
+    ),
+    payables: holdsGate(
+      permissions,
+      { "invoicing.payables": "View" },
+      companyId
+    ),
+    payments: holdsGate(
+      permissions,
+      { "invoicing.payments": "View" },
+      companyId
+    )
+  };
+  const none = { data: null } as const;
 
   const asOfDate = datetime
     .today(await getCompanyTimeZone(client, companyId))
@@ -75,32 +89,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // GL tie-outs only mean something once journals count — skip them
   // entirely before the accounting cutover.
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
   const accountingSetUp = hasAccountingCutover(companySettings.data);
 
   const [arAging, apAging, arTieOut, apTieOut, payments] = await Promise.all([
-    getArAging(client, companyId, asOfDate, { bucketDays: BUCKET_DAYS }),
-    getApAging(client, companyId, asOfDate, { bucketDays: BUCKET_DAYS }),
-    accountingSetUp
-      ? getArTieOut(client, companyId, asOfDate)
-      : Promise.resolve({ data: null }),
-    accountingSetUp
-      ? getApTieOut(client, companyId, asOfDate)
-      : Promise.resolve({ data: null }),
-    getPayments(client, companyId, {
-      search: null,
-      paymentType: null,
-      status: null,
-      customerId: null,
-      supplierId: null,
-      limit: 6,
-      cursor: null,
-      sorts,
-      filters
-    })
+    can.receivables
+      ? api.invoicing.getArAging({
+          asOfDate,
+          options: { bucketDays: BUCKET_DAYS }
+        })
+      : none,
+    can.payables
+      ? api.invoicing.getApAging({
+          asOfDate,
+          options: { bucketDays: BUCKET_DAYS }
+        })
+      : none,
+    accountingSetUp && can.receivables
+      ? api.invoicing.getArTieOut({ asOfDate })
+      : none,
+    accountingSetUp && can.payables
+      ? api.invoicing.getApTieOut({ asOfDate })
+      : none,
+    can.payments
+      ? api.invoicing.getPayments({
+          search: null,
+          paymentType: null,
+          status: null,
+          customerId: null,
+          supplierId: null,
+          limit: 6,
+          cursor: null,
+          sorts,
+          filters
+        })
+      : none
   ]);
 
   return {
+    can,
     asOfDate,
     bucketDays: BUCKET_DAYS,
     accountingSetUp,
@@ -109,7 +136,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     arTieOut: arTieOut.data ?? null,
     apTieOut: apTieOut.data ?? null,
     // The query reads one row past `limit` (the next-page check); drop it.
-    recentPayments: (payments.data ?? []).slice(
+    recentPayments: (payments.data?.rows ?? []).slice(
       0,
       6
     ) as unknown as RecentPayment[]
@@ -122,6 +149,7 @@ export default function InvoicingIndexRoute() {
     <InvoicingDashboard
       asOfDate={data.asOfDate}
       bucketDays={data.bucketDays}
+      can={data.can}
       accountingSetUp={data.accountingSetUp}
       ar={data.ar}
       ap={data.ap}

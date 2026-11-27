@@ -74,9 +74,8 @@ export async function assertReceiptNotVoided(
     .select("status")
     .where("id", "=", inspection.sourceDocumentId)
     .where("companyId", "=", companyId);
-  const receipt = await (lock === "share"
-    ? query.forShare()
-    : query.forNoKeyUpdate()
+  const receipt = await (
+    lock === "share" ? query.forShare() : query.forNoKeyUpdate()
   ).executeTakeFirst();
   if (receipt?.status === "Voided") {
     throw new Error("The receipt of this inspection was voided");

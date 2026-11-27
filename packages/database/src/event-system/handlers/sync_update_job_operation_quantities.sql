@@ -7,16 +7,34 @@ DECLARE
   v_job_operation_id TEXT;
   v_job_id TEXT;
   v_user_id TEXT;
-  v_is_last_top_level_operation BOOLEAN := FALSE;
 BEGIN
   v_user_id := COALESCE(
     p_new->>'updatedBy', p_new->>'createdBy',
     p_old->>'updatedBy', p_old->>'createdBy'
   );
 
-  IF p_operation = 'INSERT' THEN
-    v_job_operation_id := p_new->>'jobOperationId';
+  v_job_operation_id := CASE WHEN p_operation = 'DELETE' THEN p_old->>'jobOperationId'
+                             ELSE p_new->>'jobOperationId' END;
 
+  -- A terminal quantity updates both job and operation and can receive the
+  -- job. Take the receipt's own lock (FOR UPDATE) first, even for a direct
+  -- insert (e.g. inspection scrap), so the receipt never upgrades a weaker
+  -- job lock; other operations update only their own counts.
+  SELECT j.id INTO v_job_id
+  FROM "jobOperation" jo
+  JOIN "jobMakeMethod" method ON method.id = jo."jobMakeMethodId" AND method."companyId" = jo."companyId"
+  JOIN "job" j ON j.id = jo."jobId" AND j."companyId" = jo."companyId"
+  WHERE jo.id = v_job_operation_id AND method."parentMaterialId" IS NULL
+    AND NOT EXISTS (
+      SELECT 1
+      FROM "jobOperationDependency" dep
+      JOIN "jobOperation" child ON child.id = dep."operationId"
+      JOIN "jobMakeMethod" child_method ON child_method.id = child."jobMakeMethodId"
+      WHERE dep."dependsOnId" = jo.id AND child_method."parentMaterialId" IS NULL
+    )
+  FOR UPDATE OF j;
+
+  IF p_operation = 'INSERT' THEN
     UPDATE "jobOperation"
     SET
       "quantityComplete" = "quantityComplete" +
@@ -28,8 +46,6 @@ BEGIN
     WHERE id = v_job_operation_id;
 
   ELSIF p_operation = 'UPDATE' THEN
-    v_job_operation_id := p_new->>'jobOperationId';
-
     UPDATE "jobOperation"
     SET
       "quantityComplete" = "quantityComplete"
@@ -44,8 +60,6 @@ BEGIN
     WHERE id = v_job_operation_id;
 
   ELSIF p_operation = 'DELETE' THEN
-    v_job_operation_id := p_old->>'jobOperationId';
-
     UPDATE "jobOperation"
     SET
       "quantityComplete" = "quantityComplete" -
@@ -66,27 +80,7 @@ BEGIN
     AND "targetQuantity" > 0
     AND ("quantityComplete" + "quantityReworked") >= "targetQuantity";
 
-  SELECT jo."jobId" INTO v_job_id
-  FROM "jobOperation" jo
-  WHERE jo.id = v_job_operation_id;
-
-  SELECT EXISTS (
-    SELECT 1
-    FROM "jobOperation" jo
-    INNER JOIN "jobMakeMethod" jmm ON jmm.id = jo."jobMakeMethodId"
-    WHERE jo.id = v_job_operation_id
-      AND jmm."parentMaterialId" IS NULL
-      AND NOT EXISTS (
-        SELECT 1
-        FROM "jobOperationDependency" dep
-        INNER JOIN "jobOperation" child_jo ON child_jo.id = dep."operationId"
-        INNER JOIN "jobMakeMethod" child_jmm ON child_jmm.id = child_jo."jobMakeMethodId"
-        WHERE dep."dependsOnId" = jo.id
-          AND child_jmm."parentMaterialId" IS NULL
-      )
-  ) INTO v_is_last_top_level_operation;
-
-  IF v_job_id IS NOT NULL AND v_is_last_top_level_operation THEN
+  IF v_job_id IS NOT NULL THEN
     UPDATE "job"
     -- Counted as sync_finish_job_operation counts the receipt: the smallest of
     -- the routing's own final operations (parallel ones each see every unit)

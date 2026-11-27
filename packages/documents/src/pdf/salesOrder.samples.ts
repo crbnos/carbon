@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { SAMPLE_TAX_CODE } from "./samples";
+
 /**
  * Sample data for previewing the Sales Order template. Cast to `any` — it only
  * needs the fields the blocks read.
@@ -48,6 +50,12 @@ export const SAMPLE_SALES_ORDER = {
       id: "line-1",
       salesOrderLineType: "Part",
       itemReadableId: "WIDGET-100",
+      // The line's own copy of the customer part, not the live cross-reference.
+      customerPartId: "C-100",
+      customerPartRevision: "3",
+      customerPartIdFromCustomer: null,
+      customerPartRevisionFromCustomer: null,
+      partNumberDisplay: "Ours First",
       description: "Precision Widget, anodized",
       saleQuantity: 10,
       unitOfMeasureCode: "EA",
@@ -56,6 +64,7 @@ export const SAMPLE_SALES_ORDER = {
       convertedNonTaxableAddOnCost: 0,
       convertedShippingCost: 0,
       taxPercent: 0.06,
+      taxCodeId: SAMPLE_TAX_CODE.id,
       externalNotes: {}
     },
     {
@@ -70,6 +79,7 @@ export const SAMPLE_SALES_ORDER = {
       convertedNonTaxableAddOnCost: 0,
       convertedShippingCost: 0,
       taxPercent: 0.06,
+      taxCodeId: SAMPLE_TAX_CODE.id,
       externalNotes: {}
     }
   ],
@@ -79,7 +89,22 @@ export const SAMPLE_SALES_ORDER = {
     customerCity: "Chicago",
     customerStateProvince: "IL",
     customerPostalCode: "60601",
-    customerCountryName: "United States"
+    customerCountryName: "United States",
+    // A separate bill-to customer, and a drop-ship address unlike the customer's.
+    paymentCustomerName: "Globex Holdings",
+    paymentAddressLine1: "200 Finance Plaza",
+    paymentAddressLine2: "Suite 400",
+    paymentCity: "Chicago",
+    paymentStateProvince: "IL",
+    paymentPostalCode: "60603",
+    paymentCountryName: "United States",
+    shipToCustomerName: "Globex Corporation",
+    shipToAddressLine1: "88 Harbor Road",
+    shipToAddressLine2: "Dock 3",
+    shipToCity: "Springfield",
+    shipToStateProvince: "IL",
+    shipToPostalCode: "62701",
+    shipToCountryName: "United States"
   },
   paymentTerms: [{ id: "net30", name: "Net 30" }],
   shippingMethods: [{ id: "ground", name: "Ground" }],
@@ -97,5 +122,7 @@ export const SAMPLE_SALES_ORDER = {
       }
     ]
   },
+  taxCodes: [SAMPLE_TAX_CODE],
+  taxDate: "2026-06-01",
   locale: "en-US"
 } as any;

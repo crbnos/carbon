@@ -13,22 +13,22 @@ msgstr ""
 "Plural-Forms: \n"
 
 msgid " · {elsewhere} in {otherBin}"
-msgstr ""
+msgstr " · {elsewhere}、ビン {otherBin}"
 
 msgid " · {elsewhere} in no bin"
-msgstr ""
+msgstr " · {elsewhere}、ビンなし"
 
 msgid " · Kit job open"
-msgstr ""
+msgstr " · キットの製造指図はオープン"
 
 msgid " · No kit job open"
-msgstr ""
+msgstr " · キットの製造指図はありません"
 
 msgid " · Nothing ordered"
-msgstr ""
+msgstr " · 発注なし"
 
 msgid " · On order"
-msgstr ""
+msgstr " · 発注済"
 
 msgid ", not running"
 msgstr ", 停止中"
@@ -84,7 +84,7 @@ msgstr "{0}にはロット番号がありません。Carbonでバッチまたは
 #. placeholder {0}: serial.readableId
 #. placeholder {1}: serial.kitReadableId
 msgid "{0} in kit {1}"
-msgstr ""
+msgstr "キット {1} の {0}"
 
 #. placeholder {0}: result.unit.readableId
 #. placeholder {1}: result.unit.status
@@ -110,9 +110,9 @@ msgstr "{0} の保全表示"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
@@ -171,10 +171,10 @@ msgid "{companyName} logo"
 msgstr "{companyName} のロゴ"
 
 msgid "{complete} complete"
-msgstr ""
+msgstr "{complete} 完了"
 
 msgid "{complete} complete · target {target}"
-msgstr ""
+msgstr "{complete} 完了 · 目標 {target}"
 
 msgid "{completed} of {quantity}"
 msgstr "{completed} / {quantity}"
@@ -207,10 +207,10 @@ msgid "{issued} of {required}"
 msgstr "{required}のうち{issued}"
 
 msgid "{kitsReady} ready"
-msgstr ""
+msgstr "{kitsReady} 準備完了"
 
 msgid "{label} to scrap"
-msgstr ""
+msgstr "{label} をスクラップ"
 
 msgid "{label}, overdue"
 msgstr "{label}、期限超過"
@@ -229,35 +229,38 @@ msgid "{name}: {value}"
 msgstr "{name}: {value}"
 
 msgid "{namedParts} and {moreParts} more"
-msgstr ""
+msgstr "{namedParts} ほか {moreParts} 件"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} / {denominator}"
 
 msgid "{onHand} of {need}"
-msgstr ""
+msgstr "{onHand} / {need}"
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
-msgstr ""
+msgstr "手持ち {onHand} · {demand} のうち {covers} をカバー"
 
 msgid "{open} open"
-msgstr ""
+msgstr "{open} 件オープン"
 
 msgid "{quantity} in this operation"
-msgstr ""
+msgstr "この工程での {quantity}"
 
 msgid "{quantity} used in this operation"
-msgstr ""
+msgstr "この工程で使用 {quantity}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0}件の製造指図"
 
 msgid "{scrapped} scrapped"
-msgstr ""
+msgstr "{scrapped} 件廃棄"
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} は保留中です"
 
 msgid "{unbinned} in stock, in no bin"
-msgstr ""
+msgstr "在庫 {unbinned}、ビンなし"
 
 msgid "{workTypeLabel} timer started"
 msgstr "{workTypeLabel}タイマーを開始しました"
@@ -448,7 +451,7 @@ msgid "All steps"
 msgstr "全ステップ"
 
 msgid "All work centers"
-msgstr ""
+msgstr "すべての作業区"
 
 msgid "Allocate failed units"
 msgstr "不合格ユニットを割り当てる"
@@ -499,7 +502,7 @@ msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "スーパーバイザーにプロフィールに{processName}スキルを追加するよう依頼してください。"
 
 msgid "Ask the water spider"
-msgstr ""
+msgstr "水すましに確認"
 
 msgid "Asked"
 msgstr "依頼済み"
@@ -572,10 +575,10 @@ msgid "Batch {0}"
 msgstr "バッチ {0}"
 
 msgid "Batch {readableId} · {used} used"
-msgstr ""
+msgstr "バッチ {readableId} · 使用 {used}"
 
 msgid "Batch {readableId} · {used} used · in kit {kitReadableId}"
-msgstr ""
+msgstr "バッチ {readableId} · 使用 {used} · キット {kitReadableId} 内"
 
 msgid "Batch Details"
 msgstr "バッチ詳細"
@@ -633,20 +636,20 @@ msgid "Bold"
 msgstr "太字"
 
 msgid "Bring"
-msgstr ""
+msgstr "運搬"
 
 #. placeholder {0}: lane.toBring
 msgid "Bring {0}"
-msgstr ""
+msgstr "{0} を運ぶ"
 
 msgid "Bring {quantity}"
 msgstr "{quantity}を持参"
 
 msgid "Bring kit"
-msgstr ""
+msgstr "キットを運ぶ"
 
 msgid "Build kit"
-msgstr ""
+msgstr "キットを組み立てる"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "ご心配なく。パスワード忘却フローを使用して新しいマジックリンクをリクエストできます。"
@@ -716,9 +719,6 @@ msgstr "グラフ"
 msgid "Chart of {series}"
 msgstr "{series}のグラフ"
 
-msgid "Chat"
-msgstr "チャット"
-
 msgid "Check your email"
 msgstr "メールを確認してください"
 
@@ -742,7 +742,7 @@ msgstr "このユニットを開く工程を選択してください"
 
 #. placeholder {0}: unit.readableId
 msgid "Choose where {0} goes"
-msgstr ""
+msgstr "{0}の置き場所を選択"
 
 msgid "Clear"
 msgstr "クリア"
@@ -913,7 +913,7 @@ msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "過去{0}日間の未計画保全原価"
 
 msgid "Could not issue this unit"
-msgstr ""
+msgstr "この1個を出庫できませんでした"
 
 msgid "Could not load the line feed"
 msgstr "ラインフィードを読み込めませんでした"
@@ -922,7 +922,7 @@ msgid "Could not look up this label. Try again."
 msgstr "このラベルを検索できませんでした。再試行してください。"
 
 msgid "Count what is ruined. Replacements come from the shelf."
-msgstr ""
+msgstr "損傷した分の数を入力してください。代替品は棚から取り出します。"
 
 msgid "Country code"
 msgstr "国番号"
@@ -998,7 +998,7 @@ msgid "Delete Timecard (<0/>)"
 msgstr "タイムカードを削除 (<0/>)"
 
 msgid "Deliver"
-msgstr ""
+msgstr "届ける"
 
 msgid "Density"
 msgstr "密度"
@@ -1007,7 +1007,7 @@ msgid "Depot"
 msgstr "倉庫"
 
 msgid "Describe it: what, how many, where"
-msgstr ""
+msgstr "内容、数量、場所を記入してください"
 
 msgid "Describe the problem..."
 msgstr "問題を説明してください..."
@@ -1154,7 +1154,7 @@ msgid "Employee"
 msgstr "従業員"
 
 msgid "Empty"
-msgstr ""
+msgstr "空"
 
 msgid "Empty work centers"
 msgstr "作業区が空です"
@@ -1244,7 +1244,7 @@ msgid "Failed to get options"
 msgstr "オプションの取得に失敗しました"
 
 msgid "Failed to load material requests"
-msgstr ""
+msgstr "材料要求の読み込みに失敗しました"
 
 msgid "Failed to process image"
 msgstr "画像の処理に失敗"
@@ -1289,7 +1289,7 @@ msgid "Failure Mode"
 msgstr "故障モード"
 
 msgid "Fed directly"
-msgstr ""
+msgstr "直接供給"
 
 msgid "File"
 msgstr "ファイル"
@@ -1310,7 +1310,7 @@ msgid "Filter by location"
 msgstr "拠点で絞り込み"
 
 msgid "Filter by work center"
-msgstr ""
+msgstr "作業区で絞り込み"
 
 msgid "Filter steps"
 msgstr "ステップを絞り込み"
@@ -1322,7 +1322,7 @@ msgid "Finish"
 msgstr "完了"
 
 msgid "Finish kit"
-msgstr ""
+msgstr "キットを完了"
 
 msgid "Finish setting up your account"
 msgstr "アカウントのセットアップを完了する"
@@ -1363,7 +1363,7 @@ msgid "Flag issue"
 msgstr "問題を報告"
 
 msgid "Flow chart view"
-msgstr ""
+msgstr "フローチャート表示"
 
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れていませんか？"
@@ -1400,13 +1400,13 @@ msgid "Go to step {0}: {1} (done)"
 msgstr "ステップ {0} へ移動: {1}（完了）"
 
 msgid "goes to {feeds}"
-msgstr ""
+msgstr "{feeds} へ供給"
 
 msgid "Grab from {source} · {free} of {onHand} left for this station"
-msgstr ""
+msgstr "{source} から取る · この工程向けの残り {free} / {onHand}"
 
 msgid "Grab from {source} · {onHand} there"
-msgstr ""
+msgstr "{source} から取る · 在庫 {onHand}"
 
 msgid "Gradient"
 msgstr "グラデーション"
@@ -1439,7 +1439,7 @@ msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
 
 msgid "How many, where, anything the feeder should know"
-msgstr ""
+msgstr "数量、場所、供給担当者に伝えておくべきことを入力してください"
 
 msgid "How many?"
 msgstr "いくつ?"
@@ -1451,7 +1451,7 @@ msgid "I understand and want to complete without issuing"
 msgstr "理解した上で払出なしで完了します"
 
 msgid "I'll grab it from the shelf"
-msgstr ""
+msgstr "棚から取ります"
 
 msgid "I'm Still Working"
 msgstr "まだ作業中です"
@@ -1500,7 +1500,7 @@ msgid "Inactive"
 msgstr "無効"
 
 msgid "Incomplete"
-msgstr ""
+msgstr "未完了"
 
 msgid "Increase {fieldLabel}"
 msgstr "{fieldLabel}を増やす"
@@ -1632,22 +1632,22 @@ msgid "Kit"
 msgstr "キット"
 
 msgid "Kit rack"
-msgstr ""
+msgstr "キットラック"
 
 msgid "kits to build"
-msgstr ""
+msgstr "組み立てるキット"
 
 msgid "kits to deliver"
-msgstr ""
+msgstr "届けるキット"
 
 msgid "kits to finish"
-msgstr ""
+msgstr "完了させるキット"
 
 msgid "Kitter"
-msgstr ""
+msgstr "キット担当者"
 
 msgid "Kitting and preparation"
-msgstr ""
+msgstr "キット組立と準備"
 
 msgid "Labor"
 msgstr "労務"
@@ -1731,7 +1731,7 @@ msgid "Loading item details..."
 msgstr "品目詳細を読み込み中..."
 
 msgid "Loading parts..."
-msgstr ""
+msgstr "部品を読み込み中..."
 
 msgid "Loading. There's no need to scan again."
 msgstr "読み込み中です。もう一度スキャンする必要はありません。"
@@ -1762,7 +1762,7 @@ msgid "Log completed for {0}"
 msgstr "{0} の完了を記録"
 
 msgid "Log completed for {trackedEntityReadableId}"
-msgstr ""
+msgstr "{trackedEntityReadableId} の完了を記録しました"
 
 msgid "Log Rework"
 msgstr "手直しを記録"
@@ -1782,7 +1782,7 @@ msgid "Login"
 msgstr "ログイン"
 
 msgid "Loose parts"
-msgstr ""
+msgstr "バラ部品"
 
 msgid "Lot"
 msgstr "ロット"
@@ -1797,7 +1797,7 @@ msgid "Low"
 msgstr "低"
 
 msgid "Low · {kitsReady} ready"
-msgstr ""
+msgstr "低 · {kitsReady} 準備完了"
 
 msgid "Machine"
 msgstr "機械"
@@ -1809,7 +1809,7 @@ msgid "Machine, timer running"
 msgstr "機械、タイマー実行中"
 
 msgid "Made here"
-msgstr ""
+msgstr "社内製造"
 
 msgid "Main"
 msgstr "メイン"
@@ -1864,7 +1864,7 @@ msgid "Material requested"
 msgstr "資材を依頼済み"
 
 msgid "Material requests"
-msgstr ""
+msgstr "材料要求"
 
 msgid "Materials"
 msgstr "材料"
@@ -1882,7 +1882,7 @@ msgid "Metric"
 msgstr "メートル法"
 
 msgid "Missing"
-msgstr ""
+msgstr "不足"
 
 msgid "Mode"
 msgstr "モード"
@@ -1913,10 +1913,10 @@ msgid "More than one unit has this serial. Choose one."
 msgstr "複数個がこのシリアル番号を持っています。1つを選択してください。"
 
 msgid "Move {quantity}"
-msgstr ""
+msgstr "{quantity} を移動"
 
 msgid "Move {quantity} from {from}"
-msgstr ""
+msgstr "{from} から {quantity} を移動"
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1944,7 +1944,7 @@ msgid "Navigation"
 msgstr "ナビゲーション"
 
 msgid "Need {quantity}"
-msgstr ""
+msgstr "{quantity} 必要"
 
 msgid "Need material"
 msgstr "資材が必要"
@@ -1971,7 +1971,7 @@ msgid "Next step"
 msgstr "次のステップ"
 
 msgid "Next up at your station"
-msgstr ""
+msgstr "この工程で次に行うこと"
 
 msgid "Next week"
 msgstr "来週"
@@ -2023,7 +2023,7 @@ msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "シリアル{0}を持つ得意先資産がありません。得意先を選択してください。"
 
 msgid "No default bin"
-msgstr ""
+msgstr "既定のビンがありません"
 
 msgid "No dispatches assigned to you"
 msgstr "あなたに割り当てられた保全指示はありません。"
@@ -2050,7 +2050,7 @@ msgid "No issue types configured"
 msgstr "構成されたイシュータイプがありません"
 
 msgid "No kit"
-msgstr ""
+msgstr "キットなし"
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "休暇がまだ設定されていません。マネージャーにERPで設定するよう依頼してください。"
@@ -2083,7 +2083,7 @@ msgid "No open jobs"
 msgstr "オープンな製造指図はありません。"
 
 msgid "No open material requests"
-msgstr ""
+msgstr "オープンな材料要求はありません"
 
 msgid "No open service jobs at this location"
 msgstr "この拠点にオープンな外注サービスがありません"
@@ -2092,7 +2092,7 @@ msgid "No open units to allocate"
 msgstr "割り当てるオープンユニットがありません"
 
 msgid "No open work"
-msgstr ""
+msgstr "オープンな作業はありません"
 
 msgid "No operators"
 msgstr "作業者がいません。"
@@ -2170,7 +2170,7 @@ msgid "No stations at this location"
 msgstr "この拠点にはステーションがありません"
 
 msgid "No stations match"
-msgstr ""
+msgstr "一致するステーションはありません"
 
 msgid "No stock"
 msgstr "在庫なし"
@@ -2182,7 +2182,7 @@ msgid "No unit"
 msgstr "ユニットなし"
 
 msgid "No unit selected"
-msgstr ""
+msgstr "個が選択されていません"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
@@ -2206,13 +2206,13 @@ msgid "None"
 msgstr "なし"
 
 msgid "None in stock · Nothing ordered"
-msgstr ""
+msgstr "在庫なし · 発注なし"
 
 msgid "None in stock · On order"
-msgstr ""
+msgstr "在庫なし · 発注済"
 
 msgid "None on the shelf"
-msgstr ""
+msgstr "棚にありません"
 
 msgid "Normal"
 msgstr "通常検査"
@@ -2221,7 +2221,7 @@ msgid "Not in this operation"
 msgstr "この工程にはありません"
 
 msgid "Not on the list: describe it below"
-msgstr ""
+msgstr "リストにない場合は、下に内容を記入してください"
 
 msgid "Not scheduled"
 msgstr "スケジュール未設定"
@@ -2246,7 +2246,7 @@ msgid "Nothing matches your search."
 msgstr "検索に該当するものがありません。"
 
 msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
-msgstr ""
+msgstr "この工程ではまだスクラップできるものはありません。シリアルとバッチは出庫後に表示されます。"
 
 msgid "Nothing on this page uses that barcode"
 msgstr "このページにはそのバーコードを使うものがありません"
@@ -2277,13 +2277,16 @@ msgid "Offline"
 msgstr "オフライン"
 
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
 msgid "Oldest first"
 msgstr "最も古い順"
 
 msgid "On Hold"
 msgstr "保留中"
+
+msgid "On hold · {issueNumbers}"
+msgstr "保留中 · {issueNumbers}"
 
 msgid "On its way"
 msgstr "移動中"
@@ -2292,10 +2295,10 @@ msgid "one combined lot · planned"
 msgstr "1つの統合ロット · 計画済"
 
 msgid "One less {label}"
-msgstr ""
+msgstr "{label} を1つ減らす"
 
 msgid "One more {label}"
-msgstr ""
+msgstr "{label} を1つ追加"
 
 msgid "one per job · planned"
 msgstr "1つ/製造指図 · 計画済"
@@ -2343,10 +2346,10 @@ msgid "Open sub-assembly {0}: {1}"
 msgstr "サブアセンブリ {0} を開く: {1}"
 
 msgid "Open the operation to pick the unit"
-msgstr ""
+msgstr "工程を開いて個を選択してください"
 
 msgid "Operation"
-msgstr ""
+msgstr "工程"
 
 msgid "Operation due"
 msgstr "工程の納期"
@@ -2385,10 +2388,10 @@ msgstr "またはこのシークレットを手動で入力してください：
 
 #. placeholder {0}: unit.readableId
 msgid "Other operations that need {0}"
-msgstr ""
+msgstr "{0} を必要とする他の工程"
 
 msgid "Other stations"
-msgstr ""
+msgstr "他のステーション"
 
 msgid "Out"
 msgstr "欠品"
@@ -2425,7 +2428,7 @@ msgstr "部品"
 
 #. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
 msgid "Parts of {0}"
-msgstr ""
+msgstr "{0}の部品"
 
 msgid "Pass"
 msgstr "合格"
@@ -2503,10 +2506,10 @@ msgid "Pick a style, a color and a face."
 msgstr "スタイル、色、面を選択"
 
 msgid "Pick an open unit to issue parts."
-msgstr ""
+msgstr "部品を出庫するには、オープンの個を選択してください。"
 
 msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
-msgstr ""
+msgstr "部品を出庫するには、オープンの個を選択してください。この個にすでにある部品は、まだ消費を取り消せます。"
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "製造指図を選択してください。時間を追加するまでは表示されません。"
@@ -2668,6 +2671,9 @@ msgstr "品質問題"
 msgid "Quality issue created"
 msgstr "品質問題が作成されました"
 
+msgid "Quality rejected this unit for production."
+msgstr "品質部門がこのユニットを生産に使用できないと判定しました。"
+
 msgid "Quantity"
 msgstr "数量"
 
@@ -2679,7 +2685,7 @@ msgid "Quantity must be greater than 0"
 msgstr "数量は0より大きい値を入力してください"
 
 msgid "Quantity to move"
-msgstr ""
+msgstr "移動数量"
 
 msgid "Quantity:"
 msgstr "数量:"
@@ -2694,19 +2700,19 @@ msgid "Raise quality issue"
 msgstr "品質問題を起票"
 
 msgid "raw bins short"
-msgstr ""
+msgstr "材料ビンが不足"
 
 msgid "Raw shelf"
-msgstr ""
+msgstr "材料棚"
 
 msgid "Raw short: {shortParts}"
-msgstr ""
+msgstr "材料不足: {shortParts}"
 
 msgid "Re"
 msgstr "不合格判定"
 
 msgid "Ready"
-msgstr ""
+msgstr "準備完了"
 
 msgid "Reason"
 msgstr "理由"
@@ -2833,7 +2839,7 @@ msgid "Repairable"
 msgstr "修理可能"
 
 msgid "Replacement"
-msgstr ""
+msgstr "代替品"
 
 msgid "Request material"
 msgstr "資材を依頼"
@@ -2953,13 +2959,13 @@ msgid "Scan received"
 msgstr "スキャンを受け付けました"
 
 msgid "Scan the replacement serials and batches in."
-msgstr ""
+msgstr "代替品のシリアルとバッチをスキャンしてください。"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "このQRコードをスキャンしてください（例：Google AuthenticatorまたはOnePassword）、その後に表示される6桁のコードを入力してください。"
 
 msgid "Scanned"
-msgstr ""
+msgstr "スキャン済"
 
 msgid "Schedule"
 msgstr "スケジュール"
@@ -2974,19 +2980,19 @@ msgid "Scrap {readableId}"
 msgstr "{readableId} をスクラップ"
 
 msgid "Scrap {total}"
-msgstr ""
+msgstr "{total} をスクラップ"
 
 msgid "Scrap material"
 msgstr "材料をスクラップ"
 
 msgid "Scrap parts"
-msgstr ""
+msgstr "部品をスクラップ"
 
 msgid "Scrap parts of {label}"
-msgstr ""
+msgstr "{label}の部品をスクラップ"
 
 msgid "Scrap parts of {partName}"
-msgstr ""
+msgstr "{partName}の部品をスクラップ"
 
 msgid "Scrap quantity"
 msgstr "スクラップ数量"
@@ -3001,10 +3007,10 @@ msgid "Scrapped"
 msgstr "スクラップ済み"
 
 msgid "Scrapped. Grab replacements from the shelf."
-msgstr ""
+msgstr "スクラップしました。代替品は棚から取り出してください。"
 
 msgid "Scrapped. The water spider is bringing replacements."
-msgstr ""
+msgstr "スクラップしました。水すましが代替品を運んでいます。"
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "シリアル {trackedEntityReadableId} をスクラップ中"
@@ -3052,19 +3058,19 @@ msgid "Search operators..."
 msgstr "作業者を検索..."
 
 msgid "Search parts, consumables and tools"
-msgstr ""
+msgstr "部品、消耗品、工具を検索"
 
 msgid "Search projects and tasks"
 msgstr "プロジェクトとタスクを検索"
 
 msgid "Search reasons"
-msgstr ""
+msgstr "理由を検索"
 
 msgid "Search recent operations"
 msgstr "最近の工程を検索"
 
 msgid "Search stations"
-msgstr ""
+msgstr "ステーションを検索"
 
 msgid "Search..."
 msgstr "検索..."
@@ -3085,7 +3091,7 @@ msgid "Select a customer"
 msgstr "得意先を選択"
 
 msgid "Select a location to see its material requests"
-msgstr ""
+msgstr "材料要求を表示するには拠点を選択"
 
 msgid "Select a location to see its stations"
 msgstr "拠点を選択すると、そのステーションが表示されます"
@@ -3100,10 +3106,10 @@ msgid "Select a serial number to continue with this operation"
 msgstr "この工程を続行するシリアル番号を選択してください"
 
 msgid "Select a unit"
-msgstr ""
+msgstr "個を選択"
 
 msgid "Select a unit first"
-msgstr ""
+msgstr "先に個を選択してください"
 
 msgid "Select an issue type"
 msgstr "イシュータイプを選択"
@@ -3221,7 +3227,7 @@ msgid "Short"
 msgstr "不足"
 
 msgid "Short {short}"
-msgstr ""
+msgstr "不足 {short}"
 
 msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
@@ -3311,7 +3317,7 @@ msgid "Solid"
 msgstr "単色"
 
 msgid "Something else"
-msgstr ""
+msgstr "その他"
 
 msgid "Source"
 msgstr "ソース"
@@ -3362,7 +3368,7 @@ msgid "Start work"
 msgstr "作業開始"
 
 msgid "Station"
-msgstr ""
+msgstr "ステーション"
 
 msgid "Station User"
 msgstr "ステーションユーザー"
@@ -3371,7 +3377,7 @@ msgid "Station: {stationName}"
 msgstr "ステーション: {stationName}"
 
 msgid "stations short"
-msgstr ""
+msgstr "ステーション不足"
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
@@ -3521,10 +3527,10 @@ msgid "The jobs make different items — keep each job's parts apart."
 msgstr "製造指図は異なる品目を製造します — 各製造指図の部品は分けておく"
 
 msgid "the kit"
-msgstr ""
+msgstr "キット"
 
 msgid "The list failed to load. You can still describe what you need."
-msgstr ""
+msgstr "一覧を読み込めませんでした。必要なものは下に記入できます。"
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "ロットは「合格」とマークされ、{remaining}個の残りユニットがこの工程で完了します。"
@@ -3585,7 +3591,7 @@ msgid "This is a pass / fail check. Press P or F."
 msgstr "これは合否判定の項目です。P または F を押してください。"
 
 msgid "This job"
-msgstr ""
+msgstr "この製造指図"
 
 msgid "This job does not use that part"
 msgstr "この製造指図では、その部品は使用されません"
@@ -3594,7 +3600,7 @@ msgid "This job has no bill rate. Ask the office to set it before the time is bi
 msgstr "この製造指図には請求レートがありません。時間が請求される前にオフィスに設定するよう依頼してください。"
 
 msgid "This job has no operations"
-msgstr ""
+msgstr "この製造指図には工程がありません"
 
 msgid "This label does not belong to a unit in this company"
 msgstr "このラベルは、この会社のユニットに属していません"
@@ -3624,10 +3630,13 @@ msgid "This unit has used this correction its limit number of times. Scrap it or
 msgstr "この個品はこの修正の上限回数に達しました。代わりにスクラップするか、品質問題を起票してください。"
 
 msgid "This unit is complete here"
-msgstr ""
+msgstr "この個はここで完了しています"
 
 msgid "This unit is not part of this operation"
-msgstr ""
+msgstr "この個はこの工程に属していません"
+
+msgid "This unit is on hold"
+msgstr "このユニットは保留中です"
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "このユニットは永久にスクラップされ、代替ユニットが作成されます。"
@@ -3670,7 +3679,7 @@ msgid "Time Worked"
 msgstr "作業時間"
 
 msgid "to bring lineside"
-msgstr ""
+msgstr "ラインサイドへ運ぶ"
 
 msgid "To pick"
 msgstr "ピッキング待ち"
@@ -3828,7 +3837,7 @@ msgid "Until <0/>"
 msgstr "<0/>まで"
 
 msgid "Untitled"
-msgstr ""
+msgstr "無題"
 
 msgid "Up next"
 msgstr "次は"
@@ -3910,13 +3919,13 @@ msgid "View Traceability"
 msgstr "トレーサビリティを表示"
 
 msgid "Waiting"
-msgstr ""
+msgstr "待機中"
 
 msgid "Warranty"
 msgstr "保証"
 
 msgid "Water spider"
-msgstr ""
+msgstr "水すまし"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "サインインリンクと6桁コードをメールで送信しました。リンクをクリックするか、ここにコードを入力してください。"
@@ -3947,6 +3956,9 @@ msgstr "作業区ディスプレイ"
 
 msgid "Work instructions"
 msgstr "作業手順書"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "品質担当が以下の問題をすべてクローズするまで、このユニットの作業は保留されます。他のユニットには影響しません。"
 
 msgid "Work Site"
 msgstr "作業現場"

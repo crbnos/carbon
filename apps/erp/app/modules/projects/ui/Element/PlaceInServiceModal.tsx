@@ -87,9 +87,9 @@ function PlaceInServiceBody({
     }
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: load once on open
   useEffect(() => {
     loadFetcher.load(path.to.projectPlaceInService(projectId));
+    // oxlint-disable-next-line react/exhaustive-deps -- load once on open
   }, [projectId]);
 
   const data = loadFetcher.data;
@@ -241,8 +241,10 @@ function PlaceInServiceBody({
               withBlocker={false}
               isDisabled={
                 selected.length === 0 ||
-                !permissions.can("create", "accounting") ||
-                !permissions.can("update", "projects")
+                !permissions.has({
+                  "accounting.assets": "Create",
+                  "projects.projects": "Edit"
+                })
               }
             >
               <Trans>Place in Service</Trans>

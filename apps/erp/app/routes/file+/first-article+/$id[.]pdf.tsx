@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
@@ -26,8 +26,8 @@ function pdfResponse(body: BodyInit, fileName: string) {
 // and later plan or data edits must not change it. Anything else renders live
 // with a DRAFT mark.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality"
+  const { client, companyId } = await authorize(request, {
+    "quality.firstArticles": "View"
   });
 
   const { id } = params;

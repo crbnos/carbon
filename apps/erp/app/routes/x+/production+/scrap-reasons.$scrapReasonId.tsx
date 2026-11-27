@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,24 +11,20 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { scrapReasonValidator } from "~/modules/production/production.models";
-import {
-  getScrapReason,
-  upsertScrapReason
-} from "~/modules/production/production.service";
+import { upsertScrapReason } from "~/modules/production/production.service";
 import ScrapReasonForm from "~/modules/production/ui/ScrapReasons/ScrapReasonForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "production",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "production.scrapReasons": "View"
   });
 
   const { scrapReasonId } = params;
   if (!scrapReasonId) throw notFound("scrapReasonId not found");
 
-  const scrapReason = await getScrapReason(client, scrapReasonId);
+  const scrapReason = await api.production.getScrapReason({ scrapReasonId });
 
   if (scrapReason.error) {
     throw redirect(
@@ -47,8 +43,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "production"
+  const { client, userId } = await authorize(request, {
+    "production.scrapReasons": "Edit"
   });
 
   const formData = await request.formData();

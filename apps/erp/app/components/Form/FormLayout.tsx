@@ -204,12 +204,12 @@ export function FormStepButtons<Id extends string>({
 
   // A refused save names fields: open the first step that holds one. Only a
   // new set of errors moves the form, not a step change.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reacts to the errors alone
   useEffect(() => {
     const failing = steps.find((step) =>
       step.fields.some((name) => Boolean(fieldErrors[name]))
     );
     if (failing && failing.id !== current) onStepChange(failing.id);
+    // oxlint-disable-next-line react/exhaustive-deps -- reacts to the errors alone
   }, [fieldErrors]);
 
   const next = async () => {

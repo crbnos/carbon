@@ -12,14 +12,15 @@ import {
   type ValueCollector
 } from "../template";
 import type { AccountsPayableBillingAddress, PDF } from "../types";
+import type { PartNumberDisplay } from "../utils/part-number";
 import { getPurchaseOrderDisplayId } from "../utils/purchase-order";
 import {
   getMoneyFormatter,
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
-import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
+import { DocumentPage } from "./blocks/DocumentPage";
 import type {
   PurchaseOrderApproval,
   PurchaseOrderData
@@ -49,6 +50,8 @@ interface PurchaseOrderPDFProps extends PDF {
   currencyDecimals?: number | null;
   /** The approval that released the order; null when it was not approved. */
   approval?: PurchaseOrderApproval | null;
+  /** The Edit document modal's unsaved display choice for every line. */
+  partNumberDisplayDraft?: PartNumberDisplay;
 }
 
 const PurchaseOrderPDF = ({
@@ -67,7 +70,8 @@ const PurchaseOrderPDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {}
+  sections = {},
+  partNumberDisplayDraft
 }: PurchaseOrderPDFProps) => {
   const currencyCode =
     purchaseOrder.currencyCode ?? company.baseCurrencyCode ?? "USD";
@@ -138,7 +142,8 @@ const PurchaseOrderPDF = ({
     vars,
     headerOptions,
     documentTitle,
-    documentNumber
+    documentNumber,
+    partNumberDisplayDraft
   };
 
   return (

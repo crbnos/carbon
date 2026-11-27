@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { PageId } from "@carbon/database/access";
 import type { ChangeNoticeStatus } from "~/modules/items/types";
 import type { nonConformanceAssociationType } from "./quality.models";
 import type {
@@ -41,10 +42,7 @@ import type {
 } from "./quality.service";
 
 export type { CertificationLineageRow } from "./certificationLineage";
-export type {
-  FirstArticleIndexPartType,
-  Form3Row
-} from "./firstArticleRows";
+export type { FirstArticleIndexPartType, Form3Row } from "./firstArticleRows";
 
 export type Certificate = NonNullable<
   Awaited<ReturnType<typeof getCertificates>>["data"]
@@ -92,7 +90,8 @@ export type IssueAssociationKey =
 type IssueAssociationNodeBase = {
   name: string;
   pluralName: string;
-  module: string;
+  /** The pages of the associated records: any one at a level allows it. */
+  pages: readonly PageId[];
   children: {
     id: string;
     documentId: string;

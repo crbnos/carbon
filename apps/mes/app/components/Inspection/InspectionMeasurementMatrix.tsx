@@ -1688,7 +1688,7 @@ const InspectionMeasurementMatrix = ({
                       {characteristicHeader(characteristic)}
                       {hasFeatures ? (
                         // The click must not toggle the active column.
-                        // biome-ignore lint/a11y/noStaticElementInteractions: only stops the gauge picker's clicks from toggling the column; the picker inside is the control
+                        // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- only stops the gauge picker's clicks from toggling the column; the picker inside is the control
                         <div
                           className="-mx-3 -mb-2 mt-2 min-w-0 border-t border-border [&>*]:min-w-0"
                           onClick={(event) => event.stopPropagation()}
@@ -1812,7 +1812,7 @@ const InspectionMeasurementMatrix = ({
                       {hasFeatures ? (
                         // Phones: the gauge sits under the characteristic.
                         // The click must not toggle the active row.
-                        // biome-ignore lint/a11y/noStaticElementInteractions: only stops the gauge picker's clicks from toggling the row; the picker inside is the control
+                        // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- only stops the gauge picker's clicks from toggling the row; the picker inside is the control
                         <div
                           className="-mx-2 -mb-2 mt-2 hidden min-w-0 border-t border-border max-md:block [&>*]:min-w-0"
                           onClick={(event) => event.stopPropagation()}

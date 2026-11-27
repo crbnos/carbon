@@ -40,9 +40,9 @@ import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
+import { SalesRFQStatus } from ".";
 import { salesRFQStatusType } from "../../sales.models";
 import type { SalesRFQ } from "../../types";
-import { SalesRFQStatus } from ".";
 
 type SalesRFQsTableProps = {
   data: SalesRFQ[];
@@ -262,7 +262,7 @@ const SalesRFQsTable = memo((props: SalesRFQsTableProps) => {
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
-          disabled={!permissions.can("delete", "sales")}
+          disabled={!permissions.has({ "sales.rfqs": "Full" })}
           onClick={() => {
             setSelectedSalesRFQ(row);
             deleteSalesRFQModal.onOpen();
@@ -294,7 +294,7 @@ const SalesRFQsTable = memo((props: SalesRFQsTableProps) => {
           updatedBy: false
         }}
         primaryAction={
-          permissions.can("create", "sales") && (
+          permissions.has({ "sales.rfqs": "Create" }) && (
             <New label={t`RFQ`} to={path.to.newSalesRFQ} />
           )
         }

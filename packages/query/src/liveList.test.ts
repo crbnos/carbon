@@ -14,7 +14,8 @@ import {
   storedAtKey,
   storedListKey,
   storedListKeys,
-  upsertRows
+  upsertRows,
+  withRetries
 } from "./liveList";
 
 const byName = (a: { name: string }, b: { name: string }) =>
@@ -157,5 +158,61 @@ describe("storedListKeys", () => {
         ["items"]
       )
     ).toEqual([key]);
+  });
+});
+
+describe("withRetries", () => {
+  // A request that fails `failures` times, then succeeds.
+  const flaky = (failures: number) => {
+    let calls = 0;
+    const run = async () => {
+      calls += 1;
+      if (calls <= failures) throw new Error(`failure ${calls}`);
+    };
+    return { run, calls: () => calls };
+  };
+  const options = (overrides: { stopped?: () => boolean } = {}) => {
+    const waits: number[] = [];
+    const retries: number[] = [];
+    return {
+      waits,
+      retries,
+      options: {
+        delays: [10, 20, 30],
+        stopped: overrides.stopped ?? (() => false),
+        onRetry: (attempt: number) => retries.push(attempt),
+        wait: async (ms: number) => {
+          waits.push(ms);
+        }
+      }
+    };
+  };
+
+  it("tries a failed catch-up again until it succeeds", async () => {
+    const request = flaky(2);
+    const { waits, retries, options: opts } = options();
+    await withRetries(request.run, opts);
+    expect(request.calls()).toBe(3);
+    expect(waits).toEqual([10, 20]);
+    expect(retries).toEqual([1, 2]);
+  });
+
+  it("throws the last error once every delay is used", async () => {
+    const request = flaky(10);
+    const { waits, options: opts } = options();
+    await expect(withRetries(request.run, opts)).rejects.toThrow("failure 4");
+    expect(request.calls()).toBe(4);
+    expect(waits).toEqual([10, 20, 30]);
+  });
+
+  it("stops trying when the page moved on during a wait", async () => {
+    const request = flaky(10);
+    let moved = false;
+    const { options: opts } = options({ stopped: () => moved });
+    opts.wait = async () => {
+      moved = true;
+    };
+    await withRetries(request.run, opts);
+    expect(request.calls()).toBe(1);
   });
 });

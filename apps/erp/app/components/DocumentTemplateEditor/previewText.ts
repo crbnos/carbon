@@ -172,7 +172,10 @@ function ownTexts(block: DocumentBlock): PrintedText[] {
     case "keyValue":
       return block.rows.flatMap((row) => named([row.label], row.value));
     case "customField":
-      return block.label ? [name(block.label)] : [];
+      if (!block.value) return block.label ? [name(block.label)] : [];
+      return block.label
+        ? named([block.label], block.value)
+        : [value(block.value)];
     case "richText":
       return [
         ...(block.title ? [name(block.title)] : []),

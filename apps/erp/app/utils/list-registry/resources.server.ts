@@ -13,6 +13,7 @@ import {
   getFailureModes,
   getLocations,
   getLocationsList,
+  getMaintenanceDispatches,
   getMaintenanceDispatchesByLocation,
   getMaintenanceSchedulesByLocation,
   getProcesses,
@@ -27,11 +28,15 @@ import {
   TRAININGS_PAGING,
   WORK_CENTERS_PAGING
 } from "~/modules/resources/resources.service";
-import type { ListDefinition } from "./index.server";
+import type {
+  MaintenanceDispatch,
+  MaintenanceDispatchByLocation
+} from "~/modules/resources/types";
+import type { ListDefinition, ListQueryResult } from "./index.server";
 import { searchList } from "./index.server";
 
 /**
- * The maintenance lists show one location: `?location=`, else the company's
+ * The location a maintenance list shows: `?location=`, else the company's
  * first location. Null when the company has no location.
  */
 export async function resolveMaintenanceLocationId(
@@ -47,41 +52,37 @@ export async function resolveMaintenanceLocationId(
 
 export const abilitiesList = searchList({
   key: "abilities",
-  permission: { view: "resources", role: "employee" },
+  gate: { "resources.abilities": "View" },
   paging: ABILITIES_PAGING,
   service: getAbilities
 });
 
 export const failureModesList = searchList({
   key: "failure-modes",
-  permission: { view: "resources", role: "employee" },
+  gate: { "resources.failureModes": "View" },
   paging: FAILURE_MODES_PAGING,
   service: getFailureModes
 });
 
 export const locationsList = searchList({
   key: "locations",
-  permission: { view: "resources", role: "employee" },
+  gate: { "resources.locations": "View" },
   paging: LOCATIONS_PAGING,
   service: getLocations
 });
 
 export const maintenanceDispatchesList = {
   key: "maintenance-dispatches",
-  permission: { view: "resources", role: "employee" },
+  gate: { "resources.dispatches": "View" },
   ...MAINTENANCE_DISPATCHES_PAGING,
   query: async (
     client,
     companyId,
     { params, limit, cursor, exactCount, sorts, filters }
-  ) => {
-    const locationId = await resolveMaintenanceLocationId(
-      client,
-      companyId,
-      params
-    );
-    if (!locationId) return { data: [], error: null, count: 0 };
-    return getMaintenanceDispatchesByLocation(client, companyId, locationId, {
+  ): Promise<
+    ListQueryResult<MaintenanceDispatch | MaintenanceDispatchByLocation>
+  > => {
+    const args = {
       search: params.get("search"),
       status: params.get("status") ?? undefined,
       limit,
@@ -89,13 +90,29 @@ export const maintenanceDispatchesList = {
       exactCount,
       sorts,
       filters
-    });
+    };
+    // `?location=all`: every location, as the dashboard counts them.
+    if (params.get("location") === "all") {
+      return getMaintenanceDispatches(client, companyId, args);
+    }
+    const locationId = await resolveMaintenanceLocationId(
+      client,
+      companyId,
+      params
+    );
+    if (!locationId) return { data: [], error: null, count: 0 };
+    return getMaintenanceDispatchesByLocation(
+      client,
+      companyId,
+      locationId,
+      args
+    );
   }
 } satisfies ListDefinition;
 
 export const maintenanceSchedulesList = {
   key: "maintenance-schedules",
-  permission: { view: "resources", role: "employee" },
+  gate: { "resources.schedules": "View" },
   ...MAINTENANCE_SCHEDULES_PAGING,
   query: async (
     client,
@@ -121,35 +138,35 @@ export const maintenanceSchedulesList = {
 
 export const processesList = searchList({
   key: "processes",
-  permission: { view: "resources", role: "employee" },
+  gate: { "resources.processes": "View" },
   paging: PROCESSES_PAGING,
   service: getProcesses
 });
 
 export const suggestionsList = searchList({
   key: "suggestions",
-  permission: { view: "resources", role: "employee" },
+  gate: { "resources.suggestions": "View" },
   paging: SUGGESTIONS_PAGING,
   service: getSuggestions
 });
 
 export const trainingsList = searchList({
   key: "trainings",
-  permission: { view: "resources", role: "employee" },
+  gate: { "resources.training": "View" },
   paging: TRAININGS_PAGING,
   service: getTrainings
 });
 
 export const workCentersList = searchList({
   key: "work-centers",
-  permission: { view: "resources", role: "employee" },
+  gate: { "resources.workCenters": "View" },
   paging: WORK_CENTERS_PAGING,
   service: getWorkCenters
 });
 
 export const contractorsList = searchList({
   key: "contractors",
-  permission: { view: "resources", role: "employee" },
+  gate: { "resources.abilities": "View" },
   paging: CONTRACTORS_PAGING,
   service: getContractors
 });

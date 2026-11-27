@@ -66,6 +66,7 @@ import {
   FileBadge,
   ItemDescription,
   SourcingTypeProperty,
+  TaxableProperty,
   useIsComponentOfBuyAndMake
 } from "../Item";
 
@@ -100,6 +101,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
   // When `data` is injected (subassembly context), this hook won't match a
   // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     toolSummary: Tool;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -173,7 +175,6 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
       setTrackingRefusals((count) => count + 1);
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (
       field:
@@ -186,6 +187,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
         | "itemPostingGroupId"
         | "toolId"
         | "active"
+        | "taxable"
         | "mpn"
         | "unitOfMeasureCode",
       value: string | null
@@ -204,10 +206,10 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
       );
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [itemId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
@@ -224,10 +226,10 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.toolSummary?.readableId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -242,6 +244,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.toolSummary?.readableId]
   );
 
@@ -657,6 +660,11 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
           />
         </ValidatedForm>
       </ItemChangeNoticeLock>
+      <TaxableProperty
+        itemId={itemId}
+        taxable={routeDataFromRoute?.taxable}
+        onChange={(value) => onUpdate("taxable", value)}
+      />
       {routeData?.toolSummary?.replenishmentSystem?.includes("Buy") && (
         <ValidatedForm
           defaultValues={{

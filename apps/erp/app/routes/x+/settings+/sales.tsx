@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   Boolean,
@@ -41,6 +40,7 @@ import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
+  customerPartNumberDisplaySettingsValidator,
   deliveryDateCheckSettingsValidator,
   digitalQuoteValidator,
   quoteLineCategoryMarkupsSettingsValidator,
@@ -48,7 +48,7 @@ import {
   salesRuleNotificationValidator,
   settingsToggle
 } from "~/modules/settings/settings.models";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+import { PartNumbersCard } from "~/modules/settings/ui/PartNumbers/PartNumbersCard";
 import { DeliveryDateCheckCard } from "~/modules/settings/ui/Sales/DeliveryDateCheckCard";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -59,11 +59,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
-  });
+  const { api } = await authorize(request, { "settings.sales": "View" });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
   if (!companySettings.data)
     throw redirect(
       path.to.settings,
@@ -114,13 +112,18 @@ const salesSettingsForm = z.discriminatedUnion("intent", [
     .extend({ intent: z.literal("categoryMarkups") })
     .transform(({ intent: _, ...quoteLineCategoryMarkups }) => ({
       quoteLineCategoryMarkups
+    })),
+  customerPartNumberDisplaySettingsValidator
+    .extend({ intent: z.literal("customerPartNumberDisplay") })
+    .transform(({ customerPartNumberDisplay }) => ({
+      customerPartNumberDisplay
     }))
 ]);
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(salesSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.updateSalesSettings(input.data);
 }
 
@@ -317,6 +320,12 @@ export default function SalesSettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+
+        <PartNumbersCard
+          party="customer"
+          value={companySettings.customerPartNumberDisplay}
+        />
+
         <SettingsSectionHeader>
           <Trans>Customers</Trans>
         </SettingsSectionHeader>

@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,11 +12,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
-import {
-  getWarehouseTransfer,
-  getWarehouseTransferLines,
-  getWarehouseTransferRelatedItems
-} from "~/modules/inventory/inventory.service";
 import {
   WarehouseTransferDocuments,
   WarehouseTransferHeader
@@ -36,24 +32,23 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Warehouse Transfer`, to: path.to.warehouseTransfers },
     (data) => data?.warehouseTransfer?.transferId
-  ),
-  module: "inventory"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.warehouseTransfer?.transferId, "Warehouse Transfer");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
+  const { api } = await authorize(request, {
+    "inventory.warehouseTransfers": "View"
   });
 
   const { transferId } = params;
   if (!transferId) throw new Response("Not found", { status: 404 });
 
   const [warehouseTransfer, warehouseTransferLines] = await Promise.all([
-    getWarehouseTransfer(client, transferId),
-    getWarehouseTransferLines(client, transferId)
+    api.inventory.getWarehouseTransfer({ transferId }),
+    api.inventory.getWarehouseTransferLines({ transferId })
   ]);
 
   if (warehouseTransfer.error) {
@@ -82,11 +77,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     warehouseTransfer: warehouseTransfer.data,
     warehouseTransferLines: warehouseTransferLines.data ?? [],
-    relatedItems: getWarehouseTransferRelatedItems(
-      client,
-      companyId,
-      transferId
-    )
+    relatedItems: api.inventory
+      .getWarehouseTransferRelatedItems({ transferId })
+      .then(dataOrThrow)
   };
 }
 

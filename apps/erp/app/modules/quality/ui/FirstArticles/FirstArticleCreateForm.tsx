@@ -153,7 +153,8 @@ const FirstArticleCreateForm = ({
           <HStack>
             <Submit
               isDisabled={
-                !permissions.can("create", "quality") || !initialValues.jobId
+                !permissions.has({ "quality.firstArticles": "Create" }) ||
+                !initialValues.jobId
               }
             >
               <Trans>Create</Trans>

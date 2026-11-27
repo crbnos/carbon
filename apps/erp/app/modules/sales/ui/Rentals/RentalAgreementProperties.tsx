@@ -35,7 +35,8 @@ import {
   CustomerLocation,
   Employee,
   Location,
-  PaymentTerm
+  PaymentTerm,
+  TaxCode
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import {
@@ -51,6 +52,7 @@ import {
   rentalBillingCycles,
   rentalBillingTimings
 } from "../../sales.models";
+import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import type { RentalAgreement, RentalAgreementRouteData } from "./types";
 
 type Term =
@@ -66,6 +68,7 @@ type Term =
   | "currencyCode"
   | "depositAmount"
   | "taxPercent"
+  | "taxCodeId"
   | "discountRate"
   | "ownershipTransfers"
   | "specializedAsset"
@@ -111,6 +114,7 @@ const RentalAgreementProperties = () => {
   const agreement = routeData?.rentalAgreement;
   const contactEmail = routeData?.contactEmail ?? null;
   const permissions = usePermissions();
+  const invoiceAutomationHint = useInvoiceAutomationHint();
   const companySettings = useSettings();
   const currencyCode = agreement?.currencyCode ?? "";
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -122,7 +126,6 @@ const RentalAgreementProperties = () => {
     }
   }, [fetcher.data]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
     (field: Term, value: string | null) => {
       const current = agreement?.[field as keyof RentalAgreement];
@@ -138,10 +141,10 @@ const RentalAgreementProperties = () => {
         action: path.to.rentalAgreementUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id, agreement]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -153,10 +156,10 @@ const RentalAgreementProperties = () => {
         action: path.to.customFields
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdateInvoiceAutomation = useCallback(
     (value: string | null) => {
       const next = !value || value === COMPANY_DEFAULT ? null : value;
@@ -170,6 +173,7 @@ const RentalAgreementProperties = () => {
         action: path.to.rentalAgreementUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id, agreement]
   );
 
@@ -189,6 +193,7 @@ const RentalAgreementProperties = () => {
     (typeof invoiceAutomations)[number],
     string
   > = {
+    Manual: t`Manual`,
     "Draft Only": t`Draft only`,
     Post: t`Post`,
     "Post and Email": t`Post and email`,
@@ -208,10 +213,22 @@ const RentalAgreementProperties = () => {
   ];
   const isInvoicingReadOnly =
     !["Draft", "Active"].includes(agreement.status ?? "") ||
-    !permissions.can("update", "sales");
+    !permissions.has({ "sales.rentalAgreements": "Edit" });
+
+  // Payment terms, tax and the Rental Site are read when each invoice is
+  // drafted, so they stay editable while Active, like Invoicing.
+  const invoiceTermHelper =
+    agreement.status === "Active" && !isInvoicingReadOnly
+      ? t`Applies to invoices drafted from now on`
+      : undefined;
+  const rentalSiteHelper =
+    agreement.status === "Active" && !isInvoicingReadOnly
+      ? t`Bills and ships invoices drafted from now on`
+      : undefined;
 
   const isDisabled =
-    agreement.status !== "Draft" || !permissions.can("update", "sales");
+    agreement.status !== "Draft" ||
+    !permissions.has({ "sales.rentalAgreements": "Edit" });
   const moneyFormat = INPUT_FORMAT.money(currencyCode, currencyDecimals);
   const moneyStep = INPUT_STEP.money(currencyDecimals);
   // Only a fixed term can be a sales-type lease, so these inputs matter only
@@ -296,7 +313,8 @@ const RentalAgreementProperties = () => {
           label={t`Rental Site`}
           customer={agreement.customerId ?? ""}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={rentalSiteHelper}
           onChange={(location) => {
             if (location?.id) onUpdate("customerLocationId", location.id);
           }}
@@ -414,6 +432,11 @@ const RentalAgreementProperties = () => {
             </span>
           )}
           isReadOnly={isInvoicingReadOnly}
+          labelHelp={
+            agreement.effectiveInvoiceAutomation
+              ? invoiceAutomationHint(agreement.effectiveInvoiceAutomation)
+              : undefined
+          }
           helperText={
             !contactEmail && !isInvoicingReadOnly
               ? t`Add a contact with an email to send invoices`
@@ -438,7 +461,8 @@ const RentalAgreementProperties = () => {
           name="paymentTermId"
           label={t`Payment Terms`}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={invoiceTermHelper}
           onChange={(term) => {
             onUpdate("paymentTermId", term?.value ?? null);
           }}
@@ -470,12 +494,25 @@ const RentalAgreementProperties = () => {
           }}
         />
       </PropertyForm>
+      <PropertyForm name="taxCodeId" value={agreement.taxCodeId}>
+        <TaxCode
+          name="taxCodeId"
+          label={t`Tax Code`}
+          inline
+          isReadOnly={isInvoicingReadOnly}
+          helperText={invoiceTermHelper}
+          onChange={(option) => {
+            onUpdate("taxCodeId", option?.value ?? null);
+          }}
+        />
+      </PropertyForm>
       <PropertyForm name="taxPercent" value={agreement.taxPercent}>
         <NumberControlled
           name="taxPercent"
           label={t`Tax Percent`}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={invoiceTermHelper}
           value={agreement.taxPercent ?? 0}
           minValue={0}
           maxValue={1}

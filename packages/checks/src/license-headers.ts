@@ -272,27 +272,46 @@ function stripHeaders(body: string): {
   for (;;) {
     const candidate =
       found === null ? rest : rest.replace(LEADING_BLANK_LINES, "");
-    const lines = candidate.split("\n");
-    const line = (i: number) => (lines[i] as string).replace(/\r$/, "");
-    const kind = OUR_SPDX_LINES.get(line(0));
+    let end = lineEnd(candidate, 0);
+    const kind = OUR_SPDX_LINES.get(lineAt(candidate, 0, end));
     if (!kind) return { rest, found };
     found ??= kind;
-    let n = 1;
-    while (
-      n < lines.length &&
-      KNOWN_HEADER_LINES.has(line(n)) &&
-      !OUR_SPDX_LINES.has(line(n))
-    ) {
-      n++;
+    // The start of the next line; past the end when there is none.
+    let next = end + 1;
+    while (next <= candidate.length) {
+      end = lineEnd(candidate, next);
+      const line = lineAt(candidate, next, end);
+      if (!KNOWN_HEADER_LINES.has(line) || OUR_SPDX_LINES.has(line)) break;
+      next = end + 1;
     }
-    rest = lines.slice(n).join("\n");
+    rest = candidate.slice(next);
   }
+}
+
+/** Where the line starting at `from` ends: its `\n`, or the end of `text`. */
+function lineEnd(text: string, from: number): number {
+  const end = text.indexOf("\n", from);
+  return end === -1 ? text.length : end;
+}
+
+/** The line from `from` to `end`, without a trailing `\r`. */
+function lineAt(text: string, from: number, end: number): string {
+  return text.slice(from, end).replace(/\r$/, "");
 }
 
 /** The first lines after any shebang and Carbon header, for marker searches. */
 function leadingLines(contents: string): string {
-  return stripHeaders(parse(contents).body)
-    .rest.replace(LEADING_BLANK_LINES, "")
+  const text = stripHeaders(parse(contents).body).rest.replace(
+    LEADING_BLANK_LINES,
+    ""
+  );
+  // Split only up to the line break that ends the last line needed.
+  let end = -1;
+  for (let n = 0; n < CONTENT_MARKER_LINES && end < text.length; n++) {
+    end = lineEnd(text, end + 1);
+  }
+  return text
+    .slice(0, end + 1)
     .split(/\r?\n/)
     .slice(0, CONTENT_MARKER_LINES)
     .join("\n");

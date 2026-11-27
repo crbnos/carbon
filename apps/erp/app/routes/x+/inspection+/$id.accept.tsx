@@ -3,44 +3,20 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import invariant from "tiny-invariant";
-import {
-  dispositionInspection,
-  getFirstArticleInspectionByLot
-} from "~/modules/quality/quality.service";
-import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality",
-    role: "employee"
-  });
+  const { api } = await authorize(request);
   const { id } = params;
   invariant(id, "id is required");
 
-  // A First Article lot is verdict-only too, and one-shot: its FAI's Verify
-  // snapshots the verdict, so it must not change underneath it.
-  const firstArticle = (
-    await getFirstArticleInspectionByLot(client, id, companyId)
-  ).data;
-
-  const result = await dispositionInspection(getDatabaseClient(), {
-    id,
-    decision: "Accept",
-    companyId,
-    dispositionedBy: userId,
-    // ERP verdict carries no production posting — Receipt, Manual and First
-    // Article lots only. Job Operation lots are dispositioned (with their
-    // physical outcome) by the MES route. A First Article lot is decided once.
-    requireSource: firstArticle ? "First Article" : ["Receipt", "Manual"],
-    requireOpen: !!firstArticle
-  });
+  const result = await api.quality.acceptInspection({ id });
 
   if (result.error) {
     throw redirect(
@@ -49,9 +25,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (firstArticle) {
+  // A First Article lot's verdict is read on its FAI.
+  if (result.data.firstArticleId) {
     throw redirect(
-      path.to.firstArticle(firstArticle.id),
+      path.to.firstArticle(result.data.firstArticleId),
       await flash(request, success("First article accepted"))
     );
   }

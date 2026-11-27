@@ -2,30 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteMaintenanceDispatch,
-  getMaintenanceDispatch
-} from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "resources.dispatches": "View" });
   const { dispatchId } = params;
   if (!dispatchId) throw notFound("dispatchId not found");
 
-  const dispatch = await getMaintenanceDispatch(client, dispatchId);
+  const dispatch = await api.resources.getMaintenanceDispatch({ dispatchId });
   if (dispatch.error) {
     throw redirect(
       `${path.to.maintenanceDispatches}?${getParams(request)}`,
@@ -39,39 +34,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { dispatch: dispatch.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "production"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["dispatchId"] });
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  const result = await api.resources.deleteMaintenanceDispatch({
+    dispatchId: input.params.dispatchId
   });
-
-  const { dispatchId } = params;
-  if (!dispatchId) {
-    throw redirect(
-      `${path.to.maintenanceDispatches}?${getParams(request)}`,
-      await flash(request, error(null, "Failed to get a dispatch id"))
-    );
-  }
-
-  const { error: deleteError } = await deleteMaintenanceDispatch(
-    client,
-    dispatchId
-  );
-  if (deleteError) {
-    const errorMessage = getDatabaseErrorMessage(
-      deleteError,
-      "Failed to delete maintenance dispatch",
-      { referenced: "Dispatch has related records, cannot delete" }
-    );
-
-    throw redirect(
-      `${path.to.maintenanceDispatches}?${getParams(request)}`,
-      await flash(request, error(deleteError, errorMessage))
-    );
-  }
-
-  throw redirect(
-    `${path.to.maintenanceDispatches}?${getParams(request)}`,
-    await flash(request, success("Successfully deleted maintenance dispatch"))
+  return respond(args.request, result).redirect(
+    `${path.to.maintenanceDispatches}?${getParams(args.request)}`,
+    { message: "Successfully deleted maintenance dispatch" }
   );
 }
 

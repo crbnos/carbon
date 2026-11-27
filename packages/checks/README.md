@@ -4,11 +4,11 @@ Executable checks for the loop system's "core".
 
 ## Conformance net
 
-Forbids deprecated code patterns in migrations. Existing violations are
+Forbids deprecated code patterns in migrations and application code. Existing violations are
 grandfathered in `src/conformance/baseline.json`; only **new** violations fail CI.
 
-- Add a check: implement a `ConformanceCheck` under `src/conformance/`, add it to
-  `CONFORMANCE_CHECKS` in `src/run.ts`, then re-baseline.
+- Add a check: write a `defineCheck` in its subject's file under
+  `src/conformance/` and add it to that file's `checks` list (see `AGENTS.md`).
 - Re-baseline (after intentionally accepting current state): `pnpm --filter @carbon/checks baseline`
 - Run the gate: `pnpm --filter @carbon/checks test`
 

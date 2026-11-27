@@ -139,7 +139,6 @@ const SupplierHeader = () => {
     });
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
@@ -157,6 +156,7 @@ const SupplierHeader = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [supplierId]
   );
 
@@ -166,7 +166,7 @@ const SupplierHeader = () => {
       <DropdownMenuSeparator />
       <DropdownMenuItem
         shortcut={MENU_ITEM_SHORTCUTS.delete}
-        disabled={!permissions.can("delete", "purchasing")}
+        disabled={!permissions.has({ "purchasing.suppliers": "Full" })}
         destructive
         onClick={deleteModal.onOpen}
       >
@@ -218,7 +218,7 @@ const SupplierHeader = () => {
                       leftIcon={<LuClipboardCheck />}
                       variant="primary"
                       isDisabled={
-                        !permissions.can("update", "purchasing") ||
+                        !permissions.has({ "purchasing.suppliers": "Edit" }) ||
                         requestApprovalFetcher.state !== "idle"
                       }
                       isLoading={requestApprovalFetcher.state !== "idle"}

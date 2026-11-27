@@ -1791,7 +1791,7 @@ const InspectionMeasurementGrid = ({
             // Keyboard twin of the click. Not role="button": the header also
             // holds the gauge picker, which a button would hide from
             // assistive tech.
-            // biome-ignore lint/a11y/noStaticElementInteractions: focusable header that shows its characteristic on the drawing; the gauge picker inside is its own control
+            // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- focusable header that shows its characteristic on the drawing; the gauge picker inside is its own control
             <div
               data-feature-header={characteristic.featureId}
               tabIndex={hasFeatures ? 0 : undefined}

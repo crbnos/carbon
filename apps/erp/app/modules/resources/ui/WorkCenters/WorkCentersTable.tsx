@@ -319,7 +319,6 @@ const WorkCentersTable = memo(
       t
     ]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const renderContextMenu = useCallback<(row: WorkCenter) => JSX.Element>(
       (row) => (
         <>
@@ -334,7 +333,7 @@ const WorkCentersTable = memo(
           </MenuItem>
           {row.active ? (
             <MenuItem
-              disabled={!permissions.can("delete", "resources")}
+              disabled={!permissions.has({ "resources.workCenters": "Full" })}
               onClick={() => onDeactivate(row)}
             >
               <MenuIcon icon={<LuPower />} />
@@ -342,7 +341,7 @@ const WorkCentersTable = memo(
             </MenuItem>
           ) : (
             <MenuItem
-              disabled={!permissions.can("delete", "resources")}
+              disabled={!permissions.has({ "resources.workCenters": "Full" })}
               onClick={() => onActivate(row)}
             >
               <MenuIcon icon={<LuCheck />} />
@@ -352,7 +351,7 @@ const WorkCentersTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "resources")}
+            disabled={!permissions.has({ "resources.workCenters": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteWorkCenter(row.id!)}?${params?.toString()}`
@@ -365,6 +364,7 @@ const WorkCentersTable = memo(
         </>
       ),
 
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
       [navigate, params, permissions]
     );
 
@@ -383,7 +383,7 @@ const WorkCentersTable = memo(
             }
           ]}
           primaryAction={
-            permissions.can("update", "resources") && (
+            permissions.has({ "resources.workCenters": "Edit" }) && (
               <New label={t`Work Center`} to={`new?${params.toString()}`} />
             )
           }

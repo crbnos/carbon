@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { createFirstArticleInspections } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
@@ -40,8 +40,8 @@ const OPEN_JOB_STATUSES = [
 ] as const;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "quality"
+  const { client, companyId } = await authorize(request, {
+    "quality.firstArticles": "Create"
   });
 
   const jobId = new URL(request.url).searchParams.get("jobId");
@@ -100,6 +100,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("id", jobId)
       .eq("companyId", companyId)
       .maybeSingle();
+    if (job.error) {
+      throw redirect(
+        path.to.firstArticles,
+        await flash(request, error(job.error, "Failed to load the job"))
+      );
+    }
     if (job.data)
       jobOptions.unshift({ id: job.data.id, label: job.data.jobId });
   }
@@ -114,8 +120,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "quality"
+  const { client, companyId, userId } = await authorize(request, {
+    "quality.firstArticles": "Create"
   });
 
   const formData = await request.formData();

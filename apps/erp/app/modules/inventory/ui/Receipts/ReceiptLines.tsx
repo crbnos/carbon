@@ -204,7 +204,6 @@ const ReceiptLines = () => {
     }, {});
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     setSerialNumbersByLineId(
       receiptLines.reduce((acc, line) => {
@@ -239,9 +238,9 @@ const ReceiptLines = () => {
         };
       }, {})
     );
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [routeData?.receipt?.sourceDocumentId, routeData?.receiptLines?.length]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateReceiptLine = useCallback(
     async ({
       lineId,
@@ -269,6 +268,7 @@ const ReceiptLines = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     []
   );
 
@@ -668,7 +668,7 @@ function ReceiptLineInspectionBadge({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        {inspection && permissions.can("view", "quality") ? (
+        {inspection && permissions.has({ "quality.inspections": "View" }) ? (
           <Link
             to={path.to.inspection(inspection.id)}
             // The label replaces the badge text, so it names the status too.
@@ -1103,7 +1103,7 @@ function ReceiptLineItem({
       <CertificatesDrawer
         open={certificatesDisclosure.isOpen}
         receiptLineId={line.id!}
-        isReadOnly={!permissions.can("update", "inventory")}
+        isReadOnly={!permissions.has({ "inventory.receipts": "Edit" })}
         onClose={certificatesDisclosure.onClose}
       />
     </div>

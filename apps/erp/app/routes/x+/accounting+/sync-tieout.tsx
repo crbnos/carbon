@@ -2,13 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getAccountingSyncTieOut } from "~/modules/accounting/accounting.service";
 import { SyncTieOutTable } from "~/modules/accounting/ui/SyncTieOut";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -31,10 +30,7 @@ function filterValues(
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "accounting.syncTieOut": "View" });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -47,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const accountId = filterValues(filters, "accountId");
   const accountingPeriodId = searchParams.get("periodId");
 
-  const tieOut = await getAccountingSyncTieOut(client, companyId, {
+  const tieOut = await api.accounting.getAccountingSyncTieOut({
     integration,
     accountingPeriodId,
     accountId

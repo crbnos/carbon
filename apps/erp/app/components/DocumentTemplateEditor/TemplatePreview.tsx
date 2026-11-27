@@ -12,6 +12,7 @@ import { Trans } from "@lingui/react/macro";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   changedNotes,
+  changedPartNumberDisplay,
   draftProblems,
   useDocumentTemplate,
   useEditorStore
@@ -49,6 +50,7 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
   const pointedAtPage = useEditorStore((s) => s.textFocus?.fromPage === true);
   const documentValues = useEditorStore((s) => s.documentValues);
   const notes = useEditorStore(changedNotes);
+  const partNumberDisplay = useEditorStore(changedPartNumberDisplay);
   const previewNonce = useEditorStore((s) => s.previewNonce);
   const labelSizeId = useEditorStore((s) => s.labelSizeId);
   const [url, setUrl] = useState<string | null>(null);
@@ -67,7 +69,6 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
     new Map<string, Pick<DocumentTemplate, "blocks" | "settings">>()
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `previewNonce` is a manual retrigger — bumped by the toolbar refresh button to re-run the fetch.
   useEffect(() => {
     const controller = new AbortController();
     const handle = setTimeout(async () => {
@@ -96,6 +97,9 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
         formData.append("labelSizeId", labelSizeId);
         if (previewId) formData.append("previewId", previewId);
         if (notes !== undefined) formData.append("notes", notes);
+        if (partNumberDisplay !== undefined) {
+          formData.append("partNumberDisplay", partNumberDisplay);
+        }
         const response = await fetch(previewPath, {
           method: "post",
           body: formData,
@@ -141,6 +145,7 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
     labelSizeId,
     documentType,
     document,
+    partNumberDisplay,
     notes
   ]);
 

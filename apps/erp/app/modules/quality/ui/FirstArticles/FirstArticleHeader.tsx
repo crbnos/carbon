@@ -62,7 +62,7 @@ const FirstArticleHeader = ({
   const { firstArticle, lot } = detail;
   const id = firstArticle.id;
   const status = firstArticle.status;
-  const canUpdate = permissions.can("update", "quality");
+  const canUpdate = permissions.has({ "quality.firstArticles": "Edit" });
   const busy = fetcher.state !== "idle";
   const dispositioned = DISPOSITIONED.includes(lot.status);
   const rejected = lot.status === "Failed";
@@ -127,7 +127,7 @@ const FirstArticleHeader = ({
                   disabled={
                     status !== "Draft" ||
                     detail.hasMeasurements ||
-                    !permissions.can("delete", "quality")
+                    !permissions.has({ "quality.firstArticles": "Full" })
                   }
                   onClick={deleteModal.onOpen}
                 >

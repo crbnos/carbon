@@ -114,8 +114,8 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
           formId={formId}
           isDisabled={
             isEditing
-              ? !permissions.can("update", "inventory")
-              : !permissions.can("create", "inventory")
+              ? !permissions.has({ "inventory.receipts": "Edit" })
+              : !permissions.has({ "inventory.receipts": "Create" })
           }
         >
           <Trans>Save</Trans>

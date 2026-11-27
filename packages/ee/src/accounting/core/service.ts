@@ -21,6 +21,7 @@ import {
   parseStoredCredentials,
   SyncDirectionSchema
 } from "./models";
+import { resolvePostingSyncSettings } from "./posting";
 import type {
   AccountingEntityType,
   GlobalSyncConfig,
@@ -61,8 +62,18 @@ export function resolveSyncConfig(metadata: unknown): GlobalSyncConfig {
           ?.entities
       : undefined;
 
+  // Memo credits have no entity toggle on screen: the Posting tab's family
+  // decides them, so a family on "documents" turns its syncer on.
+  const { families } = resolvePostingSyncSettings(metadata);
+  const withMemoFamilies = (config: GlobalSyncConfig): GlobalSyncConfig => {
+    config.entities.creditMemo.enabled = families.creditMemo === "documents";
+    config.entities.supplierCredit.enabled =
+      families.supplierCredit === "documents";
+    return config;
+  };
+
   if (!storedEntities || typeof storedEntities !== "object") {
-    return resolved;
+    return withMemoFamilies(resolved);
   }
 
   for (const entityType of Object.keys(
@@ -86,7 +97,7 @@ export function resolveSyncConfig(metadata: unknown): GlobalSyncConfig {
     };
   }
 
-  return resolved;
+  return withMemoFamilies(resolved);
 }
 
 const logger = getLogger("ee", "accounting");
@@ -293,9 +304,8 @@ export function getProviderIntegration(
       // Secret material is split out to Supabase Vault; only the non-secret
       // config is written back to the metadata column. Vault RPCs require the
       // service-role client.
-      const { getCarbonServiceRole } = await import(
-        "@carbon/auth/client.server"
-      );
+      const { getCarbonServiceRole } =
+        await import("@carbon/auth/client.server");
       await persistIntegrationSecrets(
         getCarbonServiceRole(),
         companyId,

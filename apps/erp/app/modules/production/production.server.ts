@@ -35,6 +35,7 @@ import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.utils
 import {
   checkRevisionLock,
   getUnreleasedChangeOrderItems,
+  itemRule,
   jobCreationRefusal,
   methodStepRefusal,
   saveMethodRefusal,
@@ -110,6 +111,7 @@ import {
   peopleWeekAssignValidator,
   peopleWeekMoveValidator,
   peopleWeekUnassignValidator,
+  plannedOrderIdValidator,
   planningOrderStart,
   procedureStatus,
   productionEventValidator,
@@ -120,7 +122,8 @@ import {
   salesOrderToJobValidator,
   scheduleJobUpdateValidator,
   scheduleOperationReorderValidator,
-  shouldStartAssemblyPlan
+  shouldStartAssemblyPlan,
+  updatePlannedOrderValidator
 } from "./production.models";
 import type { JobStatus } from "./production.service";
 import * as service from "./production.service";
@@ -145,22 +148,10 @@ const logger = getLogger("erp", "production");
 export const replanAfterItemChange = defineServiceFn({
   input: z.object({ itemId: z.string() }),
   // Whoever may save the item's planning may have it re-planned.
-  permission: { update: "parts" },
+  permission: itemRule("Edit", { id: "itemId" }),
 
   async run(ctx, { itemId }) {
-    const mrp = await service.runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
-      type: "item",
-      id: itemId,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    });
-    if (mrp.error) {
-      logger.error("MRP failed after an item's planning settings changed", {
-        companyId: ctx.company.id,
-        itemId,
-        error: mrp.error
-      });
-    }
+    await service.replanAfterChange(ctx, `item ${itemId} planning saved`);
   }
 });
 
@@ -184,7 +175,7 @@ export const replanAfterItemChange = defineServiceFn({
  */
 export const planDraftJob = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { jobId }) {
     const companyId = ctx.company.id;
@@ -284,7 +275,7 @@ export const releaseCheckedJobs = defineServiceFn({
     purchaseOrdersBySupplierId: z.record(z.string(), z.string()),
     source: z.enum(["erp", "kanban"]).default("erp")
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { jobIds, purchaseOrdersBySupplierId, source }) {
     const companyId = ctx.company.id;
@@ -512,7 +503,7 @@ export const releaseJobs = defineServiceFn({
     carriedPurchaseOrders: z.record(z.string(), z.string()).optional(),
     supplierProcessByOperationId: z.record(z.string(), z.string()).default({})
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(
     ctx,
@@ -697,7 +688,7 @@ export const cancelJob = defineServiceFn({
      */
     fromStatuses: z.array(z.enum(jobStatus)).optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { jobId, fromStatuses = [...CANCELLABLE_JOB_STATUSES] }) {
     const companyId = ctx.company.id;
@@ -780,7 +771,7 @@ export const cancelJob = defineServiceFn({
  */
 export const pauseJob = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { jobId }) {
     return service.moveJobStatus(ctx, jobId, {
@@ -806,7 +797,7 @@ export const pauseJob = defineServiceFn({
  */
 export const resumeJob = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { jobId }) {
     const companyId = ctx.company.id;
@@ -894,7 +885,7 @@ const REOPENED_STATUS = {
  */
 export const reopenJob = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { jobId }) {
     const job = await ctx.asCaller.supabase
@@ -937,7 +928,7 @@ export const reopenJob = defineServiceFn({
  */
 export const closeJob = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { jobId }) {
     const toReceive = await service.outsideProcessingToReceiveRefusal(
@@ -991,30 +982,60 @@ export const closeJob = defineServiceFn({
 export const completeJob = defineServiceFn({
   input: z.object({
     jobId: z.string(),
+    expectedUnitIds: z.array(z.string()).optional(),
+    expectedReceiptPreview: z.string().optional(),
     quantityComplete: z.number().min(0),
     locationId: z.string().optional(),
     storageUnitId: z.string().optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
-  async run(ctx, { jobId, quantityComplete, locationId, storageUnitId }) {
+  async run(
+    ctx,
+    {
+      jobId,
+      quantityComplete,
+      locationId,
+      storageUnitId,
+      expectedUnitIds,
+      expectedReceiptPreview
+    }
+  ) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
     // It must NOT write job.quantityShipped: that column is advanced only by
     // post-shipment, and the shipment builder ships quantityComplete less it.
-    const rpc = await ctx.asCaller.supabase.rpc("complete_job_to_inventory", {
+    const args = {
       p_job_id: jobId,
       p_quantity_complete: quantityComplete,
       p_storage_unit_id: storageUnitId,
       p_location_id: locationId,
       p_company_id: companyId,
       p_user_id: userId
-    });
+    };
+    const rpc =
+      expectedReceiptPreview !== undefined
+        ? await ctx.asCaller.supabase.rpc("complete_job_from_receipt_preview", {
+            ...args,
+            p_expected_preview: expectedReceiptPreview,
+            p_expected_unit_ids: expectedUnitIds
+          })
+        : expectedUnitIds
+          ? await ctx.asCaller.supabase.rpc(
+              "complete_job_to_inventory_previewed",
+              {
+                ...args,
+                p_expected_unit_ids: expectedUnitIds
+              }
+            )
+          : await ctx.asCaller.supabase.rpc("complete_job_to_inventory", args);
     if (rpc.error) {
       return ctx.error(
         "rule",
-        rpc.error.message || "Failed to complete job",
+        expectedReceiptPreview && rpc.error.code === "40001"
+          ? "The serials available for this receipt changed. Reopen the Complete dialog and review the units."
+          : rpc.error.message || "Failed to complete job",
         rpc.error
       );
     }
@@ -1072,7 +1093,7 @@ export const releaseBatchMemberJobs = defineServiceFn({
     purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional(),
     carriedPurchaseOrders: z.record(z.string(), z.string()).optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.batches": "Edit" },
 
   async run(
     ctx,
@@ -1175,7 +1196,7 @@ export const releaseBatches = defineServiceFn({
     purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional(),
     carriedPurchaseOrders: z.record(z.string(), z.string()).optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.batches": "Edit" },
 
   async run(
     ctx,
@@ -1316,7 +1337,7 @@ export const releaseBatches = defineServiceFn({
  */
 export const reorderScheduleOperations = defineServiceFn({
   input: scheduleOperationReorderValidator,
-  permission: { update: "production" },
+  permission: { "production.priorities": "Edit" },
 
   async run(ctx, { columnId, updates }) {
     const client = ctx.asCaller.supabase;
@@ -1460,7 +1481,7 @@ export const reorderScheduleOperations = defineServiceFn({
  */
 export const moveScheduleJob = defineServiceFn({
   input: scheduleJobUpdateValidator,
-  permission: { update: "production" },
+  permission: { "production.priorities": "Edit" },
 
   async run(ctx, { id, locationId, columnId, priority }) {
     const companyId = ctx.company.id;
@@ -1484,7 +1505,9 @@ export const moveScheduleJob = defineServiceFn({
       return ctx.error("conflict", "Job unavailable or locked");
     }
 
-    const { data, error } = await ctx.asCaller.supabase
+    // Production → Jobs owns the job; this board's permission is the gate.
+    // Written as the system, for this company's unlocked job at the location.
+    const { data, error } = await ctx.asSystem.supabase
       .from("job")
       .update({
         dueDate,
@@ -1530,7 +1553,7 @@ export const moveScheduleJob = defineServiceFn({
  */
 export const createProductionEvent = defineServiceFn({
   input: productionEventValidator,
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
 
   async run(ctx, { id: _id, ...event }) {
     const operation = await ctx.asCaller.supabase
@@ -1588,7 +1611,7 @@ export const createProductionEvent = defineServiceFn({
  */
 export const updateProductionEvent = defineServiceFn({
   input: productionEventValidator.safeExtend({ id: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { id, ...event }) {
     const update = await service.upsertProductionEvent(ctx.asCaller.supabase, {
@@ -1631,7 +1654,7 @@ const jobIdsInput = z.array(z.string()).min(1);
  */
 export const deleteJobs = defineServiceFn({
   input: z.object({ ids: jobIdsInput }),
-  permission: { delete: "production" },
+  permission: { "production.jobs": "Full" },
 
   async run(ctx, { ids }) {
     const unique = [...new Set(ids)];
@@ -1673,7 +1696,7 @@ export const deleteJobs = defineServiceFn({
  */
 export const setJobItem = defineServiceFn({
   input: z.object({ ids: jobIdsInput, itemId: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { ids, itemId }) {
     const companyId = ctx.company.id;
@@ -1790,7 +1813,7 @@ export const setJobDeadline = defineServiceFn({
     dueDate: z.string().nullable().optional(),
     deadlineType: z.enum(deadlineTypes).optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { ids, dueDate, deadlineType }) {
     const companyId = ctx.company.id;
@@ -1885,7 +1908,7 @@ export const setJobQuantity = defineServiceFn({
     quantity: z.number().min(0).optional(),
     scrapQuantity: z.number().min(0).optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { ids, quantity, scrapQuantity }) {
     const companyId = ctx.company.id;
@@ -1942,7 +1965,7 @@ export const setJobSalesOrderLine = defineServiceFn({
     ids: jobIdsInput,
     salesOrderLineId: z.string().nullable()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { ids, salesOrderLineId }) {
     const companyId = ctx.company.id;
@@ -2029,7 +2052,7 @@ export const setJobChargeNumber = defineServiceFn({
     projectId: z.string().nullable(),
     projectElementId: z.string().nullable()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { ids, projectId, projectElementId }) {
     const companyId = ctx.company.id;
@@ -2109,7 +2132,7 @@ export const setJobFields = defineServiceFn({
     startDate: z.string().nullable().optional(),
     unitOfMeasureCode: z.string().nullable().optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { ids, ...fields }) {
     const jobs = await service.readUnlockedJobs(ctx, ids);
@@ -2164,7 +2187,7 @@ export const updateJobDetails = defineServiceFn({
     id: z.string(),
     customFields: customFieldsInput
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { id, customFields, ...job }) {
     const companyId = ctx.company.id;
@@ -2261,7 +2284,7 @@ export const configureJob = defineServiceFn({
     jobId: z.string(),
     configuration: z.record(z.string(), z.unknown())
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { jobId, configuration }) {
     const companyId = ctx.company.id;
@@ -2342,7 +2365,7 @@ export const configureJob = defineServiceFn({
  */
 export const createJobs = defineServiceFn({
   input: bulkJobValidator.extend({ customFields: customFieldsInput }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
 
   async run(ctx, input) {
     const companyId = ctx.company.id;
@@ -2433,7 +2456,7 @@ export const createJobs = defineServiceFn({
  */
 export const createJob = defineServiceFn({
   input: jobValidator.safeExtend({ customFields: customFieldsInput }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
 
   async run(ctx, { id: _id, configuration: configStr, ...job }) {
     const companyId = ctx.company.id;
@@ -2514,7 +2537,7 @@ export const copyMethodToJob = defineServiceFn({
     parts: methodPartsInput,
     configuration: z.record(z.string(), z.unknown()).optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { type, configuration, ...method }) {
     const job = await service.requireJob(ctx, method.targetId);
@@ -2575,7 +2598,7 @@ export const copyMethodToMaterial = defineServiceFn({
     parts: methodPartsInput,
     configuration: z.record(z.string(), z.unknown()).optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, method) {
     const target = await ctx.asCaller.supabase
@@ -2649,7 +2672,7 @@ export const createJobMaterial = defineServiceFn({
   // The bill of material sends its new row's id, so the row keeps its key;
   // without one the table makes it.
   input: jobMaterialInput.extend({ id: z.string().min(1).optional() }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
 
   async run(ctx, material) {
     const companyId = ctx.company.id;
@@ -2726,7 +2749,7 @@ export const createJobMaterial = defineServiceFn({
  */
 export const updateJobMaterial = defineServiceFn({
   input: jobMaterialInput.extend({ id: z.string() }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
 
   async run(ctx, { id, ...material }) {
     const companyId = ctx.company.id;
@@ -2813,7 +2836,7 @@ export const updateJobMaterial = defineServiceFn({
  */
 export const deleteJobMaterial = defineServiceFn({
   input: z.object({ jobId: z.string(), id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.jobs": "Full" },
 
   async run(ctx, { jobId, id }) {
     const job = await service.requireJob(ctx, jobId);
@@ -2851,7 +2874,7 @@ export const deleteJobMaterial = defineServiceFn({
  */
 export const deleteJobMaterials = defineServiceFn({
   input: z.object({ jobId: z.string(), ids: z.array(z.string()).min(1) }),
-  permission: { delete: "production" },
+  permission: { "production.jobs": "Full" },
 
   async run(ctx, { jobId, ids }) {
     const job = await service.requireJob(ctx, jobId);
@@ -2910,7 +2933,7 @@ const newJobOperationInput = jobOperationFields
  */
 export const createJobOperation = defineServiceFn({
   input: newJobOperationInput,
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
 
   async run(ctx, input) {
     const operation = await withOperationStandards(ctx, input);
@@ -2954,7 +2977,7 @@ export const createJobOperation = defineServiceFn({
  */
 export const updateJobOperation = defineServiceFn({
   input: jobOperationInput,
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
 
   async run(ctx, operation) {
     const job = await service.requireJob(ctx, operation.jobId);
@@ -2991,7 +3014,7 @@ export const updateJobOperation = defineServiceFn({
  */
 export const setJobOperationWorkInstruction = defineServiceFn({
   input: z.object({ id: z.string().min(1), text: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { id, text }) {
     const operation = await ctx.asCaller.supabase
@@ -3025,7 +3048,7 @@ export const setJobOperationWorkInstruction = defineServiceFn({
  */
 export const deleteJobOperation = defineServiceFn({
   input: z.object({ jobId: z.string(), id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.jobs": "Full" },
 
   async run(ctx, { jobId, id }) {
     const job = await service.requireJob(ctx, jobId);
@@ -3080,7 +3103,7 @@ export const deleteJobOperation = defineServiceFn({
  */
 export const deleteJobOperations = defineServiceFn({
   input: z.object({ jobId: z.string(), ids: z.array(z.string()).min(1) }),
-  permission: { delete: "production" },
+  permission: { "production.jobs": "Full" },
 
   async run(ctx, { jobId, ids }) {
     const job = await service.requireJob(ctx, jobId);
@@ -3137,7 +3160,7 @@ export const reorderJobOperations = defineServiceFn({
     jobId: z.string(),
     orders: z.record(z.string(), z.number())
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { jobId, orders }) {
     const job = await service.requireJob(ctx, jobId);
@@ -3180,7 +3203,7 @@ export const reorderJobOperations = defineServiceFn({
  */
 export const setJobOperationStatus = defineServiceFn({
   input: z.object({ id: z.string(), status: z.enum(jobOperationStatus) }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { id, status }) {
     const update = await ctx.asCaller.supabase
@@ -3246,7 +3269,7 @@ export const completeOperation = defineServiceFn({
     operationId: z.string(),
     quantity: z.number().positive()
   }),
-  permission: { create: "production", update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { operationId, quantity }) {
     const companyId = ctx.company.id;
@@ -3415,7 +3438,7 @@ export const completeOperation = defineServiceFn({
  */
 export const setJobOperationDueDate = defineServiceFn({
   input: z.object({ id: z.string(), dueDate: z.string().nullable() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { id, dueDate }) {
     const update = await ctx.asCaller.supabase
@@ -3454,7 +3477,7 @@ export const setJobOperationDueDate = defineServiceFn({
  */
 export const syncJobOperationProcedure = defineServiceFn({
   input: z.object({ operationId: z.string(), procedureId: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { operationId, procedureId }) {
     const operation = await ctx.asCaller.supabase
@@ -3510,7 +3533,7 @@ export const reprioritizeBatch = defineServiceFn({
     batchId: z.string().min(1),
     priority: z.number().refine(Number.isFinite, "Priority must be finite")
   }),
-  permission: { update: "production" },
+  permission: { "production.batches": "Edit" },
 
   async run(ctx, { batchId, priority }) {
     const client = ctx.asCaller.supabase;
@@ -3530,7 +3553,9 @@ export const reprioritizeBatch = defineServiceFn({
       return ctx.error("rule", "Batch unavailable", batch.error);
     }
 
-    const { error } = await client
+    // Production → Jobs owns the operations; this page's permission is the
+    // gate. Written as the system, for this company's batch only.
+    const { data, error } = await ctx.asSystem.supabase
       .from("jobOperation")
       .update({
         priority,
@@ -3539,8 +3564,10 @@ export const reprioritizeBatch = defineServiceFn({
       })
       .eq("jobOperationBatchId", batchId)
       .eq("companyId", companyId)
-      .not("status", "in", "(Done,Canceled)");
+      .not("status", "in", "(Done,Canceled)")
+      .select("id");
     if (error) return ctx.error("internal", error.message, error);
+    if (data.length === 0) return ctx.error("rule", "Batch unavailable");
     return { batchId };
   }
 });
@@ -3559,7 +3586,7 @@ export const reprioritizeBatch = defineServiceFn({
  */
 export const mergeBatchOutputs = defineServiceFn({
   input: z.object({ batchId: z.string().min(1), itemId: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.batches": "Edit" },
 
   async run(ctx, { batchId, itemId }) {
     const client = ctx.asCaller.supabase;
@@ -3647,7 +3674,7 @@ export const createBatch = defineServiceFn({
       .optional(),
     purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.batches": "Edit" },
 
   async run(ctx, { purchaseOrdersBySupplierId, release, ...batch }) {
     const client = ctx.asCaller.supabase;
@@ -3740,7 +3767,7 @@ export const createBatch = defineServiceFn({
  */
 export const unreleaseBatch = defineServiceFn({
   input: z.object({ batchId: z.string().min(1) }),
-  permission: { update: "production" },
+  permission: { "production.batches": "Edit" },
 
   async run(ctx, { batchId }) {
     const client = ctx.asCaller.supabase;
@@ -3794,7 +3821,7 @@ export const updateBatch = defineServiceFn({
     jobOperationIds: z.array(z.string().min(1)).optional(),
     workCenterId: z.string().optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.batches": "Edit" },
 
   async run(ctx, { type, workCenterId, ...batch }) {
     const result = await service.updateJobOperationBatch(
@@ -3830,7 +3857,7 @@ export const updateBatch = defineServiceFn({
  */
 export const dissolveBatches = defineServiceFn({
   input: z.object({ batchIds: z.array(z.string()).min(1) }),
-  permission: { update: "production" },
+  permission: { "production.batches": "Edit" },
 
   async run(ctx, { batchIds }) {
     const ids = [...new Set(batchIds)];
@@ -3883,7 +3910,7 @@ export const dissolveBatches = defineServiceFn({
  */
 export const assignPerson = defineServiceFn({
   input: peopleAssignmentValidator.omit({ id: true }),
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, assignment) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -3923,7 +3950,7 @@ export const assignPerson = defineServiceFn({
  */
 export const unassignPerson = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, { id }) {
     const removed = await service.deletePeopleAssignment(
@@ -3956,7 +3983,7 @@ export const unassignPerson = defineServiceFn({
  */
 export const markPersonAbsent = defineServiceFn({
   input: peopleAbsenceValidator.omit({ id: true }),
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, absence) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -3995,7 +4022,7 @@ export const markPersonAbsent = defineServiceFn({
  */
 export const clearPersonAbsence = defineServiceFn({
   input: z.object({ id: z.string().min(1), date: z.string().optional() }),
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, { id, date }) {
     const cleared = await service.clearPeopleAbsence(
@@ -4032,7 +4059,7 @@ export const clearPersonAbsence = defineServiceFn({
  */
 export const movePerson = defineServiceFn({
   input: peopleMoveValidator,
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, { id, workCenterId }) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -4065,15 +4092,15 @@ export const movePerson = defineServiceFn({
  *
  * @remarks
  * A move onto a day where that person already works the same work center
- * merges the two (hours add). Refused when the person is absent that day, or
- * already works another work center in that shift. The work center is
- * rescheduled.
+ * merges the two (hours add); onto a day where they work another work center,
+ * their day is split across both. Refused when the person is absent that day.
+ * The work center is rescheduled.
  *
  * @mcp
  */
 export const movePersonCell = defineServiceFn({
   input: peopleMoveCellValidator,
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, { id, employeeId, date }) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -4094,12 +4121,7 @@ export const movePersonCell = defineServiceFn({
     );
     if (moved instanceof CarbonError) return moved;
     if ("refused" in moved) {
-      return moved.refused === "absent"
-        ? ctx.error("rule", "This person is absent that day.")
-        : ctx.error(
-            "conflict",
-            "This person already works another work center that day. Open the day to split their hours."
-          );
+      return ctx.error("rule", "This person is absent that day.");
     }
     await service.notifyPeopleChange(ctx, "People assignment moved", [
       moved.workCenterId
@@ -4121,7 +4143,7 @@ export const movePersonCell = defineServiceFn({
  */
 export const setPersonDay = defineServiceFn({
   input: peopleDayValidator,
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, day) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -4165,7 +4187,7 @@ export const setPersonDay = defineServiceFn({
  */
 export const setPersonHours = defineServiceFn({
   input: peopleHoursValidator,
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, { id, hours }) {
     const result = await service.setPeopleAssignmentHours(
@@ -4197,7 +4219,7 @@ export const setPersonHours = defineServiceFn({
  */
 export const setPeopleOvertime = defineServiceFn({
   input: peopleOvertimeBulkValidator,
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, overtime) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -4245,7 +4267,7 @@ export const setPeopleOvertime = defineServiceFn({
  */
 export const copyPeopleDay = defineServiceFn({
   input: copyPeopleBoardValidator,
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, copy) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -4289,7 +4311,7 @@ export const copyPeopleDay = defineServiceFn({
  */
 export const assignPersonWeek = defineServiceFn({
   input: peopleWeekAssignValidator,
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, week) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -4332,7 +4354,7 @@ export const assignPersonWeek = defineServiceFn({
  */
 export const unassignPersonWeek = defineServiceFn({
   input: peopleWeekUnassignValidator,
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, week) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -4370,7 +4392,7 @@ export const unassignPersonWeek = defineServiceFn({
  */
 export const movePersonWeek = defineServiceFn({
   input: peopleWeekMoveValidator,
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, week) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -4409,7 +4431,7 @@ export const movePersonWeek = defineServiceFn({
  */
 export const copyPeopleWeekBoard = defineServiceFn({
   input: copyPeopleWeekValidator,
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, copy) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -4449,7 +4471,7 @@ export const copyPeopleWeekBoard = defineServiceFn({
  */
 export const markPersonAbsentRange = defineServiceFn({
   input: peopleAbsenceRangeValidator,
-  permission: { update: "production" },
+  permission: { "production.resourcePlanning": "Edit" },
 
   async run(ctx, range) {
     const refused = await service.requireBoardReferences(ctx, {
@@ -4515,7 +4537,7 @@ export const orderPlannedJobs = defineServiceFn({
       )
       .min(1, "No items were provided to create production orders")
   }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
 
   async run(ctx, { locationId, items }) {
     const companyId = ctx.company.id;
@@ -4619,6 +4641,7 @@ export const orderPlannedJobs = defineServiceFn({
       quantity: number;
       dueDate: string | null;
       planningActionId?: string;
+      plannedOrderId?: string;
     }[] = [];
     const errors: string[] = [];
     // A job kept without its method: the planner must Get Method on it.
@@ -4748,7 +4771,8 @@ export const orderPlannedJobs = defineServiceFn({
           jobId: id,
           quantity: order.quantity,
           dueDate: order.dueDate ?? null,
-          planningActionId: order.planningActionId
+          planningActionId: order.planningActionId,
+          plannedOrderId: order.plannedOrderId
         });
         const key = [item.id, order.periodId, item.planningSegmentId].join(
           "\u001f"
@@ -4773,12 +4797,14 @@ export const orderPlannedJobs = defineServiceFn({
 
     // Settled as soon as the jobs exist, before their methods, to keep short
     // the window in which an MRP run could net a job and the settle then take
-    // it off the suggestion a second time.
+    // it off the suggestion a second time. The same transaction converts the
+    // settled actions' planned orders to these jobs (`jobId` in `ordered`).
     const settled = await service.settleNewSupplyPlanningActions(db, {
       companyId,
       locationId,
       userId,
       type: "Make",
+      asOf: today,
       ordered
     });
     if (settled.error) {
@@ -4789,7 +4815,7 @@ export const orderPlannedJobs = defineServiceFn({
         error: settled.error
       });
       warnings.push(
-        "The jobs were created, but their suggestions were not updated. Recalculate before making them again."
+        "The jobs were created, but their suggestions and planned orders were not updated. Recalculate before making them again, and unfirm any Firm planned order a new job replaces: MRP keeps Firm orders as supply."
       );
     } else if (segments.planningGroupIds.size > 0) {
       // A grouped Make's pegs move to the jobs that answered it. A failure
@@ -4923,7 +4949,7 @@ export const updatePlannedJob = defineServiceFn({
       })
     ])
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { locationId, job }) {
     const companyId = ctx.company.id;
@@ -4997,7 +5023,7 @@ export const updatePlannedJob = defineServiceFn({
  */
 export const planJobFromPlanning = defineServiceFn({
   input: z.object({ locationId: z.string(), jobId: z.string().min(1) }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
 
   async run(ctx, { locationId, jobId }) {
     const target = await service.readPlanningJob(ctx, jobId, locationId);
@@ -5039,7 +5065,7 @@ const CHANGE_ACTION_TYPES = [
  *
  * @remarks
  * Every id is read from the persisted worklist (only an Open change action on
- * a job; the type, job and suggested value come from the row, never the
+ * a job or a planned order; the type, job and suggested value come from the row, never the
  * caller); `type` keeps only actions of that type. A job that is not Draft or
  * Planned is never edited from planning: its action is listed in
  * `requiresManualAction`. Expedite / Defer move the jobs' due dates in one
@@ -5047,11 +5073,19 @@ const CHANGE_ACTION_TYPES = [
  * job's quantity (guarded on Draft / Planned in the UPDATE) and recalculate
  * it; Cancel runs `cancelJob` from Draft / Planned. Each of those
  * is claimed right before its change, three jobs at a time, and a failed one
- * gives its claim back. With no `type`, an Open Transfer or Borrow creates a
+ * gives its claim back. An action on a Make planned order edits that order
+ * in one transaction: Expedite / Defer set its due date (the release date
+ * moves by the same days), Increase / Decrease its quantity, and the order
+ * becomes Firm; Cancel deletes it. When any such action applied, MRP runs
+ * once the batch is written (`replanAfterChange`), as after a firm or an
+ * edit. With no `type`, an Open Transfer or Borrow creates a
  * Draft project stock transfer (`applyTransferPlanningActions`, which needs
- * `update: projects`). Returns what was `applied`, the `transfers` created,
+ * Edit on Projects). Returns what was `applied`, the `transfers` created,
  * what needs review, `warnings` (applied, with a follow-up step that failed)
- * and `errors`.
+ * and `errors`. Needs Edit on Material Planning; an action on a job also
+ * needs Edit on Jobs, else it is listed in `errors`. Every read comes before
+ * the first write, so once something is applied a later failure is listed in
+ * `errors` and the answer still names what was applied.
  *
  * @mcp
  */
@@ -5060,319 +5094,532 @@ export const applyPlanningActions = defineServiceFn({
     planningActionIds: planningActionIdsInput,
     type: z.enum(CHANGE_ACTION_TYPES).optional()
   }),
-  permission: { update: "production" },
+  permission: utils.applyPlanningActionsPermission,
 
-  async run(ctx, { planningActionIds, type }) {
-    const companyId = ctx.company.id;
-    const userId = ctx.auditUserId;
-    const client = ctx.asSystem.supabase;
-    const db = ctx.asSystem.pg;
-    const applied: string[] = [];
-    const requiresManualAction: { id: string; jobId: string | null }[] = [];
-    const errors: string[] = [];
-    // Applied, but a follow-up step failed: reported, never rolled back.
-    const warnings: string[] = [];
-
-    // A claim that is not given back leaves the action Actioned with nothing
-    // applied, so a failed release is reported, never swallowed.
-    const releaseClaim = async (planningActionId: string) => {
-      const released = await service.releasePlanningActionClaim(client, {
-        id: planningActionId,
-        companyId,
-        userId
-      });
-      if (released.error) {
-        logger.error("Failed to release a planning action claim", {
-          companyId,
-          planningActionId,
-          error: released.error
-        });
-        errors.push(
-          `Planning action ${planningActionId} could not be reopened: ${released.error}`
-        );
-      }
-    };
-
-    const actionRows = await service.getPlanningActionsByIds(db, {
-      ids: planningActionIds,
-      companyId
-    });
-    if (actionRows.error) {
-      return ctx.error(
-        "internal",
-        "Failed to read planning actions",
-        actionRows.error
-      );
-    }
-    const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
-
-    // A Transfer or a Borrow creates a Draft project stock transfer
-    // (approved and posted on the transfer pages); it is never one of the
-    // change actions below. Only a plain Apply (no `type`) takes them.
-    const transferIds = type
-      ? []
-      : planningActionIds.filter((id) => {
-          const row = rowById.get(id);
-          return (
-            (row?.type === "Transfer" || row?.type === "Borrow") &&
-            row.status === "Open"
-          );
-        });
-    const transferOutcome = await applyTransferPlanningActions({
-      db: ctx.asSystem.pg,
-      companyId,
-      userId,
-      planningActionIds: transferIds
-    });
-    applied.push(...transferOutcome.applied);
-    errors.push(...transferOutcome.errors);
-    const transferIdSet = new Set(transferIds);
-
-    const eligible: { planningActionId: string; row: PlanningActionRow }[] = [];
-    for (const planningActionId of planningActionIds) {
-      if (transferIdSet.has(planningActionId)) continue;
-      const row = rowById.get(planningActionId);
-      if (!row) {
-        errors.push(`Planning action ${planningActionId} not found`);
-        continue;
-      }
-      if (row.status !== "Open") {
-        errors.push(`Planning action ${planningActionId} is not open`);
-        continue;
-      }
-      if (
-        type
-          ? row.type !== type
-          : !(CHANGE_ACTION_TYPES as readonly string[]).includes(row.type)
-      ) {
-        errors.push(
-          type
-            ? `Planning action ${planningActionId} is a ${row.type}, not ${type}`
-            : `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
-        );
-        continue;
-      }
-      if (!row.jobId) {
-        errors.push(
-          `Planning action ${planningActionId} does not target a job`
-        );
-        continue;
-      }
-      eligible.push({ planningActionId, row });
-    }
-
-    // One statement: the id list is a parameter, never a PostgREST URL.
-    const jobIds = [...new Set(eligible.map(({ row }) => row.jobId!))];
-    const jobs = await service.catchInternal(
+  run: (ctx, { planningActionIds, type }) =>
+    service.replanAfterPlannedOrderChanges(
       ctx,
-      "Failed to read the planning actions' jobs",
-      async () =>
-        jobIds.length > 0
-          ? db
-              .selectFrom("job")
-              .select(["id", "status"])
-              .where("id", "in", jobIds)
-              .where("companyId", "=", companyId)
-              .execute()
-          : []
-    );
-    if (jobs instanceof CarbonError) return jobs;
-    const jobStatusById = new Map(jobs.map((job) => [job.id, job.status]));
+      async (changedPlannedOrderIds) => {
+        const companyId = ctx.company.id;
+        const userId = ctx.auditUserId;
+        const client = ctx.asSystem.supabase;
+        const db = ctx.asSystem.pg;
+        const applied: string[] = [];
+        const requiresManualAction: { id: string; jobId: string | null }[] = [];
+        const errors: string[] = [];
+        // Applied, but a follow-up step failed: reported, never rolled back.
+        const warnings: string[] = [];
 
-    const toClaim: typeof eligible = [];
-    for (const target of eligible) {
-      const jobId = target.row.jobId!;
-      const status = jobStatusById.get(jobId);
-      if (status === undefined) {
-        errors.push(
-          `Job for planning action ${target.planningActionId} not found`
+        // A claim that is not given back leaves the action Actioned with nothing
+        // applied, so a failed release is reported, never swallowed.
+        const releaseClaim = async (planningActionId: string) => {
+          const released = await service.releasePlanningActionClaim(client, {
+            id: planningActionId,
+            companyId,
+            userId
+          });
+          if (released.error) {
+            logger.error("Failed to release a planning action claim", {
+              companyId,
+              planningActionId,
+              error: released.error
+            });
+            errors.push(
+              `Planning action ${planningActionId} could not be reopened: ${released.error}`
+            );
+          }
+        };
+
+        // Every read comes before the first write: once a write has
+        // committed (a transfer, a planned order), a later failure is an
+        // `errors` line in the answer, never an error that hides `applied`.
+        const actionRows = await service.getPlanningActionsByIds(db, {
+          ids: planningActionIds,
+          companyId
+        });
+        if (actionRows.error) {
+          return ctx.error(
+            "internal",
+            "Failed to read planning actions",
+            actionRows.error
+          );
+        }
+        const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
+
+        // A Transfer or a Borrow creates a Draft project stock transfer
+        // (approved and posted on the transfer pages); it is never one of the
+        // change actions below. Only a plain Apply (no `type`) takes them.
+        const transferIds = type
+          ? []
+          : planningActionIds.filter((id) => {
+              const row = rowById.get(id);
+              return (
+                (row?.type === "Transfer" || row?.type === "Borrow") &&
+                row.status === "Open"
+              );
+            });
+        const transferIdSet = new Set(transferIds);
+
+        // The gate is Material Planning; each action needs the page of what it
+        // changes: a job Edit on Jobs, a Make planned order Material Planning.
+        const canEditJobs = ctx.can(utils.applyPlanningJobActionsPermission);
+        const canChangePlannedOrders = ctx.can(
+          utils.plannedOrderChangePages.Make
         );
-        continue;
-      }
-      if (!isJobEditableFromPlanning(status)) {
-        // On the floor, finished, closed or cancelled since MRP ran.
-        requiresManualAction.push({ id: target.planningActionId, jobId });
-        continue;
-      }
-      toClaim.push(target);
-    }
+        const eligible: { planningActionId: string; row: PlanningActionRow }[] =
+          [];
+        const plannedOrderTargets: service.PlannedOrderPlanningAction[] = [];
+        for (const planningActionId of planningActionIds) {
+          if (transferIdSet.has(planningActionId)) continue;
+          const row = rowById.get(planningActionId);
+          if (!row) {
+            errors.push(`Planning action ${planningActionId} not found`);
+            continue;
+          }
+          if (row.status !== "Open") {
+            errors.push(`Planning action ${planningActionId} is not open`);
+            continue;
+          }
+          if (
+            type
+              ? row.type !== type
+              : !(CHANGE_ACTION_TYPES as readonly string[]).includes(row.type)
+          ) {
+            errors.push(
+              type
+                ? `Planning action ${planningActionId} is a ${row.type}, not ${type}`
+                : `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
+            );
+            continue;
+          }
+          if (row.plannedOrderId) {
+            // A Make planned order: edited (and firmed) or deleted below.
+            const target = service.plannedOrderTargetOf(row);
+            if (!target) {
+              errors.push(
+                `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
+              );
+              continue;
+            }
+            if (!canChangePlannedOrders) {
+              errors.push(
+                `Planning action ${planningActionId} changes a planned order, which needs Edit on Production → Material Planning`
+              );
+              continue;
+            }
+            plannedOrderTargets.push(target);
+            continue;
+          }
+          if (!row.jobId) {
+            errors.push(
+              `Planning action ${planningActionId} does not target a job`
+            );
+            continue;
+          }
+          if (!canEditJobs) {
+            errors.push(
+              `Planning action ${planningActionId} changes a job, which needs Edit on Jobs`
+            );
+            continue;
+          }
+          eligible.push({ planningActionId, row });
+        }
 
-    // Dates: ONE transaction for every Expedite / Defer, then ONE scheduler
-    // event (a "reorder" event re-stamps the whole company whatever its job).
-    const dateActions = toClaim.filter(
-      ({ row }) =>
-        (row.type === "Expedite" || row.type === "Defer") && row.suggestedDate
-    );
-    if (dateActions.length > 0) {
-      let outcome: Awaited<
-        ReturnType<typeof service.applyProductionPlanningDateActions>
-      >;
-      try {
-        outcome = await service.applyProductionPlanningDateActions(db, {
+        // One statement: the id list is a parameter, never a PostgREST URL.
+        const jobIds = [...new Set(eligible.map(({ row }) => row.jobId!))];
+        const jobs = await service.catchInternal(
+          ctx,
+          "Failed to read the planning actions' jobs",
+          async () =>
+            jobIds.length > 0
+              ? db
+                  .selectFrom("job")
+                  .select(["id", "status", "quantityReceivedToInventory"])
+                  .where("id", "in", jobIds)
+                  .where("companyId", "=", companyId)
+                  .execute()
+              : []
+        );
+        if (jobs instanceof CarbonError) return jobs;
+        const jobStatusById = new Map(jobs.map((job) => [job.id, job.status]));
+        // MRP sizes a job on what it has still to make (`quantity` less
+        // `quantityReceivedToInventory`); `job.quantity` is the total.
+        const receivedByJobId = new Map(
+          jobs.map((job) => [
+            job.id,
+            Number(job.quantityReceivedToInventory ?? 0)
+          ])
+        );
+
+        const toClaim: typeof eligible = [];
+        for (const target of eligible) {
+          const jobId = target.row.jobId!;
+          const status = jobStatusById.get(jobId);
+          if (status === undefined) {
+            errors.push(
+              `Job for planning action ${target.planningActionId} not found`
+            );
+            continue;
+          }
+          if (!isJobEditableFromPlanning(status)) {
+            // On the floor, finished, closed or cancelled since MRP ran.
+            requiresManualAction.push({ id: target.planningActionId, jobId });
+            continue;
+          }
+          toClaim.push(target);
+        }
+
+        // ── Writes ──
+        const transferOutcome = await applyTransferPlanningActions({
+          db: ctx.asSystem.pg,
           companyId,
           userId,
-          actions: dateActions.map(({ planningActionId, row }) => ({
-            planningActionId,
-            jobId: row.jobId!,
-            suggestedDate: row.suggestedDate
-          }))
+          planningActionIds: transferIds,
+          canEditProjects: ctx.can({ "projects.projects": "Edit" })
         });
-      } catch (err) {
-        return ctx.error(
-          "internal",
-          `Failed to reschedule jobs: ${getErrorMessage(err, "unknown error")}`,
-          err
-        );
-      }
-      applied.push(...outcome.applied);
-      requiresManualAction.push(...outcome.refused);
-      for (const id of outcome.alreadyApplied) {
-        errors.push(`Planning action ${id} was already applied`);
-      }
-      if (outcome.applied.length > 0) {
-        const notified = await service.notifyScheduleInputsChanged(
-          ctx.company.id,
-          "reorder",
-          `Planning rescheduled ${outcome.applied.length} job(s)`
-        );
-        if (!notified) {
-          warnings.push(
-            `${outcome.applied.length} due date(s) are saved, but the schedule was not refreshed`
-          );
-        }
-      }
-    }
+        applied.push(...transferOutcome.applied);
+        errors.push(...transferOutcome.errors);
 
-    // Each action is claimed right before its own change: a request that dies
-    // here strands at most the actions in flight, which the next MRP run
-    // re-emits as fresh Open actions. Resolves to the claimed suggestion.
-    const claim = async (planningActionId: string) => {
-      const claimed = await service.markPlanningActionsActioned(db, {
-        ids: [planningActionId],
-        companyId,
-        userId
-      });
-      if (claimed.error) {
-        logger.error("Failed to claim a planning action", {
+        // Planned orders: one transaction for the whole batch. No scheduler
+        // notice — a planned order is not a job the scheduler places. MRP
+        // re-plans once the whole batch is written, as after a firm or an
+        // edit (`replanAfterPlannedOrderChanges`).
+        const plannedOutcome = await service.applyPlannedOrderTargets(db, {
           companyId,
-          planningActionId,
-          error: claimed.error
+          userId,
+          orderType: "Make",
+          targets: plannedOrderTargets
         });
-        errors.push(
-          `Planning action ${planningActionId} could not be claimed: ${claimed.error.message}`
+        applied.push(...plannedOutcome.applied);
+        errors.push(...plannedOutcome.errors);
+        for (const id of plannedOutcome.changedPlannedOrderIds) {
+          changedPlannedOrderIds.add(id);
+        }
+
+        // Dates: ONE transaction for every Expedite / Defer, then ONE scheduler
+        // event (a "reorder" event re-stamps the whole company whatever its job).
+        const dateActions = toClaim.filter(
+          ({ row }) =>
+            (row.type === "Expedite" || row.type === "Defer") &&
+            row.suggestedDate
         );
-        return null;
-      }
-      const [row] = claimed.data;
-      if (!row) {
-        errors.push(`Planning action ${planningActionId} was already applied`);
-        return null;
-      }
-      return {
-        suggestedQuantity:
-          row.suggestedQuantity === null || row.suggestedQuantity === undefined
-            ? null
-            : Number(row.suggestedQuantity)
-      };
-    };
-
-    // Two actions on one job (an Increase and a Cancel) must not run at once:
-    // group by job, run the groups three at a time, each group in order.
-    const byJob = groupBy(
-      toClaim.filter(
-        ({ row }) =>
-          row.type === "Cancel" ||
-          row.type === "Increase" ||
-          row.type === "Decrease"
-      ),
-      ({ row }) => row.jobId!
-    );
-    await async.map(
-      Object.values(byJob),
-      async (group) => {
-        for (const { planningActionId, row } of group) {
-          const claimedRow = await claim(planningActionId);
-          if (!claimedRow) continue;
-          const jobId = row.jobId!;
-
-          if (row.type === "Cancel") {
-            const cancelled = await cancelJob(ctx, {
-              jobId,
-              // Read Draft / Planned above; released since, it goes to
-              // review instead of losing its picks.
-              fromStatuses: [...PLANNING_EDITABLE_JOB_STATUSES]
+        if (dateActions.length > 0) {
+          let outcome:
+            | Awaited<
+                ReturnType<typeof service.applyProductionPlanningDateActions>
+              >
+            | undefined;
+          try {
+            outcome = await service.applyProductionPlanningDateActions(db, {
+              companyId,
+              userId,
+              actions: dateActions.map(({ planningActionId, row }) => ({
+                planningActionId,
+                jobId: row.jobId!,
+                suggestedDate: row.suggestedDate
+              }))
             });
-            if (cancelled.error) {
-              await releaseClaim(planningActionId);
-              if (cancelled.error.category === "conflict") {
-                requiresManualAction.push({ id: planningActionId, jobId });
-              } else {
-                errors.push(
-                  `Failed to cancel job for planning action ${planningActionId}: ${cancelled.error.message}`
+          } catch (err) {
+            // One transaction: none of the dates moved, the actions stay Open.
+            logger.error("Failed to reschedule jobs from planning", {
+              companyId,
+              planningActionIds: dateActions.map((a) => a.planningActionId),
+              error: err
+            });
+            errors.push(
+              `Failed to reschedule jobs: ${getErrorMessage(err, "unknown error")}`
+            );
+          }
+          if (outcome) {
+            applied.push(...outcome.applied);
+            requiresManualAction.push(...outcome.refused);
+            for (const id of outcome.alreadyApplied) {
+              errors.push(`Planning action ${id} was already applied`);
+            }
+            if (outcome.applied.length > 0) {
+              const notified = await service.notifyScheduleInputsChanged(
+                ctx.company.id,
+                "reorder",
+                `Planning rescheduled ${outcome.applied.length} job(s)`
+              );
+              if (!notified) {
+                warnings.push(
+                  `${outcome.applied.length} due date(s) are saved, but the schedule was not refreshed`
                 );
               }
-              continue;
-            }
-            if (cancelled.data.warning) warnings.push(cancelled.data.warning);
-          } else {
-            const update = await service.updatePlanningJob(client, {
-              id: jobId,
-              companyId,
-              updatedBy: userId,
-              quantity: Number(
-                claimedRow.suggestedQuantity ?? row.suggestedQuantity
-              )
-            });
-            if (update.error) {
-              await releaseClaim(planningActionId);
-              errors.push(
-                `Failed to update job quantity for planning action ${planningActionId}: ${update.error.message}`
-              );
-              continue;
-            }
-            if (!update.updated) {
-              // Released (or finished) since it was read.
-              await releaseClaim(planningActionId);
-              requiresManualAction.push({ id: planningActionId, jobId });
-              continue;
-            }
-            const recalc = await service.recalculateJobRequirements(
-              client,
-              db,
-              {
-                id: jobId,
-                companyId,
-                userId
-              }
-            );
-            if (recalc.error) {
-              // The quantity change stands, and the action stays Actioned.
-              logger.error(
-                "Failed to recalculate job requirements after a planning action",
-                { companyId, jobId, planningActionId, error: recalc.error }
-              );
-              warnings.push(
-                `Planning action ${planningActionId}: the quantity is saved, but the job's materials and operations were not recalculated`
-              );
             }
           }
-          applied.push(planningActionId);
         }
-      },
-      { concurrency: 3 }
-    );
 
-    return {
-      applied,
-      // The Draft project stock transfers the applied Transfers and Borrows
-      // created, for the toast's links.
-      transfers: transferOutcome.transfers,
-      requiresManualAction,
-      warnings,
-      errors
+        // Each action is claimed right before its own change: a request that dies
+        // here strands at most the actions in flight, which the next MRP run
+        // re-emits as fresh Open actions. Resolves to the claimed suggestion.
+        const claim = async (planningActionId: string) => {
+          const claimed = await service.markPlanningActionsActioned(db, {
+            ids: [planningActionId],
+            companyId,
+            userId
+          });
+          if (claimed.error) {
+            logger.error("Failed to claim a planning action", {
+              companyId,
+              planningActionId,
+              error: claimed.error
+            });
+            errors.push(
+              `Planning action ${planningActionId} could not be claimed: ${claimed.error.message}`
+            );
+            return null;
+          }
+          const [row] = claimed.data;
+          if (!row) {
+            errors.push(
+              `Planning action ${planningActionId} was already applied`
+            );
+            return null;
+          }
+          return {
+            suggestedQuantity: service.planningActionQuantity(
+              row.suggestedQuantity
+            )
+          };
+        };
+
+        // Two actions on one job (an Increase and a Cancel) must not run at once:
+        // group by job, run the groups three at a time, each group in order.
+        const byJob = groupBy(
+          toClaim.filter(
+            ({ row }) =>
+              row.type === "Cancel" ||
+              row.type === "Increase" ||
+              row.type === "Decrease"
+          ),
+          ({ row }) => row.jobId!
+        );
+        await async.map(
+          Object.values(byJob),
+          async (group) => {
+            for (const { planningActionId, row } of group) {
+              const claimedRow = await claim(planningActionId);
+              if (!claimedRow) continue;
+              const jobId = row.jobId!;
+
+              if (row.type === "Cancel") {
+                const cancelled = await cancelJob(ctx, {
+                  jobId,
+                  // Read Draft / Planned above; released since, it goes to
+                  // review instead of losing its picks.
+                  fromStatuses: [...PLANNING_EDITABLE_JOB_STATUSES]
+                });
+                if (cancelled.error) {
+                  await releaseClaim(planningActionId);
+                  if (cancelled.error.category === "conflict") {
+                    requiresManualAction.push({ id: planningActionId, jobId });
+                  } else {
+                    errors.push(
+                      `Failed to cancel job for planning action ${planningActionId}: ${cancelled.error.message}`
+                    );
+                  }
+                  continue;
+                }
+                if (cancelled.data.warning)
+                  warnings.push(cancelled.data.warning);
+              } else {
+                const update = await service.updatePlanningJob(client, {
+                  id: jobId,
+                  companyId,
+                  updatedBy: userId,
+                  quantity:
+                    Number(
+                      claimedRow.suggestedQuantity ?? row.suggestedQuantity
+                    ) + (receivedByJobId.get(jobId) ?? 0)
+                });
+                if (update.error) {
+                  await releaseClaim(planningActionId);
+                  errors.push(
+                    `Failed to update job quantity for planning action ${planningActionId}: ${update.error.message}`
+                  );
+                  continue;
+                }
+                if (!update.updated) {
+                  // Released (or finished) since it was read.
+                  await releaseClaim(planningActionId);
+                  requiresManualAction.push({ id: planningActionId, jobId });
+                  continue;
+                }
+                const recalc = await service.recalculateJobRequirements(
+                  client,
+                  db,
+                  {
+                    id: jobId,
+                    companyId,
+                    userId
+                  }
+                );
+                if (recalc.error) {
+                  // The quantity change stands, and the action stays Actioned.
+                  logger.error(
+                    "Failed to recalculate job requirements after a planning action",
+                    { companyId, jobId, planningActionId, error: recalc.error }
+                  );
+                  warnings.push(
+                    `Planning action ${planningActionId}: the quantity is saved, but the job's materials and operations were not recalculated`
+                  );
+                }
+              }
+              applied.push(planningActionId);
+            }
+          },
+          { concurrency: 3 }
+        );
+
+        return {
+          applied,
+          // The Draft project stock transfers the applied Transfers and Borrows
+          // created, for the toast's links.
+          transfers: transferOutcome.transfers,
+          requiresManualAction,
+          warnings,
+          errors
+        };
+      }
+    )
+});
+/**
+ * Firm a planned order.
+ *
+ * @remarks
+ * A person holds a Firm planned order: MRP no longer changes its quantity or
+ * dates, and raises a planning action when it disagrees. A Make planned order
+ * needs Edit on production's Material Planning, a Buy planned order Edit on purchasing's. A
+ * Firm order is left as it is; a Converted one is refused. MRP runs after
+ * the change (`replanAfterChange`).
+ */
+export const firmPlannedOrder = defineServiceFn({
+  input: plannedOrderIdValidator,
+  // The planned order's type decides the page: the body checks it.
+  permission: { anyOf: utils.plannedOrderChangeGate },
+  async run(ctx, { id, locationId }) {
+    const order = await service.readPlannedOrderForChange(ctx, id, locationId);
+    if (order instanceof CarbonError) return order;
+    const done = {
+      id,
+      status: "Firm" as const,
+      message: "Planned order firmed"
     };
+    if (order.status === "Firm") return done;
+    const firmed = await service.catchInternal(
+      ctx,
+      "Failed to firm the planned order",
+      () =>
+        service.firmPlannedOrder(ctx.asSystem.pg, {
+          id,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        })
+    );
+    if (firmed instanceof CarbonError) return firmed;
+    if (!firmed) {
+      return ctx.error(
+        "conflict",
+        "The planned order changed since it was read"
+      );
+    }
+    await service.replanAfterChange(ctx, `planned order ${id} firmed`);
+    return done;
   }
 });
+
+/**
+ * Give a Firm planned order back to MRP.
+ *
+ * @remarks
+ * The order becomes Planned again, with no firm stamp, and the next MRP run
+ * may change or delete it. A Make planned order needs Edit on production's
+ * Material Planning, a Buy planned order Edit on purchasing's
+ * (`plannedOrderChangePages`). A Planned order is left as it is; a Converted
+ * one is refused. MRP runs after the change (`replanAfterChange`).
+ */
+export const unfirmPlannedOrder = defineServiceFn({
+  input: plannedOrderIdValidator,
+  // The planned order's type decides the page: the body checks it.
+  permission: { anyOf: utils.plannedOrderChangeGate },
+  async run(ctx, { id, locationId }) {
+    const order = await service.readPlannedOrderForChange(ctx, id, locationId);
+    if (order instanceof CarbonError) return order;
+    const done = {
+      id,
+      status: "Planned" as const,
+      message: "Planned order returned to MRP"
+    };
+    if (order.status === "Planned") return done;
+    const unfirmed = await service.catchInternal(
+      ctx,
+      "Failed to unfirm the planned order",
+      () =>
+        service.unfirmPlannedOrder(ctx.asSystem.pg, {
+          id,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        })
+    );
+    if (unfirmed instanceof CarbonError) return unfirmed;
+    if (!unfirmed) {
+      return ctx.error(
+        "conflict",
+        "The planned order changed since it was read"
+      );
+    }
+    await service.replanAfterChange(ctx, `planned order ${id} unfirmed`);
+    return done;
+  }
+});
+
+/**
+ * Change a planned order's quantity or due date.
+ *
+ * @remarks
+ * The edit firms the order, so MRP keeps the planner's numbers. A new due
+ * date moves the release date by the same number of days, and must fall in
+ * a planning week (else a validation error). A Make planned
+ * order needs Edit on production's Material Planning, a Buy planned order Edit on purchasing's.
+ * A Converted order is refused.
+ */
+export const updatePlannedOrder = defineServiceFn({
+  input: updatePlannedOrderValidator,
+  // The planned order's type decides the page: the body checks it.
+  permission: { anyOf: utils.plannedOrderChangeGate },
+  async run(ctx, { id, locationId, quantity, dueDate }) {
+    if (quantity === undefined && dueDate === undefined) {
+      return ctx.error("validation", "Change the quantity or the due date");
+    }
+    const order = await service.readPlannedOrderForChange(ctx, id, locationId);
+    if (order instanceof CarbonError) return order;
+    let changed: string[];
+    try {
+      changed = await service.updatePlannedOrders(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        edits: [{ id, quantity, dueDate }]
+      });
+    } catch (err) {
+      // a due date no planning week holds: the order would have no week
+      if (err instanceof service.PlannedOrderOutsideHorizonError) {
+        return ctx.error("validation", err.message);
+      }
+      return ctx.error("internal", "Failed to update the planned order", err);
+    }
+    if (changed.length === 0) {
+      return ctx.error(
+        "conflict",
+        "The planned order changed since it was read"
+      );
+    }
+    await service.replanAfterChange(ctx, `planned order ${id} edited`);
+    return { id, status: "Firm" as const, message: "Planned order updated" };
+  }
+});
+
 /**
  * Dismiss production planning suggestions.
  *
@@ -5384,7 +5631,7 @@ export const applyPlanningActions = defineServiceFn({
  */
 export const dismissProductionPlanningActions = defineServiceFn({
   input: z.object({ planningActionIds: planningActionIdsInput }),
-  permission: { update: "production" },
+  permission: { "production.materialPlanning": "Edit" },
 
   async run(ctx, { planningActionIds }) {
     const result = await service.dismissPlanningActions(ctx.asSystem.pg, {
@@ -5412,7 +5659,7 @@ export const dismissProductionPlanningActions = defineServiceFn({
  */
 export const reopenProductionPlanningActions = defineServiceFn({
   input: z.object({ planningActionIds: planningActionIdsInput }),
-  permission: { update: "production" },
+  permission: { "production.materialPlanning": "Edit" },
 
   async run(ctx, { planningActionIds }) {
     const result = await service.reopenDismissedPlanningActions(
@@ -5448,7 +5695,7 @@ export const assignProductionPlanningActions = defineServiceFn({
     planningActionIds: planningActionIdsInput,
     assignee: z.string().optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.materialPlanning": "Edit" },
 
   async run(ctx, { planningActionIds, assignee }) {
     if (
@@ -5491,7 +5738,7 @@ export const assignProductionPlanningActions = defineServiceFn({
  */
 export const createProductionQuantity = defineServiceFn({
   input: productionQuantityValidator,
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
 
   async run(ctx, { id: _id, ...quantity }) {
     const companyId = ctx.company.id;
@@ -5559,13 +5806,13 @@ export const createProductionQuantity = defineServiceFn({
  * Correct a recorded production quantity.
  *
  * @remarks
- * Needs accounting update, since the quantity feeds the job's costing. A
- * scrap reason is kept only on Scrap. Not published: a published operation
- * gates on its own module's permission.
+ * Needs Edit on the job's quantities (Production → Jobs) and accounting
+ * update, since the quantity feeds the job's costing. A scrap reason is kept
+ * only on Scrap. Not published: it needs two modules' permissions.
  */
 export const updateProductionQuantity = defineServiceFn({
   input: productionQuantityValidator.safeExtend({ id: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "production.jobs": "Edit", "accounting.reporting": "Edit" },
 
   async run(ctx, { id, ...quantity }) {
     const update = await service.upsertProductionQuantity(
@@ -5607,7 +5854,7 @@ export const setProcedureFields = defineServiceFn({
     processId: z.string().optional(),
     tags: z.array(z.string()).optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.procedures": "Edit" },
 
   async run(ctx, { ids, content: parsedContent, ...fields }) {
     let update = ctx.asCaller.supabase
@@ -5652,7 +5899,7 @@ export const createAssemblyInstruction = defineServiceFn({
     itemId: z.string().min(1),
     modelUploadId: z.string().optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.assemblies": "Create" },
 
   async run(ctx, { itemId, modelUploadId }) {
     const client = ctx.asCaller.supabase;
@@ -5755,7 +6002,7 @@ export const createAssemblyInstruction = defineServiceFn({
  */
 export const replanAssembly = defineServiceFn({
   input: z.object({ id: z.string(), fresh: z.boolean().default(false) }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
 
   async run(ctx, { id, fresh }) {
     const client = ctx.asCaller.supabase;
@@ -5856,7 +6103,7 @@ export const generateAssemblySteps = defineServiceFn({
     id: z.string(),
     mode: z.enum(["generate", "regenerate"]).default("generate")
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
 
   async run(ctx, { id, mode }) {
     // The service role: the auto-detected units it materializes need create
@@ -5927,7 +6174,7 @@ export const generateAssemblySteps = defineServiceFn({
  */
 export const cancelAssemblyJob = defineServiceFn({
   input: z.object({ id: z.string(), kind: z.enum(["convert", "plan"]) }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
 
   async run(ctx, { id, kind }) {
     const client = ctx.asCaller.supabase;
@@ -5967,7 +6214,8 @@ export const cancelAssemblyJob = defineServiceFn({
     }
 
     if (kind === "convert") {
-      await client
+      // The item pages own the model: written as the system, this company's only.
+      await ctx.asSystem.supabase
         .from("modelUpload")
         .update({
           processingStatus: "Failed",
@@ -5989,7 +6237,7 @@ export const cancelAssemblyJob = defineServiceFn({
  */
 export const reconvertAssemblyModel = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
 
   async run(ctx, { id }) {
     const instruction = await service.readInstructionModel(ctx, id);
@@ -6027,7 +6275,7 @@ export const reconvertAssemblyModel = defineServiceFn({
  */
 export const convertAssemblyModel = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
 
   async run(ctx, { id }) {
     const instruction = await service.readInstructionModel(ctx, id);
@@ -6072,7 +6320,7 @@ export const convertAssemblyModel = defineServiceFn({
  */
 export const matchAssemblyBom = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
 
   async run(ctx, { id }) {
     const args = {
@@ -6109,7 +6357,7 @@ export const mapAssemblyComponent = defineServiceFn({
     geometryHash: z.string().min(1),
     itemId: z.string().min(1)
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
 
   async run(ctx, { id, modelUploadId, geometryHash, itemId }) {
     const owned = await service.requireOwnRecords(ctx, [
@@ -6154,7 +6402,7 @@ export const mapAssemblyComponent = defineServiceFn({
  */
 export const reassignAssemblyComponents = defineServiceFn({
   input: assemblyStepComponentsReassignValidator.safeExtend({ id: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
 
   async run(ctx, { id, targetStepId, componentNodeIds, mode }) {
     const moved = await service.catchInternal(
@@ -6202,7 +6450,7 @@ export const setAssemblyStepComponents = defineServiceFn({
     stepId: z.string(),
     componentNodeIds: z.array(z.string())
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
 
   async run(ctx, { id, stepId, componentNodeIds }) {
     const client = ctx.asCaller.supabase;
@@ -6256,7 +6504,7 @@ export const setAssemblyStepComponents = defineServiceFn({
  */
 export const syncAssemblyToOperation = defineServiceFn({
   input: z.object({ id: z.string(), operationId: z.string().min(1) }),
-  permission: { update: "production" },
+  permission: utils.syncAssemblyToOperationPermission,
 
   async run(ctx, { id, operationId }) {
     const operation = await ctx.asCaller.supabase
@@ -6305,7 +6553,7 @@ export const syncAssemblyToOperation = defineServiceFn({
  */
 export const convertSalesOrderLinesToJobs = defineServiceFn({
   input: z.object({ orderId: z.string() }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
   async run(ctx, { orderId }) {
     const companyId = ctx.company.id;
     const owned = await service.requireOwnRecords(ctx, [
@@ -6380,7 +6628,7 @@ export const createSalesOrderLineJob = defineServiceFn({
   input: salesOrderToJobValidator.safeExtend({
     customFields: customFieldsInput
   }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
   async run(ctx, { id: _id, ...job }) {
     const companyId = ctx.company.id;
     const system = ctx.asSystem.supabase;
@@ -6449,7 +6697,7 @@ export const createSalesOrderLineJob = defineServiceFn({
  */
 export const deleteJobOperationStep = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.jobs": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6468,7 +6716,7 @@ export const deleteJobOperationStep = defineServiceFn({
  */
 export const deleteJobOperationStepSlide = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.jobs": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6487,7 +6735,7 @@ export const deleteJobOperationStepSlide = defineServiceFn({
  */
 export const deleteJobOperationParameter = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.jobs": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6506,7 +6754,7 @@ export const deleteJobOperationParameter = defineServiceFn({
  */
 export const deleteJobOperationTool = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.jobs": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6525,7 +6773,7 @@ export const deleteJobOperationTool = defineServiceFn({
  */
 export const deleteProcedure = defineServiceFn({
   input: z.looseObject({ procedureId: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.procedures": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6544,7 +6792,7 @@ export const deleteProcedure = defineServiceFn({
  */
 export const deleteProcedureStep = defineServiceFn({
   input: z.looseObject({ procedureStepId: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.procedures": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6564,7 +6812,7 @@ export const deleteProcedureStep = defineServiceFn({
  */
 export const deleteProcedureParameter = defineServiceFn({
   input: z.looseObject({ procedureParameterId: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.procedures": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6584,7 +6832,7 @@ export const deleteProcedureParameter = defineServiceFn({
  */
 export const deleteProductionEvent = defineServiceFn({
   input: z.looseObject({ productionEventId: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.jobs": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6606,7 +6854,7 @@ export const deleteProductionEvent = defineServiceFn({
  */
 export const deleteProductionQuantity = defineServiceFn({
   input: z.looseObject({ productionQuantityId: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.jobs": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6625,7 +6873,7 @@ export const deleteProductionQuantity = defineServiceFn({
  */
 export const getActiveJobOperationByJobId = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: "employee",
   async run(ctx, input) {
     return await service.getActiveJobOperationByJobId(
       ctx.asCaller.supabase,
@@ -6645,7 +6893,7 @@ export const getActiveJobOperationsByLocation = defineServiceFn({
     locationId: z.string(),
     workCenterIds: z.array(z.string()).optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.priorities": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6669,7 +6917,7 @@ export const getJobsByDateRange = defineServiceFn({
     startDate: z.string(),
     endDate: z.string()
   }),
-  permission: { view: "production" },
+  permission: { "production.priorities": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6690,7 +6938,7 @@ export const getJobsByDateRange = defineServiceFn({
  */
 export const getUnscheduledJobs = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.priorities": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6709,7 +6957,7 @@ export const getUnscheduledJobs = defineServiceFn({
  */
 export const getActiveProductionEvents = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -6728,7 +6976,7 @@ export const getActiveProductionEvents = defineServiceFn({
  */
 export const deleteScrapReason = defineServiceFn({
   input: z.looseObject({ scrapReasonId: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.scrapReasons": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6741,83 +6989,16 @@ export const deleteScrapReason = defineServiceFn({
 });
 
 /**
- * Delete failure mode
+ * Get an item's demand projections at a location.
  *
- * @mcp destructive
- */
-export const deleteFailureMode = defineServiceFn({
-  input: z.looseObject({ failureModeId: z.string() }),
-  permission: { delete: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteFailureMode(
-        ctx.asCaller.supabase,
-        input.failureModeId as never
-      )
-    );
-  }
-});
-
-/**
- * Delete maintenance dispatch
+ * @remarks
+ * Each row has its week's start date (`weekStart`), the date the projection
+ * writes take. Without `periodIds`, the weeks the writes take (see
+ * `createDemandProjections`).
  *
- * @mcp destructive
- */
-export const deleteMaintenanceDispatch = defineServiceFn({
-  input: z.looseObject({ dispatchId: z.string() }),
-  permission: { delete: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteMaintenanceDispatch(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
-    );
-  }
-});
-
-/**
- * Delete maintenance dispatch event
- *
- * @mcp destructive
- */
-export const deleteMaintenanceDispatchEvent = defineServiceFn({
-  input: z.looseObject({ eventId: z.string() }),
-  permission: { delete: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteMaintenanceDispatchEvent(
-        ctx.asCaller.supabase,
-        input.eventId as never
-      )
-    );
-  }
-});
-
-/**
- * Delete maintenance schedule
- *
- * @mcp destructive
- */
-export const deleteMaintenanceSchedule = defineServiceFn({
-  input: z.looseObject({ scheduleId: z.string() }),
-  permission: { delete: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteMaintenanceSchedule(
-        ctx.asCaller.supabase,
-        input.scheduleId as never
-      )
-    );
-  }
-});
-
-/**
- * Get demand projections
+ * @param itemId - The item.
+ * @param locationId - The location.
+ * @param periodIds - The weekly period ids to read (see `shared_getPlanningPeriods`). Leave it out for the weeks the writes take.
  *
  * @mcp read
  */
@@ -6825,17 +7006,116 @@ export const getDemandProjections = defineServiceFn({
   input: z.looseObject({
     itemId: z.string(),
     locationId: z.string(),
-    periodIds: z.array(z.string())
+    periodIds: z.array(z.string()).optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.demandForecasts": "View" },
   async run(ctx, input) {
-    return unwrap(
+    return unwrap(ctx, await service.getDemandProjectionWeeks(ctx, input));
+  }
+});
+
+const demandProjectionInput = z.object({
+  itemId: z.string().min(1),
+  locationId: z.string().min(1),
+  weeks: z
+    .array(
+      z.object({
+        weekStart: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Use YYYY-MM-DD" }),
+        quantity: z.number().min(0)
+      })
+    )
+    .min(1)
+});
+
+/**
+ * Create the demand projections of an item at a location.
+ *
+ * @remarks
+ * Needs demand forecasting (the FORECAST feature). A projection is a weekly
+ * quantity the planning run counts as demand. A week is named by its start
+ * date, a Sunday, among the 52 weeks from this week on in the company's time
+ * zone or in the location's (the two can differ by a week). The week before
+ * them is skipped and not written: a form left open over a week boundary
+ * still sends it. Only weeks above 0 are written, and at least one must be.
+ * A week the item already has is overwritten.
+ *
+ * @param itemId - The item.
+ * @param locationId - The location.
+ * @param weeks - The weekly quantities: `weekStart` (YYYY-MM-DD, a Sunday) and `quantity`.
+ * @returns The weeks written, each with its period id (see production_getDemandProjections).
+ *
+ * @mcp
+ */
+export const createDemandProjections = defineServiceFn({
+  input: demandProjectionInput,
+  permission: { "production.demandForecasts": "Create" },
+  async run(ctx, input) {
+    const rows = await service.planDemandProjections(ctx, input);
+    if (rows instanceof CarbonError) return rows;
+    const positive = rows.filter((row) => row.forecastQuantity > 0);
+    if (positive.length === 0) {
+      return ctx.error("validation", "No forecast quantities provided");
+    }
+    return service.writeDemandProjections(ctx, input, positive);
+  }
+});
+
+/**
+ * Set weeks of an item's demand projections at a location.
+ *
+ * @remarks
+ * Needs demand forecasting (the FORECAST feature). Every week sent is
+ * written: 0 removes its projection. Weeks not sent keep their quantity. A
+ * week is named by its start date, a Sunday, among the weeks a create takes
+ * (see `createDemandProjections`); the week before them is skipped, as a
+ * create skips it.
+ *
+ * @param itemId - The item.
+ * @param locationId - The location.
+ * @param weeks - The weekly quantities: `weekStart` (YYYY-MM-DD, a Sunday) and `quantity`.
+ * @returns The weeks written, each with its period id (see production_getDemandProjections).
+ *
+ * @mcp
+ */
+export const updateDemandProjections = defineServiceFn({
+  input: demandProjectionInput,
+  permission: { "production.demandForecasts": "Edit" },
+  async run(ctx, input) {
+    const rows = await service.planDemandProjections(ctx, input);
+    if (rows instanceof CarbonError) return rows;
+    return service.writeDemandProjections(ctx, input, rows);
+  }
+});
+
+/**
+ * Delete an item's demand projections at a location.
+ *
+ * @remarks
+ * Needs demand forecasting (the FORECAST feature). Removes the weeks a
+ * create takes (see `createDemandProjections`); earlier weeks stay.
+ *
+ * @param itemId - The item.
+ * @param locationId - The location.
+ * @returns The weeks cleared, each with its period id and a quantity of 0.
+ *
+ * @mcp destructive
+ */
+export const deleteDemandProjections = defineServiceFn({
+  input: z.object({
+    itemId: z.string().min(1),
+    locationId: z.string().min(1)
+  }),
+  permission: { "production.demandForecasts": "Full" },
+  async run(ctx, input) {
+    const refused = await service.refuseUnlessItemAndLocationOwned(ctx, input);
+    if (refused) return refused;
+    const formWeeks = await service.demandProjectionFormWeeks(
       ctx,
-      await service.getDemandProjections(
-        ctx.asCaller.supabase,
-        payload(ctx, input).build() as never
-      )
+      input.locationId
     );
+    return service.clearDemandProjections(ctx, input, formWeeks);
   }
 });
 
@@ -6864,7 +7144,7 @@ export const getDemandForecastReport = defineServiceFn({
     endDate: z.iso.date().optional(),
     cursor: z.string().min(1).optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.demandForecasts": "View" },
   async run(ctx, input) {
     if (input.startDate && input.endDate && input.startDate > input.endDate) {
       return ctx.error("validation", "startDate must be on or before endDate");
@@ -6927,7 +7207,7 @@ export const getJobDocuments = defineServiceFn({
     quoteLineId: z.string().nullable().optional(),
     itemId: z.string().nullable().optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return await service.getJobDocuments(
       ctx.asCaller.supabase,
@@ -6951,7 +7231,7 @@ export const getJobDocumentsWithItemId = defineServiceFn({
     }),
     itemId: z.string()
   }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return await service.getJobDocumentsWithItemId(
       ctx.asCaller.supabase,
@@ -6969,7 +7249,7 @@ export const getJobDocumentsWithItemId = defineServiceFn({
  */
 export const getJob = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6985,7 +7265,7 @@ export const getJob = defineServiceFn({
  */
 export const getJobExpediteForecast = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7007,7 +7287,7 @@ export const getJobExpediteForecast = defineServiceFn({
  */
 export const getJobByOperationId = defineServiceFn({
   input: z.looseObject({ operationId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7026,7 +7306,7 @@ export const getJobByOperationId = defineServiceFn({
  */
 export const getJobPurchaseOrderLines = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7051,7 +7331,7 @@ export const getCompletionJobs = defineServiceFn({
     throughDate: z.string().nullable(),
     search: z.string().nullable()
   }),
-  permission: { view: "production" },
+  permission: { "production.outbound": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7078,7 +7358,7 @@ export const getCapacityReservationsForResources = defineServiceFn({
       )
       .optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.forecast": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7099,7 +7379,7 @@ export const getCapacityReservationsForResources = defineServiceFn({
  */
 export const getMaintenanceDowntimeForResources = defineServiceFn({
   input: z.looseObject({ locationId: z.string().optional() }),
-  permission: { view: "production" },
+  permission: { "production.forecast": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7127,7 +7407,7 @@ export const getJobs = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7147,7 +7427,7 @@ export const getJobs = defineServiceFn({
  */
 export const getJobsBySalesOrderLine = defineServiceFn({
   input: z.looseObject({ salesOrderLineId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7183,7 +7463,7 @@ export const getJobsList = defineServiceFn({
       )
       .optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7203,7 +7483,7 @@ export const getJobsList = defineServiceFn({
  */
 export const getJobMakeMethodById = defineServiceFn({
   input: z.looseObject({ jobMakeMethodId: z.string() }),
-  permission: { view: "production" },
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7223,7 +7503,7 @@ export const getJobMakeMethodById = defineServiceFn({
  */
 export const getRootMakeMethod = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7253,7 +7533,7 @@ export const getJobMaterialsWithQuantityOnHand = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7275,7 +7555,7 @@ export const getJobMaterialsWithQuantityOnHand = defineServiceFn({
  */
 export const getJobMaterialItemIds = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7301,7 +7581,7 @@ export const getJobOrderStatusMap = defineServiceFn({
     materials: z.array(
       z.looseObject({
         description: z.string(),
-        estimatedQuantity: z.number(),
+        estimatedQuantity: z.number().nullable(),
         id: z.string(),
         itemReadableId: z.string(),
         itemScrapPercentage: z.number(),
@@ -7322,17 +7602,17 @@ export const getJobOrderStatusMap = defineServiceFn({
         quantityFromProductionOrderInStorageUnit: z.number(),
         quantityFromProductionOrderNotInStorageUnit: z.number(),
         quantityInTransitToStorageUnit: z.number(),
-        quantityIssued: z.number(),
+        quantityIssued: z.number().nullable(),
         quantityOnHandInStorageUnit: z.number(),
         quantityOnHandNotInStorageUnit: z.number(),
         quantityOnProductionOrder: z.number(),
         quantityOnPurchaseOrder: z.number(),
         quantityOnSalesOrder: z.number(),
         quantityPerParent: z.number(),
-        storageUnitId: z.string(),
-        storageUnitName: z.string(),
-        substitutedFromItemId: z.string(),
-        thumbnailPath: z.string(),
+        storageUnitId: z.string().nullable(),
+        storageUnitName: z.string().nullable(),
+        substitutedFromItemId: z.string().nullable(),
+        thumbnailPath: z.string().nullable(),
         type: z.enum([
           "Part",
           "Service",
@@ -7341,12 +7621,12 @@ export const getJobOrderStatusMap = defineServiceFn({
           "Fixture",
           "Consumable"
         ]),
-        unitOfMeasureCode: z.string()
+        unitOfMeasureCode: z.string().nullable()
       })
     ),
     asOfDate: z.string().optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return await service.getJobOrderStatusMap(
       ctx.asCaller.supabase,
@@ -7367,7 +7647,7 @@ export const getJobOrderStatusMap = defineServiceFn({
  */
 export const getJobMethodTree = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7383,7 +7663,7 @@ export const getJobMethodTree = defineServiceFn({
  */
 export const getJobMaterialsByMethodId = defineServiceFn({
   input: z.looseObject({ jobMakeMethodId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7411,7 +7691,7 @@ export const getJobOperations = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: "production" },
+  permission: "employee",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7431,7 +7711,7 @@ export const getJobOperations = defineServiceFn({
  */
 export const getJobOperationDependencies = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7450,7 +7730,7 @@ export const getJobOperationDependencies = defineServiceFn({
  */
 export const getJobOperationAttachments = defineServiceFn({
   input: z.looseObject({ jobOperationIds: z.array(z.string()) }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return await service.getJobOperationAttachments(
       ctx.asCaller.supabase,
@@ -7466,7 +7746,7 @@ export const getJobOperationAttachments = defineServiceFn({
  */
 export const getJobOperationsList = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7485,7 +7765,7 @@ export const getJobOperationsList = defineServiceFn({
  */
 export const getJobOperationsByMethodId = defineServiceFn({
   input: z.looseObject({ jobMakeMethodId: z.string() }),
-  permission: { view: "production" },
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7513,7 +7793,7 @@ export const getJobOperationStepRecords = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7540,7 +7820,7 @@ export const getJobOperationStepRecords = defineServiceFn({
  */
 export const getJobOperationStepTimings = defineServiceFn({
   input: z.object({ jobOperationId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     const timings = unwrap(
       ctx,
@@ -7563,7 +7843,7 @@ export const getJobOperationStepTimings = defineServiceFn({
  */
 export const getOutsideOperationsByJobId = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7583,7 +7863,7 @@ export const getOutsideOperationsByJobId = defineServiceFn({
  */
 export const getProcedure = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.procedures": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7599,7 +7879,7 @@ export const getProcedure = defineServiceFn({
  */
 export const getProcedureVersions = defineServiceFn({
   input: z.looseObject({ name: z.string(), version: z.number() }),
-  permission: { view: "production" },
+  permission: { "production.procedures": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7627,7 +7907,7 @@ export const getProcedures = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: "production" },
+  permission: { "production.procedures": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7647,7 +7927,7 @@ export const getProcedures = defineServiceFn({
  */
 export const getProceduresList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "production" },
+  permission: { "production.procedures": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -7663,7 +7943,7 @@ export const getProceduresList = defineServiceFn({
  */
 export const getProductionEvent = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7688,7 +7968,7 @@ export const getProductionEvents = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7703,6 +7983,11 @@ export const getProductionEvents = defineServiceFn({
 
 /**
  * Get production planning
+ *
+ * @param locationId - The location to plan.
+ * @param periods - The weekly period ids, earliest first, from
+ *   `shared_getPlanningPeriods` for the same location.
+ * @param asOf - The location's today (YYYY-MM-DD).
  *
  * @mcp read
  */
@@ -7721,7 +8006,7 @@ export const getProductionPlanning = defineServiceFn({
     actionTypes: z.array(z.string()).optional(),
     actionAssignees: z.array(z.string()).optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.materialPlanning": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7739,6 +8024,10 @@ export const getProductionPlanning = defineServiceFn({
 /**
  * Get production projections
  *
+ * @param locationId - The location to read.
+ * @param periods - The weekly period ids, earliest first, from
+ *   `shared_getPlanningPeriods` for the same location.
+ *
  * @mcp read
  */
 export const getProductionProjections = defineServiceFn({
@@ -7753,7 +8042,7 @@ export const getProductionProjections = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.demandForecasts": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7775,7 +8064,7 @@ export const getProductionProjections = defineServiceFn({
  */
 export const getProductionQuantity = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7803,7 +8092,7 @@ export const getProductionQuantities = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7823,7 +8112,7 @@ export const getProductionQuantities = defineServiceFn({
  */
 export const getProductionDataByOperations = defineServiceFn({
   input: z.looseObject({ jobOperationIds: z.array(z.string()) }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return await service.getProductionDataByOperations(
       ctx.asCaller.supabase,
@@ -7839,7 +8128,7 @@ export const getProductionDataByOperations = defineServiceFn({
  */
 export const getScrapReasonsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "production" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -7855,7 +8144,7 @@ export const getScrapReasonsList = defineServiceFn({
  */
 export const getScrapReason = defineServiceFn({
   input: z.looseObject({ scrapReasonId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.scrapReasons": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7882,7 +8171,7 @@ export const getScrapReasons = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.scrapReasons": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7896,171 +8185,13 @@ export const getScrapReasons = defineServiceFn({
 });
 
 /**
- * Get failure mode
- *
- * @mcp read
- */
-export const getFailureMode = defineServiceFn({
-  input: z.looseObject({ failureModeId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getFailureMode(
-        ctx.asCaller.supabase,
-        input.failureModeId as never
-      )
-    );
-  }
-});
-
-/**
- * Get failure modes
- *
- * @mcp read
- */
-export const getFailureModes = defineServiceFn({
-  input: z.looseObject({
-    limit: z
-      .number()
-      .int()
-      .describe("Rows per page. Left out, the read is not paged.")
-      .optional(),
-    offset: z.number().int().default(0),
-    search: z.string().nullable().optional()
-  }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return paged(
-      ctx,
-      await service.getFailureModes(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        payload(ctx, input).build() as never
-      )
-    );
-  }
-});
-
-/**
- * Get failure modes list
- *
- * @mcp read
- */
-export const getFailureModesList = defineServiceFn({
-  input: z.record(z.string(), z.unknown()),
-  permission: { view: "production" },
-  async run(ctx) {
-    return unwrap(
-      ctx,
-      await service.getFailureModesList(ctx.asCaller.supabase, ctx.company.id)
-    );
-  }
-});
-
-/**
- * Get maintenance dispatch
- *
- * @mcp read
- */
-export const getMaintenanceDispatch = defineServiceFn({
-  input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getMaintenanceDispatch(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
-    );
-  }
-});
-
-/**
- * Get maintenance dispatch comments
- *
- * @mcp read
- */
-export const getMaintenanceDispatchComments = defineServiceFn({
-  input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getMaintenanceDispatchComments(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
-    );
-  }
-});
-
-/**
- * Get maintenance dispatch events
- *
- * @mcp read
- */
-export const getMaintenanceDispatchEvents = defineServiceFn({
-  input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getMaintenanceDispatchEvents(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
-    );
-  }
-});
-
-/**
- * Get maintenance dispatch items
- *
- * @mcp read
- */
-export const getMaintenanceDispatchItems = defineServiceFn({
-  input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getMaintenanceDispatchItems(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
-    );
-  }
-});
-
-/**
- * Get maintenance schedule
- *
- * @mcp read
- */
-export const getMaintenanceSchedule = defineServiceFn({
-  input: z.looseObject({ scheduleId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getMaintenanceSchedule(
-        ctx.asCaller.supabase,
-        input.scheduleId as never
-      )
-    );
-  }
-});
-
-/**
  * Get tracked entity by job id
  *
  * @mcp read
  */
 export const getTrackedEntityByJobId = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8079,7 +8210,7 @@ export const getTrackedEntityByJobId = defineServiceFn({
  */
 export const getTrackedEntitiesByJobId = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8098,7 +8229,7 @@ export const getTrackedEntitiesByJobId = defineServiceFn({
  */
 export const getJobReceiptSnapshot = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return await service.getJobReceiptSnapshot(
       ctx.asSystem.pg,
@@ -8115,7 +8246,7 @@ export const getJobReceiptSnapshot = defineServiceFn({
  */
 export const recalculateJobRequirements = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8152,7 +8283,7 @@ export const runMRP = defineServiceFn({
     ]),
     id: z.string()
   }),
-  permission: { update: "inventory" },
+  permission: { "production.materialPlanning": "Edit" },
   async run(ctx, { type, id }) {
     return unwrap(
       ctx,
@@ -8167,26 +8298,53 @@ export const runMRP = defineServiceFn({
 });
 
 /**
- * Update job batch number
+ * Set the serial or batch number of a unit of a job.
+ *
+ * @remarks
+ * Renames one tracked entity (`readableId`): the Serial and Batch Number
+ * fields on the job page. The unit must be one of the job's own units or a
+ * unit of one of its Make to Order sub-assemblies. Refused on a Completed,
+ * Closed or Cancelled job. The value is trimmed, and an empty value clears
+ * the number. It is not checked against the item's serial sequence or
+ * against other units.
+ *
+ * @param jobId - The job (its `id`) whose unit it is.
+ * @param trackedEntityId - The unit. A job's own units come from
+ *   `production_getTrackedEntitiesByJobId`; a sub-assembly's from
+ *   `inventory_getTrackedEntitiesByMakeMethodId`.
+ * @param value - The new serial or batch number; null or empty clears it.
+ * @returns The unit's id and its number.
  *
  * @mcp
  */
 export const updateJobBatchNumber = defineServiceFn({
-  input: z.looseObject({
-    trackedEntityId: z.string(),
+  input: z.object({
+    jobId: z.string().min(1),
+    trackedEntityId: z.string().min(1),
     value: z.string().nullable()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.updateJobBatchNumber(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        input.trackedEntityId as never,
-        input.value as never
-      )
+    // As the system, as the job page always wrote it: a unit's row is
+    // inventory's under RLS, and the field needs Edit on production.jobs only.
+    const result = await service.updateJobBatchNumber(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      {
+        jobId: input.jobId,
+        trackedEntityId: input.trackedEntityId,
+        value: input.value?.trim() || null
+      }
     );
+    if ("error" in result) return unwrap(ctx, result);
+    switch (result.status) {
+      case "locked":
+        return ctx.error("rule", JOB_LOCKED_MESSAGE);
+      case "notUnit":
+        return ctx.error("notFound", "The unit is not one of this job's");
+      case "renamed":
+        return result.unit;
+    }
   }
 });
 
@@ -8197,7 +8355,7 @@ export const updateJobBatchNumber = defineServiceFn({
  */
 export const getJobReleaseReadiness = defineServiceFn({
   input: z.looseObject({ jobIds: z.array(z.string()) }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8219,7 +8377,7 @@ export const updateJobMaterialOrder = defineServiceFn({
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8240,7 +8398,7 @@ export const updateJobOperationStepOrder = defineServiceFn({
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8259,7 +8417,7 @@ export const updateJobOperationStepOrder = defineServiceFn({
  */
 export const updateKanbanJob = defineServiceFn({
   input: z.looseObject({ id: z.string(), jobId: z.string().nullable() }),
-  permission: { update: "production" },
+  permission: { "inventory.kanbans": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8288,7 +8446,7 @@ const stepOrderInput = z.object({
  */
 export const updateQuoteOperationStepOrder = defineServiceFn({
   input: stepOrderInput,
-  permission: { update: ["sales", "production"] },
+  permission: { "sales.quotes": "Edit", "production.jobs": "Edit" },
   async run(ctx, { operationId, updates }) {
     await updateSortOrder(ctx.asSystem.pg, {
       table: "quoteOperationStep",
@@ -8309,14 +8467,14 @@ export const updateQuoteOperationStepOrder = defineServiceFn({
  * Refused unless the method is a Draft, when the item's revision is released
  * and release control enforces it, and while a change notice holds the
  * method. All or nothing: a step that is not on `operationId` refuses the
- * whole reorder. Needs parts update, as the method editor does, and
- * production update, which the step rows require.
+ * whole reorder. Needs Edit on the page of the item's type, as the method
+ * editor does; the step rows check the same page.
  *
  * @mcp
  */
 export const updateMethodOperationStepOrder = defineServiceFn({
   input: stepOrderInput,
-  permission: { update: ["parts", "production"] },
+  permission: itemRule("Edit", { id: "operationId", from: "methodOperation" }),
   async run(ctx, { operationId, updates }) {
     const lock = await checkRevisionLock(ctx.asCaller.supabase, {
       kind: "operation",
@@ -8351,7 +8509,7 @@ export const updateProcedureStepOrder = defineServiceFn({
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
-  permission: { update: "production" },
+  permission: { "production.procedures": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8422,7 +8580,7 @@ export const insertJob = defineServiceFn({
       })
       .optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
   async run(ctx, { options, ...job }) {
     const refusal = await jobCreationRefusal(ctx, job);
     if (refusal) return refusal;
@@ -8478,7 +8636,7 @@ export const createJobOperationStep = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8527,7 +8685,7 @@ export const updateJobOperationStep = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8546,7 +8704,7 @@ export const updateJobOperationStep = defineServiceFn({
  */
 export const duplicateJobOperationStep = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8593,7 +8751,7 @@ export const createJobOperationStepSlide = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8642,7 +8800,7 @@ export const updateJobOperationStepSlide = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8673,7 +8831,7 @@ export const createJobOperationParameter = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8706,7 +8864,7 @@ export const updateJobOperationParameter = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8737,7 +8895,7 @@ export const createJobOperationTool = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8770,7 +8928,7 @@ export const updateJobOperationTool = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8794,7 +8952,7 @@ export const setJobMaterialStepLink = defineServiceFn({
     linked: z.boolean(),
     quantity: z.number().nullable().optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8818,7 +8976,7 @@ export const setJobOperationToolStepLink = defineServiceFn({
     jobOperationStepId: z.string(),
     linked: z.boolean()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8841,15 +8999,19 @@ const saveMethodInput = z.object({
  *
  * @remarks
  * Overwrites make method `targetId` with job `sourceId`'s root method, the
- * parts `parts` names. Needs parts update, since it rewrites the item's bill
- * of material and process, and is refused under the same revision lock.
+ * parts `parts` names. Needs Edit on the page of the item's type, since it
+ * rewrites the item's bill of material and process, and Edit on Jobs. It is
+ * refused under the same revision lock.
  *
  * @mcp destructive
  */
 export const upsertMakeMethodFromJob = defineServiceFn({
   input: saveMethodInput,
-  permission: { update: ["production", "parts"] },
+  permission: itemRule("Edit", { id: "targetId", from: "makeMethod" }),
   async run(ctx, input) {
+    if (!ctx.can({ "production.jobs": "Edit" })) {
+      return ctx.error("forbidden", "Saving a job's method needs Edit on Jobs");
+    }
     const refusal = await saveMethodRefusal(ctx, input.targetId);
     if (refusal) return refusal;
     return unwrap(
@@ -8868,15 +9030,18 @@ export const upsertMakeMethodFromJob = defineServiceFn({
  *
  * @remarks
  * Overwrites make method `targetId` with job make method `sourceId`, the
- * parts `parts` names. Needs parts update and is refused under the same
- * revision lock as `upsertMakeMethodFromJob`.
+ * parts `parts` names. Needs Edit on the page of the item's type and on Jobs,
+ * and is refused under the same revision lock as `upsertMakeMethodFromJob`.
  *
  * @mcp destructive
  */
 export const upsertMakeMethodFromJobMethod = defineServiceFn({
   input: saveMethodInput,
-  permission: { update: ["production", "parts"] },
+  permission: itemRule("Edit", { id: "targetId", from: "makeMethod" }),
   async run(ctx, input) {
+    if (!ctx.can({ "production.jobs": "Edit" })) {
+      return ctx.error("forbidden", "Saving a job's method needs Edit on Jobs");
+    }
     const refusal = await saveMethodRefusal(ctx, input.targetId);
     if (refusal) return refusal;
     return unwrap(
@@ -8910,7 +9075,7 @@ export const createProcedure = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.procedures": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8944,7 +9109,7 @@ export const updateProcedure = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "production" },
+  permission: { "production.procedures": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8990,7 +9155,7 @@ export const createProcedureStep = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.procedures": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9038,7 +9203,7 @@ export const updateProcedureStep = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "production" },
+  permission: { "production.procedures": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9068,7 +9233,7 @@ export const createProcedureParameter = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.procedures": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9100,7 +9265,7 @@ export const updateProcedureParameter = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "production" },
+  permission: { "production.procedures": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9129,7 +9294,7 @@ export const createScrapReason = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.scrapReasons": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9160,335 +9325,11 @@ export const updateScrapReason = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "production" },
+  permission: { "production.scrapReasons": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
       await service.upsertScrapReason(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
-    );
-  }
-});
-
-/**
- * Create a failure mode
- *
- * @remarks
- * Upsert failure mode
- *
- * @mcp
- */
-export const createFailureMode = defineServiceFn({
-  input: z.looseObject({
-    name: z.string().min(1),
-    customFields: z.unknown().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
-  permission: { create: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertFailureMode(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a failure mode
- *
- * @remarks
- * Upsert failure mode
- *
- * @mcp
- */
-export const updateFailureMode = defineServiceFn({
-  input: z
-    .looseObject({
-      name: z.string().min(1),
-      customFields: z.unknown().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertFailureMode(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
-    );
-  }
-});
-
-/**
- * Create a maintenance dispatch comment
- *
- * @remarks
- * Upsert maintenance dispatch comment
- *
- * @mcp
- */
-export const createMaintenanceDispatchComment = defineServiceFn({
-  input: z.looseObject({
-    maintenanceDispatchId: z.string().min(1),
-    comment: z.string().min(1),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
-  permission: { create: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchComment(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a maintenance dispatch comment
- *
- * @remarks
- * Upsert maintenance dispatch comment
- *
- * @mcp
- */
-export const updateMaintenanceDispatchComment = defineServiceFn({
-  input: z
-    .looseObject({
-      maintenanceDispatchId: z.string().min(1),
-      comment: z.string().min(1),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchComment(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
-    );
-  }
-});
-
-/**
- * Create a maintenance dispatch event
- *
- * @remarks
- * Upsert maintenance dispatch event
- *
- * @mcp
- */
-export const createMaintenanceDispatchEvent = defineServiceFn({
-  input: z.looseObject({
-    maintenanceDispatchId: z.string().min(1),
-    employeeId: z.string().min(1),
-    workCenterId: z.string().min(1),
-    startTime: z.string().min(1),
-    endTime: z.string().optional(),
-    notes: z.string().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
-  permission: { create: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchEvent(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a maintenance dispatch event
- *
- * @remarks
- * Upsert maintenance dispatch event
- *
- * @mcp
- */
-export const updateMaintenanceDispatchEvent = defineServiceFn({
-  input: z
-    .looseObject({
-      maintenanceDispatchId: z.string().min(1),
-      employeeId: z.string().min(1),
-      workCenterId: z.string().min(1),
-      startTime: z.string().min(1),
-      endTime: z.string().optional(),
-      notes: z.string().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchEvent(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
-    );
-  }
-});
-
-/**
- * Create a maintenance dispatch item
- *
- * @remarks
- * Upsert maintenance dispatch item
- *
- * @mcp
- */
-export const createMaintenanceDispatchItem = defineServiceFn({
-  input: z.looseObject({
-    maintenanceDispatchId: z.string().min(1),
-    itemId: z.string().min(1),
-    quantity: z.number().min(1),
-    unitOfMeasureCode: z.string().min(1),
-    unitCost: z.number().min(0).optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
-  permission: { create: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchItem(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a maintenance dispatch item
- *
- * @remarks
- * Upsert maintenance dispatch item
- *
- * @mcp
- */
-export const updateMaintenanceDispatchItem = defineServiceFn({
-  input: z
-    .looseObject({
-      maintenanceDispatchId: z.string().min(1),
-      itemId: z.string().min(1),
-      quantity: z.number().min(1),
-      unitOfMeasureCode: z.string().min(1),
-      unitCost: z.number().min(0).optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchItem(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
-    );
-  }
-});
-
-/**
- * Create a maintenance schedule
- *
- * @remarks
- * Upsert maintenance schedule
- *
- * @mcp
- */
-export const createMaintenanceSchedule = defineServiceFn({
-  input: z.looseObject({
-    name: z.string().min(1),
-    description: z.string().optional(),
-    workCenterId: z.string().min(1),
-    frequency: z.enum(["Daily", "Weekly", "Monthly", "Quarterly", "Annual"]),
-    priority: z.enum(["Low", "Medium", "High", "Critical"]),
-    estimatedDuration: z.number().optional(),
-    active: z.boolean().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
-  permission: { create: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceSchedule(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a maintenance schedule
- *
- * @remarks
- * Upsert maintenance schedule
- *
- * @mcp
- */
-export const updateMaintenanceSchedule = defineServiceFn({
-  input: z
-    .looseObject({
-      name: z.string().min(1),
-      description: z.string().optional(),
-      workCenterId: z.string().min(1),
-      frequency: z.enum(["Daily", "Weekly", "Monthly", "Quarterly", "Annual"]),
-      priority: z.enum(["Low", "Medium", "High", "Critical"]),
-      estimatedDuration: z.number().optional(),
-      active: z.boolean().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceSchedule(
         ctx.asCaller.supabase,
         payload(ctx, input).forUpdate() as never
       )
@@ -9503,7 +9344,7 @@ export const updateMaintenanceSchedule = defineServiceFn({
  */
 export const getPeopleAssignments = defineServiceFn({
   input: z.looseObject({ locationId: z.string(), date: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.resourcePlanning": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9523,7 +9364,7 @@ export const getPeopleAssignments = defineServiceFn({
  */
 export const getPeopleAbsences = defineServiceFn({
   input: z.looseObject({ date: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.resourcePlanning": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9547,7 +9388,7 @@ export const getPeopleAssignmentsRange = defineServiceFn({
     startDate: z.string(),
     endDate: z.string()
   }),
-  permission: { view: "production" },
+  permission: { "production.resourcePlanning": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9567,7 +9408,7 @@ export const getPeopleAssignmentsRange = defineServiceFn({
  */
 export const getPeopleAbsencesRange = defineServiceFn({
   input: z.looseObject({ startDate: z.string(), endDate: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.resourcePlanning": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9591,7 +9432,7 @@ export const getPeopleCapacityOperations = defineServiceFn({
     startDate: z.string().nullable(),
     endDate: z.string()
   }),
-  permission: { view: "production" },
+  permission: { "production.resourcePlanning": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9611,7 +9452,7 @@ export const getPeopleCapacityOperations = defineServiceFn({
  */
 export const getWorkCenterShifts = defineServiceFn({
   input: z.looseObject({ workCenterIds: z.array(z.string()) }),
-  permission: { view: "production" },
+  permission: { "production.resourcePlanning": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9631,7 +9472,7 @@ export const getWorkCenterShifts = defineServiceFn({
  */
 export const getWorkCenterReservationsRange = defineServiceFn({
   input: z.looseObject({ startAt: z.string(), endAt: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.resourcePlanning": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9651,7 +9492,7 @@ export const getWorkCenterReservationsRange = defineServiceFn({
  */
 export const getLocationEmployees = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.resourcePlanning": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9671,7 +9512,7 @@ export const getLocationEmployees = defineServiceFn({
  */
 export const getWorkCenterRequiredAbilities = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.resourcePlanning": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9691,7 +9532,7 @@ export const getWorkCenterRequiredAbilities = defineServiceFn({
  */
 export const getActiveEmployeeAbilities = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "production" },
+  permission: { "production.resourcePlanning": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -9722,7 +9563,7 @@ export const notifyScheduleInputsChanged = defineServiceFn({
     reason: z.string(),
     entityId: z.string().optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, input) {
     const sent = await service.notifyScheduleInputsChanged(
       ctx.company.id,
@@ -9741,7 +9582,7 @@ export const notifyScheduleInputsChanged = defineServiceFn({
  */
 export const getUnbatchedBatchableOperationCount = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -9768,7 +9609,7 @@ export const getJobOperationBatches = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.batches": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -9788,7 +9629,7 @@ export const getJobOperationBatches = defineServiceFn({
  */
 export const getJobOperationBatchMemberStats = defineServiceFn({
   input: z.looseObject({ batchIds: z.array(z.string()) }),
-  permission: { view: "production" },
+  permission: { "production.batches": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9808,7 +9649,7 @@ export const getJobOperationBatchMemberStats = defineServiceFn({
  */
 export const getJobOperationBatchMembers = defineServiceFn({
   input: z.looseObject({ batchIds: z.array(z.string()) }),
-  permission: { view: "production" },
+  permission: { "production.batches": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9828,7 +9669,7 @@ export const getJobOperationBatchMembers = defineServiceFn({
  */
 export const getBatchOutputLots = defineServiceFn({
   input: z.looseObject({ batchId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.batches": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9848,7 +9689,7 @@ export const getBatchOutputLots = defineServiceFn({
  */
 export const getJobOperationBatchWithMembers = defineServiceFn({
   input: z.looseObject({ batchId: z.string() }),
-  permission: { view: "production" },
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9868,7 +9709,7 @@ export const getJobOperationBatchWithMembers = defineServiceFn({
  */
 export const getJobOperationBatchEvents = defineServiceFn({
   input: z.looseObject({ batchId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.batches": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9888,7 +9729,7 @@ export const getJobOperationBatchEvents = defineServiceFn({
  */
 export const getBatchableOperations = defineServiceFn({
   input: z.looseObject({ locationId: z.string(), processId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.batches": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9908,7 +9749,7 @@ export const getBatchableOperations = defineServiceFn({
  */
 export const getBatchableProcesses = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "production" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -9924,7 +9765,7 @@ export const getBatchableProcesses = defineServiceFn({
  */
 export const getAssemblyInstruction = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9949,7 +9790,7 @@ export const getAssemblyInstructions = defineServiceFn({
     limit: z.number().optional(),
     offset: z.number().optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -9968,7 +9809,7 @@ export const getAssemblyInstructions = defineServiceFn({
  */
 export const getAssemblyInstructionsForItem = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9988,7 +9829,7 @@ export const getAssemblyInstructionsForItem = defineServiceFn({
  */
 export const getAssemblyInstructionSteps = defineServiceFn({
   input: z.looseObject({ assemblyInstructionId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10012,7 +9853,7 @@ export const upsertAssemblyInstruction = defineServiceFn({
     modelUploadId: z.string(),
     itemId: z.string().nullable().optional()
   }),
-  permission: { create: "production", update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10034,7 +9875,7 @@ export const updateAssemblyInstructionStatus = defineServiceFn({
     id: z.string(),
     data: z.looseObject({ status: z.enum(["Draft", "Published", "Archived"]) })
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10057,7 +9898,7 @@ export const getAssemblyInstructionVersions = defineServiceFn({
     id: z.string(),
     rootInstructionId: z.string().nullable().optional()
   }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10081,7 +9922,7 @@ export const getAssemblyInstructionVersions = defineServiceFn({
  */
 export const copyAssemblyInstructionAsVersion = defineServiceFn({
   input: z.looseObject({ copyFromId: z.string() }),
-  permission: { create: "production" },
+  permission: { "production.assemblies": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10105,14 +9946,17 @@ export const copyAssemblyInstructionAsVersion = defineServiceFn({
  */
 export const activateAssemblyInstructionVersion = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.activateAssemblyInstructionVersion(
-        ctx.asCaller.supabase,
-        payload(ctx, input).withUser().build() as never
-      )
+      await service.activateAssemblyInstructionVersion(ctx.asCaller.supabase, {
+        id: input.id,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        // The system handle the operations' repoint and re-sync run on.
+        db: ctx.asSystem.pg
+      })
     );
   }
 });
@@ -10124,7 +9968,7 @@ export const activateAssemblyInstructionVersion = defineServiceFn({
  */
 export const deleteAssemblyInstruction = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.assemblies": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10254,7 +10098,7 @@ export const upsertAssemblyInstructionStep = defineServiceFn({
     assemblyInstructionId: z.string(),
     sortOrder: z.number().optional()
   }),
-  permission: { create: "production", update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10356,7 +10200,7 @@ export const updateAssemblyStepMotion = defineServiceFn({
       .optional(),
     reset: z.boolean().optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10379,7 +10223,7 @@ export const updateAssemblyStepHiddenComponents = defineServiceFn({
     assemblyInstructionId: z.string(),
     hiddenComponentNodeIds: z.array(z.string())
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10401,7 +10245,7 @@ export const makeAssemblySubAssembly = defineServiceFn({
     assemblyInstructionId: z.string(),
     stepId: z.string()
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return await service.makeAssemblySubAssembly(
       ctx.asSystem.pg,
@@ -10527,7 +10371,7 @@ export const insertAssemblyInstructionStep = defineServiceFn({
     assemblyInstructionId: z.string(),
     parentStepId: z.string().optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.assemblies": "Create" },
   async run(ctx, input) {
     return await service.insertAssemblyInstructionStep(
       ctx.asSystem.pg,
@@ -10548,7 +10392,7 @@ export const updateAssemblySubAssembly = defineServiceFn({
     title: z.string().optional(),
     usedInStepId: z.string().nullable().optional()
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return await service.updateAssemblySubAssembly(
       ctx.asSystem.pg,
@@ -10567,7 +10411,7 @@ export const ungroupAssemblySubAssembly = defineServiceFn({
     assemblyInstructionId: z.string(),
     headerId: z.string()
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return await service.ungroupAssemblySubAssembly(
       ctx.asSystem.pg,
@@ -10586,7 +10430,7 @@ export const deleteAssemblySubAssembly = defineServiceFn({
     assemblyInstructionId: z.string(),
     headerId: z.string()
   }),
-  permission: { delete: "production" },
+  permission: { "production.assemblies": "Full" },
   async run(ctx, input) {
     return await service.deleteAssemblySubAssembly(
       ctx.asSystem.pg,
@@ -10605,7 +10449,7 @@ export const updateAssemblyInstructionStepStatus = defineServiceFn({
     id: z.string(),
     data: z.looseObject({ status: z.enum(["Todo", "Review", "Done"]) })
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10634,7 +10478,7 @@ export const updateAssemblyInstructionStepOrder = defineServiceFn({
       })
     )
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return await service.updateAssemblyInstructionStepOrder(
       ctx.asSystem.pg,
@@ -10653,7 +10497,7 @@ export const updateAssemblyInstructionStepOrder = defineServiceFn({
  */
 export const deleteAssemblyInstructionStep = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.assemblies": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10672,7 +10516,7 @@ export const deleteAssemblyInstructionStep = defineServiceFn({
  */
 export const getAssemblyInstructionStepSlides = defineServiceFn({
   input: z.looseObject({ stepIds: z.array(z.string()) }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10719,7 +10563,7 @@ export const createAssemblyInstructionStepSlide = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { create: "production" },
+  permission: { "production.assemblies": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10768,7 +10612,7 @@ export const updateAssemblyInstructionStepSlide = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10787,7 +10631,7 @@ export const updateAssemblyInstructionStepSlide = defineServiceFn({
  */
 export const deleteAssemblyInstructionStepSlide = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.assemblies": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10806,7 +10650,7 @@ export const deleteAssemblyInstructionStepSlide = defineServiceFn({
  */
 export const getAssemblyInstructionStepTools = defineServiceFn({
   input: z.looseObject({ stepIds: z.array(z.string()) }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10831,7 +10675,7 @@ export const upsertAssemblyInstructionStepTool = defineServiceFn({
     quantity: z.number().optional(),
     sortOrder: z.number().optional()
   }),
-  permission: { create: "production", update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10850,7 +10694,7 @@ export const upsertAssemblyInstructionStepTool = defineServiceFn({
  */
 export const deleteAssemblyInstructionStepTool = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.assemblies": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10869,7 +10713,7 @@ export const deleteAssemblyInstructionStepTool = defineServiceFn({
  */
 export const getAssemblyInstructionStepMaterials = defineServiceFn({
   input: z.looseObject({ stepIds: z.array(z.string()) }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10894,7 +10738,7 @@ export const upsertAssemblyInstructionStepMaterial = defineServiceFn({
     quantity: z.number().nullable().optional(),
     sortOrder: z.number().optional()
   }),
-  permission: { create: "production", update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10916,7 +10760,7 @@ export const updateAssemblyInstructionStepMaterialOrder = defineServiceFn({
     assemblyInstructionId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
-  permission: { update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return await service.updateAssemblyInstructionStepMaterialOrder(
       ctx.asSystem.pg,
@@ -10935,7 +10779,7 @@ export const updateAssemblyInstructionStepMaterialOrder = defineServiceFn({
  */
 export const deleteAssemblyInstructionStepMaterial = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.assemblies": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10954,7 +10798,7 @@ export const deleteAssemblyInstructionStepMaterial = defineServiceFn({
  */
 export const getAssemblyUnits = defineServiceFn({
   input: z.looseObject({ modelUploadId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10979,7 +10823,7 @@ export const upsertAssemblyUnit = defineServiceFn({
     componentNodeIds: z.array(z.string()),
     itemId: z.string().nullable().optional()
   }),
-  permission: { create: "production", update: "production" },
+  permission: { "production.assemblies": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10998,7 +10842,7 @@ export const upsertAssemblyUnit = defineServiceFn({
  */
 export const deleteAssemblyUnit = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.assemblies": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11014,7 +10858,7 @@ export const deleteAssemblyUnit = defineServiceFn({
  */
 export const getLatestAssemblyPlanJob = defineServiceFn({
   input: z.looseObject({ modelUploadId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11033,7 +10877,7 @@ export const getLatestAssemblyPlanJob = defineServiceFn({
  */
 export const getAssemblyPlanJson = defineServiceFn({
   input: z.looseObject({ modelUploadId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return await service.getAssemblyPlanJson(
       ctx.asCaller.supabase,
@@ -11049,7 +10893,7 @@ export const getAssemblyPlanJson = defineServiceFn({
  */
 export const getAssemblyComponentMappings = defineServiceFn({
   input: z.looseObject({ modelUploadId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11068,7 +10912,7 @@ export const getAssemblyComponentMappings = defineServiceFn({
  */
 export const deleteAssemblyComponentMapping = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "production" },
+  permission: { "production.assemblies": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11091,7 +10935,7 @@ export const deleteAssemblyComponentMapping = defineServiceFn({
  */
 export const getFlattenedBomMaterials = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { view: "production" },
+  permission: { "production.assemblies": "View" },
   async run(ctx, input) {
     return await service.getFlattenedBomMaterials(
       ctx.asCaller.supabase,
@@ -11108,7 +10952,7 @@ export const getFlattenedBomMaterials = defineServiceFn({
  */
 export const createJobDocumentUploadUrl = defineServiceFn({
   input: z.looseObject({ jobId: z.string(), name: z.string() }),
-  permission: { create: "production" },
+  permission: { "production.jobs": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11138,7 +10982,7 @@ export const createJobDocumentUploadUrl = defineServiceFn({
  */
 export const getJobDocumentDownloadUrl = defineServiceFn({
   input: z.object({ jobId: z.string().min(1), name: z.string().min(1) }),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(ctx, { jobId, name }) {
     return signRecordFileUrl(ctx, {
       folder: "job",

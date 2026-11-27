@@ -185,8 +185,8 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
             isDisabled={
               !isDraft ||
               (isEditing
-                ? !permissions.can("update", "sales")
-                : !permissions.can("create", "sales"))
+                ? !permissions.has({ "sales.rfqs": "Edit" })
+                : !permissions.has({ "sales.rfqs": "Create" }))
             }
           >
             <Trans>Save</Trans>

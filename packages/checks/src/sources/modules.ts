@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { ModuleDir, SourceFile } from "../check";
+import { readSource } from "./read-source";
 
 const MODULES_REL = "apps/erp/app/modules";
 
@@ -26,7 +27,7 @@ export function loadModuleServerFiles(
 ): { server: SourceFile; service: SourceFile }[] {
   const read = (rel: string): SourceFile => ({
     file: rel,
-    contents: readFileSync(join(root, rel), "utf-8")
+    contents: readSource(join(root, rel))
   });
   return loadModules(modulesDir(root)).flatMap(({ name, entries }) => {
     const server = [`${name}.server.ts`, `${name}.ee.server.ts`].find((f) =>

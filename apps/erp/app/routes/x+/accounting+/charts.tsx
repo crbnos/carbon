@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -12,10 +12,6 @@ import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getChartOfAccounts,
-  getFiscalYearSettings
-} from "~/modules/accounting/accounting.service";
 import type { Chart } from "~/modules/accounting/types";
 import { ChartOfAccountsTree } from "~/modules/accounting/ui/ChartOfAccounts";
 import ChartOfAccountsTableFilters from "~/modules/accounting/ui/ChartOfAccounts/ChartOfAccountsTableFilters";
@@ -32,13 +28,10 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateOnSearchChange;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
+  const { api } = await authorize(
     request,
-    {
-      view: "accounting",
-      role: "employee",
-      bypassRls: true
-    }
+    { "accounting.chartOfAccounts": "View" },
+    { bypassRls: true }
   );
 
   const url = new URL(request.url);
@@ -48,12 +41,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const endDate = searchParams.get("endDate") || null;
 
   const [chartOfAccounts, fiscalYearSettings] = await Promise.all([
-    getChartOfAccounts(client, companyGroupId, {
+    api.accounting.getChartOfAccounts({
       incomeBalance: null,
       startDate,
       endDate
     }),
-    getFiscalYearSettings(client, companyId)
+    api.accounting.getFiscalYearSettings({})
   ]);
 
   if (chartOfAccounts.error) {

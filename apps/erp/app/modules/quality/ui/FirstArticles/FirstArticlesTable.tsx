@@ -152,7 +152,7 @@ const FirstArticlesTable = memo(({ data, count }: FirstArticlesTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "quality") && (
+        permissions.has({ "quality.firstArticles": "Create" }) && (
           <New label={t`First Article`} to={path.to.newFirstArticle} />
         )
       }

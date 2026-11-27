@@ -10,7 +10,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { TrainingsTable } from "~/modules/resources/ui";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { trainingsList } from "~/utils/list-registry/resources.server";
@@ -24,8 +23,8 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, trainingsList, {
     dataKey: "trainings",
-    firstPage: async ({ client, companyId, request }) => {
-      const tags = await getTagsList(client, companyId, "training");
+    firstPage: async ({ api, request }) => {
+      const tags = await api.shared.getTagsList({ table: "training" });
       if (tags.error) {
         throw redirect(
           path.to.authenticatedRoot,

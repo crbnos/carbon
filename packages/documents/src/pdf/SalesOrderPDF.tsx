@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
+import { DEFAULT_CURRENCY_DECIMALS } from "@carbon/utils";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   documentValues,
@@ -12,13 +13,21 @@ import {
   type ValueCollector
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
+import type { PartNumberDisplay } from "../utils/part-number";
+import { getLineTaxableSubtotal } from "../utils/sales-order";
 import {
   getMoneyFormatter,
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
-import { DocumentPage } from "./blocks/DocumentPage";
+import {
+  buildTaxSummary,
+  lineTaxSummaryEntries,
+  type TaxCodeSummaryRow,
+  toTaxSummaryCodes
+} from "../utils/tax-summary";
 import { documentChrome } from "./blocks/documentChrome";
+import { DocumentPage } from "./blocks/DocumentPage";
 import type { SalesOrderData, SalesOrderLocations } from "./blocks/salesOrder";
 import {
   buildSalesOrderVars,
@@ -44,6 +53,12 @@ interface SalesOrderPDFProps extends PDF {
   sections?: Record<string, ResolvedSection>;
   /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
   currencyDecimals?: number | null;
+  /** The Edit document modal's unsaved display choice for every line. */
+  partNumberDisplayDraft?: PartNumberDisplay;
+  /** The codes the lines name (`TAX_CODE_SUMMARY_SELECT`), for the tax summary. */
+  taxCodes?: TaxCodeSummaryRow[] | null;
+  /** The date the codes' components are read on (YYYY-MM-DD). */
+  taxDate?: string | null;
 }
 
 const SalesOrderPDF = ({
@@ -62,7 +77,10 @@ const SalesOrderPDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {}
+  sections = {},
+  taxCodes,
+  taxDate,
+  partNumberDisplayDraft
 }: SalesOrderPDFProps) => {
   const currencyCode = salesOrder.currencyCode ?? company.baseCurrencyCode;
   const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
@@ -72,6 +90,22 @@ const SalesOrderPDF = ({
 
   const resolved = resolveTemplate("salesOrder", template);
   const { theme, settings, footerSectionId } = resolved;
+
+  // Sales orders have no ledger: the summary splits each line's tax across
+  // its code's components on the order date.
+  const taxLines = salesOrderLines.map((line) => ({
+    taxCodeId: line.taxCodeId,
+    taxPercent: line.taxPercent ?? 0,
+    base: getLineTaxableSubtotal(line)
+  }));
+  const taxSummary =
+    taxDate && taxCodes && taxCodes.length > 0
+      ? buildTaxSummary(
+          lineTaxSummaryEntries(taxLines, toTaxSummaryCodes(taxCodes), taxDate),
+          taxLines.reduce((sum, line) => sum + line.base * line.taxPercent, 0),
+          currencyDecimals ?? DEFAULT_CURRENCY_DECIMALS
+        )
+      : [];
 
   const values = documentValues(settings.valueEdits, valueCollector);
   const vars = values.document(
@@ -123,8 +157,10 @@ const SalesOrderPDF = ({
     values,
     vars,
     headerOptions,
+    taxSummary,
     documentTitle,
-    documentNumber
+    documentNumber,
+    partNumberDisplayDraft
   };
 
   return (

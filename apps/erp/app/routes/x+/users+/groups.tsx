@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -12,7 +12,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import type { Group } from "~/modules/users/types";
 import { GroupsTable } from "~/modules/users/ui";
-import { getGroups } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
@@ -24,10 +23,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "users",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "users.groups": "View" });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -37,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // The list is a tree (`arrayToTree`), and a page cut can split a group from
   // its parent, so it loads once: the first SINGLE_LOAD_LIMIT groups.
-  const groups = await getGroups(client, companyId, {
+  const groups = await api.users.getGroups({
     search,
     uid,
     limit: SINGLE_LOAD_LIMIT,
@@ -54,10 +50,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    groups: (groups.data ? arrayToTree(groups.data) : []) as Group[],
+    groups: (groups.data?.rows
+      ? arrayToTree(groups.data?.rows)
+      : []) as Group[],
     error: null,
-    count: groups.count ?? 0,
-    isTruncated: (groups.data?.length ?? 0) >= SINGLE_LOAD_LIMIT
+    count: groups.data?.count ?? 0,
+    isTruncated: (groups.data?.rows?.length ?? 0) >= SINGLE_LOAD_LIMIT
   };
 }
 

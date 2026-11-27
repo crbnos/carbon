@@ -37,7 +37,6 @@ const VIEW_TRANSITIONS = `
 export default function ChangelogLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen w-full bg-ed-paper">
-      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static stylesheet, no input */}
       <style dangerouslySetInnerHTML={{ __html: VIEW_TRANSITIONS }} />
       <MainHeader active="changelog" />
       <main className="pt-16 pb-24">{children}</main>

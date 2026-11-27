@@ -30,6 +30,7 @@ import StripeCustomerPanel, {
 } from "~/modules/invoicing/ui/SalesInvoice/StripeCustomerPanel";
 import type { loader as contractConfirmLoader } from "~/routes/x+/contract+/$id.confirm";
 import { path } from "~/utils/path";
+import { untaxedContractInvoices } from "../../sales.utils";
 import type { Contract, ContractRouteData } from "./types";
 import { useContractLabels } from "./useContractLabels";
 
@@ -80,12 +81,29 @@ const ContractConfirmBody = ({
   const isStripe = mode === "Post and Send via Stripe";
 
   const routeData = useRouteData<ContractRouteData>(path.to.contract(id));
-  const planned = plannedInvoices(routeData);
-  const first = planned[0] ?? null;
+  // The invoices still to be drafted, priced and taxed on the server as the
+  // drafted invoices will be; when the tax codes could not be read, the
+  // schedule's nets alone.
+  const taxed = routeData?.plannedInvoices ?? null;
+  const planned: { invoiceDate: string; total: number }[] | null = taxed
+    ? taxed.map((invoice) => ({
+        invoiceDate: invoice.invoiceDate,
+        total: invoice.net + invoice.tax
+      }))
+    : routeData
+      ? untaxedContractInvoices({
+          computedSchedule: routeData.computedSchedule,
+          invoices: routeData.schedule
+        }).map((invoice) => ({
+          invoiceDate: invoice.invoiceDate,
+          total: invoice.net
+        }))
+      : null;
+  const first = planned?.[0] ?? null;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `stripeLink` is a fresh object each render, so depending on it would re-run this effect forever.
   useEffect(() => {
     if (isStripe) stripeLink.load(path.to.contractConfirm(id));
+    // oxlint-disable-next-line react/exhaustive-deps -- `stripeLink` is a fresh object each render, so depending on it would re-run this effect forever.
   }, [isStripe, id]);
 
   // The action redirects with a flash; close once it has settled.
@@ -102,7 +120,8 @@ const ContractConfirmBody = ({
     isStripe && !isCheckingStripe && !stripeLink.data?.stripeCustomerLinked;
   // Invoices that post on their own need the invoicing permission too.
   const needsInvoicing =
-    mode !== "Draft Only" && !permissions.can("create", "invoicing");
+    mode !== "Draft Only" &&
+    !permissions.has({ "invoicing.salesInvoices": "Create" });
 
   // An unlinked billing customer is linked as part of confirming: resolve it
   // against the connected account the way the invoice post modal does. The
@@ -131,6 +150,7 @@ const ContractConfirmBody = ({
         resolution.state === "missing-email"));
 
   const automation: Record<typeof mode, string> = {
+    Manual: t`Invoices are drafted for review and posted by hand.`,
     "Draft Only": t`Invoices are drafted for review and posted by hand.`,
     Post: t`Invoices are drafted and posted automatically.`,
     "Post and Email": t`Invoices are drafted, posted and emailed automatically.`,
@@ -187,7 +207,7 @@ const ContractConfirmBody = ({
                   <Trans>Planned invoices so far</Trans>
                 )}
               </span>
-              <span>{planned.length}</span>
+              <span>{planned ? planned.length : "—"}</span>
             </HStack>
             <HStack className="justify-between text-sm w-full">
               <span className="text-muted-foreground">
@@ -196,7 +216,12 @@ const ContractConfirmBody = ({
               <span>{labels.invoiceAutomation[mode]}</span>
             </HStack>
             <p className="text-xs text-muted-foreground w-full">
-              {automation[mode]} <Trans>Amounts are before tax.</Trans>
+              {automation[mode]}{" "}
+              {taxed ? (
+                <Trans>Amounts include tax.</Trans>
+              ) : (
+                <Trans>Amounts exclude tax.</Trans>
+              )}
             </p>
           </VStack>
 
@@ -260,7 +285,7 @@ const ContractConfirmBody = ({
           isDisabled={
             isStripeBlocked ||
             needsInvoicing ||
-            !permissions.can("update", "sales")
+            !permissions.has({ "sales.serviceContracts": "Edit" })
           }
         >
           <Trans>Confirm</Trans>
@@ -269,30 +294,5 @@ const ContractConfirmBody = ({
     </ValidatedForm>
   );
 };
-
-/** The invoices still to be drafted, with their totals — planned live for an
- *  unedited Draft, else persisted. Billed Externally rows are not invoiced. */
-function plannedInvoices(
-  data: ContractRouteData | undefined
-): { invoiceDate: string; total: number }[] {
-  if (!data) return [];
-  if (data.computedSchedule) {
-    return data.computedSchedule
-      .filter((invoice) => invoice.status === "Planned")
-      .map((invoice) => ({
-        invoiceDate: invoice.invoiceDate,
-        total: invoice.rows.reduce((sum, row) => sum + row.amount, 0)
-      }));
-  }
-  return data.schedule
-    .filter((invoice) => invoice.status === "Planned")
-    .map((invoice) => ({
-      invoiceDate: invoice.invoiceDate,
-      total: invoice.customerContractInvoiceLine.reduce(
-        (sum, row) => sum + Number(row.amount),
-        0
-      )
-    }));
-}
 
 export default ContractConfirmModal;

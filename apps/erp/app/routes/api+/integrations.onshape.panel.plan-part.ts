@@ -31,8 +31,8 @@ import {
   onshapeFailure,
   selectInBatches
 } from "@carbon/ee/onshape";
-import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import { readPartProperties } from "@carbon/ee/onshape.server";
+import { authorizePanel } from "@carbon/ee/onshape/panel-session.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -59,13 +59,9 @@ const ITEM_COLUMNS =
 
 /** Plan a part push without writing; the apply makes no Onshape call. */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requireOnshapePanelPermissions(
-    request,
-    {
-      create: "parts",
-      update: "parts"
-    }
-  );
+  const { client, companyId, userId } = await authorizePanel(request, {
+    "parts.parts": "Edit"
+  });
 
   const parsed = payloadSchema.safeParse(
     await request.json().catch(() => null)

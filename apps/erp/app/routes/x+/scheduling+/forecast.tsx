@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, hasPermission } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { error } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { holdsGate } from "@carbon/database/access";
 import { Badge, Button, ClientOnly, cn, useDebounce } from "@carbon/react";
 import { datetime, formatDate, redirect } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
@@ -20,7 +21,7 @@ import {
   toCalendarDate
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
-import { Plural, Trans } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 import { LuBan, LuTriangleAlert } from "react-icons/lu";
@@ -34,17 +35,12 @@ import {
 } from "~/components/Gantt";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
+import { getShiftsWithTimesByIds } from "~/modules/people/people.service";
 import {
-  getDepartmentsList,
-  getShiftsWithTimes,
-  getShiftsWithTimesByIds
-} from "~/modules/people/people.service";
-import {
-  getCapacityReservationsForResources,
   getForecastNonWorkingIntervals,
   getHolidayDates,
-  getMaintenanceDowntimeForResources,
   getQualifiedPeopleByProcess,
+  getUnreservedOperations,
   getWorkCenterNonWorkingIntervals
 } from "~/modules/production/production.service";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
@@ -57,11 +53,12 @@ import {
   buildResourceTimeline,
   collapseToLanes,
   forecastCounts,
+  NO_WORK_CENTER_LANE_ID,
   workCenterIdFromLaneId,
   workCenterLaneId
 } from "~/modules/production/ui/Schedule/resourceTimeline";
-import { TimelineDetail } from "~/modules/production/ui/Schedule/TimelineDetail";
 import type { TimelineNodeDetail } from "~/modules/production/ui/Schedule/timeline";
+import { TimelineDetail } from "~/modules/production/ui/Schedule/TimelineDetail";
 import type {
   AvailabilityShift,
   WorkCenterAvailability
@@ -139,14 +136,13 @@ function resolveForecastWindow(input: {
 
 export const handle: Handle = {
   breadcrumb: msg`Forecast`,
-  to: path.to.scheduleForecast,
-  module: "production"
+  to: path.to.scheduleForecast
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId, permissions } = await requirePermissions(
+  const { client, companyId, userId, permissions, api } = await authorize(
     request,
-    { view: "production" }
+    { "production.forecast": "View" }
   );
 
   const url = new URL(request.url);
@@ -176,9 +172,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationResult
   ] = await Promise.all([
     getLocationTimeZone(client, locationId, companyId),
-    getShiftsWithTimes(client, companyId, locationId),
+    api.people.getShiftsWithTimes({ locationId }),
     getWorkCentersByLocation(client, locationId),
-    getDepartmentsList(client, companyId),
+    api.people.getDepartmentsList({}),
     client
       .from("location")
       .select("name, requiresStaffing")
@@ -222,21 +218,46 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // from the SAME availability ladder the scheduler uses — so the shaded
   // background can't disagree with the bars. Shades the axis so a reservation
   // spanning several days no longer reads as 24h/day.
-  const [reservations, maintenanceResult, holidays] = await Promise.all([
-    getCapacityReservationsForResources(client, companyId, locationId, {
-      from: new Date(windowStartMs).toISOString(),
-      to: new Date(windowEndMs).toISOString()
+  const [
+    reservations,
+    maintenanceResult,
+    holidays,
+    unreservedOperationsResult
+  ] = await Promise.all([
+    api.production.getCapacityReservationsForResources({
+      locationId,
+      window: {
+        from: new Date(windowStartMs).toISOString(),
+        to: new Date(windowEndMs).toISOString()
+      }
     }),
-    getMaintenanceDowntimeForResources(client, companyId, locationId),
+    api.production.getMaintenanceDowntimeForResources({ locationId }),
     getHolidayDates(client, companyId, {
       from: toCalendarDate(fromAbsolute(windowStartMs, timeZone)).toString(),
       to: toCalendarDate(fromAbsolute(windowEndMs, timeZone)).toString()
-    })
+    }),
+    // A department scopes the board to its stations; an operation with no
+    // reservation is drawn on none of them.
+    departmentId
+      ? Promise.resolve({ data: [], error: null })
+      : getUnreservedOperations(client, companyId, locationId)
   ]);
   if (holidays.error) {
     throw redirect(
       path.to.production,
       await flash(request, error(holidays.error, "Failed to load holidays"))
+    );
+  }
+  if (unreservedOperationsResult.error) {
+    throw redirect(
+      path.to.production,
+      await flash(
+        request,
+        error(
+          unreservedOperationsResult.error,
+          "Failed to load the operations that are not on the schedule"
+        )
+      )
     );
   }
   const nonWorkingIntervals = getForecastNonWorkingIntervals({
@@ -408,10 +429,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
         rangeStart: windowStartMs,
         rangeEnd: windowEndMs
       })
-    ].map(([workCenterId, intervals]) => [
-      workCenterLaneId(workCenterId),
-      intervals
-    ])
+    ]
+      .map(([workCenterId, intervals]) => [
+        workCenterLaneId(workCenterId),
+        intervals
+      ])
+      // An op with no work center has no working hours to split on: its bar is
+      // one unbroken "can't be scheduled" row, not one per day.
+      .concat([[NO_WORK_CENTER_LANE_ID, []]])
   );
 
   // A department scopes the board to its work centers and their reservations —
@@ -496,7 +521,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           }),
       // Qualifications are readable with resources view only; without it the
       // list would read as "nobody is qualified", so it is left out.
-      hasPermission(permissions, "resources", "view", companyId)
+      holdsGate(permissions, { "resources.abilities": "View" }, companyId)
         ? getQualifiedPeopleByProcess(client, companyId, {
             processIds: unschedulableProcessIds,
             fromDate: toCalendarDate(now(timeZone)).toString()
@@ -581,6 +606,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // filter, and avoids conjuring a lane for a hidden station).
     maintenance: maintenance.filter((m) =>
       departmentWorkCenterIds.has(m.workCenterId)
+    ),
+    operationsWithoutWorkCenter: (unreservedOperationsResult.data ?? []).map(
+      (op) => ({
+        operationId: op.id,
+        jobId: op.jobId,
+        jobReadableId: op.job?.jobId ?? op.jobId,
+        operationDescription: op.description ?? null,
+        itemReadableId: op.jobMakeMethod?.item?.readableIdWithRevision ?? null,
+        itemName: op.jobMakeMethod?.item?.name ?? null,
+        itemThumbnailPath: op.jobMakeMethod?.item?.thumbnailPath ?? null,
+        itemType: op.jobMakeMethod?.item?.type ?? null,
+        conflictReason: op.conflictReason
+      })
     ),
     window: { start: windowStartMs, end: windowEndMs }
   });
@@ -699,24 +737,28 @@ export default function ResourceGanttView() {
 
   const { isGated } = usePlanGate({ feature: "FORECAST" });
 
+  const { t } = useLingui();
   const { locale } = useLocale();
   const navigate = useNavigate();
   const { location, replaceSearchParam } = useReplaceLocation();
   const selectedSpanId = getSpanId(location);
   const view = getView(location);
+  // The loader builds the board untranslated; its one lane that names no
+  // resource is titled here.
+  const noWorkCenterTitle = t`No work center`;
 
   // Compact (the default) puts each work center on one row with its operations
   // side by side; detailed is the full Location > Work Center > Operation >
   // People tree. Switched in the browser — both come from the same events.
-  const events = useMemo(
-    () =>
-      trace
-        ? view === "compact"
-          ? collapseToLanes(trace.events)
-          : trace.events
-        : [],
-    [trace, view]
-  );
+  const events = useMemo(() => {
+    if (!trace) return [];
+    const titled = trace.events.map((event) =>
+      event.id === NO_WORK_CENTER_LANE_ID
+        ? { ...event, data: { ...event.data, message: noWorkCenterTitle } }
+        : event
+    );
+    return view === "compact" ? collapseToLanes(titled) : titled;
+  }, [trace, view, noWorkCenterTitle]);
 
   // Axis labels are 24-hour clock times for a day/shift and dates for a week,
   // both in the plant's timezone (the company fallback is resolved server-side).
@@ -773,9 +815,12 @@ export default function ResourceGanttView() {
     replaceSearchParam("span", selectedSpan);
   }, 250);
 
-  const selectedDetail = selectedSpanId
-    ? detailsById[selectedSpanId]
-    : undefined;
+  const selectedDetail =
+    selectedSpanId === NO_WORK_CENTER_LANE_ID && detailsById[selectedSpanId]
+      ? { ...detailsById[selectedSpanId], title: noWorkCenterTitle }
+      : selectedSpanId
+        ? detailsById[selectedSpanId]
+        : undefined;
 
   const nextWorkDate = nextScheduledDate
     ? formatDate(

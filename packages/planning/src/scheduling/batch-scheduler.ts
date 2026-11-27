@@ -15,6 +15,7 @@ import type {
   KyselyMasterDataProvider,
   LiveReservation
 } from "./master-data-provider.ts";
+import { claimLocationSave, lockLocationSchedule } from "./persist-location.ts";
 import { allocateOperation, isConflict } from "./slot-allocator.ts";
 
 /**
@@ -376,7 +377,12 @@ export async function placeReleasedBatches(args: {
   userId: string;
   orderedJobIds: string[];
   horizonEnd: number;
-  persist: boolean;
+  /**
+   * False for a what-if: mirror the stored batch rows. Otherwise the run's
+   * start (`databaseNow`): the write is skipped when a run that started
+   * later already saved the location (`claimLocationSave`).
+   */
+  persist: false | { runStartedAt: string };
 }): Promise<Map<string, BatchPlacement>> {
   const {
     db,
@@ -628,7 +634,17 @@ export async function placeReleasedBatches(args: {
 
   // One transaction: the old batch rows disappear only together with the new
   // ones appearing — the per-job runs that follow read a consistent set.
+  const { runStartedAt } = persist;
   await db.transaction().execute(async (trx) => {
+    await lockLocationSchedule(trx, locationId);
+    // A newer run already saved: its batch rows stand. This run's own save
+    // is skipped the same way, so its placements are never stored.
+    if (
+      !(await claimLocationSave(trx, { companyId, locationId, runStartedAt }))
+    ) {
+      return;
+    }
+
     // Persist auto-selected work centers to the batch (and its members —
     // mirroring the server fn's "assigning a work center writes it to every
     // member"). The IS NULL guard defers to a human pick that landed after

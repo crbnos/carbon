@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -15,8 +15,8 @@ const logger = getLogger("erp", "shipment", "certificate-preview");
 
 /** Live, watermarked preview of a shipment's Certificate of Conformance. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, userId } = await authorize(request, {
+    "inventory.shipments": "View"
   });
 
   const { id } = params;

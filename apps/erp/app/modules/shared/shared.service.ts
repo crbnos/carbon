@@ -9,11 +9,10 @@ import {
   ServerFnError
 } from "@carbon/api/errors";
 import {
-  hasPermissions,
   type PermissionRule,
   type Permissions,
-  permissionsFromClaims,
-  type RequiredPermissions,
+  type Requirement,
+  type RowsToRead,
   resolvePermissions
 } from "@carbon/api/permissions";
 import {
@@ -27,14 +26,18 @@ import {
   type Actor,
   type CarbonError,
   createServiceContext,
+  NO_ORIGIN,
+  readRowRequirement,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import { attempt, serverFnRefusal } from "@carbon/api/service-tools.server";
 import {
   itemLedgerInStripes,
+  loadProjectStock,
   type StockStripe
 } from "@carbon/api/stock-stripes";
-import { error, getAppUrl } from "@carbon/auth";
+import { error, getAppUrl, readClaimsFresh } from "@carbon/auth";
+import { authenticateApiKey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -43,15 +46,25 @@ import {
   getLocationOwnTimeZone,
   isKysely,
   type Json,
+  PERIOD_LOCK_KEY,
   getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
+import {
+  type AnyOfGate,
+  admits,
+  ITEM_TYPE_PAGES,
+  type PageGate,
+  pageById,
+  userActor
+} from "@carbon/database/access";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
-import type {
-  KyselyDatabase as DB,
-  Kysely,
-  KyselyDatabase,
-  KyselyTx
+import {
+  type KyselyDatabase as DB,
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
 } from "@carbon/database/client";
 import {
   type ContractPosition,
@@ -76,10 +89,15 @@ import type { AccountType } from "@carbon/database/ledger";
 import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
 import {
   type BinStock,
+  chooseHeldStockBin,
   chooseSourceBin,
+  keepInspectionHeldStock,
+  planHeldStockDraw,
+  planStripedUntrackedDraw,
+  type StripedBinDraw,
   untrackedDrawLockKey
 } from "@carbon/database/picked-consumption";
-import { equals } from "@carbon/database/precision";
+import { equals, SCALE } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
 import {
   assignReceiptBatchNumbers,
@@ -101,12 +119,33 @@ import {
   updateRows,
   updateRowsById
 } from "@carbon/database/rows";
+import {
+  roundSalesPostingAmounts,
+  type SalesPostingAmountsInput,
+  salesTaxableBase
+} from "@carbon/database/sales-posting-amounts";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
   type CurrencyRate,
   convertUnitPrice,
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
+import {
+  chargedTaxPercent,
+  effectiveComponents,
+  lineRateMismatches,
+  purchaseLineTaxParts,
+  receiptLineTax,
+  receiptUnitCost,
+  splitLineTax,
+  type TaxCodeInput,
+  taxCodesWithoutComponents
+} from "@carbon/database/tax-components";
+import {
+  negateTaxLedgerRows,
+  type TaxLedgerLine,
+  type TaxLedgerRow
+} from "@carbon/database/tax-ledger";
 import {
   ImplementationHubEmail,
   SalesOrderEmail
@@ -179,11 +218,23 @@ import {
   getCurrencyByCode,
   getPaymentTermsList
 } from "~/modules/accounting/accounting.service";
+import {
+  decideLineTax,
+  hasNoRateInForce,
+  itemTaxDecision,
+  type LineTax,
+  newPurchaseLineTax,
+  noRateInForceMessage
+} from "~/modules/accounting/accounting.utils";
 import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
 import {
   loadReturnLineJobs,
   SHIP_BACK_JOB_STATUSES
 } from "~/modules/inventory/shipment-service-return";
+import type {
+  PurchasePostingAmounts,
+  PurchasePostingLine
+} from "~/modules/invoicing/invoicing.service";
 import {
   canEditChangeNoticeWorkflow,
   changeNoticeLockedMessage
@@ -230,7 +281,12 @@ import {
   type standardFactorType,
   toTiptapDoc
 } from "./shared.models";
-import { flatChargeShare } from "./shared.utils";
+import {
+  flatChargeShare,
+  quoteToSalesOrderPermission,
+  salesRfqToQuotePermission,
+  supplierQuoteToPurchaseOrderPermission
+} from "./shared.utils";
 import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
 import type { ItemModelUpload, MethodRowsAdded } from "./types";
 
@@ -1339,6 +1395,33 @@ export async function sendSalesOrderEmail(args: {
   return { success: true };
 }
 
+/** The weeks the planning screens show, from this week of the location's today. */
+export const PLANNING_WEEKS = 12 * 4;
+
+/**
+ * The weekly periods the planning screens show for a location: `PLANNING_WEEKS`
+ * from the week of the location's today, created when missing, oldest first.
+ * The tool `shared_getPlanningPeriods` reads them; the planning loaders call
+ * the two steps themselves.
+ */
+export async function getPlanningWeeks(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  locationId: string,
+  companyId: string
+) {
+  const today = datetime.today(
+    await getLocationTimeZone(client, locationId, companyId)
+  );
+  const periods = await getOrCreatePeriods(db, today, PLANNING_WEEKS);
+  // Without `periodType`, which is always "Week" here.
+  return periods.map(({ id, startDate, endDate }) => ({
+    id,
+    startDate,
+    endDate
+  }));
+}
+
 export async function getOrCreatePeriods(
   db: Kysely<KyselyDatabase>,
   today: CalendarDate,
@@ -1358,48 +1441,52 @@ export async function getOrCreatePeriods(
     currentStart = periodEnd.add({ days: 1 });
   }
 
-  // Check which periods already exist
-  const existingPeriods = await db
-    .selectFrom("period")
-    .selectAll()
-    .where(
-      "startDate",
-      "in",
-      ranges.map((r) => r.startDate)
-    )
-    .where("periodType", "=", "Week")
-    .execute();
+  const startDates = ranges.map((r) => r.startDate);
+  const readWeeks = (handle: Kysely<KyselyDatabase>) =>
+    handle
+      .selectFrom("period")
+      .selectAll()
+      .where("startDate", "in", startDates)
+      .where("periodType", "=", "Week")
+      .orderBy("startDate")
+      .execute();
 
+  const existingPeriods = await readWeeks(db);
   if (existingPeriods.length === ranges.length) {
     return existingPeriods.map(toPlainPeriod);
   }
 
-  // Find missing periods
-  const existingStartDates = new Set(
-    existingPeriods.map((p) => dateToString(p.startDate))
-  );
-
-  const periodsToCreate = ranges.filter(
-    (r) => !existingStartDates.has(r.startDate)
-  );
-
-  // Create missing periods in a transaction
-  const created = await db.transaction().execute(async (trx) => {
-    return await trx
+  // `period` is shared by every company and has no unique key on a week, so
+  // the missing weeks are read again and inserted under one lock: a call that
+  // waits for it reads the weeks the first one inserted.
+  const periods = await withTransaction(db, async (trx) => {
+    await sql`SELECT pg_advisory_xact_lock(${PERIOD_LOCK_KEY}::bigint)`.execute(
+      trx
+    );
+    const existing = await readWeeks(trx);
+    const existingStartDates = new Set(
+      existing.map((p) => dateToString(p.startDate))
+    );
+    const missing = ranges.filter((r) => !existingStartDates.has(r.startDate));
+    if (missing.length === 0) return existing;
+    const created = await trx
       .insertInto("period")
       .values(
-        periodsToCreate.map((p) => ({
+        missing.map((p) => ({
           startDate: p.startDate,
           endDate: p.endDate,
-          periodType: "Week" as const,
-          createdAt: new Date().toISOString()
+          periodType: "Week" as const
         }))
       )
       .returningAll()
       .execute();
+    return [...existing, ...created];
   });
 
-  return [...existingPeriods, ...created].map(toPlainPeriod);
+  // In week order: callers pair the i-th period with the i-th week column.
+  return periods
+    .map(toPlainPeriod)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
 }
 
 /** Convert a pg DATE value (Date object or string) to an ISO date string. */
@@ -1448,7 +1535,7 @@ type CompanyScopedTable = {
  * belongs to the company AND hangs off that quote. One query.
  *
  * Record ids in a URL or form body prove nothing about tenancy:
- * `requirePermissions` authorizes the CALLER for `companyId`, not the ids it
+ * `authorize` authorizes the CALLER for `companyId`, not the ids it
  * sends. Most tables have single-column foreign keys, so a service-role or
  * Kysely write happily accepts another company's row as a parent. Call this
  * before any RLS-bypassing read or write keyed on a caller-supplied id.
@@ -1519,20 +1606,30 @@ export async function refuseUnlessOwned(
 }
 
 /**
- * For a write gated on company membership (`permission: {}`): a person logs
- * their own time, but that gate admits an API key holding any scope, even a
- * read-only one. A key also needs `required`.
+ * For a write whose gate admits a key without what the write needs: one gated
+ * on `"employee"` (a person logs their own time, but that gate admits an API
+ * key holding any permission, even a read-only one), and one gated narrower
+ * than what its writes need (the Accounts Create invites, a custom field
+ * write the table's own page decides). A key also needs `required`: every
+ * entry of a page gate, or one gate of an `anyOf`.
  */
 export function refuseKeyWithout(
   ctx: ServiceContext,
-  required: RequiredPermissions
+  required: PageGate | AnyOfGate
 ): CarbonError | null {
   if (ctx.actor.type !== "apiKey" || ctx.can(required)) return null;
+  const named = (gate: PageGate) =>
+    Object.entries(gate)
+      .map(([page, level]) => `${page}: ${level}`)
+      .join(", ");
+  const gates = "anyOf" in required ? required.anyOf : [required];
   return ctx.error(
     "forbidden",
-    `This API key needs ${Object.entries(required)
-      .map(([action, module]) => `${action}: ${module}`)
-      .join(", ")} to do this`
+    `This API key needs ${
+      gates.length === 1
+        ? named(gates[0]!)
+        : `one of ${gates.map(named).join("; ")}`
+    } to do this`
   );
 }
 
@@ -2177,7 +2274,7 @@ const POSTING_DEFAULTS: Partial<
  * - From handles that carry the caller's `client`, `as` is required (the
  *   body's permission rule, or what the input requires): the caller must hold
  *   it first — a user's claims, an API key's
- *   scopes, nothing for the service role. With the body's input `schema`, the
+ *   permissions, nothing for the service role. With the body's input `schema`, the
  *   input is parsed first and the rule reads it as the body will. The body
  *   then runs as the system
  *   on the user's behalf, over that same `db` (a transaction stays one).
@@ -2269,7 +2366,7 @@ async function runPosting<I, R>(
     async (span) => {
       if (handles.client && as) {
         const parsed = (schema ? schema.parse(input) : input) as I;
-        const caller = postingCaller(handles.client, handles.userId);
+        const caller = postingCredential(handles.client, handles.userId);
         span.setAttribute("carbon.function.actor", caller.type);
         await authorizePostingCaller(
           handles,
@@ -2280,6 +2377,7 @@ async function runPosting<I, R>(
       const ctx = createServiceContext({
         actor,
         company: await postingCompany(handles, posting?.groupless === true),
+        origin: NO_ORIGIN,
         caller: handles.client ?? getCarbonServiceRole(),
         system: getCarbonServiceRole,
         pg: () => handles.db,
@@ -3599,9 +3697,11 @@ export async function importMethods(
     companyId: string;
     userId: string;
     summary: Summary;
+    /** Whether the caller holds a gate (`ctx.can`): a parent's method needs Edit on its type's page. */
+    can: (gate: PageGate) => boolean;
   }
 ): Promise<void> {
-  const { table, mappedRecords, companyId, userId, summary } = args;
+  const { table, mappedRecords, companyId, userId, summary, can } = args;
   const added = noMethodRowsAdded();
   const warnings: string[] = [];
   summary.added = added;
@@ -3838,6 +3938,17 @@ export async function importMethods(
 
     if (errors.length > 0) {
       for (const e of errors) summary.errors.push(e);
+      continue;
+    }
+
+    // A parent's method needs Edit on its type's page; the gate covers Parts only.
+    const parent = itemMap.get(key(g.readableId, g.revision));
+    const parentPage = parent ? ITEM_TYPE_PAGES[parent.type] : undefined;
+    if (parent && parentPage && !can({ [parentPage]: "Edit" })) {
+      summary.errors.push({
+        row: rowOf(g.firstIndex),
+        reason: `Parent ${partLabel} is a ${parent.type}; changing its method needs Edit on ${pageById(parentPage)?.label ?? parentPage}`
+      });
       continue;
     }
 
@@ -4539,17 +4650,23 @@ async function writeGroup(
       .forNoKeyUpdate()
       .execute();
 
+    // Every version is locked now, in the order an activation locks them: a
+    // file that writes two versions would otherwise take them one at a time
+    // and deadlock with an activation holding the second.
     const methods: MakeMethodVersion[] =
       g.versions.size === 0
         ? []
         : (
-            await trx
-              .selectFrom("makeMethod")
-              .select(["id", "version", "status", "changeOrderId"])
-              .where("itemId", "=", parentItemId)
-              .where("companyId", "=", companyId)
-              .execute()
-          ).map((m) => ({ ...m, version: Number(m.version) }));
+            await lockItemMakeMethods(trx, {
+              itemIds: [parentItemId],
+              companyId
+            })
+          ).map((m) => ({
+            id: m.id,
+            version: Number(m.version),
+            status: m.status,
+            changeOrderId: m.changeOrderId
+          }));
     // Versions this file creates. A blank version still resolves against the
     // versions that existed before the import, whatever the row order.
     const createdIds = new Map<number, string>();
@@ -4691,8 +4808,8 @@ async function writeGroup(
           reason: `Material ${text(r.componentId)} rev ${text(r.componentRevision) || "0"} is already on the BOM of ${partLabel}; skipped`
         });
       }
-      const insertedComponents = materialPlan.insert.map(
-        ({ index }) => components.get(index)!
+      const insertedComponents = materialPlan.insert.map(({ index }) =>
+        components.get(index)!
       );
       const makeMethodIdByItem = await currentMakeMethodIds(
         trx,
@@ -5852,6 +5969,7 @@ type ReferencedTable =
   | "supplierType"
   | "paymentTerm"
   | "shippingMethod"
+  | "taxCode"
   | "supplier"
   | "location"
   | "materialSubstance"
@@ -5882,7 +6000,8 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
     { column: "accountManagerId", table: "employee", label: "Account Manager" },
     { column: "customerStatusId", table: "customerStatus", label: "Status" },
     { column: "customerTypeId", table: "customerType", label: "Type" },
-    { column: "paymentTermId", table: "paymentTerm", label: "Payment Term" }
+    { column: "paymentTermId", table: "paymentTerm", label: "Payment Term" },
+    { column: "taxCodeId", table: "taxCode", label: "Tax Code" }
   ],
   supplier: [
     { column: "accountManagerId", table: "employee", label: "Account Manager" },
@@ -5892,7 +6011,8 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
       column: "shippingMethodId",
       table: "shippingMethod",
       label: "Shipping Method"
-    }
+    },
+    { column: "taxCodeId", table: "taxCode", label: "Tax Code" }
   ],
   part: itemReferences,
   tool: itemReferences,
@@ -6850,7 +6970,12 @@ async function writeItemPlanningOrderMultiples(
 async function upsertTaxIdentifiers(
   trx: Kysely<KyselyDatabase>,
   table: "customerTax" | "supplierTax",
-  records: Array<{ entityId: string; taxId: string | null | undefined }>,
+  records: Array<{
+    entityId: string;
+    taxId: string | null | undefined;
+    /** A CSV sets a tax code but never clears one. */
+    taxCodeId?: string | null;
+  }>,
   cId: string,
   userId: string
 ): Promise<void> {
@@ -6862,6 +6987,7 @@ async function upsertTaxIdentifiers(
       records.map((r) => ({
         customerId: r.entityId,
         taxId: r.taxId ?? null,
+        taxCodeId: r.taxCodeId || null,
         companyId: cId,
         updatedAt: now,
         updatedBy: userId
@@ -6873,6 +6999,7 @@ async function upsertTaxIdentifiers(
           .onConflict((oc) =>
             oc.column("customerId").doUpdateSet({
               taxId: sql`excluded."taxId"`,
+              taxCodeId: sql`COALESCE(excluded."taxCodeId", "customerTax"."taxCodeId")`,
               updatedAt: now,
               updatedBy: userId
             })
@@ -6885,6 +7012,7 @@ async function upsertTaxIdentifiers(
     records.map((r) => ({
       supplierId: r.entityId,
       taxId: r.taxId ?? null,
+      taxCodeId: r.taxCodeId || null,
       companyId: cId,
       updatedAt: now,
       updatedBy: userId
@@ -6896,6 +7024,7 @@ async function upsertTaxIdentifiers(
         .onConflict((oc) =>
           oc.column("supplierId").doUpdateSet({
             taxId: sql`excluded."taxId"`,
+            taxCodeId: sql`COALESCE(excluded."taxCodeId", "supplierTax"."taxCodeId")`,
             updatedAt: now,
             updatedBy: userId
           })
@@ -7033,6 +7162,7 @@ export async function importCsvTable(
           [];
         const customerTaxForInserts: Array<{
           taxId: string | null | undefined;
+          taxCodeId: string | null | undefined;
         }> = [];
         const csvIdsForInserts: string[] = [];
         const customerUpdates: {
@@ -7042,6 +7172,7 @@ export async function importCsvTable(
         const customerTaxUpdates: Array<{
           entityId: string;
           taxId: string | null | undefined;
+          taxCodeId: string | null | undefined;
         }> = [];
         // Updates matched by name (no pre-existing csv mapping). After the
         // updates run, we add csv mappings for these so the next import takes
@@ -7061,6 +7192,7 @@ export async function importCsvTable(
           const {
             id,
             taxId,
+            taxCodeId,
             locationName: _ln,
             addressLine1: _a1,
             addressLine2: _a2,
@@ -7106,7 +7238,11 @@ export async function importCsvTable(
                 updatedBy: userId
               }
             });
-            customerTaxUpdates.push({ entityId: decision.entityId, taxId });
+            customerTaxUpdates.push({
+              entityId: decision.entityId,
+              taxId,
+              taxCodeId
+            });
             extForUpdates.push({ entityId: decision.entityId, ext });
             // Only attach a CSV->entity mapping when there is a real external id.
             if (matchedByCsvId === undefined && id) {
@@ -7125,7 +7261,7 @@ export async function importCsvTable(
               createdAt: datetime.timestamp(),
               createdBy: userId
             } as Database["public"]["Tables"]["customer"]["Insert"]);
-            customerTaxForInserts.push({ taxId });
+            customerTaxForInserts.push({ taxId, taxCodeId });
             csvIdsForInserts.push(id!);
             extForInserts.push(ext);
           }
@@ -7162,7 +7298,8 @@ export async function importCsvTable(
             "customerTax",
             inserted.map((row, i) => ({
               entityId: row.id!,
-              taxId: customerTaxForInserts[i]?.taxId
+              taxId: customerTaxForInserts[i]?.taxId,
+              taxCodeId: customerTaxForInserts[i]?.taxCodeId
             })),
             companyId,
             userId
@@ -7239,6 +7376,7 @@ export async function importCsvTable(
           [];
         const supplierTaxForInserts: Array<{
           taxId: string | null | undefined;
+          taxCodeId: string | null | undefined;
         }> = [];
         const csvIdsForInserts: string[] = [];
         const supplierUpdates: {
@@ -7248,6 +7386,7 @@ export async function importCsvTable(
         const supplierTaxUpdates: Array<{
           entityId: string;
           taxId: string | null | undefined;
+          taxCodeId: string | null | undefined;
         }> = [];
         const csvIdsForNameMatchedUpdates: Array<{
           entityId: string;
@@ -7267,6 +7406,7 @@ export async function importCsvTable(
           const {
             id,
             taxId,
+            taxCodeId,
             locationName: _ln,
             addressLine1: _a1,
             addressLine2: _a2,
@@ -7312,7 +7452,11 @@ export async function importCsvTable(
                 updatedBy: userId
               }
             });
-            supplierTaxUpdates.push({ entityId: decision.entityId, taxId });
+            supplierTaxUpdates.push({
+              entityId: decision.entityId,
+              taxId,
+              taxCodeId
+            });
             extForUpdates.push({ entityId: decision.entityId, ext });
             // Only attach a CSV->entity mapping when there is a real external id.
             if (matchedByCsvId === undefined && id) {
@@ -7331,7 +7475,7 @@ export async function importCsvTable(
               createdAt: datetime.timestamp(),
               createdBy: userId
             } as Database["public"]["Tables"]["supplier"]["Insert"]);
-            supplierTaxForInserts.push({ taxId });
+            supplierTaxForInserts.push({ taxId, taxCodeId });
             csvIdsForInserts.push(id!);
             extForInserts.push(ext);
           }
@@ -7368,7 +7512,8 @@ export async function importCsvTable(
             "supplierTax",
             inserted.map((row, i) => ({
               entityId: row.id!,
-              taxId: supplierTaxForInserts[i]?.taxId
+              taxId: supplierTaxForInserts[i]?.taxId,
+              taxCodeId: supplierTaxForInserts[i]?.taxCodeId
             })),
             companyId,
             userId
@@ -8176,8 +8321,8 @@ export async function importCsvTable(
         }) =>
           Boolean(
             record.firstName?.trim() ||
-              record.lastName?.trim() ||
-              record.email?.trim()
+            record.lastName?.trim() ||
+            record.email?.trim()
           );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
@@ -8348,8 +8493,8 @@ export async function importCsvTable(
         }) =>
           Boolean(
             record.firstName?.trim() ||
-              record.lastName?.trim() ||
-              record.email?.trim()
+            record.lastName?.trim() ||
+            record.email?.trim()
           );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
@@ -9053,7 +9198,8 @@ export async function importCsvTable(
         mappedRecords,
         companyId,
         userId,
-        summary
+        summary,
+        can: (gate) => ctx.can(gate)
       });
       break;
     }
@@ -9240,6 +9386,30 @@ function resolveTaxPercent(line: {
 }
 
 /**
+ * A converted line's rate: its code's charged rate on the new document's
+ * date, so the rate agrees with the document's tax point (sales posting
+ * refuses a mismatch). A line with no code keeps its rate, and so does one
+ * whose code has no component in force then: posting refuses that line with
+ * a message that names the code.
+ */
+async function convertedTaxPercent(
+  trx: KyselyTx,
+  companyId: string,
+  taxCodeIds: ReadonlyArray<string | null | undefined>,
+  date: string
+): Promise<
+  (line: { taxCodeId: string | null; taxPercent: number | null }) => number
+> {
+  const codes = await loadTaxCodes(trx, companyId, taxCodeIds, date);
+  return (line) => {
+    const code = line.taxCodeId ? codes.get(line.taxCodeId) : undefined;
+    return code && code.components.length > 0
+      ? chargedTaxPercent(code, date)
+      : (line.taxPercent ?? 0);
+  };
+}
+
+/**
  * Where an order's goods go, for the invoice's customer ship-to: a drop
  * shipment's own location, else the order header's ship-to. The same rule as
  * `resolveSalesOrderShipTo` (sales rules) — never the bill-to.
@@ -9401,21 +9571,57 @@ async function billedPurchaseOrderCharges(
   };
 }
 
+/**
+ * Locks every make method version of the items, in id order, and returns
+ * them. A writer that changes a version's status, or writes into a version
+ * because of its status, reads the status here and not before: one id order
+ * for every writer means two of them wait rather than deadlock. NO KEY UPDATE
+ * leaves BOM lines elsewhere that point at these versions free to be written.
+ */
+export async function lockItemMakeMethods(
+  db: Kysely<DB>,
+  args: { itemIds: string[]; companyId: string }
+) {
+  const itemIds = [...new Set(args.itemIds)];
+  if (itemIds.length === 0) return [];
+  return db
+    .selectFrom("makeMethod")
+    .select(["id", "itemId", "version", "status", "changeOrderId"])
+    .where("itemId", "in", itemIds)
+    .where("companyId", "=", args.companyId)
+    .orderBy("id")
+    .forNoKeyUpdate()
+    .execute();
+}
+
 /** `id` for the three document-to-invoice conversions, `convertedId` for the rest. */
 export type ConvertResult = { id?: string; convertedId?: string };
 
+/**
+ * Each conversion needs Create (or more) on the page of the document it makes.
+ * Checked only when a caller's client reaches the posting; a system caller's
+ * service function gates on the same constant (`quoteToSalesOrderPermission`).
+ */
 export const convertDocumentPermission = {
   by: "type",
   rules: {
-    methodVersionToActive: { update: "resources" },
-    purchaseOrderToPurchaseInvoice: { update: "invoicing" },
-    quoteToSalesOrder: { update: "sales" },
-    salesOrderToSalesInvoice: { update: "invoicing" },
-    salesRfqToQuote: { update: "sales" },
-    shipmentToSalesInvoice: { update: "invoicing" },
-    supplierQuoteToPurchaseOrder: { update: "purchasing" },
-    warehouseTransferToShipment: { update: "inventory" },
-    warehouseTransferToReceipt: { update: "inventory" }
+    // `activateMethodVersion` passes the item's row rule instead: a keyed
+    // rule names one page, and a method's page is its item's type.
+    methodVersionToActive: { "parts.parts": "Edit" },
+    purchaseOrderToPurchaseInvoice: { "invoicing.purchaseInvoices": "Edit" },
+    quoteToSalesOrder: quoteToSalesOrderPermission,
+    salesOrderToSalesInvoice: { "invoicing.salesInvoices": "Edit" },
+    salesRfqToQuote: salesRfqToQuotePermission,
+    shipmentToSalesInvoice: { "invoicing.salesInvoices": "Edit" },
+    supplierQuoteToPurchaseOrder: supplierQuoteToPurchaseOrderPermission,
+    warehouseTransferToShipment: {
+      "inventory.warehouseTransfers": "Edit",
+      "inventory.shipments": "Create"
+    },
+    warehouseTransferToReceipt: {
+      "inventory.warehouseTransfers": "Edit",
+      "inventory.receipts": "Create"
+    }
   }
 } satisfies PermissionRule<z.output<typeof convertInput>>;
 
@@ -9443,63 +9649,50 @@ export async function convertDocument(
       });
       if (makeMethod.error) throw new Error(makeMethod.error.message);
       if (!makeMethod.data) throw new NotFoundError("Make method not found");
+      const { itemId } = makeMethod.data;
 
       if (await isStrictBackflush(db, companyId)) {
         await assertMethodHasPullFrom(db, { makeMethodId, companyId });
       }
 
-      const [relatedMakeMethods, draftQuotes, draftJobs] = await inOrder([
-        () =>
-          many(db, "makeMethod", {
-            itemId: makeMethod.data?.itemId,
-            companyId
-          }),
+      const [draftQuotes, draftJobs] = await inOrder([
         () => many(db, "quote", { companyId, status: "Draft" }),
         () => many(db, "job", { companyId, status: "Draft" })
       ]);
 
-      if (relatedMakeMethods.error)
-        throw new Error(relatedMakeMethods.error.message);
-
       if (draftQuotes.error) throw new Error(draftQuotes.error.message);
       if (draftJobs.error) throw new Error(draftJobs.error.message);
 
-      const draftMakeMethodIds = relatedMakeMethods.data
-        ?.filter(
-          (makeMethod) =>
-            makeMethod.id !== makeMethodId && makeMethod.status === "Draft"
-        )
-        ?.map((makeMethod) => makeMethod.id);
-
-      const activeMakeMethodIds = relatedMakeMethods.data
-        ?.filter(
-          (makeMethod) =>
-            makeMethod.id !== makeMethodId && makeMethod.status === "Active"
-        )
-        ?.map((makeMethod) => makeMethod.id);
-
-      const relatedMakeMethodIds = [
-        ...(draftMakeMethodIds ?? []),
-        ...(activeMakeMethodIds ?? [])
-      ];
-
-      const [methodMaterials] = await inOrder([
-        () =>
-          many(db, "methodMaterial", {
-            materialMakeMethodId: relatedMakeMethodIds,
-            companyId
-          })
-      ]);
-
-      if (methodMaterials.error) throw new Error(methodMaterials.error.message);
-
       await db.transaction().execute(async (trx) => {
+        // The statuses are read under the lock: an activation that waited
+        // for another archives the version that one made Active.
+        const versions = await lockItemMakeMethods(trx, {
+          itemIds: [itemId],
+          companyId
+        });
+        if (!versions.some((version) => version.id === makeMethodId)) {
+          throw new NotFoundError("Make method not found");
+        }
+        const others = versions.filter(
+          (version) => version.id !== makeMethodId
+        );
+        const activeMakeMethodIds = others
+          .filter((version) => version.status === "Active")
+          .map((version) => version.id);
+        const relatedMakeMethodIds = others
+          .filter(
+            (version) =>
+              version.status === "Active" || version.status === "Draft"
+          )
+          .map((version) => version.id);
+
         if (activeMakeMethodIds.length > 0) {
           await trx
             .updateTable("makeMethod")
             .set({ status: "Archived" })
             .where("id", "in", activeMakeMethodIds)
             .where("companyId", "=", companyId)
+            .where("status", "=", "Active")
             .execute();
         }
 
@@ -9610,6 +9803,18 @@ export async function convertDocument(
           purchaseOrder.data!.currencyCode ?? "USD"
         );
 
+        const dateIssued = datetime
+          .today(await resolveCompanyTimeZone(trx, companyId))
+          .toString();
+        // The supplier's tax amount stays; the rate is the code's on the
+        // invoice's date, the posting's tax point.
+        const taxPercentOf = await convertedTaxPercent(
+          trx,
+          companyId,
+          uninvoicedLines.map((line) => line.taxCodeId),
+          dateIssued
+        );
+
         const purchaseInvoice = await trx
           .insertInto("purchaseInvoice")
           .values({
@@ -9625,9 +9830,7 @@ export async function convertDocument(
             locationId: purchaseOrderDelivery.data!.locationId,
             paymentTermId: purchaseOrderPayment.data!.paymentTermId,
             currencyCode: purchaseOrder.data!.currencyCode ?? "USD",
-            dateIssued: datetime
-              .today(await resolveCompanyTimeZone(trx, companyId))
-              .toString(),
+            dateIssued,
             exchangeRate: purchaseOrder.data!.exchangeRate ?? 1,
             subtotal: uninvoicedSubtotal ?? 0,
             supplierInteractionId: purchaseOrder.data!.supplierInteractionId,
@@ -9705,7 +9908,8 @@ export async function convertDocument(
                 "supplierTaxAmount"
               ),
               // The rate is invariant under proration; only the amount scales
-              taxPercent: line.taxPercent ?? 0,
+              taxPercent: taxPercentOf(line),
+              taxCodeId: line.taxCodeId,
               purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
               inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
               conversionFactor: line.conversionFactor,
@@ -9806,6 +10010,12 @@ export async function convertDocument(
           trx,
           "salesOrder",
           companyId
+        );
+        const taxPercentOf = await convertedTaxPercent(
+          trx,
+          companyId,
+          quoteLineRows.map((line) => line.taxCodeId),
+          today
         );
 
         // Check if any selected lines have quantity 0
@@ -10005,6 +10215,13 @@ export async function convertDocument(
               nonTaxableAddOnCost: addOn - taxableAddOn,
               description: line.description,
               itemId: line.itemId,
+              // The quote line's part number choice and the customer's number
+              // it quoted, so the order prints like the quote.
+              partNumberDisplay: line.partNumberDisplay,
+              customerPartId: line.customerPartId?.trim() || null,
+              customerPartRevision: line.customerPartId?.trim()
+                ? line.customerPartRevision
+                : null,
               locationId: line.locationId ?? locationId,
               methodType: line.methodType,
               storageUnitId: sourceStorageUnitId(line, price.quantity),
@@ -10029,7 +10246,8 @@ export async function convertDocument(
               createdBy: userId,
               companyId,
               exchangeRate: quote.data.exchangeRate ?? 1,
-              taxPercent: line.taxPercent,
+              taxPercent: taxPercentOf(line),
+              taxCodeId: line.taxCodeId,
               shippingCost: price.shippingCost ?? 0,
               sortOrder: line.sortOrder ?? 1,
               configuration: toJson(line.configuration)
@@ -10108,7 +10326,7 @@ export async function convertDocument(
           .map((line) => ({
             companyId,
             customerId: quote.data?.customerId!,
-            customerPartId: line.customerPartId!,
+            customerPartId: line.customerPartId?.trim() ?? "",
             customerPartRevision: line.customerPartRevision ?? "",
             itemId: line.itemId!
           }))
@@ -10236,6 +10454,15 @@ export async function convertDocument(
         // Flat charges bill once across partial invoices (flatChargeShare).
         const billed = await billedSalesOrderCharges(trx, companyId, order.id);
         const decimals = await baseCurrencyDecimals(trx, companyId);
+        const dateIssued = datetime
+          .today(await resolveCompanyTimeZone(trx, companyId))
+          .toString();
+        const taxPercentOf = await convertedTaxPercent(
+          trx,
+          companyId,
+          uninvoicedLines.map((line) => line.taxCodeId),
+          dateIssued
+        );
 
         const salesInvoice = await trx
           .insertInto("salesInvoice")
@@ -10252,9 +10479,7 @@ export async function convertDocument(
             locationId: orderShipment.locationId,
             paymentTermId: salesOrderPayment.data!.paymentTermId,
             currencyCode: order.currencyCode ?? "USD",
-            dateIssued: datetime
-              .today(await resolveCompanyTimeZone(trx, companyId))
-              .toString(),
+            dateIssued,
             exchangeRate: order.exchangeRate ?? 1,
             subtotal: uninvoicedSubtotal ?? 0,
             opportunityId: order.opportunityId,
@@ -10320,6 +10545,7 @@ export async function convertDocument(
               invoiceLineType: line.salesOrderLineType,
               salesOrderId: line.salesOrderId,
               salesOrderLineId: line.id,
+              partNumberDisplay: line.partNumberDisplay,
               methodType: line.methodType,
               itemId: line.itemId,
               locationId: line.locationId,
@@ -10335,7 +10561,8 @@ export async function convertDocument(
                 "nonTaxableAddOnCost"
               ),
               shippingCost: share(line.shippingCost, "shippingCost"),
-              taxPercent: line.taxPercent ?? 0,
+              taxPercent: taxPercentOf(line),
+              taxCodeId: line.taxCodeId,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
               exchangeRate: line.exchangeRate ?? 1,
               serviceStartDate: line.serviceStartDate ?? null,
@@ -10623,8 +10850,20 @@ export async function convertDocument(
           .where("salesRfqId", "=", id)
           .execute();
 
+        // Each line takes the quote's tax, as a line added on the quote does.
+        const quoteLineTax = await customerLineTaxes(trx, {
+          companyId,
+          customerId: salesRfq.data.customerId,
+          customerLocationId: salesRfq.data.customerLocationId ?? null,
+          date: datetime
+            .today(await resolveCompanyTimeZone(trx, companyId))
+            .toString(),
+          itemIds: salesRfqLinesWithItemIds.map((line) => line.itemId)
+        });
+
         const quoteLineInserts: Database["public"]["Tables"]["quoteLine"]["Insert"][] =
           salesRfqLinesWithItemIds.map((line) => ({
+            ...quoteLineTax(line.itemId),
             id: line.id ?? undefined,
             quoteId: quote.id!,
             itemId: line.itemId!,
@@ -10783,6 +11022,13 @@ export async function convertDocument(
         acc[lineId] = (acc[lineId] || 0) + line.shippedQuantity;
         return acc;
       }, {});
+      // The invoice prints what the packing slip printed, an Edit document
+      // pick included, else the order line's choice.
+      const shippedPartNumberDisplay = new Map(
+        shipmentLines.data
+          .filter((line) => line.lineId && line.partNumberDisplay)
+          .map((line) => [line.lineId!, line.partNumberDisplay])
+      );
 
       // Each shipped fixed asset line counts as quantity 1
       for (const line of shipmentFixedAssetLines.data) {
@@ -10891,6 +11137,15 @@ export async function convertDocument(
         // Flat charges bill once across partial invoices (flatChargeShare).
         const billed = await billedSalesOrderCharges(trx, companyId, order.id);
         const decimals = await baseCurrencyDecimals(trx, companyId);
+        const dateIssued = datetime
+          .today(await resolveCompanyTimeZone(trx, companyId))
+          .toString();
+        const taxPercentOf = await convertedTaxPercent(
+          trx,
+          companyId,
+          uninvoicedLines.map((line) => line.taxCodeId),
+          dateIssued
+        );
 
         const salesInvoice = await trx
           .insertInto("salesInvoice")
@@ -10907,9 +11162,7 @@ export async function convertDocument(
             locationId: orderShipment.locationId,
             paymentTermId: salesOrderPayment.data!.paymentTermId,
             currencyCode: order.currencyCode ?? "USD",
-            dateIssued: datetime
-              .today(await resolveCompanyTimeZone(trx, companyId))
-              .toString(),
+            dateIssued,
             exchangeRate: order.exchangeRate ?? 1,
             subtotal: uninvoicedSubtotal ?? 0,
             opportunityId: order.opportunityId,
@@ -10976,6 +11229,8 @@ export async function convertDocument(
               invoiceLineType: line.salesOrderLineType,
               salesOrderId: line.salesOrderId,
               salesOrderLineId: line.id,
+              partNumberDisplay:
+                shippedPartNumberDisplay.get(line.id) ?? line.partNumberDisplay,
               methodType: line.methodType,
               itemId: line.itemId,
               locationId: line.locationId,
@@ -10991,7 +11246,8 @@ export async function convertDocument(
                 "nonTaxableAddOnCost"
               ),
               shippingCost: share(line.shippingCost, "shippingCost"),
-              taxPercent: line.taxPercent ?? 0,
+              taxPercent: taxPercentOf(line),
+              taxCodeId: line.taxCodeId,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
               exchangeRate: line.exchangeRate ?? 1,
               serviceStartDate: line.serviceStartDate ?? null,
@@ -11017,27 +11273,48 @@ export async function convertDocument(
     case "supplierQuoteToPurchaseOrder": {
       const { selectedLines } = payload;
 
-      const [quote, quoteLines, company, employeeJob] = await inOrder([
-        () => single(db, "supplierQuote", { id, companyId }),
-        () =>
-          many<
-            "supplierQuoteLine",
-            rows.Tables["supplierQuoteLine"]["Row"] & {
-              item: Pick<rows.Tables["item"]["Row"], "type"> | null;
-            }
-          >(
-            db,
-            "supplierQuoteLine",
-            { supplierQuoteId: id, companyId },
-            {
-              embed: {
-                item: { table: "item", via: "itemId", columns: ["type"] }
+      const [quote, quoteLines, quoteLinePrices, company, employeeJob] =
+        await inOrder([
+          () => single(db, "supplierQuote", { id, companyId }),
+          () =>
+            many<
+              "supplierQuoteLine",
+              rows.Tables["supplierQuoteLine"]["Row"] & {
+                item: Pick<
+                  rows.Tables["item"]["Row"],
+                  "type" | "taxable"
+                > | null;
               }
-            }
-          ),
-        () => single(db, "company", { id: companyId }),
-        () => single(db, "employeeJob", { id: userId, companyId })
-      ]);
+            >(
+              db,
+              "supplierQuoteLine",
+              { supplierQuoteId: id, companyId },
+              {
+                embed: {
+                  item: {
+                    table: "item",
+                    via: "itemId",
+                    columns: ["type", "taxable"]
+                  }
+                }
+              }
+            ),
+          // The tax code of the price break each selected quantity bought.
+          () =>
+            many(db, "supplierQuoteLinePrice", {
+              supplierQuoteId: id,
+              companyId
+            }),
+          () => single(db, "company", { id: companyId }),
+          () => single(db, "employeeJob", { id: userId, companyId })
+        ]);
+      if (quoteLinePrices.error) throw quoteLinePrices.error;
+      const priceTaxCodeIds = new Map(
+        (quoteLinePrices.data ?? []).map((price) => [
+          `${price.supplierQuoteLineId}:${price.quantity}`,
+          price.taxCodeId
+        ])
+      );
 
       if (quote.error) throw new NotFoundError(`Quote with id ${id} not found`);
       if (quoteLines.error)
@@ -11076,6 +11353,20 @@ export async function convertDocument(
           trx,
           "purchaseOrder",
           companyId
+        );
+        // A coded line takes its code's rate on the order's date (today: the
+        // order date is stamped on submit); the supplier's amount stays.
+        const priceTaxCodeId = (lineId: string) =>
+          priceTaxCodeIds.get(
+            `${lineId}:${selectedLines![lineId]!.quantity}`
+          ) ?? null;
+        const taxPercentOf = await convertedTaxPercent(
+          trx,
+          companyId,
+          Object.keys(selectedLines ?? {}).map(priceTaxCodeId),
+          datetime
+            .today(await resolveCompanyTimeZone(trx, companyId))
+            .toString()
         );
 
         const purchaseOrder = await trx
@@ -11148,6 +11439,8 @@ export async function convertDocument(
             )
             .map((line) => {
               const isIndirect = line.supplierQuoteLineType === "G/L Account";
+              // A non-taxable item carries no tax, as on every line write.
+              const nonTaxable = !isIndirect && line.item?.taxable === false;
               return {
                 purchaseOrderId: insertedPurchaseOrderId,
                 purchaseOrderLineType: isIndirect
@@ -11155,6 +11448,11 @@ export async function convertDocument(
                   : (line.item?.type as "Part"),
                 description: line.description,
                 itemId: isIndirect ? null : line.itemId,
+                // The number the supplier quoted; without one the line copies
+                // the supplier part's number.
+                supplierPartId: isIndirect
+                  ? null
+                  : line.supplierPartId?.trim() || null,
                 accountId: isIndirect ? line.accountId : null,
                 costCenterId: isIndirect ? line.costCenterId : null,
                 locationId: isIndirect ? null : employeeJob.data?.locationId,
@@ -11172,8 +11470,16 @@ export async function convertDocument(
                 supplierUnitPrice: selectedLines![line.id!]!.supplierUnitPrice,
                 supplierShippingCost:
                   selectedLines![line.id!]!.supplierShippingCost,
-                supplierTaxAmount: selectedLines![line.id!]!.supplierTaxAmount,
-                taxPercent: resolveTaxPercent(selectedLines![line.id!]!),
+                supplierTaxAmount: nonTaxable
+                  ? 0
+                  : selectedLines![line.id!]!.supplierTaxAmount,
+                taxPercent: nonTaxable
+                  ? 0
+                  : taxPercentOf({
+                      taxCodeId: priceTaxCodeId(line.id!),
+                      taxPercent: resolveTaxPercent(selectedLines![line.id!]!)
+                    }),
+                taxCodeId: nonTaxable ? null : priceTaxCodeId(line.id!),
                 sortOrder: line.sortOrder ?? 1,
                 createdBy: userId,
                 companyId
@@ -11760,26 +12066,29 @@ async function releaseDraftReceiptEntities(
 export const createDocumentPermission = {
   by: "type",
   rules: {
-    nonConformanceTasks: { update: "quality" },
-    purchaseOrderFromJob: { create: ["purchasing", "production"] },
-    receiptDefault: { create: "inventory" },
-    receiptFromPurchaseOrder: { create: "inventory" },
-    receiptFromInboundTransfer: { create: "inventory" },
-    receiptFromSalesReturnOrder: { create: "inventory" },
-    receiptFromWarehouseTransfer: { create: "inventory" },
-    receiptLineSplit: { create: "inventory" },
-    shipmentDefault: { create: "inventory" },
-    shipmentFromPurchaseOrder: { create: "inventory" },
-    shipmentFromWarehouseTransfer: { create: "inventory" },
-    shipmentFromPurchaseReturnOrder: { create: "inventory" },
-    shipmentFromSalesOrder: { create: "inventory" },
-    shipmentFromSalesReturnOrder: { create: "inventory" },
-    shipmentFromSalesOrderLine: { create: "inventory" },
-    shipmentLineSplit: { create: "inventory" },
-    shipmentFromRentalAgreement: { create: "inventory" },
-    receiptFromRentalAgreement: { create: "inventory" },
-    shipmentFromCustomerContract: { create: "inventory" },
-    journalEntry: { create: "accounting" }
+    nonConformanceTasks: { "quality.issues": "Edit" },
+    purchaseOrderFromJob: {
+      "purchasing.purchaseOrders": "Create",
+      "production.jobs": "Create"
+    },
+    receiptDefault: { "inventory.receipts": "Create" },
+    receiptFromPurchaseOrder: { "inventory.receipts": "Create" },
+    receiptFromInboundTransfer: { "inventory.receipts": "Create" },
+    receiptFromSalesReturnOrder: { "inventory.receipts": "Create" },
+    receiptFromWarehouseTransfer: { "inventory.receipts": "Create" },
+    receiptLineSplit: { "inventory.receipts": "Create" },
+    shipmentDefault: { "inventory.shipments": "Create" },
+    shipmentFromPurchaseOrder: { "inventory.shipments": "Create" },
+    shipmentFromWarehouseTransfer: { "inventory.shipments": "Create" },
+    shipmentFromPurchaseReturnOrder: { "inventory.shipments": "Create" },
+    shipmentFromSalesOrder: { "inventory.shipments": "Create" },
+    shipmentFromSalesReturnOrder: { "inventory.shipments": "Create" },
+    shipmentFromSalesOrderLine: { "inventory.shipments": "Create" },
+    shipmentLineSplit: { "inventory.shipments": "Create" },
+    shipmentFromRentalAgreement: { "inventory.shipments": "Create" },
+    receiptFromRentalAgreement: { "inventory.receipts": "Create" },
+    shipmentFromCustomerContract: { "inventory.shipments": "Create" },
+    journalEntry: { "accounting.journalEntries": "Create" }
   }
 } satisfies PermissionRule<z.output<typeof createInput>>;
 
@@ -11871,6 +12180,9 @@ async function addJobShipmentLine(
       unitPrice: number | null;
       taxPercent: number;
       unitOfMeasureCode: string | null;
+      partNumberDisplay:
+        | Database["public"]["Enums"]["partNumberDisplay"]
+        | null;
     };
     orderQuantity: number;
     outstandingQuantity: number;
@@ -11921,6 +12233,7 @@ async function addJobShipmentLine(
     .values({
       shipmentId: args.shipmentId,
       lineId: salesOrderLine.id,
+      partNumberDisplay: salesOrderLine.partNumberDisplay,
       companyId,
       fulfillmentId: fulfillment?.id,
       itemId: salesOrderLine.itemId,
@@ -12460,31 +12773,55 @@ export async function createDocument(
           outsideOperations.map((d) => d.jobMakeMethod?.itemId).filter(Boolean)
         );
 
-        const [suppliers, supplierPayments, supplierShipping, items] =
-          await inOrder([
-            () =>
-              many(db, "supplier", {
-                id: Array.from(supplierIds),
-                companyId
-              }),
-            () =>
-              many(db, "supplierPayment", {
-                supplierId: Array.from(supplierIds),
-                companyId
-              }),
-            () =>
-              many(db, "supplierShipping", {
-                supplierId: Array.from(supplierIds),
-                companyId
-              }),
-            () =>
-              many(db, "item", {
-                id: Array.from(itemIds) as string[],
-                companyId
-              })
-          ]);
+        const [
+          suppliers,
+          supplierPayments,
+          supplierShipping,
+          items,
+          supplierTaxes
+        ] = await inOrder([
+          () =>
+            many(db, "supplier", {
+              id: Array.from(supplierIds),
+              companyId
+            }),
+          () =>
+            many(db, "supplierPayment", {
+              supplierId: Array.from(supplierIds),
+              companyId
+            }),
+          () =>
+            many(db, "supplierShipping", {
+              supplierId: Array.from(supplierIds),
+              companyId
+            }),
+          () =>
+            many(db, "item", {
+              id: Array.from(itemIds) as string[],
+              companyId
+            }),
+          () =>
+            many(db, "supplierTax", {
+              supplierId: Array.from(supplierIds),
+              companyId
+            })
+        ]);
 
         if (suppliers.error) throw new Error(suppliers.error.message);
+        if (supplierTaxes.error) throw new Error(supplierTaxes.error.message);
+        // Each line takes its supplier's tax, as a line added on the order
+        // does (`newPurchaseLineTax`).
+        const [supplierTaxCodes, today] = await Promise.all([
+          loadTaxCodes(
+            db,
+            companyId,
+            (supplierTaxes.data ?? []).map((row) => row.taxCodeId),
+            null
+          ),
+          getCompanyTimeZone(db, companyId).then((tz) =>
+            datetime.today(tz).toString()
+          )
+        ]);
         if (supplierPayments.error)
           throw new Error(supplierPayments.error.message);
         if (supplierShipping.error)
@@ -12640,6 +12977,35 @@ export async function createDocument(
 
             purchaseOrderIdsBySupplierId[supplier] = purchaseOrderId;
 
+            const [order, decimals] = await Promise.all([
+              trx
+                .selectFrom("purchaseOrder")
+                .select(["orderDate", "currencyCode"])
+                .where("id", "=", purchaseOrderId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst(),
+              // A currency not set up leaves the amount to the line form.
+              currencyDecimals(trx, companyId, supplierCurrencyCode).catch(
+                () => null
+              )
+            ]);
+            const taxDate = order?.orderDate ?? today;
+            const supplierTaxCodeId =
+              supplierTaxes.data?.find((row) => row.supplierId === supplier)
+                ?.taxCodeId ?? null;
+            const supplierDecision = decideLineTax({
+              source: "purchase",
+              taxExempt: false,
+              taxExemptionReason: null,
+              itemTaxable: true,
+              locationTaxCode: null,
+              partyTaxCode: supplierTaxCodeId
+                ? (supplierTaxCodes.get(supplierTaxCodeId) ?? null)
+                : null,
+              fallbackTaxPercent: 0,
+              date: taxDate
+            });
+
             const purchaseOrderLineInserts: Database["public"]["Tables"]["purchaseOrderLine"]["Insert"][] =
               [];
 
@@ -12660,8 +13026,17 @@ export async function createDocument(
                     ? (operation.operationMinimumCost ?? 0)
                     : totalCostWithUnitPrice;
 
+                const tax = newPurchaseLineTax(supplierDecision, {
+                  itemTaxable: item.taxable !== false,
+                  date: taxDate,
+                  base: totalCostWithMinimumCost,
+                  currencyDecimals: decimals
+                });
+                if (tax.error !== null) throw new InvalidInputError(tax.error);
+
                 // Create purchase order line
                 purchaseOrderLineInserts.push({
+                  ...tax.data,
                   purchaseOrderId,
                   purchaseOrderLineType: item.type,
                   itemId: item.id,
@@ -12930,6 +13305,29 @@ export async function createDocument(
         return acc;
       }, {});
 
+      // The tax the company cannot reclaim is cost; the recoverable share
+      // goes to Tax Paid when the invoice posts, so it never enters the
+      // received cost. A Reverse Charge code's non-recoverable share is
+      // self-assessed cost the supplier did not charge. With no code this
+      // is the receipt's historical cost. The tax point is the PO's order
+      // date, the date its lines' rates were taken on. A draft never refuses:
+      // a code with no rate in force then splits nothing (all of the
+      // supplier's tax is cost), and posting the receipt refuses it.
+      const receiptTaxCodes = await loadTaxCodes(
+        db,
+        companyId,
+        purchaseOrderLines.data.map((line) => line.taxCodeId),
+        purchaseOrder.data.orderDate ??
+          datetime.today(await resolveCompanyTimeZone(db, companyId)).toString()
+      );
+      const receiptTax = (line: (typeof purchaseOrderLines.data)[number]) =>
+        receiptLineTax({
+          base:
+            (line.purchaseQuantity ?? 0) * (line.unitPrice ?? 0) +
+            (line.shippingCost ?? 0),
+          taxAmount: line.taxAmount ?? 0,
+          code: line.taxCodeId ? receiptTaxCodes.get(line.taxCodeId) : undefined
+        });
       const { startAtZero, batchNumbersFromPurchaseOrder } =
         await receiptSettings(db, companyId);
       const batchNumberBase =
@@ -12971,10 +13369,6 @@ export async function createDocument(
             ? d.storageUnitId
             : null;
 
-        const shippingAndTaxUnitCost =
-          ((d.taxAmount ?? 0) + (d.shippingCost ?? 0)) /
-          (d.purchaseQuantity * (d.conversionFactor ?? 1));
-
         acc.push({
           lineId: d.id,
           companyId: companyId,
@@ -12989,8 +13383,13 @@ export async function createDocument(
             serializedItems.has(d.itemId) && !isOutsideOperation,
           requiresBatchTracking:
             batchItems.has(d.itemId) && !isOutsideOperation,
-          unitPrice:
-            unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
+          unitPrice: receiptUnitCost({
+            unitPrice,
+            conversionFactor: d.conversionFactor ?? 1,
+            purchaseQuantity: d.purchaseQuantity,
+            ...receiptTax(d),
+            shippingCost: d.shippingCost ?? 0
+          }),
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
           locationId: lineLocationId,
           requiresInspection: inspectedItemIds.has(d.itemId),
@@ -13975,11 +14374,37 @@ export async function createDocument(
           .where("companyId", "=", companyId)
           .execute();
 
+        // A line with no From bin ships from a bin at the From location that
+        // holds the stock. A serial or batch line posts from its units' bins.
+        const untrackedItemIds = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Inventory")
+            .map((d) => d.id)
+        );
+        const chooseSourceStorageUnit = await shipmentSourceBinChooser(trx, {
+          companyId,
+          lines: shipmentLineItems
+            .filter((line) => untrackedItemIds.has(line.itemId))
+            .map((line) => ({
+              itemId: line.itemId,
+              locationId: line.locationId ?? null
+            })),
+          inspectionHolds: "all"
+        });
+
         await trx
           .insertInto("shipmentLine")
           .values(
             shipmentLineItems.map((lineItem) => ({
               ...lineItem,
+              storageUnitId: untrackedItemIds.has(lineItem.itemId)
+                ? chooseSourceStorageUnit({
+                    itemId: lineItem.itemId,
+                    locationId: lineItem.locationId ?? null,
+                    storageUnitId: lineItem.storageUnitId ?? null,
+                    quantity: lineItem.shippedQuantity ?? 0
+                  })
+                : lineItem.storageUnitId,
               shipmentId: id
             }))
           )
@@ -14225,11 +14650,53 @@ export async function createDocument(
           .where("companyId", "=", companyId)
           .execute();
 
+        // An untracked Return to Stock line ships from the bin that holds
+        // the returned stock, held units first, from common stock (the
+        // returned stock came in as common stock). A serviced unit ships at
+        // no value and moves no stock, so its line names no bin.
+        const binLineIds = new Set(
+          returnLines
+            .filter(
+              (d) =>
+                d.returnType === "Return to Stock" &&
+                !!d.itemId &&
+                items.data?.some(
+                  (item) =>
+                    item.id === d.itemId &&
+                    item.itemTrackingType === "Inventory"
+                )
+            )
+            .map((d) => d.id)
+        );
+        const chooseSourceStorageUnit = await returnShipmentSourceBinChooser(
+          trx,
+          {
+            companyId,
+            lines: shipmentLineItems
+              .filter((line) => binLineIds.has(line.lineId ?? ""))
+              .map((line) => ({
+                itemId: line.itemId,
+                locationId: line.locationId ?? null,
+                stripe: null
+              })),
+            inspectionHolds: "all"
+          }
+        );
+
         await trx
           .insertInto("shipmentLine")
           .values(
             shipmentLineItems.map((lineItem) => ({
               ...lineItem,
+              storageUnitId: binLineIds.has(lineItem.lineId ?? "")
+                ? chooseSourceStorageUnit({
+                    itemId: lineItem.itemId,
+                    locationId: lineItem.locationId ?? null,
+                    stripe: null,
+                    storageUnitId: lineItem.storageUnitId ?? null,
+                    quantity: lineItem.shippedQuantity ?? 0
+                  })
+                : lineItem.storageUnitId,
               shipmentId: id
             }))
           )
@@ -14397,6 +14864,61 @@ export async function createDocument(
         entitiesByReturnLine.set(row.purchaseReturnOrderLineId, list);
       }
 
+      // An untracked line ships from the bin that holds the returned stock,
+      // held units first, on the stripe its posting draws: the stripe its
+      // purchase order line received into (its project's stock when the
+      // project has project stock), else common stock.
+      const untrackedItemIds = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Inventory")
+          .map((d) => d.id)
+      );
+      const untrackedReturnLines = purchaseReturnOrderLines.data.filter((d) =>
+        untrackedItemIds.has(d.itemId)
+      );
+      const returnPoLineIds = [
+        ...new Set(
+          untrackedReturnLines
+            .map((d) => d.purchaseOrderLineId)
+            .filter((lineId): lineId is string => !!lineId)
+        )
+      ];
+      const returnPoLines =
+        returnPoLineIds.length > 0
+          ? await db
+              .selectFrom("purchaseOrderLine")
+              .select(["id", "projectId"])
+              .where("id", "in", returnPoLineIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          : [];
+      const returnProjectStock = await loadProjectStock(
+        db,
+        companyId,
+        returnPoLines.map((line) => line.projectId)
+      );
+      const projectByPoLine = new Map(
+        returnPoLines.map((line) => [line.id, line.projectId])
+      );
+      const poLineByReturnLine = new Map(
+        untrackedReturnLines.map((d) => [d.id, d.purchaseOrderLineId])
+      );
+      const returnLineStripe = (
+        lineId: string | null | undefined
+      ): StockStripe => {
+        const poLineId = lineId ? poLineByReturnLine.get(lineId) : null;
+        const projectId = poLineId
+          ? (projectByPoLine.get(poLineId) ?? null)
+          : null;
+        return projectId && returnProjectStock.has(projectId)
+          ? projectId
+          : null;
+      };
+      // Every untracked line takes a bin, a line an inspection reject wrote
+      // off included: the posting puts the write-off back in the line's bin
+      // before it ships from it.
+      const binLineIds = new Set(untrackedReturnLines.map((d) => d.id));
+
       const result = await db.transaction().execute(async (trx) => {
         const shipmentId = await getNextSequence(trx, "shipment", companyId);
 
@@ -14447,11 +14969,35 @@ export async function createDocument(
           .where("companyId", "=", companyId)
           .execute();
 
+        const chooseSourceStorageUnit = await returnShipmentSourceBinChooser(
+          trx,
+          {
+            companyId,
+            lines: shipmentLineItems
+              .filter((line) => binLineIds.has(line.lineId ?? ""))
+              .map((line) => ({
+                itemId: line.itemId,
+                locationId: line.locationId ?? null,
+                stripe: returnLineStripe(line.lineId)
+              })),
+            inspectionHolds: "openLots"
+          }
+        );
+
         const insertedLines = await trx
           .insertInto("shipmentLine")
           .values(
             shipmentLineItems.map((lineItem) => ({
               ...lineItem,
+              storageUnitId: binLineIds.has(lineItem.lineId ?? "")
+                ? chooseSourceStorageUnit({
+                    itemId: lineItem.itemId,
+                    locationId: lineItem.locationId ?? null,
+                    stripe: returnLineStripe(lineItem.lineId),
+                    storageUnitId: lineItem.storageUnitId ?? null,
+                    quantity: lineItem.shippedQuantity ?? 0
+                  })
+                : lineItem.storageUnitId,
               shipmentId: id
             }))
           )
@@ -14918,7 +15464,8 @@ export async function createDocument(
                   shippingCost: salesOrderLine.shippingCost,
                   unitPrice: salesOrderLine.unitPrice,
                   taxPercent: salesOrderLine.taxPercent,
-                  unitOfMeasureCode: salesOrderLine.unitOfMeasureCode
+                  unitOfMeasureCode: salesOrderLine.unitOfMeasureCode,
+                  partNumberDisplay: salesOrderLine.partNumberDisplay
                 },
                 orderQuantity: salesOrderLine.saleQuantity,
                 outstandingQuantity:
@@ -14942,6 +15489,7 @@ export async function createDocument(
               .values({
                 shipmentId: shipmentId,
                 lineId: salesOrderLine.id,
+                partNumberDisplay: salesOrderLine.partNumberDisplay,
                 companyId: companyId,
                 itemId: salesOrderLine.itemId,
                 orderQuantity: salesOrderLine.saleQuantity,
@@ -15156,7 +15704,8 @@ export async function createDocument(
                   shippingCost: salesOrderLine.data.shippingCost,
                   unitPrice: salesOrderLine.data.unitPrice,
                   taxPercent: salesOrderLine.data.taxPercent,
-                  unitOfMeasureCode: salesOrderLine.data.unitOfMeasureCode
+                  unitOfMeasureCode: salesOrderLine.data.unitOfMeasureCode,
+                  partNumberDisplay: salesOrderLine.data.partNumberDisplay
                 },
                 orderQuantity: job.productionQuantity ?? 0,
                 outstandingQuantity: Math.max(0, job.productionQuantity ?? 0)
@@ -15207,6 +15756,7 @@ export async function createDocument(
             .values({
               shipmentId: shipmentId,
               lineId: salesOrderLineId,
+              partNumberDisplay: salesOrderLine.data.partNumberDisplay,
               companyId: companyId,
               itemId: salesOrderLine.data.itemId!,
               orderQuantity: salesOrderLine.data.saleQuantity ?? 0,
@@ -16961,13 +17511,11 @@ export function cutLeasePaymentRows(args: {
     .filter(
       (row) => row.amount > 0 && (!args.after || row.periodStart > args.after)
     )
-    .map(
-      (row): CutLeasePaymentRow => ({
-        ...row,
-        leaseLineId: asset.id,
-        status: row.dueDate < lease.invoiceFromDate ? "Skipped" : "Pending"
-      })
-    );
+    .map((row): CutLeasePaymentRow => ({
+      ...row,
+      leaseLineId: asset.id,
+      status: row.dueDate < lease.invoiceFromDate ? "Skipped" : "Pending"
+    }));
 
   return { commencementPayment: round(cut.commencementPayment), rows };
 }
@@ -18141,6 +18689,32 @@ export async function assertPostable(
     );
   }
 }
+
+/**
+ * The first statement of a posting's transaction. The claim and
+ * `assertPostable` let a second post of a Pending document through; it waits
+ * here until the first commits, then sees it posted and refuses.
+ */
+export async function lockPostable(
+  trx: Transaction<KyselyDatabase>,
+  table: PostableTable,
+  id: string,
+  companyId: string
+): Promise<void> {
+  const document = await trx
+    .selectFrom(table)
+    .select(["status"])
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (document && !["Draft", "Pending"].includes(document.status ?? "")) {
+    throw new ServerFnError(
+      `Cannot post: it is already ${document.status}`,
+      409
+    );
+  }
+}
 // Manual accounting work (recognition runs here) runs only after the
 // company's accounting cutover: before it, journals are Provisional and count
 // nowhere (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 1). The ERP
@@ -18508,9 +19082,127 @@ export async function lockUntrackedDraws(
   );
 }
 
+/** Each order line table, its order, and the counters documents post into it. */
+const ORDER_LINE_COUNTERS = {
+  purchaseOrderLine: {
+    order: "purchaseOrder",
+    orderId: "purchaseOrderId",
+    counters: [
+      "quantityReceived",
+      "quantityInvoiced",
+      "quantityShipped",
+      "receivedComplete",
+      "invoicedComplete"
+    ]
+  },
+  salesOrderLine: {
+    order: "salesOrder",
+    orderId: "salesOrderId",
+    counters: [
+      "quantitySent",
+      "quantityInvoiced",
+      "sentComplete",
+      "invoicedComplete"
+    ]
+  },
+  salesReturnOrderLine: {
+    order: "salesReturnOrder",
+    orderId: "salesReturnOrderId",
+    counters: ["quantityReceived", "quantityShipped"]
+  },
+  purchaseReturnOrderLine: {
+    order: "purchaseReturnOrder",
+    orderId: "purchaseReturnOrderId",
+    counters: ["quantityShipped"]
+  },
+  warehouseTransferLine: {
+    order: "warehouseTransfer",
+    orderId: "transferId",
+    counters: ["shippedQuantity", "receivedQuantity"]
+  }
+} as const;
+
+export type OrderLineTable = keyof typeof ORDER_LINE_COUNTERS;
+
+/**
+ * Locks the orders of `lineIds`, then the lines, each FOR UPDATE in id order.
+ * Every writer of an order line's counters takes these locks first, in this
+ * order, so two documents on one line run one after the other and never
+ * deadlock. Returns the lines as they read under the lock.
+ */
+export async function lockOrderLines(
+  db: Kysely<DB>,
+  table: OrderLineTable,
+  companyId: string,
+  lineIds: readonly string[]
+): Promise<Map<string, Record<string, unknown>>> {
+  const ids = [...new Set(lineIds)];
+  const locked = new Map<string, Record<string, unknown>>();
+  if (ids.length === 0) return locked;
+  const { order, orderId } = ORDER_LINE_COUNTERS[table];
+  await sql`
+    SELECT 1 FROM ${sql.table(order)}
+    WHERE "companyId" = ${companyId}
+      AND id IN (
+        SELECT ${sql.ref(orderId)} FROM ${sql.table(table)}
+        WHERE "companyId" = ${companyId} AND id = ANY(${ids}::text[])
+      )
+    ORDER BY id
+    FOR UPDATE
+  `.execute(db);
+  const { rows } = await sql<Record<string, unknown>>`
+    SELECT * FROM ${sql.table(table)}
+    WHERE "companyId" = ${companyId} AND id = ANY(${ids}::text[])
+    ORDER BY id
+    FOR UPDATE
+  `.execute(db);
+  for (const row of rows) locked.set(row.id as string, row);
+  return locked;
+}
+
+/**
+ * {@link lockOrderLines}, then refuses when a counter of a line in `read`
+ * moved since it was read: the document planned its counters, and the
+ * journal lines that follow from them, from that read.
+ */
+export async function lockOrderLinesAsRead(
+  db: Kysely<DB>,
+  table: OrderLineTable,
+  companyId: string,
+  read: readonly { id: string }[],
+  refusal: string
+): Promise<void> {
+  const locked = await lockOrderLines(
+    db,
+    table,
+    companyId,
+    read.map((line) => line.id)
+  );
+  const counters: readonly string[] = ORDER_LINE_COUNTERS[table].counters;
+  const moved = read.some((line) => {
+    const now = locked.get(line.id);
+    return counters.some((counter) => {
+      const before = (line as Record<string, unknown>)[counter];
+      const after = now?.[counter];
+      return typeof before === "boolean" || typeof after === "boolean"
+        ? Boolean(before) !== Boolean(after)
+        : Number(before ?? 0) !== Number(after ?? 0);
+    });
+  });
+  if (moved) throw new InvalidInputError(refusal);
+}
+
 // Each item's untracked on-hand per bin and stripe at a location. `nettable`:
 // a guess may take from it (active, nettable, not lineside; no storage unit
 // always is).
+//
+// `inspectionHolds`: a unit's stock is net of what open inspection lots hold
+// there (`inspection_held_quantity`; "openLots" leaves out a Partial lot's
+// remainder, as a supplier return does), taken off the common stripe first,
+// and the unit is marked `inspectionHeld`. The hold guard refuses any draw
+// that takes a unit below what its lots hold, so a guess must not count that
+// stock. Every path that guesses a bin passes it; the job backflush, which
+// the SQL backflush mirrors, does not yet.
 export async function getUntrackedBinStock(
   trx: Kysely<DB>,
   args: {
@@ -18518,6 +19210,7 @@ export async function getUntrackedBinStock(
     itemIds: string[];
     locationId: string;
     stripes: readonly StockStripe[];
+    inspectionHolds?: "all" | "openLots";
   }
 ): Promise<Map<string, BinStock[]>> {
   const bins = new Map<string, BinStock[]>();
@@ -18566,11 +19259,217 @@ export async function getUntrackedBinStock(
         (row.effectiveNettable === true &&
           row.active === true &&
           !row.workCenterId),
+      held:
+        row.storageUnitId !== null &&
+        row.effectiveNettable === false &&
+        row.active === true &&
+        !row.workCenterId,
       quantity: Number(row.quantity ?? 0)
     });
     bins.set(row.itemId, list);
   }
+  if (args.inspectionHolds) {
+    await deductInspectionHolds(trx, {
+      companyId: args.companyId,
+      bins,
+      openLotsOnly: args.inspectionHolds === "openLots"
+    });
+  }
   return bins;
+}
+
+// Takes what open inspection lots hold in each unit off that unit's stock
+// (common stripe first), in one read over every (item, unit) with stock.
+async function deductInspectionHolds(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    bins: Map<string, BinStock[]>;
+    openLotsOnly: boolean;
+  }
+): Promise<void> {
+  const pairs = [...args.bins].flatMap(([itemId, list]) =>
+    pluckUnique(
+      list.filter((bin) => bin.storageUnitId !== null && bin.quantity > 0),
+      (bin) => bin.storageUnitId as string
+    ).map((storageUnitId) => ({ itemId, storageUnitId }))
+  );
+  if (pairs.length === 0) return;
+  const { rows } = await sql<{
+    itemId: string;
+    storageUnitId: string;
+    free: number;
+  }>`
+    SELECT p."itemId", p."storageUnitId",
+      public.inspection_untracked_on_hand(${args.companyId}, p."itemId", p."storageUnitId")
+        - public.inspection_held_quantity(${args.companyId}, p."itemId", p."storageUnitId", ${args.openLotsOnly}) AS "free"
+    FROM unnest(
+      ${pairs.map((p) => p.itemId)}::text[],
+      ${pairs.map((p) => p.storageUnitId)}::text[]
+    ) AS p("itemId", "storageUnitId")
+    WHERE public.inspection_held_quantity(${args.companyId}, p."itemId", p."storageUnitId", ${args.openLotsOnly}) > 0
+  `.execute(trx);
+  for (const row of rows) {
+    const unitBins = (args.bins.get(row.itemId) ?? [])
+      .filter((bin) => bin.storageUnitId === row.storageUnitId)
+      .sort(
+        (a, b) =>
+          Number((a.projectId ?? null) !== null) -
+          Number((b.projectId ?? null) !== null)
+      );
+    let excess = round(
+      unitBins.reduce((sum, bin) => sum + Math.max(0, bin.quantity), 0) -
+        Math.max(0, Number(row.free))
+    );
+    for (const bin of unitBins) {
+      bin.inspectionHeld = true;
+      if (excess <= 0) continue;
+      const take = Math.min(excess, Math.max(0, bin.quantity));
+      bin.quantity = round(bin.quantity - take);
+      excess = round(excess - take);
+    }
+  }
+}
+
+/**
+ * The item's pick method default as a guess may take it: nettable
+ * (`getNettableDefaultStorageUnitId`), active and not lineside, the units
+ * `getUntrackedBinStock` marks `nettable`. Else null, so the draw takes the
+ * bins that hold the stock.
+ */
+async function getGuessableDefaultStorageUnitId(
+  trx: Transaction<DB>,
+  args: { companyId: string; locationId: string; itemId: string }
+): Promise<string | null> {
+  const storageUnitId = await getNettableDefaultStorageUnitId(
+    trx,
+    args.itemId,
+    args.locationId,
+    args.companyId
+  );
+  if (!storageUnitId) return null;
+  const unit = await trx
+    .selectFrom("storageUnit")
+    .select(
+      sql<
+        string | null
+      >`get_effective_work_center_id(${sql.ref("storageUnit.id")})`.as(
+        "workCenterId"
+      )
+    )
+    .where("id", "=", storageUnitId)
+    .where("companyId", "=", args.companyId)
+    .where("active", "=", true)
+    .executeTakeFirst();
+  return unit && !unit.workCenterId ? storageUnitId : null;
+}
+
+/**
+ * Where an untracked draw of one item comes from: the bin the caller names,
+ * else the item's nettable default, then the other bins that hold the stock,
+ * fullest first, stripe by stripe (`planStripedUntrackedDraw`). Quarantine and
+ * lineside units are never guessed. Locks the draw before it reads the bins,
+ * so two draws never plan from the same on-hand. Every posting that takes
+ * untracked stock out with no bin chosen goes through this or
+ * `planHeldUntrackedDraw`; never post such a row at a NULL bin by default.
+ */
+export async function planUntrackedDraw(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    locationId: string;
+    itemId: string;
+    quantity: number;
+    storageUnitId: string | null;
+    stripes: readonly StockStripe[];
+  }
+): Promise<{ draws: StripedBinDraw[]; available: number }> {
+  await lockUntrackedDraws(trx, {
+    companyId: args.companyId,
+    locationId: args.locationId,
+    itemIds: [args.itemId]
+  });
+  const preferredStorageUnitId =
+    args.storageUnitId ??
+    (await getGuessableDefaultStorageUnitId(trx, {
+      companyId: args.companyId,
+      locationId: args.locationId,
+      itemId: args.itemId
+    }));
+  const bins =
+    (
+      await getUntrackedBinStock(trx, {
+        companyId: args.companyId,
+        itemIds: [args.itemId],
+        locationId: args.locationId,
+        stripes: args.stripes,
+        inspectionHolds: "all"
+      })
+    ).get(args.itemId) ?? [];
+  const draws = keepInspectionHeldStock(
+    planStripedUntrackedDraw({
+      bins,
+      stripes: args.stripes,
+      preferredStorageUnitId,
+      quantity: args.quantity
+    }),
+    bins
+  );
+  // What the plan may draw: nettable bins and no storage unit, and the
+  // preferred bin even when it is not nettable.
+  const available = round(
+    bins
+      .filter(
+        (bin) =>
+          bin.nettable ||
+          (bin.storageUnitId !== null &&
+            bin.storageUnitId === preferredStorageUnitId)
+      )
+      .reduce((sum, bin) => sum + Math.max(0, bin.quantity), 0)
+  );
+  return { draws, available };
+}
+
+/**
+ * Where a draw of nonconforming or returned untracked stock comes from (an
+ * NCR's Scrap or Return to Supplier): the bin the caller names, else held
+ * units (quarantine, MRB, rejected) first, then the other bins, fullest first
+ * (`planHeldStockDraw`). Locks the draw before it reads the bins.
+ */
+export async function planHeldUntrackedDraw(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    locationId: string;
+    itemId: string;
+    quantity: number;
+    storageUnitId: string | null;
+    stripe: string | null;
+  }
+): Promise<StripedBinDraw[]> {
+  await lockUntrackedDraws(trx, {
+    companyId: args.companyId,
+    locationId: args.locationId,
+    itemIds: [args.itemId]
+  });
+  const bins =
+    (
+      await getUntrackedBinStock(trx, {
+        companyId: args.companyId,
+        itemIds: [args.itemId],
+        locationId: args.locationId,
+        stripes: [args.stripe],
+        inspectionHolds: "all"
+      })
+    ).get(args.itemId) ?? [];
+  return keepInspectionHeldStock(
+    planHeldStockDraw({
+      bins,
+      preferredStorageUnitId: args.storageUnitId,
+      quantity: args.quantity
+    }).map((draw) => ({ ...draw, projectId: args.stripe })),
+    bins
+  );
 }
 
 /**
@@ -18579,12 +19478,14 @@ export async function getUntrackedBinStock(
  * so a user's choice never changes silently. A line with no bin takes one that
  * holds the stock (`chooseSourceBin`). Lines are planned in order, so two lines
  * of one item do not count the same stock. Shipments draw common stock only.
+ * With `inspectionHolds`, stock open inspection lots hold is not counted.
  */
 export async function shipmentSourceBinChooser(
   db: Kysely<DB>,
   args: {
     companyId: string;
     lines: { itemId: string; locationId: string | null }[];
+    inspectionHolds?: "all" | "openLots";
   }
 ): Promise<
   (line: {
@@ -18594,54 +19495,109 @@ export async function shipmentSourceBinChooser(
     quantity: number;
   }) => string | null
 > {
-  const locationIds = [
-    ...new Set(
-      args.lines
-        .map((line) => line.locationId)
-        .filter((id): id is string => !!id)
-    )
-  ];
+  const choose = await lineBinChooser(db, {
+    companyId: args.companyId,
+    lines: args.lines.map((line) => ({ ...line, stripe: null })),
+    inspectionHolds: args.inspectionHolds,
+    pick: chooseSourceBin
+  });
+  return (line) => choose({ ...line, stripe: null });
+}
+
+/**
+ * The bin each untracked line of a return shipment (Sales or Purchase Return
+ * Order) ships from. Returned and rejected stock is set aside in a held unit
+ * (quarantine, MRB, rejected), so a line with no bin takes a held unit that
+ * holds the stock first, then another bin, fullest first
+ * (`chooseHeldStockBin`). A bin the line names is kept. Each line draws one
+ * stripe: the stripe its posting draws. Stock open inspection lots hold
+ * (`inspectionHolds`: "openLots" for a supplier return, which may ship a
+ * Partial lot's remainder) is not counted. Lines are planned in order, so two
+ * lines of one item do not count the same stock.
+ */
+export async function returnShipmentSourceBinChooser(
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    lines: { itemId: string; locationId: string | null; stripe: StockStripe }[];
+    inspectionHolds: "all" | "openLots";
+  }
+) {
+  return lineBinChooser(db, { ...args, pick: chooseHeldStockBin });
+}
+
+// The shared body of the line bin choosers: one stock read per location, then
+// each line in order, less what earlier lines of the item already took.
+async function lineBinChooser(
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    lines: { itemId: string; locationId: string | null; stripe: StockStripe }[];
+    inspectionHolds?: "all" | "openLots";
+    pick: (args: {
+      bins: readonly BinStock[];
+      preferredStorageUnitId: string | null;
+      quantity: number;
+    }) => string | null;
+  }
+): Promise<
+  (line: {
+    itemId: string;
+    locationId: string | null;
+    stripe: StockStripe;
+    storageUnitId: string | null;
+    quantity: number;
+  }) => string | null
+> {
+  const locationIds = pluckUnique(
+    args.lines.filter((line) => !!line.locationId),
+    (line) => line.locationId as string
+  );
+  // One read per location: getUntrackedBinStock reads one location, and a
+  // shipment has one or two.
   const stockByLocation = new Map<string, Map<string, BinStock[]>>();
   for (const locationId of locationIds) {
+    const lines = args.lines.filter((line) => line.locationId === locationId);
     stockByLocation.set(
       locationId,
       await getUntrackedBinStock(db, {
         companyId: args.companyId,
-        itemIds: [
-          ...new Set(
-            args.lines
-              .filter((line) => line.locationId === locationId)
-              .map((line) => line.itemId)
-          )
-        ],
+        itemIds: pluckUnique(lines, (line) => line.itemId),
         locationId,
-        stripes: [null]
+        stripes: [...new Set(lines.map((line) => line.stripe ?? null))],
+        inspectionHolds: args.inspectionHolds
       })
     );
   }
   const assigned = new Map<string, number>();
-  const key = (itemId: string, locationId: string, bin: string | null) =>
-    `${locationId}\u0000${itemId}\u0000${bin ?? ""}`;
+  const key = (
+    itemId: string,
+    locationId: string,
+    stripe: StockStripe,
+    bin: string | null
+  ) => `${locationId}\u0000${itemId}\u0000${stripe ?? ""}\u0000${bin ?? ""}`;
 
   return (line) => {
     if (!line.locationId) return line.storageUnitId;
     const locationId = line.locationId;
+    const stripe = line.stripe ?? null;
     const chosen =
       line.storageUnitId ??
-      chooseSourceBin({
-        bins: (stockByLocation.get(locationId)?.get(line.itemId) ?? []).map(
-          (bin) => ({
+      args.pick({
+        bins: (stockByLocation.get(locationId)?.get(line.itemId) ?? [])
+          .filter((bin) => (bin.projectId ?? null) === stripe)
+          .map((bin) => ({
             ...bin,
             quantity:
               bin.quantity -
-              (assigned.get(key(line.itemId, locationId, bin.storageUnitId)) ??
-                0)
-          })
-        ),
+              (assigned.get(
+                key(line.itemId, locationId, stripe, bin.storageUnitId)
+              ) ?? 0)
+          })),
         preferredStorageUnitId: null,
         quantity: line.quantity
       });
-    const k = key(line.itemId, locationId, chosen);
+    const k = key(line.itemId, locationId, stripe, chosen);
     assigned.set(k, (assigned.get(k) ?? 0) + line.quantity);
     return chosen;
   };
@@ -19007,24 +19963,26 @@ export function attributesContain(values: Record<string, string>) {
   return sql<boolean>`"attributes" @> ${JSON.stringify(values)}::jsonb`;
 }
 /**
- * Who stands behind a posting's client: the service role (the system), an API
- * key (checked against its scopes) or the signed-in user (checked against the
- * user's claims). Never derive it from input.
+ * The credential a posting's client carries: the service role (the system),
+ * an API key (checked against its permissions) or the signed-in user's token
+ * (checked against the user's claims, read through that client). Not an
+ * `Actor`: the key is not yet authenticated and no claims are read. Never
+ * derive it from input.
  */
-export type PostingCaller =
+export type PostingCredential =
   | { type: "system" }
   | { type: "apiKey"; apiKey: string }
-  | { type: "user" };
+  | { type: "user"; client: SupabaseClient<Database> };
 
 /**
  * The client's key decides the caller. A user's token must be `userId`'s,
  * since the permissions are read for that user. Never replace this with a flag
  * the caller passes: /api/v1 fills unknown parameters from the body.
  */
-export function postingCaller(
+export function postingCredential(
   client: SupabaseClient<Database>,
   userId: string
-): PostingCaller {
+): PostingCredential {
   const { supabaseKey, headers = {} } = client as unknown as {
     supabaseKey?: string;
     headers?: Record<string, string>;
@@ -19037,7 +19995,7 @@ export function postingCaller(
   if (bearerSubject(headers.Authorization) !== userId) {
     throw new ForbiddenError("userId does not match the signed-in user");
   }
-  return { type: "user" };
+  return { type: "user", client };
 }
 
 /** The `sub` of a `Bearer` JWT, unverified. The token comes from this
@@ -19055,67 +20013,604 @@ function bearerSubject(authorization: string | undefined): string | undefined {
   }
 }
 
-/** Refuses a caller who does not hold `required` in the company. */
+/** Refuses a caller who does not pass `required` in the company (`admits`). */
 export async function authorizePostingCaller(
   {
     db,
     companyId,
     userId
   }: Pick<PostingHandles, "db" | "companyId" | "userId">,
-  caller: PostingCaller,
-  required: Permissions
+  caller: PostingCredential,
+  resolved: Requirement | RowsToRead
 ): Promise<void> {
   if (caller.type === "system") return;
-  if (required === "system") {
+  if (resolved === "system") {
     throw new ForbiddenError("Only server-side callers may run this");
   }
+  // A row rule reads its rows the way the service function gate does.
+  const required =
+    typeof resolved === "object" && "ids" in resolved
+      ? await readRowRequirement(db, companyId, resolved)
+      : resolved;
   if (caller.type === "apiKey") {
-    return authorizeApiKey(db, companyId, caller.apiKey, required);
+    const { key, refusal } = await authenticateApiKey(caller.apiKey);
+    if (refusal?.status === 429) {
+      throw new ServerFnError(refusal.message, 429, refusal.headers);
+    }
+    if (!key || key.companyId !== companyId) {
+      throw new ForbiddenError(refusal?.message ?? "Invalid API key");
+    }
+    if (
+      !admits(
+        { type: "apiKey", permissions: key.permissions },
+        companyId,
+        required
+      )
+    ) {
+      throw new ForbiddenError("API key lacks required permissions");
+    }
+    return;
   }
-  const { rows } = await sql<{
-    claims: Record<string, unknown> | null;
-  }>`SELECT get_claims(${userId}, ${companyId}) AS claims`.execute(db);
-  const claims = rows[0]?.claims ?? {};
-  // A portal account holds a few view permissions, so the list alone would admit it.
-  if (claims.role === "customer" || claims.role === "supplier") {
-    throw new ForbiddenError();
-  }
-  if (!hasPermissions(permissionsFromClaims(claims), companyId, required)) {
+  const { role, permissions } = await readClaimsFresh(
+    caller.client,
+    userId,
+    companyId
+  );
+  if (!admits(userActor({ role, permissions }), companyId, required)) {
     throw new ForbiddenError();
   }
 }
 
-/** A key of this company, unexpired, whose scopes (`<module>_<action>` →
- *  company ids, shaped like claims) cover `required`. Rate limiting stays with
- *  the route that authenticated the key. */
-async function authorizeApiKey(
-  db: Kysely<KyselyDatabase>,
-  companyId: string,
-  apiKey: string,
-  required: RequiredPermissions
-): Promise<void> {
-  const key = await db
-    .selectFrom("apiKey")
-    .select("scopes")
-    .where(
-      "keyHash",
-      "=",
-      sql<string>`encode(sha256(convert_to(${apiKey}, 'UTF8')), 'hex')`
-    )
-    .where("companyId", "=", companyId)
-    .where((eb) =>
-      eb.or([
-        eb("expiresAt", "is", null),
-        eb("expiresAt", ">", sql<string>`now()`)
-      ])
-    )
-    .executeTakeFirst();
-  if (!key) throw new ForbiddenError("Invalid API key");
-  if (Object.keys(required).length === 0) return;
-  const scopes = permissionsFromClaims(
-    (key.scopes ?? {}) as Record<string, unknown>
-  );
-  if (!hasPermissions(scopes, companyId, required)) {
-    throw new ForbiddenError("API key lacks required permissions");
+// ---------------------------------------------------------------------------
+// Tax codes and the tax ledger, shared by every posting path
+// ---------------------------------------------------------------------------
+
+/**
+ * The tax of new sales lines, by item, read inside `db` (a transaction sees
+ * its own inserts): one decision for the customer and ship-to on `date`
+ * (`decideLineTax`, the customer's bare percent included), zeroed for a
+ * non-taxable item (`itemTaxDecision`). A code with no rate in force on
+ * `date` is refused.
+ */
+export async function customerLineTaxes(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    customerId: string;
+    customerLocationId: string | null;
+    date: string;
+    itemIds: ReadonlyArray<string | null | undefined>;
   }
+): Promise<(itemId: string | null | undefined) => LineTax> {
+  const { companyId } = args;
+  const itemIds = [...new Set(args.itemIds.filter((id): id is string => !!id))];
+  const [customer, customerTax, location, items] = await Promise.all([
+    db
+      .selectFrom("customer")
+      .select("taxPercent")
+      .where("companyId", "=", companyId)
+      .where("id", "=", args.customerId)
+      .executeTakeFirst(),
+    db
+      .selectFrom("customerTax")
+      .select(["taxExempt", "taxExemptionReason", "taxCodeId"])
+      .where("companyId", "=", companyId)
+      .where("customerId", "=", args.customerId)
+      .executeTakeFirst(),
+    args.customerLocationId
+      ? db
+          .selectFrom("customerLocation")
+          .select("taxCodeId")
+          .where("companyId", "=", companyId)
+          .where("id", "=", args.customerLocationId)
+          .executeTakeFirst()
+      : undefined,
+    itemIds.length > 0
+      ? db
+          .selectFrom("item")
+          .select(["id", "taxable"])
+          .where("companyId", "=", companyId)
+          .where("id", "in", itemIds)
+          .execute()
+      : []
+  ]);
+  const locationCodeId = location?.taxCodeId ?? null;
+  const partyCodeId = customerTax?.taxCodeId ?? null;
+  const codes = await loadTaxCodes(
+    db,
+    companyId,
+    [locationCodeId, partyCodeId],
+    null
+  );
+  const decision = decideLineTax({
+    source: "sales",
+    taxExempt: customerTax?.taxExempt ?? false,
+    taxExemptionReason: customerTax?.taxExemptionReason ?? null,
+    itemTaxable: true,
+    locationTaxCode: locationCodeId
+      ? (codes.get(locationCodeId) ?? null)
+      : null,
+    partyTaxCode: partyCodeId ? (codes.get(partyCodeId) ?? null) : null,
+    fallbackTaxPercent: Number(customer?.taxPercent ?? 0),
+    date: args.date
+  });
+  if (hasNoRateInForce(decision)) {
+    throw new InvalidInputError(noRateInForceMessage(args.date));
+  }
+  const taxable = new Map(items.map((item) => [item.id, item.taxable]));
+  return (itemId) => {
+    const tax = itemTaxDecision(
+      decision,
+      !itemId || taxable.get(itemId) !== false
+    );
+    return { taxCodeId: tax.taxCodeId, taxPercent: tax.taxPercent };
+  };
+}
+
+/**
+ * The tax codes `ids` name, each with only the components in force on
+ * `date` (YYYY-MM-DD), in two queries. A null `date` keeps every component,
+ * for a caller that reads documents of many dates (`taxCodesOn`). Shared by
+ * every posting path that splits a line's tax into components. A code of
+ * another company, or one that no longer exists, is simply absent from the
+ * map.
+ */
+export async function loadTaxCodes(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  companyId: string,
+  ids: ReadonlyArray<string | null | undefined>,
+  date: string | null
+): Promise<Map<string, TaxCodeInput>> {
+  const taxCodeIds = [...new Set(ids.filter((id): id is string => !!id))];
+  if (taxCodeIds.length === 0) return new Map();
+
+  const [codes, components] = await Promise.all([
+    db
+      .selectFrom("taxCode")
+      .select(["id", "calculationType", "taxesShipping"])
+      .where("companyId", "=", companyId)
+      .where("id", "in", taxCodeIds)
+      .execute(),
+    db
+      .selectFrom("taxCodeComponent")
+      .select([
+        "id",
+        "taxCodeId",
+        "name",
+        "taxAuthorityId",
+        "taxPercent",
+        "recoverablePercent",
+        "sequence",
+        "isCompound",
+        "taxReceivedAccountId",
+        "taxPaidAccountId",
+        "effectiveDate",
+        "expirationDate"
+      ])
+      .where("companyId", "=", companyId)
+      .where("taxCodeId", "in", taxCodeIds)
+      .execute()
+  ]);
+
+  return new Map(
+    codes.map((code) => {
+      const all = components
+        .filter((c) => c.taxCodeId === code.id)
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          taxAuthorityId: c.taxAuthorityId,
+          taxPercent: Number(c.taxPercent),
+          recoverablePercent: Number(c.recoverablePercent),
+          sequence: c.sequence,
+          isCompound: c.isCompound,
+          taxReceivedAccountId: c.taxReceivedAccountId,
+          taxPaidAccountId: c.taxPaidAccountId,
+          effectiveDate: c.effectiveDate,
+          expirationDate: c.expirationDate
+        }));
+      return [
+        code.id,
+        {
+          id: code.id,
+          calculationType: code.calculationType,
+          taxesShipping: code.taxesShipping,
+          components:
+            date === null ? all : effectiveComponents({ components: all }, date)
+        }
+      ];
+    })
+  );
+}
+
+/** Every code of `codes` (loaded with a null date) on `date`. */
+export function taxCodesOn(
+  codes: ReadonlyMap<string, TaxCodeInput>,
+  date: string
+): Map<string, TaxCodeInput> {
+  return new Map(
+    [...codes].map(([id, code]) => [
+      id,
+      { ...code, components: effectiveComponents(code, date) }
+    ])
+  );
+}
+
+/**
+ * `taxCodesOn` for one document of a batch (the cutover backfill, a memo
+ * rebuild): refuses, as live posting does, a code the document names with no
+ * component in force on its tax point, instead of posting its tax unsplit.
+ * `document` names it: "Purchase invoice PI000012".
+ */
+export function taxCodesInForceOn(
+  codes: ReadonlyMap<string, TaxCodeInput>,
+  args: {
+    taxCodeIds: ReadonlyArray<string | null | undefined>;
+    taxPointDate: string;
+    document: string;
+  }
+): Map<string, TaxCodeInput> {
+  if (
+    taxCodesWithoutComponents(codes, args.taxCodeIds, args.taxPointDate)
+      .length > 0
+  ) {
+    throw new InvalidInputError(
+      `${args.document} has a tax code with no component in force on ${args.taxPointDate}, its tax date. Add a component that covers that date, or change the tax code.`
+    );
+  }
+  return taxCodesOn(codes, args.taxPointDate);
+}
+
+/**
+ * The codes a document's lines name, each with the components in force on
+ * the document's tax point: the date its lines' rates were taken on (one per
+ * document). Refuses a code with no component in force then, so a coded
+ * line never posts its tax unsplit, with no authority, or into cost.
+ */
+export async function loadTaxCodesInForce(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    taxCodeIds: ReadonlyArray<string | null | undefined>;
+    taxPointDate: string;
+    /** Names the document in the refusal: "sales invoice", "memo". */
+    document: string;
+  }
+): Promise<Map<string, TaxCodeInput>> {
+  const codes = taxCodesOn(
+    await loadTaxCodes(db, args.companyId, args.taxCodeIds, null),
+    args.taxPointDate
+  );
+  const missing = taxCodesWithoutComponents(
+    codes,
+    args.taxCodeIds,
+    args.taxPointDate
+  );
+  if (missing.length > 0) {
+    const named = await db
+      .selectFrom("taxCode")
+      .select("name")
+      .where("companyId", "=", args.companyId)
+      .where("id", "in", missing)
+      .execute();
+    const names = named.length
+      ? named.map((code) => code.name).join(", ")
+      : missing.join(", ");
+    throw new InvalidInputError(
+      `Tax code ${names} has no component in force on ${args.taxPointDate}, the ${args.document}'s tax date. Add a component that covers that date, or change the line's tax code.`
+    );
+  }
+  return codes;
+}
+
+/** A rate as the user reads it: 0.175 -> "17.5%". */
+function percentLabel(rate: number | string | null): string {
+  return `${round(Number(rate ?? 0) * 100, 4)}%`;
+}
+
+/**
+ * Refuses a document whose coded line's stored rate is not its code's
+ * charged rate on the tax point (`lineRateMismatches`): an order line rated
+ * on the order date and invoiced later, or a draft whose date changed after
+ * its lines were rated. `taxCodes` holds the lines' codes
+ * (`loadTaxCodesInForce`) and `lines` every line of the document, so the
+ * refusal can name the line.
+ */
+export async function refuseLineRateMismatches<
+  T extends PositionedLine & {
+    taxCodeId: string | null;
+    taxPercent: number | string | null;
+  }
+>(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    lines: ReadonlyArray<T>;
+    taxCodes: ReadonlyMap<string, TaxCodeInput>;
+    taxPointDate: string;
+    /** Names the document in the refusal: "sales invoice". */
+    document: string;
+  }
+): Promise<void> {
+  const mismatch = lineRateMismatches(
+    args.lines,
+    args.taxCodes,
+    args.taxPointDate
+  )[0];
+  if (!mismatch) return;
+  const named = await db
+    .selectFrom("taxCode")
+    .select("name")
+    .where("companyId", "=", args.companyId)
+    .where("id", "=", mismatch.line.taxCodeId!)
+    .executeTakeFirst();
+  throw new InvalidInputError(
+    `${documentLineLabel(mismatch.line, args.lines)} charges ${percentLabel(mismatch.line.taxPercent)}, but tax code ${named?.name ?? mismatch.line.taxCodeId} is ${percentLabel(mismatch.chargedPercent)} on ${args.taxPointDate}, the ${args.document}'s tax date. Save the line again to take the code's rate on that date. Recalculate taxes replaces every line's code with the customer's default.`
+  );
+}
+
+type TaxedPurchaseLine = {
+  id: string;
+  quantity: number;
+  unitPrice: number | null;
+  shippingCost: number | null;
+  taxAmount: number | null;
+  taxCodeId: string | null;
+};
+
+/** What names a document line to the user: where the document lists it. */
+type PositionedLine = {
+  id: string;
+  /** DOUBLE PRECISION: node-postgres hands it over as a string. */
+  sortOrder: number | string;
+  /** A timestamp: a string through PostgREST, a `Date` through Kysely. */
+  createdAt: string | Date;
+  description?: string | null;
+};
+
+/** The moment a row was created, for ordering only (an absolute instant). */
+function createdInstant(value: string | Date): number {
+  return value instanceof Date ? value.getTime() : Date.parse(value);
+}
+
+/**
+ * "Line 2 (Freight services)": the line's 1-based position among the
+ * document's lines in the order the document lists them (sortOrder, then
+ * createdAt), and its description when it has one. `lines` must be every
+ * line of the document.
+ */
+function documentLineLabel(
+  line: PositionedLine,
+  lines: ReadonlyArray<PositionedLine>
+): string {
+  const ordered = [...lines].sort(
+    (a, b) =>
+      Number(a.sortOrder) - Number(b.sortOrder) ||
+      createdInstant(a.createdAt) - createdInstant(b.createdAt) ||
+      a.id.localeCompare(b.id)
+  );
+  const position = ordered.findIndex((other) => other.id === line.id) + 1;
+  const description = line.description?.trim();
+  return description ? `Line ${position} (${description})` : `Line ${position}`;
+}
+
+/**
+ * Each purchase line with its tax split by its code's components (base
+ * amounts): the supplier's tax for a Normal code, self-assessed tax for a
+ * Reverse Charge code. A line with no code is returned as it is. Shared by
+ * the posting and the cutover backfill so both split the same way.
+ *
+ * Refuses a Reverse Charge line that carries a tax amount: the supplier
+ * charges no tax on a reverse charge, so that amount would be paid to the
+ * supplier AND self-assessed — the same tax twice. `lines` is every line of
+ * one invoice, so the refusal can name the line as the invoice lists it.
+ */
+export function withPurchaseTax<T extends TaxedPurchaseLine & PositionedLine>(
+  lines: ReadonlyArray<T>,
+  taxCodes: ReadonlyMap<string, TaxCodeInput>
+): Array<T & Pick<PurchasePostingLine, "taxParts" | "selfAssessedParts">> {
+  return lines.map((line) => {
+    const code = line.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined;
+    if (!code || code.components.length === 0) return line;
+    if (
+      code.calculationType === "Reverse Charge" &&
+      !equals(line.taxAmount ?? 0, 0)
+    ) {
+      throw new InvalidInputError(
+        `${documentLineLabel(line, lines)} has a Reverse Charge tax code and a tax amount of ${line.taxAmount}. A supplier charges no tax on a reverse charge, and Carbon self-assesses it when it posts. Clear the line's tax amount.`
+      );
+    }
+    return {
+      ...line,
+      ...purchaseLineTaxParts({
+        base: line.quantity * (line.unitPrice ?? 0) + (line.shippingCost ?? 0),
+        taxAmount: line.taxAmount ?? 0,
+        code
+      })
+    };
+  });
+}
+
+/** The tax-ledger inputs of a posted purchase invoice, from its amounts. */
+export function purchaseTaxLedgerLines(
+  lines: ReadonlyArray<
+    TaxedPurchaseLine & { invoiceLineType: string; taxPercent: number | null }
+  >,
+  amountsByLineId: ReadonlyMap<string, PurchasePostingAmounts>
+): TaxLedgerLine[] {
+  return lines
+    .filter((line) => line.invoiceLineType !== "Comment")
+    .map((line) => {
+      const amounts = amountsByLineId.get(line.id);
+      const legs = amounts?.taxLegs ?? [];
+      const selfAssessed = legs.some((leg) => leg.selfAssessed);
+      return {
+        documentLineId: line.id,
+        taxCodeId: line.taxCodeId,
+        taxableBase: (amounts?.nominalBaseCost ?? 0) + (line.shippingCost ?? 0),
+        components: legs.map((leg) => leg.part),
+        taxPercent: line.taxPercent ?? 0,
+        taxAmount: selfAssessed
+          ? (amounts?.selfAssessedTaxBase ?? 0)
+          : (line.taxAmount ?? 0),
+        exempt: null,
+        selfAssessed
+      };
+    });
+}
+
+/**
+ * The class of each account a purchase posting's tax legs can hit: the Tax
+ * Paid and reverse charge defaults and every component's Tax Paid account
+ * (`taxAccountClasses` on `buildPurchaseInvoicePostingLines`). One query.
+ *
+ * Refuses an account that is not in the company's group: the posting would
+ * otherwise default its class and post to another company's account.
+ */
+export async function loadTaxAccountClasses(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    defaults: {
+      taxPaidAccount: string | null;
+      reverseChargeSalesTaxPayableAccount: string | null;
+    };
+    taxCodes: ReadonlyMap<string, TaxCodeInput>;
+  }
+): Promise<Map<string, string>> {
+  const ids = [
+    args.defaults.taxPaidAccount,
+    args.defaults.reverseChargeSalesTaxPayableAccount,
+    ...[...args.taxCodes.values()].flatMap((code) =>
+      code.components.map((component) => component.taxPaidAccountId)
+    )
+  ].filter((id): id is string => !!id);
+  if (ids.length === 0) return new Map();
+  const requested = [...new Set(ids)];
+  const rows = await db
+    .selectFrom("account")
+    .innerJoin("company", "company.companyGroupId", "account.companyGroupId")
+    .select(["account.id", "account.class"])
+    .where("company.id", "=", args.companyId)
+    .where("account.id", "in", requested)
+    .execute();
+  const found = new Set(rows.map((row) => row.id));
+  const foreign = requested.find((id) => !found.has(id));
+  if (foreign) {
+    throw new InvalidInputError(
+      `Tax account ${foreign} is not an account of this company. Choose one of this company's accounts on the tax code or in the account defaults.`
+    );
+  }
+  return new Map(
+    rows.flatMap((row) => (row.class ? [[row.id, row.class] as const] : []))
+  );
+}
+
+export type SalesTaxLedgerSourceLine = SalesPostingAmountsInput & {
+  id: string;
+  invoiceLineType: string;
+  itemId: string | null;
+  taxCodeId: string | null;
+};
+
+/**
+ * The tax-ledger inputs of a posted sales invoice's lines, from the same
+ * rounded amounts the journal posts (`roundSalesPostingAmounts`) and the same
+ * tax base (`salesTaxableBase`), so the subledger agrees with the journal.
+ * An exempt customer or a non-taxable item writes an exempt-base row.
+ */
+export function salesTaxLedgerLines(args: {
+  lines: ReadonlyArray<SalesTaxLedgerSourceLine>;
+  headerShipping: ReadonlyMap<string, number>;
+  taxCodes: ReadonlyMap<string, TaxCodeInput>;
+  nonTaxableItemIds: ReadonlySet<string>;
+  exemption: {
+    reason: Database["public"]["Enums"]["taxExemptionReason"] | null;
+    certificateNumber: string | null;
+  } | null;
+}): TaxLedgerLine[] {
+  return args.lines
+    .filter((line) => line.invoiceLineType !== "Comment")
+    .map((line) => {
+      const code = line.taxCodeId
+        ? args.taxCodes.get(line.taxCodeId)
+        : undefined;
+      // The line's own snapshot of its code's "taxes shipping".
+      const postingLine = {
+        ...line,
+        allocatedHeaderShipping: args.headerShipping.get(line.id) ?? 0,
+        taxesShipping: line.taxesShipping ?? false
+      };
+      const taxableBase = salesTaxableBase(postingLine);
+      const taxAmount = roundSalesPostingAmounts(postingLine).salesTaxBase;
+      const nonTaxable =
+        !!line.itemId && args.nonTaxableItemIds.has(line.itemId);
+      const exempt =
+        taxAmount === 0 && (args.exemption || nonTaxable)
+          ? {
+              reason: nonTaxable ? null : (args.exemption?.reason ?? null),
+              certificateNumber: nonTaxable
+                ? null
+                : (args.exemption?.certificateNumber ?? null)
+            }
+          : null;
+      return {
+        documentLineId: line.id,
+        taxCodeId: line.taxCodeId,
+        taxableBase,
+        components:
+          !exempt && code && code.components.length > 0
+            ? splitLineTax({
+                base: taxableBase,
+                lineTax: taxAmount,
+                components: code.components,
+                scale: SCALE
+              })
+            : [],
+        taxPercent: line.taxPercent ?? 0,
+        taxAmount,
+        exempt
+      };
+    });
+}
+
+/**
+ * A void's tax-ledger rows: every row the document wrote, negated, on the
+ * void's journal and date. The liability report then nets the document to
+ * zero. Writes nothing for a document that wrote no rows.
+ */
+export async function negateDocumentTaxLedger(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: TaxLedgerRow["documentType"];
+    documentId: string;
+    journalId: string;
+    postingDate: string;
+    createdBy: string;
+  }
+): Promise<void> {
+  // Every column, so one added later is carried into the negation too.
+  const rows = (
+    await trx
+      .selectFrom("taxLedger")
+      .selectAll()
+      .where("companyId", "=", args.companyId)
+      .where("documentType", "=", args.documentType)
+      .where("documentId", "=", args.documentId)
+      .execute()
+  ).map(
+    ({ id: _id, createdAt: _createdAt, updatedBy: _updatedBy, ...row }) => row
+  );
+  if (rows.length === 0) return;
+  await trx
+    .insertInto("taxLedger")
+    .values(
+      negateTaxLedgerRows(rows as TaxLedgerRow[], {
+        journalId: args.journalId,
+        postingDate: args.postingDate,
+        createdBy: args.createdBy
+      })
+    )
+    .execute();
 }

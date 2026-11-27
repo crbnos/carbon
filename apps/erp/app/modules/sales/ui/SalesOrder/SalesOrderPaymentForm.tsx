@@ -50,7 +50,8 @@ const SalesOrderPaymentForm = ({
     initialValues.invoiceCustomerId
   );
 
-  const isDisabled = !permissions.can("update", "sales") || isLocked;
+  const isDisabled =
+    !permissions.has({ "sales.salesOrders": "Edit" }) || isLocked;
 
   return (
     <Card>

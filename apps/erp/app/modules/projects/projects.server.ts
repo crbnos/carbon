@@ -31,6 +31,10 @@ import {
 import {
   deleteIndirectPool as eeDeleteIndirectPool,
   deleteIndirectPoolAccount as eeDeleteIndirectPoolAccount,
+  getIndirectPool as eeGetIndirectPool,
+  getIndirectPools as eeGetIndirectPools,
+  getIndirectRateRuns as eeGetIndirectRateRuns,
+  getIndirectRates as eeGetIndirectRates,
   runFinalTrueUp as eeRunFinalTrueUp,
   runIndirectRatePeriod as eeRunIndirectRatePeriod,
   setIndirectRate as eeSetIndirectRate,
@@ -70,7 +74,10 @@ import {
 } from "~/modules/accounting/accounting.service";
 import { upsertPurchaseOrderLine } from "~/modules/purchasing/purchasing.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import { refuseKeyWithout } from "~/modules/shared/shared.service";
+import {
+  refuseKeyWithout,
+  refuseUnlessOwned
+} from "~/modules/shared/shared.service";
 import {
   billableItemActionValidator,
   buildFromPartValidator,
@@ -90,6 +97,7 @@ import {
   manualPegSupplyTypes,
   NEW_PURCHASE_ORDER,
   newProjectJobValidator,
+  PROJECT_ISSUE_GATE,
   placeInServiceValidator,
   planningGroupExcessRules,
   planningGroupPriorityRules,
@@ -146,7 +154,7 @@ const logger = getLogger("erp", "projects");
  */
 export const getProject = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -171,7 +179,7 @@ export const getProject = defineServiceFn({
  */
 export const getProjectSwitcherOptions = defineServiceFn({
   input: z.object({}),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -215,7 +223,7 @@ export const getProjects = defineServiceFn({
       .optional(),
     ownerId: z.string().nullable().optional()
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -247,7 +255,7 @@ export const createProject = defineServiceFn({
     sourceProjectId: z.string().optional(),
     wbsTemplateKey: z.string().optional()
   }),
-  permission: { create: "projects" },
+  permission: { "projects.projects": "Create" },
   async run(ctx, input) {
     const companyId = ctx.company.id;
     const { id: _id, sourceProjectId, wbsTemplateKey, ...project } = input;
@@ -304,7 +312,7 @@ export const createProject = defineServiceFn({
  */
 export const updateProject = defineServiceFn({
   input: projectValidator.safeExtend({ id: z.string() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -432,7 +440,7 @@ export const updateProject = defineServiceFn({
  */
 export const updateProjectTemplate = defineServiceFn({
   input: z.object({ projectId: z.string(), isTemplate: z.boolean() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const result = await service.updateProjectTemplate(ctx.asCaller.supabase, {
       id: input.projectId,
@@ -470,7 +478,7 @@ export const updateProjectStatus = defineServiceFn({
     projectId: z.string(),
     status: z.enum(projectStatuses)
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { projectId, status }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -535,7 +543,7 @@ export const updateProjectStatus = defineServiceFn({
  */
 export const deleteProject = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { delete: "projects" },
+  permission: { "projects.projects": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -561,7 +569,7 @@ export const deleteProject = defineServiceFn({
  */
 export const stopProjectWork = defineServiceFn({
   input: stopWorkValidator,
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     try {
       const result = await stopWork(ctx.asCaller.supabase, {
@@ -599,7 +607,7 @@ export const stopProjectWork = defineServiceFn({
  */
 export const resumeProjectWork = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const result = await resumeWork(ctx.asCaller.supabase, {
       companyId: ctx.company.id,
@@ -629,7 +637,7 @@ export const resumeProjectWork = defineServiceFn({
  */
 export const updateProjectControlSettings = defineServiceFn({
   input: projectControlSettingsValidator,
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     try {
       const result = await updateControlSettings(ctx.asCaller.supabase, {
@@ -667,7 +675,7 @@ export const updateProjectControlSettings = defineServiceFn({
  */
 export const getProjectMembers = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -693,7 +701,7 @@ export const getProjectMembers = defineServiceFn({
  */
 export const addProjectMember = defineServiceFn({
   input: projectMemberValidator,
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -731,7 +739,7 @@ export const addProjectMember = defineServiceFn({
  */
 export const removeProjectMember = defineServiceFn({
   input: projectMemberValidator,
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const result = await service.removeProjectMember(ctx.asCaller.supabase, {
       projectId: input.projectId,
@@ -759,7 +767,7 @@ export const removeProjectMember = defineServiceFn({
  */
 export const getChargeNumbers = defineServiceFn({
   input: z.object({}),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -781,7 +789,7 @@ export const getChargeNumbers = defineServiceFn({
  */
 export const getProjectStates = defineServiceFn({
   input: z.object({}),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -801,7 +809,7 @@ export const getProjectStates = defineServiceFn({
  */
 export const upsertProjectState = defineServiceFn({
   input: projectStateValidator,
-  permission: { update: "settings" },
+  permission: { "settings.projects": "Edit" },
   async run(ctx, { id, ...state }) {
     const result = id
       ? await service.upsertProjectState(ctx.asCaller.supabase, {
@@ -837,7 +845,7 @@ export const upsertProjectState = defineServiceFn({
  */
 export const deleteProjectState = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { update: "settings" },
+  permission: { "settings.projects": "Edit" },
   async run(ctx, input) {
     const result = await service.deleteProjectState(ctx.asSystem.pg, {
       companyId: ctx.company.id,
@@ -860,7 +868,7 @@ export const deleteProjectState = defineServiceFn({
  */
 export const setProjectStateDefault = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { update: "settings" },
+  permission: { "settings.projects": "Edit" },
   async run(ctx, input) {
     const result = await service.setProjectStateDefault(ctx.asSystem.pg, {
       companyId: ctx.company.id,
@@ -884,7 +892,7 @@ export const setProjectStateDefault = defineServiceFn({
  */
 export const getProjectLabels = defineServiceFn({
   input: z.object({}),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -904,7 +912,7 @@ export const getProjectLabels = defineServiceFn({
  */
 export const upsertProjectLabel = defineServiceFn({
   input: projectLabelValidator,
-  permission: { update: "settings" },
+  permission: { "settings.projects": "Edit" },
   async run(ctx, { id, ...label }) {
     const result = id
       ? await service.upsertProjectLabel(ctx.asCaller.supabase, {
@@ -937,7 +945,7 @@ export const upsertProjectLabel = defineServiceFn({
  */
 export const deleteProjectLabel = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { update: "settings" },
+  permission: { "settings.projects": "Edit" },
   async run(ctx, input) {
     const result = await service.deleteProjectLabel(
       ctx.asCaller.supabase,
@@ -963,7 +971,7 @@ export const deleteProjectLabel = defineServiceFn({
  */
 export const getProjectMilestones = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -987,7 +995,7 @@ export const getProjectMilestones = defineServiceFn({
  */
 export const upsertProjectMilestone = defineServiceFn({
   input: projectMilestoneValidator.safeExtend({ projectId: z.string() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { id, projectId, ...milestone }) {
     const result = id
       ? await service.upsertProjectMilestone(ctx.asCaller.supabase, {
@@ -1025,7 +1033,7 @@ export const upsertProjectMilestone = defineServiceFn({
  */
 export const completeProjectMilestone = defineServiceFn({
   input: z.object({ id: z.string(), completed: z.boolean() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const companyId = ctx.company.id;
     const result = await service.completeProjectMilestone(
@@ -1076,7 +1084,7 @@ export const completeProjectMilestone = defineServiceFn({
  */
 export const deleteProjectMilestone = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const result = await service.deleteProjectMilestone(
       ctx.asCaller.supabase,
@@ -1117,7 +1125,7 @@ export const getProjectLedger = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1141,7 +1149,7 @@ export const getProjectLedger = defineServiceFn({
  */
 export const getProjectElementCosts = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1165,7 +1173,7 @@ export const getProjectElementCosts = defineServiceFn({
  */
 export const getProjectOpenTimesheetEntries = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1189,7 +1197,7 @@ export const getProjectOpenTimesheetEntries = defineServiceFn({
  */
 export const getProjectCostSummary = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1214,7 +1222,7 @@ export const getProjectCostSummary = defineServiceFn({
  */
 export const getProjectBurdenSummary = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1238,7 +1246,7 @@ export const getProjectBurdenSummary = defineServiceFn({
  */
 export const getRdComponents = defineServiceFn({
   input: z.object({}),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1262,7 +1270,7 @@ export const getRdComponents = defineServiceFn({
  */
 export const getRdSection174AReport = defineServiceFn({
   input: z.object({ taxYear: z.number().int().optional() }),
-  permission: { view: ["projects", "accounting"] },
+  permission: { "projects.reports": "View", "accounting.reporting": "View" },
   async run(ctx, { taxYear }) {
     const report = await service.getRdTaxReport(
       ctx.asSystem.pg,
@@ -1294,7 +1302,7 @@ export const getRdSection174AReport = defineServiceFn({
  */
 export const getRdForm6765GReport = defineServiceFn({
   input: z.object({ taxYear: z.number().int().optional() }),
-  permission: { view: ["projects", "accounting"] },
+  permission: { "projects.reports": "View", "accounting.reporting": "View" },
   async run(ctx, { taxYear }) {
     const report = await service.getRdTaxReport(
       ctx.asSystem.pg,
@@ -1329,13 +1337,13 @@ export const getRdForm6765GReport = defineServiceFn({
  * Get the accounting periods the labor distribution report offers.
  *
  * @remarks
- * Newest first. It needs the report's permissions, not `view: accounting`.
+ * Newest first. It needs the report's permissions, not View on an accounting page.
  *
  * @mcp read
  */
 export const getLaborDistributionPeriods = defineServiceFn({
   input: z.object({}),
-  permission: { view: ["projects", "people"] },
+  permission: { "projects.reports": "View", "people.employees": "View" },
   async run(ctx) {
     return service.getLaborDistributionPeriods(ctx.asSystem.pg, {
       companyId: ctx.company.id
@@ -1357,7 +1365,7 @@ export const getLaborDistributionPeriods = defineServiceFn({
  */
 export const getLaborDistribution = defineServiceFn({
   input: z.object({ periodId: z.string() }),
-  permission: { view: ["projects", "people"] },
+  permission: { "projects.reports": "View", "people.employees": "View" },
   async run(ctx, { periodId }) {
     const rows = await service.getLaborDistributionRows(ctx.asSystem.pg, {
       companyId: ctx.company.id,
@@ -1380,7 +1388,7 @@ export const getLaborDistribution = defineServiceFn({
  */
 export const upsertProjectReportPin = defineServiceFn({
   input: z.object({ reportKey: z.string().min(1), pinned: z.boolean() }),
-  permission: { view: "projects" },
+  permission: { "projects.reports": "View" },
   async run(ctx, input) {
     if (!isProjectReportKey(input.reportKey)) {
       return ctx.error("notFound", "The report could not be found");
@@ -1412,7 +1420,7 @@ export const upsertProjectReportPin = defineServiceFn({
  */
 export const getProjectBaselines = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1435,7 +1443,7 @@ export const getProjectBaselines = defineServiceFn({
  */
 export const getProjectBaseline = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1458,7 +1466,7 @@ export const getProjectBaseline = defineServiceFn({
  */
 export const createProjectBaseline = defineServiceFn({
   input: projectBaselineValidator.extend({ projectId: z.string() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     try {
       return await service.createProjectBaseline(ctx.asSystem.pg, {
@@ -1487,7 +1495,7 @@ export const createProjectBaseline = defineServiceFn({
  */
 export const getProjectChangeRequests = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1510,7 +1518,7 @@ export const getProjectChangeRequests = defineServiceFn({
  */
 export const getProjectChangeRequest = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1533,7 +1541,7 @@ export const getProjectChangeRequest = defineServiceFn({
  */
 export const createProjectChangeRequest = defineServiceFn({
   input: projectChangeRequestValidator.extend({ projectId: z.string() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const companyId = ctx.company.id;
     const project = await service.getProject(
@@ -1584,7 +1592,7 @@ export const updateProjectChangeRequestStatus = defineServiceFn({
     projectId: z.string(),
     changeRequestId: z.string()
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const { projectId, changeRequestId, intent, notes } = input;
     const companyId = ctx.company.id;
@@ -1768,7 +1776,7 @@ export const updateProjectChangeRequestStatus = defineServiceFn({
             }
           }
         } else {
-          // No approval rule applies: a user with `update: projects` decides.
+          // No approval rule applies: a user with Edit on Projects decides.
           const moved = await service.setChangeRequestStatus(db, {
             ...scope,
             from: ["In Review"],
@@ -1873,7 +1881,7 @@ export const createProjectChangeRequestComment = defineServiceFn({
     projectId: z.string(),
     changeRequestId: z.string()
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     const changeRequest = await service.getProjectChangeRequest(
       ctx.asCaller.supabase,
@@ -1922,7 +1930,7 @@ export const resolveProjectChangeRequestComment = defineServiceFn({
     changeRequestId: z.string(),
     id: z.string().min(1, { message: "No comment" })
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const changeRequest = await service.getProjectChangeRequest(
       ctx.asCaller.supabase,
@@ -1967,7 +1975,7 @@ export const deleteProjectChangeRequestComment = defineServiceFn({
     changeRequestId: z.string(),
     id: z.string().min(1, { message: "No comment" })
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     const changeRequest = await service.getProjectChangeRequest(
       ctx.asCaller.supabase,
@@ -2014,7 +2022,7 @@ export const updateProjectChangeRequestView = defineServiceFn({
     targetId: z.string().min(1),
     viewed: z.boolean()
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     const result = await service.setProjectChangeRequestView(
       ctx.asCaller.supabase,
@@ -2046,7 +2054,7 @@ export const importProjectWbs = defineServiceFn({
     apply: z.boolean()
   }),
   // A row without an Element ID creates an element, as New element does.
-  permission: { create: "projects", update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const companyId = ctx.company.id;
     const client = ctx.asCaller.supabase;
@@ -2105,7 +2113,7 @@ export const importProjectWbs = defineServiceFn({
  */
 export const pinProjectWbsCodes = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const companyId = ctx.company.id;
     const locked = await service.requireProjectPlanEditable(
@@ -2140,7 +2148,7 @@ export const renumberProjectWbsSubtree = defineServiceFn({
     projectId: z.string(),
     elementId: z.string().min(1, { message: "Choose an element" })
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const companyId = ctx.company.id;
     const locked = await service.requireProjectPlanEditable(
@@ -2201,7 +2209,7 @@ export const getProjectElements = defineServiceFn({
     labelId: z.array(z.string()).nullish(),
     search: z.string().nullish()
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, { projectId, ...filters }) {
     return unwrap(
       ctx,
@@ -2226,7 +2234,7 @@ export const getProjectElements = defineServiceFn({
  */
 export const getProjectElementDescriptions = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2249,7 +2257,7 @@ export const getProjectElementDescriptions = defineServiceFn({
  */
 export const getProjectElement = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2282,7 +2290,7 @@ export const createProjectElement = defineServiceFn({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
   }),
-  permission: { create: "projects" },
+  permission: { "projects.projects": "Create" },
   async run(ctx, input) {
     const { id: _id, projectId, changeRequestId, ...element } = input;
     // A locked plan takes plan-layer changes only through a change request.
@@ -2344,7 +2352,7 @@ export const updateProjectElementField = defineServiceFn({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const { ids, field, value, projectId } = input;
     const project = await service.requireOpenProject(ctx, projectId);
@@ -2433,7 +2441,7 @@ export const updateProjectElementBilling = defineServiceFn({
     ids: z.array(z.string().min(1)).min(1, { message: "Choose an element" }),
     isBilling: z.boolean()
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const project = await service.requireOpenProject(ctx, input.projectId);
     if (project instanceof CarbonError) return project;
@@ -2469,7 +2477,7 @@ export const setProjectElementLabels = defineServiceFn({
     projectElementId: z.string(),
     labelIds: z.array(z.string())
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const project = await service.requireOpenProject(ctx, input.projectId);
     if (project instanceof CarbonError) return project;
@@ -2503,7 +2511,7 @@ export const moveProjectElement = defineServiceFn({
     order: sortOrderUpdates.default([]),
     changeRequestId: changeRequestIdField
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const { projectId, elementId, order } = input;
     const parentId = input.parentId || null;
@@ -2590,7 +2598,7 @@ export const updateProjectElementOrder = defineServiceFn({
     updates: sortOrderUpdates,
     changeRequestId: changeRequestIdField
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const { projectId, updates } = input;
     const changeRequestId = input.changeRequestId ?? null;
@@ -2646,7 +2654,7 @@ export const deleteProjectElement = defineServiceFn({
     elementId: z.string(),
     changeRequestId: changeRequestIdField
   }),
-  permission: { delete: "projects" },
+  permission: { "projects.projects": "Full" },
   async run(ctx, input) {
     const { projectId, elementId } = input;
     const changeRequestId = input.changeRequestId ?? null;
@@ -2696,7 +2704,7 @@ export const deleteProjectElement = defineServiceFn({
  */
 export const updateProjectElementEarnedValue = defineServiceFn({
   input: elementEarnedValueValidator.safeExtend({ projectId: z.string() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { projectId, ...fields }) {
     const project = await service.requireOpenProject(ctx, projectId);
     if (project instanceof CarbonError) return project;
@@ -2740,7 +2748,7 @@ export const updateProjectElementEarnedValue = defineServiceFn({
  */
 export const getProjectElementLinks = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2769,7 +2777,7 @@ export const upsertProjectElementLink = defineServiceFn({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const { projectId, changeRequestId: crId, ...link } = input;
     const changeRequestId = crId ?? null;
@@ -2821,7 +2829,7 @@ export const deleteProjectElementLink = defineServiceFn({
     id: z.string().min(1, { message: "No link selected" }),
     changeRequestId: changeRequestIdField
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const { projectId, id } = input;
     const changeRequestId = input.changeRequestId ?? null;
@@ -2874,7 +2882,7 @@ export const clearSuspectLink = defineServiceFn({
     projectId: z.string(),
     id: z.string().min(1, { message: "No link selected" })
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const project = await service.requireOpenProject(ctx, input.projectId);
     if (project instanceof CarbonError) return project;
@@ -2906,7 +2914,7 @@ export const saveParameterFormula = defineServiceFn({
     formula: z.string(),
     changeRequestId: changeRequestIdField
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const { projectId } = input;
     const changeRequestId = input.changeRequestId ?? null;
@@ -2951,7 +2959,7 @@ export const saveParameterFormula = defineServiceFn({
  */
 export const getProjectElementComments = defineServiceFn({
   input: z.object({ projectElementId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2974,7 +2982,7 @@ export const getProjectElementComments = defineServiceFn({
  */
 export const insertProjectElementComment = defineServiceFn({
   input: projectElementCommentValidator,
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2999,7 +3007,7 @@ export const deleteProjectElementComment = defineServiceFn({
   input: z.object({
     id: z.string().min(1, { message: "No comment was given" })
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3027,7 +3035,7 @@ export const deleteProjectElementComment = defineServiceFn({
  */
 export const getProjectElementPlanLines = defineServiceFn({
   input: z.object({ projectElementId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3056,7 +3064,7 @@ export const upsertProjectElementMaterial = defineServiceFn({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { projectId, changeRequestId, id, ...line }) {
     const refusal = await service.planLineWriteRefusal(ctx, {
       projectId,
@@ -3115,7 +3123,7 @@ export const deleteProjectElementMaterial = defineServiceFn({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { id, projectId, changeRequestId }) {
     const refusal = await service.planLineWriteRefusal(ctx, {
       projectId,
@@ -3165,7 +3173,7 @@ export const upsertProjectElementLabor = defineServiceFn({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { projectId, changeRequestId, id, ...line }) {
     const refusal = await service.planLineWriteRefusal(ctx, {
       projectId,
@@ -3224,7 +3232,7 @@ export const deleteProjectElementLabor = defineServiceFn({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { id, projectId, changeRequestId }) {
     const refusal = await service.planLineWriteRefusal(ctx, {
       projectId,
@@ -3274,7 +3282,7 @@ export const upsertProjectElementCost = defineServiceFn({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { projectId, changeRequestId, id, ...line }) {
     const refusal = await service.planLineWriteRefusal(ctx, {
       projectId,
@@ -3333,7 +3341,7 @@ export const deleteProjectElementCost = defineServiceFn({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { id, projectId, changeRequestId }) {
     const refusal = await service.planLineWriteRefusal(ctx, {
       projectId,
@@ -3384,7 +3392,7 @@ export const deleteProjectElementCost = defineServiceFn({
  */
 export const getProjectItemValues = defineServiceFn({
   input: z.object({ itemIds: z.array(z.string()) }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     const values = unwrap(
       ctx,
@@ -3411,7 +3419,7 @@ export const getProjectItemValues = defineServiceFn({
  */
 export const getElementHistoryByItem = defineServiceFn({
   input: z.object({ itemId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3444,7 +3452,7 @@ export const getItemNumericCustomFields = defineServiceFn({
       "Fixture"
     ])
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3471,7 +3479,7 @@ export const getItemNumericCustomFields = defineServiceFn({
  */
 export const buildElementsFromPart = defineServiceFn({
   input: buildFromPartValidator.safeExtend({ projectId: z.string() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { projectId, ...data }) {
     try {
       return await service.buildElementsFromPart(
@@ -3504,14 +3512,26 @@ export const buildElementsFromPart = defineServiceFn({
  * unreleased change notice holds, for a Make to Asset item that cannot
  * complete to the asset, and for a charge number that cannot take the job.
  * When one part CLIN of a project contract has the same item and bills this
- * element, the job builds that CLIN's part. The material remembers the job.
+ * element, the job builds that CLIN's part. The material remembers the job,
+ * so the plan line shows it.
+ *
+ * @returns `jobId`, the new job.
+ *
+ * @param projectId - The project of the element.
+ * @param projectElementId - The element the material is a plan line of.
+ * @param materialId - The Make to Order plan line (a `projectElementMaterial` id). See projects_getProjectElementPlanLines.
+ * @param quantity - How many to make, in the plan line's unit. Above 0.
+ * @param dueDate - The job's due date, `YYYY-MM-DD`. Left out, the job has none.
+ * @param locationId - The location that makes the job.
+ *
+ * @mcp
  */
 export const createJobFromMaterial = defineServiceFn({
   input: createJobFromMaterialValidator.extend({
     projectId: z.string(),
     projectElementId: z.string()
   }),
-  permission: { create: "production", view: "projects" },
+  permission: { "production.jobs": "Create", "projects.projects": "View" },
   async run(
     ctx,
     { projectId, projectElementId, materialId, quantity, dueDate, locationId }
@@ -3584,14 +3604,26 @@ export const createJobFromMaterial = defineServiceFn({
  * Contract project consumes the job; a Capitalize project builds the
  * element's asset under construction. When one part CLIN of a project
  * contract has the same item and bills this element, the job builds that
- * CLIN's part.
+ * CLIN's part. For a plan line that is already there, use
+ * projects_createJobFromMaterial.
+ *
+ * @returns `jobId`, the new job.
+ *
+ * @param projectId - The project of the element.
+ * @param projectElementId - The task the job is charged to.
+ * @param itemId - A part the company makes (replenishment Make, or Buy and Make).
+ * @param quantity - How many to make, in the part's unit. Above 0.
+ * @param dueDate - The job's due date, `YYYY-MM-DD`. Left out, the job has none.
+ * @param locationId - The location that makes the job.
+ *
+ * @mcp
  */
 export const createProjectElementJob = defineServiceFn({
   input: newProjectJobValidator.extend({
     projectId: z.string(),
     projectElementId: z.string()
   }),
-  permission: { create: "production", view: "projects" },
+  permission: { "production.jobs": "Create", "projects.projects": "View" },
   async run(
     ctx,
     { projectId, projectElementId, itemId, quantity, dueDate, locationId }
@@ -3633,19 +3665,36 @@ export const createProjectElementJob = defineServiceFn({
  *
  * @remarks
  * The line is charged to the material's element, on a Draft purchase order
- * of the supplier (`purchaseOrderId`) or a new one (`purchaseOrderId` =
- * `new`). The quantity is in the plan line's unit and becomes purchase units
- * through the supplier part's conversion factor, raised to its minimum order
- * quantity; the price is the supplier part's, in the order's currency.
- * Refused while purchasing is blocked for the item. The material remembers
- * the line.
+ * of the supplier (`purchaseOrderId`) or a new one at the project's location
+ * (`purchaseOrderId` = `new`). The quantity is in the plan line's unit and
+ * becomes purchase units through the supplier part's conversion factor,
+ * raised to its minimum order quantity; the price is the supplier part's, else
+ * the item's unit cost, in the order's currency. Refused for a material that
+ * is not Purchase to Order or already has a PO line, and while purchasing is
+ * blocked for the item. The material remembers the line, so the plan line
+ * shows it.
+ *
+ * @returns `purchaseOrderId`, the order, and `purchaseOrderLineId`, the new line.
+ *
+ * @param projectId - The project of the element.
+ * @param projectElementId - The element the material is a plan line of.
+ * @param materialId - The Purchase to Order plan line (a `projectElementMaterial` id). See projects_getProjectElementPlanLines.
+ * @param supplierId - The supplier to buy from.
+ * @param quantity - How many to buy, in the plan line's unit. Above 0.
+ * @param requiredDate - The line's required date, `YYYY-MM-DD`. Left out, the line has none.
+ * @param purchaseOrderId - A Draft purchase order of the supplier, or `new` for a new one.
+ *
+ * @mcp
  */
 export const createPurchaseOrderLineFromMaterial = defineServiceFn({
   input: createPurchaseOrderLineFromMaterialValidator.extend({
     projectId: z.string(),
     projectElementId: z.string()
   }),
-  permission: { create: "purchasing", view: "projects" },
+  permission: {
+    "purchasing.purchaseOrders": "Create",
+    "projects.projects": "View"
+  },
   async run(
     ctx,
     {
@@ -3835,7 +3884,10 @@ export const createPurchaseOrderLineFromMaterial = defineServiceFn({
  */
 export const createProjectPurchaseOrderLine = defineServiceFn({
   input: createProjectPurchaseOrderLineInput,
-  permission: { create: "purchasing", view: "projects" },
+  permission: {
+    "purchasing.purchaseOrders": "Create",
+    "projects.projects": "View"
+  },
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -3991,7 +4043,7 @@ export const getProjectPegs = defineServiceFn({
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional()
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, { projectId, asOf }) {
     const companyId = ctx.company.id;
     return unwrap(
@@ -4019,7 +4071,7 @@ export const getProjectPegs = defineServiceFn({
  * line or job (`supplyType`, `supplyId`) of the same planning group and item,
  * for `quantity`, with a reason. Needs the planning groups feature. The ee
  * function writes past row-level security, so the caller needs
- * `update: projects`.
+ * Edit on Projects.
  */
 export const createManualPeg = defineServiceFn({
   input: z.object({
@@ -4030,7 +4082,7 @@ export const createManualPeg = defineServiceFn({
     quantity: z.number().positive(),
     manualReason: z.string().trim().min(1)
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     let result: Awaited<ReturnType<typeof pegging.createManualPeg>>;
     try {
@@ -4075,7 +4127,7 @@ export const createManualPeg = defineServiceFn({
  */
 export const placeProjectAssetsInService = defineServiceFn({
   input: placeInServiceValidator.extend({ projectId: z.string() }),
-  permission: { update: "projects", create: "accounting" },
+  permission: { "projects.projects": "Edit", "accounting.assets": "Create" },
   async run(ctx, { projectId, fixedAssetIds, toClassId, inServiceDate }) {
     const companyId = ctx.company.id;
     const db = ctx.asSystem.pg;
@@ -4173,7 +4225,7 @@ export const getLaborCategories = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "projects" },
+  permission: { "projects.laborCategories": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -4196,7 +4248,7 @@ export const getLaborCategories = defineServiceFn({
  */
 export const getLaborCategory = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { view: "projects" },
+  permission: { "projects.laborCategories": "View" },
   async run(ctx, { id }) {
     return unwrap(
       ctx,
@@ -4212,7 +4264,7 @@ export const getLaborCategory = defineServiceFn({
  */
 export const getLaborCategoriesList = defineServiceFn({
   input: z.object({}),
-  permission: { view: "projects" },
+  permission: { "projects.laborCategories": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -4228,17 +4280,23 @@ export const getLaborCategoriesList = defineServiceFn({
  * Create or update a labor category.
  *
  * @remarks
- * With `id` it updates that category (needs `update: projects`); without, it
- * creates one (needs `create: projects`).
+ * With `id` it updates that category (needs Edit on Labor Categories); without,
+ * it creates one (needs Create on Labor Categories).
  *
  * @mcp
  */
 export const upsertLaborCategory = defineServiceFn({
   input: laborCategoryValidator,
   // Create and update need different permissions: the body decides.
-  permission: {},
+  permission: "employee",
   async run(ctx, { id, ...fields }) {
-    if (!ctx.can(id ? { update: "projects" } : { create: "projects" })) {
+    if (
+      !ctx.can(
+        id
+          ? { "projects.laborCategories": "Edit" }
+          : { "projects.laborCategories": "Create" }
+      )
+    ) {
       return ctx.error("forbidden", "You do not have permission to do this");
     }
     const result = id
@@ -4273,7 +4331,7 @@ export const upsertLaborCategory = defineServiceFn({
  */
 export const getLaborCategoryRates = defineServiceFn({
   input: z.object({ laborCategoryId: z.string().min(1) }),
-  permission: { view: "projects" },
+  permission: { "projects.laborCategories": "View" },
   async run(ctx, { laborCategoryId }) {
     return unwrap(
       ctx,
@@ -4298,7 +4356,7 @@ export const getLaborCategoryRates = defineServiceFn({
  */
 export const upsertLaborCategoryRate = defineServiceFn({
   input: laborCategoryRateValidator,
-  permission: { update: "projects" },
+  permission: { "projects.laborCategories": "Edit" },
   async run(ctx, { id, ...rate }) {
     const result = id
       ? await service.upsertLaborCategoryRate(ctx.asCaller.supabase, {
@@ -4336,7 +4394,7 @@ export const getTimesheetWeek = defineServiceFn({
     from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4357,10 +4415,10 @@ export const getTimesheetWeek = defineServiceFn({
  * Runs `save-timesheet-entry`: one cell of the grid (employee, date, charge
  * number, labor category), or a new entry in `add` mode. Saving never posts.
  * Left out, `employeeId` is the caller. Another employee's week can be
- * changed by their manager or by a user with `update: projects` (in DCAA
- * mode the entry then waits in Pending Employee Review). An empty element,
+ * changed by a user with Edit on Approvals (in DCAA mode the entry then
+ * waits in Pending Employee Review). An empty element,
  * work location or R&D role is none. A budget overrun never refuses the
- * entry: it comes back as `warning`. An API key needs `update: projects`.
+ * entry: it comes back as `warning`. An API key needs Edit on Projects.
  *
  * @mcp
  */
@@ -4377,29 +4435,23 @@ export const saveTimesheetEntry = defineServiceFn({
     jobId: z.string().nullable().optional(),
     jobOperationId: z.string().nullable().optional()
   }),
-  // Your own time needs company membership; another employee's is decided
-  // in the body (their manager, or `update: projects`).
-  permission: {},
+  // Your own time needs company membership; another employee's needs Edit
+  // on Approvals, checked in the body.
+  permission: "employee",
   async run(ctx, input) {
-    const keyRefused = refuseKeyWithout(ctx, { update: "projects" });
+    const keyRefused = refuseKeyWithout(ctx, { "projects.projects": "Edit" });
     if (keyRefused) return keyRefused;
 
     const employeeId = input.employeeId ?? ctx.auditUserId;
+    // Changing a colleague's time is an Approvals action, as RLS on
+    // `timesheetEntry` has it; the posting writes as the system.
     if (
       employeeId !== ctx.auditUserId &&
-      !ctx.can({ update: "projects" }) &&
-      !(
-        ctx.can({ view: "projects" }) &&
-        (await service.managesEmployee(ctx.asCaller.supabase, {
-          companyId: ctx.company.id,
-          userId: ctx.auditUserId,
-          employeeId
-        }))
-      )
+      !ctx.can({ "projects.approvals": "Edit" })
     ) {
       return ctx.error(
         "forbidden",
-        "You can open the timesheet of an employee you manage only"
+        "Changing another employee's time needs Edit on Approvals"
       );
     }
 
@@ -4438,15 +4490,15 @@ export const saveTimesheetEntry = defineServiceFn({
  * waits in Approvals. In DCAA mode the entry is Draft until the week is
  * certified. `outcome` says which happened; a failed post leaves the entry
  * logged and comes back as `postingError`. A budget overrun is `warning`. An
- * API key needs `update: projects`.
+ * API key needs Edit on Projects.
  *
  * @mcp
  */
 export const logTimesheetEntry = defineServiceFn({
   input: logTimeValidator,
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
-    const keyRefused = refuseKeyWithout(ctx, { update: "projects" });
+    const keyRefused = refuseKeyWithout(ctx, { "projects.projects": "Edit" });
     if (keyRefused) return keyRefused;
 
     const settings = await getCompanySettings(
@@ -4540,7 +4592,7 @@ export const submitTimesheetWeek = defineServiceFn({
     weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     certificationText: z.string().optional()
   }),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
     const submitted = await run(ctx, "submit-timesheet-week", () =>
       service.submitTimesheetWeek(ctx, {
@@ -4606,7 +4658,7 @@ export const postTimesheet = defineServiceFn({
  */
 export const approveTimesheetEntries = defineServiceFn({
   input: z.object({ ids: z.array(z.string().min(1)).min(1) }),
-  permission: { update: "projects" },
+  permission: { "projects.approvals": "Edit" },
   async run(ctx, { ids }) {
     const refusal = await service.timesheetApprovalRefusal(
       ctx.asCaller.supabase,
@@ -4672,7 +4724,7 @@ export const rejectTimesheetEntries = defineServiceFn({
     ids: z.array(z.string().min(1)).min(1),
     note: z.string()
   }),
-  permission: { update: "projects" },
+  permission: { "projects.approvals": "Edit" },
   async run(ctx, input) {
     const note = input.note.trim();
     if (!note) {
@@ -4705,15 +4757,15 @@ export const rejectTimesheetEntries = defineServiceFn({
  * original, and a labor transfer always waits for another user's approval.
  * Otherwise, with approvals off both post at once (`post-timesheet`); a failed
  * post comes back as `postingError`. `outcome` says which happened. An API key
- * needs `update: projects`.
+ * needs Edit on Projects.
  *
  * @mcp
  */
 export const createTimesheetCorrection = defineServiceFn({
   input: timesheetCorrectionValidator,
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
-    const keyRefused = refuseKeyWithout(ctx, { update: "projects" });
+    const keyRefused = refuseKeyWithout(ctx, { "projects.projects": "Edit" });
     if (keyRefused) return keyRefused;
 
     // The correction runs over Kysely (no RLS), so the entry must be the
@@ -4799,7 +4851,7 @@ export const createTimesheetCorrection = defineServiceFn({
  */
 export const acceptTimesheetReview = defineServiceFn({
   input: timesheetReviewAcceptValidator,
-  permission: {},
+  permission: "employee",
   async run(ctx, { ids }) {
     try {
       const acceptedIds = await service.acceptTimesheetReview(ctx.asSystem.pg, {
@@ -4833,7 +4885,7 @@ export const acceptTimesheetReview = defineServiceFn({
  */
 export const getTimesheetRevisions = defineServiceFn({
   input: z.object({ timesheetEntryId: z.string().min(1) }),
-  permission: { view: "projects" },
+  permission: { "projects.approvals": "View" },
   async run(ctx, { timesheetEntryId }) {
     return unwrap(
       ctx,
@@ -4856,7 +4908,7 @@ export const getTimesheetRevisions = defineServiceFn({
  */
 export const getPendingReviewEntries = defineServiceFn({
   input: z.object({ employeeId: z.string().min(1).optional() }),
-  permission: { view: "projects" },
+  permission: { "projects.approvals": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4878,7 +4930,7 @@ export const getPendingReviewEntries = defineServiceFn({
  */
 export const getTimesheetApprovalCount = defineServiceFn({
   input: z.object({}),
-  permission: { view: "projects" },
+  permission: { "projects.approvals": "View" },
   async run(ctx) {
     const result = await service.getTimesheetApprovalCount(
       ctx.asCaller.supabase,
@@ -4906,7 +4958,7 @@ export const getTimesheetApprovalCount = defineServiceFn({
  */
 export const getTimesheetApprovals = defineServiceFn({
   input: z.object({ ownerId: z.string().min(1).nullable().optional() }),
-  permission: { view: "projects" },
+  permission: { "projects.approvals": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4932,7 +4984,7 @@ export const sendMissingTimeReminders = defineServiceFn({
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
   }),
-  permission: { view: ["projects"] },
+  permission: { "projects.reports": "View" },
   async run(ctx, { employeeIds, startDate, endDate }) {
     // The dates come from the database again, not from the caller.
     const employees = await service.getMissingTimeByEmployee(ctx.asSystem.pg, {
@@ -4984,15 +5036,22 @@ export const sendMissingTimeReminders = defineServiceFn({
  * Take an employee out of the Missing Time report, or back in.
  *
  * @remarks
- * Sets `timesheetRequired` on the employee's job record. Refuses an employee
- * with no job record.
+ * Sets `timesheetRequired` on the employee's job record, as Exclude and
+ * Include on Projects → Reports → Missing Time do. An employee with it off
+ * gets no missing time notice and is not counted by the close check.
+ * Refuses an employee with no job record.
+ *
+ * @param employeeId - The employee's user id.
+ * @param timesheetRequired - False takes the employee out of the report; true puts them back.
+ *
+ * @mcp
  */
 export const updateTimesheetRequired = defineServiceFn({
   input: z.object({
     employeeId: z.string().min(1),
     timesheetRequired: z.boolean()
   }),
-  permission: { view: ["projects"], update: "people" },
+  permission: { "projects.reports": "View", "people.employees": "Edit" },
   async run(ctx, { employeeId, timesheetRequired }) {
     try {
       const updated = await service.updateTimesheetRequired(ctx.asSystem.pg, {
@@ -5031,11 +5090,13 @@ export const updateTimesheetRequired = defineServiceFn({
  * control (Government Contracting 5c): a Block budget refuses the charge, a
  * Warn budget posts it and returns the overrun as `budgetWarning`.
  *
+ * @returns The expense entry's `id` and the `budgetWarning`.
+ *
  * @mcp
  */
 export const createProjectExpense = defineServiceFn({
   input: projectExpenseValidator,
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const budget = await service.checkProjectBudget(
       ctx.asSystem.pg,
@@ -5054,9 +5115,10 @@ export const createProjectExpense = defineServiceFn({
     );
     if (budget.status === "block") return ctx.error("rule", budget.message);
 
-    const postingError = await service.addProjectExpense(ctx, input);
-    if (postingError) return ctx.error("rule", postingError);
+    const added = await service.addProjectExpense(ctx, input);
+    if ("postingError" in added) return ctx.error("rule", added.postingError);
     return {
+      id: added.id,
       budgetWarning: budget.status === "warn" ? budget.message : null
     };
   }
@@ -5076,7 +5138,7 @@ export const createProjectExpense = defineServiceFn({
  */
 export const postProjectIssue = defineServiceFn({
   input: projectIssueValidator,
-  permission: { update: ["inventory", "projects"] },
+  permission: PROJECT_ISSUE_GATE,
   async run(ctx, input) {
     let budgetWarning: string | null = null;
     if (input.direction === "Issue") {
@@ -5128,7 +5190,7 @@ export const postProjectIssue = defineServiceFn({
  */
 export const getProjectBillingElements = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, { projectId }) {
     return unwrap(
       ctx,
@@ -5166,8 +5228,11 @@ export const getContractBillableItems = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: ["projects", "sales"] },
+  // Approvals and a contracts page, checked in the body.
+  permission: "employee",
   async run(ctx, input) {
+    const refused = service.refuseContractBilling(ctx, "View");
+    if (refused) return refused;
     return paged(
       ctx,
       await service.getContractBillableItems(
@@ -5189,8 +5254,11 @@ export const getContractBillableItems = defineServiceFn({
  */
 export const getContractBillingLines = defineServiceFn({
   input: z.object({ projectId: z.string().nullable().optional() }),
-  permission: { view: ["projects", "sales"] },
+  // Approvals and a contracts page, checked in the body.
+  permission: "employee",
   async run(ctx, { projectId }) {
+    const refused = service.refuseContractBilling(ctx, "View");
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.getContractBillingLines(ctx.asCaller.supabase, {
@@ -5220,9 +5288,12 @@ export const getContractBillingLines = defineServiceFn({
  */
 export const updateProjectBillableItems = defineServiceFn({
   input: billableItemActionValidator,
-  // Billing review is contract billing: it also needs the sales permission.
-  permission: { update: "projects", view: "sales" },
+  // Billing review is contract billing: Approvals Edit and a contracts
+  // page, checked in the body.
+  permission: "employee",
   async run(ctx, input) {
+    const refused = service.refuseContractBilling(ctx, "Edit");
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.updateProjectBillableItems(ctx.asCaller.supabase, {
@@ -5255,7 +5326,7 @@ export const getPlanningGroups = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "projects" },
+  permission: { "projects.planningGroups": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -5275,7 +5346,7 @@ export const getPlanningGroups = defineServiceFn({
  */
 export const getPlanningGroup = defineServiceFn({
   input: z.object({ planningGroupId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.planningGroups": "View" },
   async run(ctx, { planningGroupId }) {
     return unwrap(
       ctx,
@@ -5298,7 +5369,7 @@ export const getPlanningGroup = defineServiceFn({
  */
 export const getPlanningGroupsList = defineServiceFn({
   input: z.object({}),
-  permission: { view: "projects" },
+  permission: { "projects.planningGroups": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -5318,7 +5389,7 @@ export const getPlanningGroupsList = defineServiceFn({
  */
 export const getPlanningGroupMembers = defineServiceFn({
   input: z.object({ planningGroupId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.planningGroups": "View" },
   async run(ctx, { planningGroupId }) {
     return unwrap(
       ctx,
@@ -5336,7 +5407,17 @@ export const getPlanningGroupMembers = defineServiceFn({
  *
  * @remarks
  * Planning groups are a commercial feature (PLANNING_GROUPS). Creating needs
- * `create: projects`, updating `update: projects`.
+ * Create on Planning Groups, updating (with `id`) Edit on Planning Groups;
+ * an API key needs the same level. Refuses a location of another company and
+ * an exception project without project stock.
+ *
+ * @param id - The group to update. Left out, a new group.
+ * @param locationId - The location whose stock the group plans.
+ * @param excessRule - Where supply beyond the members' need goes: `Common Stock`, or `Exception Project`.
+ * @param exceptionProjectId - The project that takes the excess, for `Exception Project`. It needs project stock.
+ * @param priorityRule - Which member is supplied first: `Earliest Need`, or `Project Priority`.
+ *
+ * @mcp
  */
 export const upsertPlanningGroup = defineServiceFn({
   input: z
@@ -5357,11 +5438,12 @@ export const upsertPlanningGroup = defineServiceFn({
         path: ["exceptionProjectId"]
       }
     ),
-  permission: {},
+  permission: "employee",
   async run(ctx, { id, ...fields }) {
-    if (!ctx.can(id ? { update: "projects" } : { create: "projects" })) {
-      return ctx.error("forbidden", "You do not have permission to do this");
-    }
+    const refused = service.refuseWithout(ctx, {
+      "projects.planningGroups": id ? "Edit" : "Create"
+    });
+    if (refused) return refused;
     try {
       const result = id
         ? await eeUpsertPlanningGroup(ctx.asCaller.supabase, {
@@ -5399,7 +5481,7 @@ export const upsertPlanningGroup = defineServiceFn({
  */
 export const deletePlanningGroup = defineServiceFn({
   input: z.object({ planningGroupId: z.string() }),
-  permission: { delete: "projects" },
+  permission: { "projects.planningGroups": "Full" },
   async run(ctx, { planningGroupId }) {
     const deleted = await service.deletePlanningGroup(
       ctx.asCaller.supabase,
@@ -5433,7 +5515,7 @@ export const getProjectStockTransfers = defineServiceFn({
     search: z.string().nullable().optional(),
     projectId: z.string().nullable().optional()
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -5456,7 +5538,7 @@ export const getProjectStockTransfers = defineServiceFn({
  */
 export const getProjectStockTransfer = defineServiceFn({
   input: z.object({ projectStockTransferId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, { projectStockTransferId }) {
     return unwrap(
       ctx,
@@ -5479,7 +5561,7 @@ export const getProjectStockTransfer = defineServiceFn({
  */
 export const getProjectStockTransferLines = defineServiceFn({
   input: z.object({ projectStockTransferId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, { projectStockTransferId }) {
     return unwrap(
       ctx,
@@ -5507,7 +5589,7 @@ export const getProjectStockTransferLines = defineServiceFn({
  */
 export const upsertProjectStockTransfer = defineServiceFn({
   input: projectStockTransferValidator,
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -5609,7 +5691,7 @@ export const upsertProjectStockTransferLine = defineServiceFn({
   input: projectStockTransferLineValidator.extend({
     projectStockTransferId: z.string()
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5632,7 +5714,7 @@ export const upsertProjectStockTransferLine = defineServiceFn({
  */
 export const deleteProjectStockTransferLine = defineServiceFn({
   input: z.object({ id: z.string(), projectStockTransferId: z.string() }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { id, projectStockTransferId }) {
     const deleted = await service.deleteProjectStockTransferLine(
       ctx.asCaller.supabase,
@@ -5682,7 +5764,7 @@ export const updateProjectStockTransferStatus = defineServiceFn({
     id: z.string(),
     action: z.enum(projectStockTransferActions)
   }),
-  permission: { update: "projects" },
+  permission: { "projects.projects": "Edit" },
   async run(ctx, { id, action }) {
     if (action === "post") {
       return run(ctx, "post-project-stock-transfer", () =>
@@ -5721,7 +5803,7 @@ export const getProjectBorrows = defineServiceFn({
     locationId: z.string().nullable().optional(),
     dueBefore: z.string().nullable().optional()
   }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5745,7 +5827,7 @@ export const getProjectBorrows = defineServiceFn({
  */
 export const getProjectStockOnHand = defineServiceFn({
   input: z.object({ projectId: z.string() }),
-  permission: { view: "projects" },
+  permission: { "projects.projects": "View" },
   async run(ctx, { projectId }) {
     return service.getProjectStockOnHand(ctx.asSystem.pg, {
       companyId: ctx.company.id,
@@ -5761,9 +5843,19 @@ export const getProjectStockOnHand = defineServiceFn({
  *
  * @remarks
  * Government Contracting is a commercial feature: without it the call is
- * refused. Creating needs `create: accounting`, updating
- * `update: accounting`. A duplicate name or sequence is refused with the
- * field's message.
+ * refused. Creating needs Create on Indirect Pools, updating (with `id`)
+ * Edit on Indirect Pools; an API key needs the same level. A duplicate name
+ * or sequence is refused with the field's message.
+ *
+ * @returns `id`, the pool.
+ *
+ * @param id - The pool to update. Left out, a new pool.
+ * @param sequence - The pool's place in the rate cascade, 1 first. Unique in the company.
+ * @param appliedAccountId - The account applied burden credits, when burden is posted as applied burden.
+ * @param appliesToProjects - Whether the pool's rate burdens project cost. A Service Center pool cannot.
+ * @param offsetAbsorbedOverhead - Overhead pools only: subtract the overhead projects already absorbed from their burden.
+ *
+ * @mcp
  */
 export const upsertIndirectPool = defineServiceFn({
   input: z
@@ -5795,13 +5887,12 @@ export const upsertIndirectPool = defineServiceFn({
         path: ["appliesToProjects"]
       }
     ),
-  permission: {},
+  permission: "employee",
   async run(ctx, input) {
-    if (
-      !ctx.can(input.id ? { update: "accounting" } : { create: "accounting" })
-    ) {
-      return ctx.error("forbidden", "You do not have permission to do this");
-    }
+    const refused = service.refuseWithout(ctx, {
+      "accounting.indirectPools": input.id ? "Edit" : "Create"
+    });
+    if (refused) return refused;
     try {
       const result = await eeUpsertIndirectPool(ctx.asCaller.supabase, {
         ...input,
@@ -5827,15 +5918,109 @@ export const upsertIndirectPool = defineServiceFn({
 });
 
 /**
+ * List the indirect pools.
+ *
+ * @remarks
+ * Every pool of the company, active or not, in sequence order: the pool's
+ * type, base type, applied account and whether it burdens projects.
+ *
+ * @mcp read
+ */
+export const getIndirectPools = defineServiceFn({
+  input: z.object({}),
+  permission: { "accounting.indirectPools": "View" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await eeGetIndirectPools(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get an indirect pool with its accounts.
+ *
+ * @remarks
+ * Each account is a Cost or Base account of the pool, with its number, name
+ * and any dimension that narrows it.
+ *
+ * @param id - The indirect pool. See projects_getIndirectPools.
+ *
+ * @mcp read
+ */
+export const getIndirectPool = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { "accounting.indirectPools": "View" },
+  async run(ctx, { id }) {
+    return unwrap(
+      ctx,
+      await eeGetIndirectPool(ctx.asCaller.supabase, id, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * List the indirect rates of a fiscal year.
+ *
+ * @remarks
+ * One row per pool, period and rate type (Provisional, Target, Final, and
+ * Actual from the rate runs). A rate is a fraction: 0.3 is 30 %.
+ *
+ * @param fiscalYear - The fiscal year, for example 2026.
+ *
+ * @mcp read
+ */
+export const getIndirectRates = defineServiceFn({
+  input: z.object({ fiscalYear: z.number().int() }),
+  permission: { "accounting.indirectRates": "View" },
+  async run(ctx, { fiscalYear }) {
+    return unwrap(
+      ctx,
+      await eeGetIndirectRates(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        fiscalYear
+      })
+    );
+  }
+});
+
+/**
+ * List the indirect rate runs.
+ *
+ * @remarks
+ * Each period run and year-end true-up, newest first, with the start date
+ * of the period it posted into.
+ *
+ * @mcp read
+ */
+export const getIndirectRateRuns = defineServiceFn({
+  input: z.object({}),
+  permission: { "accounting.indirectRates": "View" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await eeGetIndirectRateRuns(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
  * Delete an indirect pool.
  *
  * @remarks
  * A pool with rates or burden is refused: deactivate it instead.
+ *
+ * @param id - The indirect pool. See projects_getIndirectPools.
+ *
+ * @mcp destructive
  */
 export const deleteIndirectPool = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.indirectPools": "Full" },
   async run(ctx, { id }) {
+    // A delete that matches no row would answer success.
+    const refused = await refuseUnlessOwned(ctx, "indirectPool", { id });
+    if (refused) return refused;
     try {
       const deleted = await eeDeleteIndirectPool(ctx.asCaller.supabase, {
         id,
@@ -5862,10 +6047,19 @@ export const deleteIndirectPool = defineServiceFn({
  * @remarks
  * A project account cannot be a Base account; one account and dimension
  * cell is a Cost account of at most one pool.
+ *
+ * @param id - The pool account to change. Leave it out to add one. See projects_getIndirectPool.
+ * @param indirectPoolId - The indirect pool. See projects_getIndirectPools.
+ * @param accountId - The account.
+ * @param dimensionId - A dimension that narrows the account. Send it with dimensionValueId, or neither.
+ * @param dimensionValueId - The dimension's value. Send it with dimensionId, or neither.
+ * @param role - Cost (the pool's cost) or Base (what the pool's rate applies to).
+ *
+ * @mcp
  */
 export const upsertIndirectPoolAccount = defineServiceFn({
   input: indirectPoolAccountValidator,
-  permission: { update: "accounting" },
+  permission: { "accounting.indirectPools": "Edit" },
   async run(ctx, input) {
     try {
       const result = await eeUpsertIndirectPoolAccount(ctx.asCaller.supabase, {
@@ -5897,11 +6091,18 @@ export const upsertIndirectPoolAccount = defineServiceFn({
 
 /**
  * Remove an account from an indirect pool.
+ *
+ * @param id - The pool account. See projects_getIndirectPool.
+ *
+ * @mcp destructive
  */
 export const deleteIndirectPoolAccount = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.indirectPools": "Edit" },
   async run(ctx, { id }) {
+    // A delete that matches no row would answer success.
+    const refused = await refuseUnlessOwned(ctx, "indirectPoolAccount", { id });
+    if (refused) return refused;
     try {
       const deleted = await eeDeleteIndirectPoolAccount(ctx.asCaller.supabase, {
         id,
@@ -5921,11 +6122,21 @@ export const deleteIndirectPoolAccount = defineServiceFn({
  *
  * @remarks
  * Actual rates come from the rate run: enter a Provisional, Target or Final
- * rate.
+ * rate. Writes the rate for each period from `fromPeriod` to 12.
+ *
+ * @returns The ids of the rate rows written.
+ *
+ * @param indirectPoolId - The indirect pool. See projects_getIndirectPools.
+ * @param fiscalYear - The fiscal year, for example 2026.
+ * @param fromPeriod - The first period of the year it applies to, 1 to 12.
+ * @param rateType - Provisional, Target or Final.
+ * @param rate - A fraction: 0.3 is 30 %.
+ *
+ * @mcp
  */
 export const setIndirectRate = defineServiceFn({
   input: indirectRateEntryValidator,
-  permission: { update: "accounting" },
+  permission: { "accounting.indirectRates": "Edit" },
   async run(ctx, input) {
     try {
       const result = await eeSetIndirectRate(ctx.asCaller.supabase, {
@@ -5937,7 +6148,14 @@ export const setIndirectRate = defineServiceFn({
       if (result.error && (!("code" in result.error) || !result.error.code)) {
         return ctx.error("rule", result.error.message);
       }
-      return unwrap(ctx, result);
+      const rates = unwrap(ctx, result);
+      if (rates instanceof CarbonError) return rates;
+      if (!rates) {
+        return ctx.error("internal", "Failed to save the indirect rates");
+      }
+      // One row per period from `fromPeriod` on; an object, so the tool does
+      // not read as a paged list.
+      return { ids: rates.map((rate) => rate.id) };
     } catch (err) {
       if (!(err instanceof EntitlementError)) throw err;
       return ctx.error("entitlement", "Upgrade to use indirect rates");
@@ -5950,12 +6168,16 @@ export const setIndirectRate = defineServiceFn({
  *
  * @remarks
  * Computes the period's indirect rates, the project burden and its billing.
+ *
+ * @param accountingPeriodId - A Locked accounting period. See accounting_getAccountingPeriods.
+ *
+ * @mcp
  */
 export const runIndirectRatePeriod = defineServiceFn({
   input: z.object({
     accountingPeriodId: z.string().min(1, { message: "Choose a locked period" })
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.indirectRates": "Edit" },
   async run(ctx, { accountingPeriodId }) {
     try {
       const result = await eeRunIndirectRatePeriod(
@@ -5982,13 +6204,18 @@ export const runIndirectRatePeriod = defineServiceFn({
  * @remarks
  * The burden catch-up of `fiscalYear` at the Final rate of period 12, posted
  * into the given Locked period, then the burden billing.
+ *
+ * @param fiscalYear - The fiscal year to true up, for example 2026.
+ * @param accountingPeriodId - A Locked accounting period the catch-up posts into. See accounting_getAccountingPeriods.
+ *
+ * @mcp
  */
 export const runFinalTrueUp = defineServiceFn({
   input: z.object({
     fiscalYear: z.number().int({ message: "Choose a fiscal year" }),
     accountingPeriodId: z.string().min(1, { message: "Choose a locked period" })
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.indirectRates": "Edit" },
   async run(ctx, { fiscalYear, accountingPeriodId }) {
     try {
       const result = await eeRunFinalTrueUp(

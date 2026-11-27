@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { dataOrThrow } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -31,14 +32,8 @@ import { LuChevronRight, LuImage } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DateTime } from "~/components";
-import {
-  getPurchasingRFQ,
-  getPurchasingRFQLines
-} from "~/modules/purchasing/purchasing.service";
 import type { PurchasingRFQLine } from "~/modules/purchasing/types";
-import { getCompany } from "~/modules/settings/settings.service";
 import type { Company } from "~/modules/settings/types";
-import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 export const meta = () => {
   return [{ title: "RFQ Preview" }];
@@ -54,14 +49,12 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   // Require authentication - this is an internal preview
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing"
-  });
+  const { api } = await authorize(request, { "purchasing.rfqs": "View" });
 
   const [rfqResult, linesResult, company] = await Promise.all([
-    getPurchasingRFQ(client, id),
-    getPurchasingRFQLines(client, id),
-    getCompany(client, companyId)
+    api.purchasing.getPurchasingRFQ({ id }),
+    api.purchasing.getPurchasingRFQLines({ purchasingRfqId: id }),
+    api.settings.getCompany({})
   ]);
 
   if (rfqResult.error || !rfqResult.data) {
@@ -87,10 +80,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       ? await Promise.all(
           Object.entries(thumbnailPaths).map(([lineId, path]) => {
             if (!path) return null;
-            return getBase64ImageFromSupabase(client, path).then((data) => ({
-              id: lineId,
-              data
-            }));
+            return api.shared
+              .getBase64ImageFromSupabase({ path })
+              .then(dataOrThrow)
+              .then((data) => ({
+                id: lineId,
+                data
+              }));
           })
         )
       : []
@@ -200,7 +196,7 @@ const LineItems = ({
                   thumbnail beside it, pushing the description past the card
                   edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
-                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
+                {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
                   className="flex flex-col cursor-pointer w-full min-w-0"
                   onClick={(e) => {

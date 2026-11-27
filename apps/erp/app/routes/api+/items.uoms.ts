@@ -2,15 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
-import { getUnitOfMeasuresList } from "~/modules/items/items.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { api } = await authorize(request);
 
-  return await getUnitOfMeasuresList(client, companyId);
+  return await api.items.getUnitOfMeasuresList({});
 }
 
 export const clientLoader = cachedClientLoader<typeof loader>({

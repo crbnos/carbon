@@ -100,10 +100,9 @@ export const useRealtimeChannel = <TDeps extends any[]>(
   onSubscribedRef.current = onSubscribed;
   const { carbon, isRealtimeAuthSet } = useCarbon();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   const memoSetup = useCallback(setup, [topic, ...dependencies]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (!carbon) return;
 
@@ -267,9 +266,11 @@ export const useRealtimeChannel = <TDeps extends any[]>(
         retryTimerRef.current = null;
       }
       retryCountRef.current = 0;
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
       clearDisconnected(toastKeyRef.current);
       void teardown();
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [
     carbon,
     isRealtimeAuthSet,

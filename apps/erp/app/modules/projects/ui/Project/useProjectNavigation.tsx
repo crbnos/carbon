@@ -17,6 +17,7 @@ import {
 } from "react-icons/lu";
 import { useParams } from "react-router";
 import { usePermissions } from "~/hooks";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import { PROJECT_TAB_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
@@ -105,7 +106,7 @@ export function useProjectSidebarLinks({
           }
         ]
       : []),
-    ...(showBilling && permissions.can("view", "sales")
+    ...(showBilling && permissions.has(CONTRACT_READ_GATE)
       ? [
           {
             name: t`Billing`,

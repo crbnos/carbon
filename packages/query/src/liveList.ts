@@ -146,3 +146,47 @@ export function storedListKeys(keys: string[], names: string[]): string[] {
     (key) => isListKey(key) && names.includes(key.split(":")[0] ?? "")
   );
 }
+
+/**
+ * How long to wait before each new try of a catch-up that failed. Without
+ * them, one failed request leaves the lists stale until the hourly check.
+ */
+export const CATCH_UP_RETRY_MS = [1_000, 3_000, 10_000];
+
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Runs `run`, and runs it again after each of `delays` while it fails.
+ * Returns early, without trying again, once `stopped()` is true (the page
+ * moved to another company, or closed). Throws the last error when every try
+ * failed.
+ */
+export async function withRetries(
+  run: () => Promise<void>,
+  {
+    delays,
+    stopped,
+    onRetry,
+    wait = sleep
+  }: {
+    delays: number[];
+    stopped: () => boolean;
+    /** Called after a failed try that will be tried again. `attempt` counts from 1. */
+    onRetry: (attempt: number, error: unknown) => void;
+    wait?: (ms: number) => Promise<void>;
+  }
+): Promise<void> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await run();
+      return;
+    } catch (error) {
+      const delay = delays[attempt - 1];
+      if (delay === undefined || stopped()) throw error;
+      onRetry(attempt, error);
+      await wait(delay);
+      if (stopped()) return;
+    }
+  }
+}

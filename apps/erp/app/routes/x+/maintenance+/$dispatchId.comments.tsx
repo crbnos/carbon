@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { error, success } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import {
   Button,
   Card,
@@ -21,63 +21,30 @@ import type { ActionFunctionArgs } from "react-router";
 import { data, useFetcher, useParams } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import {
-  isMaintenanceDispatchLocked,
-  maintenanceDispatchCommentValidator
-} from "~/modules/resources/resources.models";
-import {
-  getMaintenanceDispatch,
-  upsertMaintenanceDispatchComment
-} from "~/modules/resources/resources.service";
+import { maintenanceDispatchCommentValidator } from "~/modules/resources/resources.models";
 import type { MaintenanceDispatchComment } from "~/modules/resources/types";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(
+    maintenanceDispatchCommentValidator.omit({ maintenanceDispatchId: true })
+  ).request(args, { params: ["dispatchId"] });
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  const result = await api.resources.createMaintenanceDispatchComment({
+    comment: input.data.comment,
+    maintenanceDispatchId: input.params.dispatchId
   });
-
-  const { dispatchId } = params;
-  if (!dispatchId) throw new Error("dispatchId not found");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "resources"
-  });
-  const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
-  await requireUnlocked({
-    request,
-    isLocked: isMaintenanceDispatchLocked(dispatch.data?.status),
-    redirectTo: path.to.maintenanceDispatch(dispatchId),
-    message: "Cannot modify a locked dispatch. Reopen it first."
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(
-    maintenanceDispatchCommentValidator
-  ).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const upsertComment = await upsertMaintenanceDispatchComment(client, {
-    ...validation.data,
-    maintenanceDispatchId: dispatchId,
-    createdBy: validation.data.id ? undefined : userId,
-    // @ts-expect-error - stfu typescript
-    updatedBy: validation.data.id ? userId : undefined
-  });
-
-  if (upsertComment.error) {
-    return data(
-      {},
-      await flash(request, error(upsertComment.error, "Failed to save comment"))
-    );
-  }
-
-  return data({}, await flash(request, success("Comment saved")));
+  // The comment box posts through a plain fetcher: the flash is its toast.
+  return data(
+    result,
+    await flash(
+      args.request,
+      result.error
+        ? error(null, result.error.message)
+        : success("Comment saved")
+    )
+  );
 }
 
 export default function MaintenanceDispatchCommentsRoute() {
@@ -112,7 +79,7 @@ export default function MaintenanceDispatchCommentsRoute() {
         </h2>
       </HStack>
 
-      {permissions.can("update", "resources") && (
+      {permissions.has({ "resources.dispatches": "Edit" }) && (
         <Card>
           <CardContent className="py-4">
             <VStack spacing={2}>

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
@@ -14,21 +14,23 @@ import { z } from "zod";
 export const messagingNotifySchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("jobOperationNote"),
-    operationId: z.string()
+    operationId: z.string(),
+    // Optional: a tablet still running an older MES build sends none.
+    noteId: z.string().optional()
   })
 ]);
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await authorize(request);
 
   const payload = messagingNotifySchema.safeParse(await request.json());
 
   if (payload.success) {
     switch (payload.data.type) {
       case "jobOperationNote":
-        const { operationId } = payload.data;
+        const { operationId, noteId } = payload.data;
 
-        const [job, previousMessages] = await Promise.all([
+        const [job, previousMessages, note] = await Promise.all([
           client
             .from("jobOperation")
             .select("*, job(id, assignee), jobMakeMethod(id, parentMaterialId)")
@@ -37,7 +39,18 @@ export async function action({ request }: ActionFunctionArgs) {
           client
             .from("jobOperationNote")
             .select("*")
-            .eq("jobOperationId", operationId)
+            .eq("jobOperationId", operationId),
+          // Only the sender's own note on this operation becomes the message.
+          noteId
+            ? client
+                .from("jobOperationNote")
+                .select("note")
+                .eq("id", noteId)
+                .eq("jobOperationId", operationId)
+                .eq("createdBy", userId)
+                .eq("companyId", companyId)
+                .maybeSingle()
+            : null
         ]);
 
         const assignee = job.data?.job?.assignee;
@@ -70,7 +83,8 @@ export async function action({ request }: ActionFunctionArgs) {
                 type: "users",
                 userIds: usersToNotify
               },
-              from: userId
+              from: userId,
+              body: note?.data?.note
             });
           }
         }

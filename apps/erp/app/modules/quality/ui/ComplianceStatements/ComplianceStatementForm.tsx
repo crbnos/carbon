@@ -48,8 +48,8 @@ const ComplianceStatementForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "quality")
-    : !permissions.can("create", "quality");
+    ? !permissions.has({ "quality.complianceStatements": "Edit" })
+    : !permissions.has({ "quality.complianceStatements": "Create" });
 
   return (
     <ModalDrawerProvider type="drawer">

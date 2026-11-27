@@ -142,7 +142,7 @@ export function PeopleCard({
   const canOpen = !isOverlay && !isDisabled;
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a tap anywhere on the card opens it; the name button is the keyboard/AT control
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer-only shortcut so a tap anywhere on the card opens it; the name button is the keyboard/AT control
     <div
       ref={isOverlay ? undefined : setNodeRef}
       style={style}

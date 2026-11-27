@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import {
   jobCompletionDate,
@@ -16,19 +17,15 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { mergeDemandProjections } from "~/modules/items/demand-projection";
 import {
-  getDemandForecastSources,
   getItemDemand,
   getItemNettableQuantities,
-  getItemQuantities,
-  getOpenJobMaterials,
-  getOpenProductionOrders,
-  getOpenPurchaseOrderLines,
-  getOpenSalesOrderLines
+  getOpenJobMaterials
 } from "~/modules/items/items.service";
 import { bucketSupplyByPeriod } from "~/modules/items/ui/Item/planningSupplyDemand";
 import {
   getLocationTimeZone,
-  getOrCreatePeriods
+  getOrCreatePeriods,
+  PLANNING_WEEKS
 } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -46,8 +43,6 @@ const defaultResponse = {
   openProductionOrders: [],
   openPurchaseOrderLines: []
 };
-
-const WEEKS_TO_FORECAST = 12 * 4;
 
 type OpenJobMaterialLine = NonNullable<
   Awaited<ReturnType<typeof getOpenJobMaterials>>["data"]
@@ -171,9 +166,10 @@ async function getRedirectedOpenJobMaterials(
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(ITEM_PAGES, "View")
+  );
 
   const { id: itemId, locationId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -185,7 +181,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const periods = await getOrCreatePeriods(
     getDatabaseClient(),
     today,
-    WEEKS_TO_FORECAST
+    PLANNING_WEEKS
   );
 
   const [
@@ -204,13 +200,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       periods: periods.map((p) => p.id ?? ""),
       companyId
     }),
-    getItemQuantities(client, itemId, companyId, locationId),
+    api.items.getItemQuantities({ itemId, locationId }),
     getItemNettableQuantities(client, itemId, companyId, locationId),
-    getOpenSalesOrderLines(client, { itemId, companyId, locationId }),
-    getOpenJobMaterials(client, { itemId, companyId, locationId }),
-    getOpenProductionOrders(client, { itemId, companyId, locationId }),
-    getOpenPurchaseOrderLines(client, { itemId, companyId, locationId }),
-    getDemandForecastSources(client, {
+    api.items.getOpenSalesOrderLines({ itemId, companyId, locationId }),
+    api.items.getOpenJobMaterials({ itemId, companyId, locationId }),
+    api.items.getOpenProductionOrders({ itemId, companyId, locationId }),
+    api.items.getOpenPurchaseOrderLines({ itemId, companyId, locationId }),
+    api.items.getDemandForecastSources({
       itemId,
       locationId,
       periods: periods.map((p) => p.id ?? ""),

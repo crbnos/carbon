@@ -47,9 +47,8 @@ import type {
   FirstArticleInspectionProduct
 } from "~/modules/quality/types";
 import { path } from "~/utils/path";
-import CertificateForm, {
-  getCertificateTypeLabel
-} from "../Certificates/CertificateForm";
+import CertificateForm from "../Certificates/CertificateForm";
+import { getCertificateTypeLabel } from "../Certificates/certificateTypeLabels";
 import FirstArticleProductForm from "./FirstArticleProductForm";
 import { useFirstArticleLabels } from "./useFirstArticleLabels";
 
@@ -78,7 +77,8 @@ const FirstArticleProducts = ({ detail }: FirstArticleProductsProps) => {
   const { firstArticle } = detail;
   const id = firstArticle.id;
   const isEditable =
-    firstArticle.status === "Draft" && permissions.can("update", "quality");
+    firstArticle.status === "Draft" &&
+    permissions.has({ "quality.firstArticles": "Edit" });
 
   return (
     <Card>

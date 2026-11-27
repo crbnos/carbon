@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { type PageId, pageOfTable } from "@carbon/database/access";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import { round } from "@carbon/database/precision";
 import { moneyFormatOptions } from "@carbon/utils";
@@ -194,6 +195,7 @@ export const purchaseInvoiceLineValidator = z
     supplierUnitPrice: zfd.numeric(z.number().optional()),
     supplierShippingCost: zfd.numeric(z.number().optional().default(0)),
     supplierTaxAmount: zfd.numeric(z.number().optional().default(0)),
+    taxCodeId: zfd.text(z.string().optional()),
     taxPercent: zfd.numeric(z.number().min(0).max(1).optional().default(0)),
     requiredDate: zfd.text(z.string().optional()),
     locationId: zfd.text(z.string().optional()),
@@ -444,6 +446,7 @@ export const salesInvoiceLineValidator = z
     discountPercent: zfd.numeric(z.number().min(0).max(100).optional()),
     shippingCost: zfd.numeric(z.number().optional().default(0)),
     taxPercent: zfd.numeric(z.number().optional().default(0)),
+    taxCodeId: zfd.text(z.string().optional()),
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
@@ -547,13 +550,34 @@ export const memoValidator = z
     memoDate: z.string().min(1, { message: "Date is required" }),
     currencyCode: z.string().min(1, { message: "Currency is required" }),
     exchangeRate: zfd.numeric(z.number().positive().default(1)),
-    amount: zfd.numeric(z.number().positive({ message: "Amount must be > 0" })),
+    // The memo form enters the NET and a tax code; `upsertMemo` computes the
+    // tax forward from the code's rate on the memo date and stores
+    // amount = net + tax (spec "Memo tax"). A caller that sends `amount` and
+    // no `netAmount` keeps the old meaning: a gross with no tax — refused on
+    // an update of a memo that carries tax (`resolveMemoTaxAmounts` in invoicing.utils).
+    netAmount: zfd.numeric(
+      z.number().positive({ message: "Net amount must be > 0" }).optional()
+    ),
+    taxCodeId: zfd.text(z.string().optional()),
+    amount: zfd.numeric(
+      z.number().positive({ message: "Amount must be > 0" }).optional()
+    ),
     reference: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional())
   })
   .refine((d) => Boolean(d.customerId) !== Boolean(d.supplierId), {
     message: "A memo is for exactly one party (customer or supplier)",
     path: ["customerId"]
+  })
+  .refine((d) => d.netAmount !== undefined || d.amount !== undefined, {
+    message: "Net amount is required",
+    path: ["netAmount"]
+  })
+  // A tax code is applied to a net. Taken with only a gross, the tax would
+  // have to be worked out backwards from it, which posting never does.
+  .refine((d) => !d.taxCodeId || d.netAmount !== undefined, {
+    message: "A tax code needs a net amount",
+    path: ["taxCodeId"]
   });
 
 // ----------------------------------------------------------------------
@@ -835,6 +859,20 @@ export function isInvoicePayable(
     Number.isFinite(Number(balance)) &&
     Number(balance ?? 0) > 0
   );
+}
+
+/** Who a memo is with: a supplier (a Supplier Credit) or a customer (a Credit Memo). */
+export type MemoParty = "supplier" | "customer";
+
+/**
+ * The page that owns a memo, by its party (the registry's `where` on `memo`):
+ * Supplier Credits with a supplier, Credit Memos with a customer.
+ */
+export function memoPage(
+  memo: { supplierId?: string | null; customerId?: string | null } | MemoParty
+): PageId {
+  const row = typeof memo === "string" ? { [`${memo}Id`]: memo } : memo;
+  return pageOfTable("memo", row);
 }
 
 /**

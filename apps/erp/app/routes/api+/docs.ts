@@ -25,9 +25,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Fixed until the next deploy, and the limit above is 20 an hour. Loaded
   // here rather than at module scope: the schema is ~6 MB of source, and the
   // dev server evaluates every route module up front.
-  const { default: swaggerDocsSchema } = await import(
-    "@carbon/database/swagger-docs-schema"
-  );
+  const { default: swaggerDocsSchema } =
+    await import("@carbon/database/swagger-docs-schema");
   return data(swaggerDocsSchema, { headers: DAY_CACHE_HEADERS });
 }
 

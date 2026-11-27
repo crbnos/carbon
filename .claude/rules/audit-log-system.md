@@ -27,7 +27,7 @@ The partition key *is the table name* — there is **no `companyId` column**. Co
 - `operation` TEXT CHECK IN (`INSERT`,`UPDATE`,`DELETE`)
 - `actorId` TEXT | null — user who made the change; null = system/service-role. Captured via `auth.uid()` in `dispatch_event_batch`, which is NULL on a direct Kysely connection (no `request.jwt.claims` GUC). The handler therefore falls back to the row's own audit columns — `record.actorId ?? new.updatedBy ?? new.createdBy ?? old.updatedBy ?? old.createdBy` (`packages/jobs/src/inngest/functions/events/audit.ts`) — so a Kysely write is still attributed, provided it stamps `updatedBy`/`createdBy`. A write that stamps neither logs as "System"
 - `diff` JSONB | null — `{ field: { old, new, snapshot? } }`
-- `metadata` JSONB | null — `ipAddress`, `userAgent`, `origin`, `requestId`
+- `metadata` JSONB | null — `ipAddress`, `userAgent`, `origin`, `requestId`. A service function that writes its own entries (`insertAuditLogEntries`, the invite revocation in `users.server.ts`) takes `ipAddress` and `userAgent` from `ctx.origin`, which the entry point reads from the request's headers (`originOf`, `@carbon/api/service-fn.server`), never from its input. The IP is the entry our proxy wrote; the user agent, and the city off Vercel, are what the caller sent
 - `createdAt` TIMESTAMPTZ — original event time (handler passes `event.timestamp`; falls back to `clock_timestamp()` per row)
 
 Indexes on `(entityType,entityId)`, `tableName`, `recordId`, `actorId`, `createdAt DESC`.
@@ -50,7 +50,7 @@ forked to attach the trigger to every new (and pre-existing) table via the idemp
 ## Access (migration `20260924171942_audit-log-company-scope.sql`)
 
 Each `auditLog_{companyId}` table has ONE policy, `"SELECT"`, true only for callers holding
-`settings_view` in that company. INSERT/UPDATE/DELETE/TRUNCATE are revoked from `anon`/`authenticated`.
+View on Audit Logs (`settings.auditLogs_view`) in that company. INSERT/UPDATE/DELETE/TRUNCATE are revoked from `anon`/`authenticated`.
 `secure_audit_log_table(companyId)` applies both, and `create_audit_log_table` calls it on every table it
 creates or touches, because the default privileges on `public` re-grant ALL to the API roles on each new
 table. (Before this, the policy was `audit_log_access` FOR ALL USING (true), and any holder of the anon
@@ -61,15 +61,18 @@ The RPCs are all SECURITY DEFINER, so each one begins with
 
 | Permission | Functions |
 |---|---|
-| `settings_view` | `get_entity_audit_log`, `get_audit_log`, `get_audit_log_count` |
-| `settings_update` | `create_audit_log_table` |
+| `settings.auditLogs_view` | `get_entity_audit_log`, `get_audit_log`, `get_audit_log_count` |
+| `settings.auditLogs_update` | `create_audit_log_table` |
 | `NULL` (service role only) | `insert_audit_log_batch`, `get_audit_logs_for_archive`, `delete_old_audit_logs`, `drop_audit_log_table` |
 
 The guard only applies when `current_setting('role')` is `anon` or `authenticated`, so the service role
 and direct Postgres connections pass. **Never swap it for `REVOKE EXECUTE`**: on supabase/postgres
 15.14.1.112, calling any function the caller lacks EXECUTE on, as `anon`/`authenticated`, segfaults the
 backend (see `.ai/lessons.md`). The controlled-environment auto-enable in the `settings+/audit-logs.tsx`
-loader therefore runs as the service role, because that loader only requires `settings_view`.
+loader therefore runs as the service role, because that loader only requires View on Audit Logs.
+`20261111050003_audit-log-page-policy.sql` rewrites every existing table's policy from the module
+key to the page key, after `20261111050000` ships the page-key `secure_audit_log_table`; `create_audit_log_table` re-secures a table whose policy does not name
+`settings.auditLogs_view`.
 
 ## On-by-default in controlled environments (3.3.1)
 

@@ -445,6 +445,7 @@ export const Constants = {
       ],
       inventoryCountStatus: ["Draft", "Pending", "Posted"],
       invoiceAutomation: [
+        "Manual",
         "Draft Only",
         "Post",
         "Post and Email",
@@ -756,6 +757,12 @@ export const Constants = {
         "Outside Processing",
       ],
       parameterSource: ["Manual", "Sum", "Min", "Max", "Formula", "Item"],
+      partNumberDisplay: [
+        "Ours First",
+        "Theirs First",
+        "Theirs Only",
+        "Ours Only",
+      ],
       payableLineType: [
         "Comment",
         "G/L Account",
@@ -774,6 +781,7 @@ export const Constants = {
       performanceBasedPaymentEventType: ["Severable", "Cumulative"],
       periodCloseStatus: ["Open", "Locked", "Closed"],
       periodType: ["Week", "Day", "Month"],
+      permissionLevel: ["None", "View", "Create", "Edit", "Full"],
       pickingListLineStatus: ["Pending", "Picked", "Short", "Cancelled"],
       pickingListStatus: [
         "Draft",
@@ -783,6 +791,8 @@ export const Constants = {
         "Partial",
       ],
       pickMethodSortMethod: ["Default", "FEFO", "FIFO", "LIFO"],
+      plannedOrderStatus: ["Planned", "Firm", "Converted"],
+      plannedOrderType: ["Make", "Buy", "Transfer"],
       planningActionStatus: ["Open", "Dismissed", "Actioned"],
       planningActionType: [
         "Order",
@@ -1180,6 +1190,7 @@ export const Constants = {
         "Excluded",
       ],
       tableViewType: ["Public", "Private"],
+      taxCalculationType: ["Normal", "Reverse Charge"],
       taxDepreciationMethod: ["Straight Line", "Declining Balance", "MACRS"],
       taxExemptionReason: [
         "Resale",
@@ -1192,6 +1203,16 @@ export const Constants = {
         "Educational",
         "Religious",
         "Other",
+      ],
+      taxLedgerSource: ["Sales", "Purchase"],
+      taxReportingCategory: [
+        "Standard",
+        "Reduced",
+        "Zero-Rated",
+        "Exempt",
+        "Reverse Charge",
+        "Export",
+        "Out of Scope",
       ],
       testCaseVerdict: ["Not Run", "Pass", "Fail", "Inconclusive"],
       timekeepingControls: ["Standard", "DCAA"],

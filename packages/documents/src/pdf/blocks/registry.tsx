@@ -44,6 +44,11 @@ export const salesInvoiceBlockRegistry: Partial<
         texts={salesInvoiceTexts.summary}
         vars={data.vars}
         currencyCode={data.currencyCode}
+        taxSummary={data.taxSummary}
+        values={data.values}
+        locale={data.locale}
+        numberFormatter={data.numberFormatter}
+        invoiceMessages={data.invoiceMessages}
         rows={[
           { label: "subtotal", value: "subtotalValue", always: true },
           { label: "discount", value: "discountValue" },

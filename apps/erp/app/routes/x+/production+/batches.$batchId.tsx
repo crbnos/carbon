@@ -3,33 +3,25 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getBatchOutputLots,
-  getJobOperationBatchEvents,
-  getJobOperationBatchWithMembers
-} from "~/modules/production/production.service";
 import { BatchDetailDrawer } from "~/modules/production/ui/Batches/BatchDetailDrawer";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "production.batches": "View" });
 
   const { batchId } = params;
   if (!batchId) throw notFound("batchId not found");
 
   const [batch, events, outputLots] = await Promise.all([
-    getJobOperationBatchWithMembers(client, batchId, companyId),
-    getJobOperationBatchEvents(client, batchId, companyId),
-    getBatchOutputLots(client, batchId, companyId)
+    api.production.getJobOperationBatchWithMembers({ batchId }),
+    api.production.getJobOperationBatchEvents({ batchId }),
+    api.production.getBatchOutputLots({ batchId })
   ]);
   if (batch.error || !batch.data) {
     throw redirect(

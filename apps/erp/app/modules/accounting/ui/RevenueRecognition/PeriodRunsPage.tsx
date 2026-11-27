@@ -26,7 +26,7 @@ import { usePermissions } from "~/hooks";
 import RevenueRecognitionRunsTable, {
   type RevenueRecognitionRunListItem
 } from "./RevenueRecognitionRunsTable";
-import { RUN_PAGES } from "./runPages";
+import { RUN_PAGES, runPage } from "./runPages";
 
 type PeriodRunsPageProps = {
   /** Which runs the page lists and creates. */
@@ -61,7 +61,7 @@ export default function PeriodRunsPage({
 
   const { listPath, newPath } = RUN_PAGES[type];
   const canCreate =
-    permissions.can("create", "accounting") && !hasDraftBlocking;
+    permissions.has({ [runPage(type)]: "Create" }) && !hasDraftBlocking;
 
   return (
     <VStack spacing={0} className="h-full">
@@ -71,7 +71,7 @@ export default function PeriodRunsPage({
         count={count}
         infinite={infinite}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ [runPage(type)]: "Create" }) && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

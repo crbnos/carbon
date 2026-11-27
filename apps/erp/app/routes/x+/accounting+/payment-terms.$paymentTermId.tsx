@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,25 +11,21 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { paymentTermValidator } from "~/modules/accounting/accounting.models";
-import {
-  getPaymentTerm,
-  upsertPaymentTerm
-} from "~/modules/accounting/accounting.service";
+import { upsertPaymentTerm } from "~/modules/accounting/accounting.service";
 import type { PaymentTermCalculationMethod } from "~/modules/accounting/types";
 import { PaymentTermForm } from "~/modules/accounting/ui/PaymentTerms";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "accounting.paymentTerms": "View"
   });
 
   const { paymentTermId } = params;
   if (!paymentTermId) throw notFound("paymentTermId not found");
 
-  const paymentTerm = await getPaymentTerm(client, paymentTermId);
+  const paymentTerm = await api.accounting.getPaymentTerm({ paymentTermId });
 
   return {
     paymentTerm: paymentTerm?.data ?? null
@@ -38,8 +34,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "accounting"
+  const { client, userId } = await authorize(request, {
+    "accounting.paymentTerms": "Edit"
   });
 
   const formData = await request.formData();

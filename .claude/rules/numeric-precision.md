@@ -2,9 +2,8 @@
 paths:
   - "packages/database/src/precision.ts"
   - "packages/utils/src/format.ts"
-  - "packages/checks/src/conformance/no-derived-percent-column.ts"
-  - "packages/checks/src/conformance/no-raw-rounding.ts"
-  - "packages/checks/src/conformance/no-inline-fraction-digits.ts"
+  - "packages/checks/src/conformance/migrations.ts"
+  - "packages/checks/src/conformance/numbers.ts"
   - "packages/checks/src/sources/typescript.ts"
   - "packages/form/src/components/Number.tsx"
   - "packages/ee/src/accounting/providers/xero/serialize.ts"
@@ -121,19 +120,20 @@ corruption, which came from deriving the amount UNROUNDED so the money input
 re-committed a changed value on blur. Derive the amount through `applyRate`
 and blur commits an identical value, triggering nothing.
 
-`useDerivedTaxAmount` (exported from `TaxFields`) owns the base-change
+`useTaxPair` (exported from `TaxFields`) owns the base-change
 re-derivation and deliberately skips its first run — a saved line's stored
 pair is displayed as stored rather than silently recomputed on mount.
 
 Build the denominator with `taxableBase(unitPrice, quantity, shippingCost)`
-(also from `TaxFields`), never inline arithmetic. An EMPTIED number input
+(`packages/utils/src/tax.ts`, exported from `@carbon/utils`; `TaxFields` imports
+it from there), never inline arithmetic. An EMPTIED number input
 commits **NaN**, not 0 — that is react-aria's empty state
 (`if (!newInputValue.length) setNumberValue(NaN)`) — and one NaN term makes
 the whole sum NaN, so `applyRate` returns NaN, the amount field renders blank,
 and saving writes 0 against a live 6.25% percent. The pair is broken and the
 tax silently vanishes. `taxableBase` reads each term as 0 BEFORE the sum, which
 is the only place it can be done: once the terms are added, no downstream guard
-can recover them. `useDerivedTaxAmount` additionally refuses a non-finite
+can recover them. `useTaxPair` additionally refuses a non-finite
 subtotal, so "never overwrite a stored amount with NaN" holds by construction.
 
 ## Display digits = input digits (named kinds)

@@ -99,7 +99,7 @@ databaseTest(
         .execute();
       expect(lines).toHaveLength(1);
       expect(lines[0]!.description).toContain(
-        "2026-10-07 – 2026-11-06 · 31 days · Month rate"
+        "Oct 7, 2026 – Nov 6, 2026 · 31 days · Month rate"
       );
       expect(Number(lines[0]!.unitPrice)).toBe(300);
     } finally {

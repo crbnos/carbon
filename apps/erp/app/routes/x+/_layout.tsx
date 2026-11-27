@@ -451,7 +451,6 @@ export default function AuthenticatedRoute() {
         dismissible: false
       }
     : systemStatus.data?.announcement;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
   useEffect(() => {
     shellLoadedAt = Date.now();
   }, [loaderData]);
@@ -514,7 +513,7 @@ export default function AuthenticatedRoute() {
   // attestation. Declining either logs the user out.
   //
   // `entityRequired` is false for Carbon staff — they provision customer tenants
-  // and so hold users_update there, but the Rider binds the customer's own
+  // and so hold Edit on Accounts there, but the Rider binds the customer's own
   // organization and is not theirs to sign. They fall straight through to their
   // own attestation; the customer's first admin binds the customer.
   let itarScreen: ReactNode = null;
@@ -525,7 +524,7 @@ export default function AuthenticatedRoute() {
     (entityBlocking || !itarCertification.userCertified)
   ) {
     if (entityBlocking) {
-      itarScreen = permissions.can("update", "users") ? (
+      itarScreen = permissions.has({ "users.accounts": "Edit" }) ? (
         <ItarEntityCertification
           companyName={companyName ?? "your company"}
           riderPdfPath={ITAR_RIDER_PDF_PATH}

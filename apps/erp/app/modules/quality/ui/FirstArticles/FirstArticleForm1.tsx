@@ -87,7 +87,8 @@ const FirstArticleForm1 = ({ detail, baselines }: FirstArticleForm1Props) => {
 
   const { firstArticle } = detail;
   const isDraft = firstArticle.status === "Draft";
-  const isDisabled = !isDraft || !permissions.can("update", "quality");
+  const isDisabled =
+    !isDraft || !permissions.has({ "quality.firstArticles": "Edit" });
   const [scope, setScope] = useState(firstArticle.scope);
 
   return (

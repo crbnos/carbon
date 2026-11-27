@@ -102,7 +102,6 @@ const JobProperties = () => {
   );
   const showDueDate = deadlineRequiresDueDate(deadlineType);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (field: keyof Job, value: string | number | null) => {
       if (value === routeData?.job[field]) {
@@ -119,6 +118,7 @@ const JobProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [jobId, routeData?.job]
   );
 
@@ -140,7 +140,6 @@ const JobProperties = () => {
     [jobId, currentChargeNumber, fetcher.submit]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -155,10 +154,10 @@ const JobProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [jobId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
@@ -175,10 +174,10 @@ const JobProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [jobId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateBatchNumber = useCallback(
     (trackedEntityId: string, value: string) => {
       const formData = new FormData();
@@ -196,6 +195,7 @@ const JobProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     []
   );
 
@@ -209,7 +209,7 @@ const JobProperties = () => {
       ? optimisticAssignment
       : routeData?.job?.assignee;
 
-  const canUpdate = permissions.can("update", "production");
+  const canUpdate = permissions.has({ "production.jobs": "Edit" });
   const isLocked = isJobLocked(routeData?.job?.status);
   const isDisabled = !canUpdate || isLocked;
 

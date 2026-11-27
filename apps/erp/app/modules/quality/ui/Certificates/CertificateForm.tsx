@@ -6,8 +6,6 @@ import { useCarbon } from "@carbon/auth";
 import { storage } from "@carbon/files";
 import { ValidatedForm } from "@carbon/form";
 import { HStack, IconButton, toast, VStack } from "@carbon/react";
-import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
@@ -26,6 +24,7 @@ import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import { certificateTypes, certificateValidator } from "../../quality.models";
+import { getCertificateTypeLabel } from "./certificateTypeLabels";
 
 type UploadedFile = { path: string; name: string; size: number };
 
@@ -222,24 +221,5 @@ const CertificateForm = ({
     </ValidatedForm>
   );
 };
-
-// Message descriptors, resolved by the caller's `t` from `useLingui()`. A
-// helper that took `t` as an argument and used `` t`...` `` rendered blank:
-// the macro only rewrites a `t` that comes from `useLingui()` in scope.
-const CERTIFICATE_TYPE_LABELS: Record<
-  (typeof certificateTypes)[number],
-  MessageDescriptor
-> = {
-  Material: msg`Material`,
-  "Special Process": msg`Special Process`,
-  "Functional Test": msg`Functional Test`,
-  Other: msg`Other`
-};
-
-export function getCertificateTypeLabel(
-  type: (typeof certificateTypes)[number]
-): MessageDescriptor {
-  return CERTIFICATE_TYPE_LABELS[type] ?? { id: type, message: type };
-}
 
 export default CertificateForm;

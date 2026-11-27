@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { PageGate } from "@carbon/database/access";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import {
   addDays,
   addMonths,
@@ -49,26 +51,32 @@ import {
   taxExemptionReasons
 } from "../shared/shared.models";
 
+// Each KPI names the pages it reads, so the dashboard shows only what the person may see.
 export const KPIs = [
   {
     key: "supplierQuoteCount",
-    label: "Supplier Quotes"
+    label: "Supplier Quotes",
+    gate: { "purchasing.supplierQuotes": "View" }
   },
   {
     key: "purchaseOrderCount",
-    label: "Purchase Orders"
+    label: "Purchase Orders",
+    gate: { "purchasing.purchaseOrders": "View" }
   },
   {
     key: "purchaseInvoiceCount",
-    label: "Purchase Invoices"
+    label: "Purchase Invoices",
+    gate: { "invoicing.purchaseInvoices": "View" }
   },
   {
     key: "purchaseOrderAmount",
-    label: "Purchase Order Amount"
+    label: "Purchase Order Amount",
+    gate: { "purchasing.purchaseOrders": "View" }
   },
   {
     key: "purchaseInvoiceAmount",
-    label: "Purchase Invoice Amount"
+    label: "Purchase Invoice Amount",
+    gate: { "invoicing.purchaseInvoices": "View" }
   }
   // {
   //   key: "turnaroundTime",
@@ -153,6 +161,8 @@ export const plannedOrderValidator = z.object({
   supplierId: zfd.text(z.string().optional()),
   // The Order action this suggestion came from, which Order settles
   planningActionId: zfd.text(z.string().optional()),
+  // The planned order this suggestion stands for, which Order converts
+  plannedOrderId: zfd.text(z.string().optional()),
   itemReadableId: zfd.text(z.string().optional()),
   unitPrice: zfd.numeric(z.number().optional()),
   unitOfMeasureCode: zfd.text(z.string().optional()),
@@ -282,9 +292,11 @@ export const purchaseOrderLineValidator = z
     requiredDate: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     supplierPartId: zfd.text(z.string().optional()),
+    partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional()),
     supplierShippingCost: zfd.numeric(z.number().optional()),
     supplierTaxAmount: zfd.numeric(z.number().optional()),
     supplierUnitPrice: zfd.numeric(z.number().optional()),
+    taxCodeId: zfd.text(z.string().optional()),
     taxPercent: zfd.numeric(z.number().min(0).max(1).optional().default(0))
   })
   .refine(
@@ -406,7 +418,9 @@ export const supplierValidator = z.object({
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
   purchasingContactId: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional())
+  website: zfd.text(z.string().optional()),
+  // Empty: the company default applies.
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
 
@@ -422,7 +436,9 @@ export const supplierApprovalValidator = z.object({
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
   purchasingContactId: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional())
+  website: zfd.text(z.string().optional()),
+  // Empty: the company default applies.
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
 
@@ -437,7 +453,8 @@ export const supplierTaxValidator = z
       (val) => (val === "" ? undefined : val),
       z.enum(taxExemptionReasons).optional().nullable()
     ),
-    taxExemptionCertificateNumber: zfd.text(z.string().optional())
+    taxExemptionCertificateNumber: zfd.text(z.string().optional()),
+    taxCodeId: zfd.text(z.string().optional())
   })
   .refine(
     (data) => !data.taxExempt || (data.taxExempt && data.taxExemptionReason),
@@ -762,7 +779,7 @@ export type RequestQuoteLine = z.infer<
 >["lines"][number];
 
 /** Whole purchase units when the unit differs, as planning orders them; the
- * inner round strips float noise (1.1 / 0.1 = 11.000000000000002). */
+ * inner round strips float noise (0.07 / 0.01 = 7.000000000000001). */
 export function toPurchaseQuantity(inventoryQuantity: number, factor: number) {
   return factor === 1
     ? round(inventoryQuantity)
@@ -1016,6 +1033,24 @@ export function isPurchaseOrderEditLocked(
 }
 
 /**
+ * Why a purchase order's lines cannot change which part numbers they print,
+ * else null. A sent order keeps printing the numbers it was sent with, and an
+ * order waiting for approval is not edited. The line form and Edit document
+ * both follow it.
+ */
+export function purchaseOrderPartNumberRefusal(
+  status: string | null | undefined
+): string | null {
+  if (status === "Needs Approval") {
+    return "The part numbers of a purchase order cannot change while it waits for approval.";
+  }
+  if (isPurchaseOrderLocked(status)) {
+    return "The part numbers of a purchase order cannot change once it is sent.";
+  }
+  return null;
+}
+
+/**
  * Why an edit of a purchase order is refused, or null when it is allowed.
  * `changesSupplierOrCurrency`: the edit names another supplier or currency,
  * which a released order never takes (that is a new order).
@@ -1215,6 +1250,7 @@ export const PURCHASE_ORDER_LINE_VERSION_COLUMNS = [
   "supplierShippingCost",
   "supplierTaxAmount",
   "taxPercent",
+  "taxCodeId",
   "setupPrice",
   "exchangeRate",
   "locationId",
@@ -1626,7 +1662,7 @@ export function planningQuantityChange(
   const conversionFactor = Number(line.conversionFactor) || 1;
   // MRP suggests a whole number of purchase units already
   // (`quantityAfterApply`, @carbon/planning); the inner round strips float
-  // noise (1.1 / 0.1 = 11.000000000000002) that would otherwise ceil it a
+  // noise (0.07 / 0.01 = 7.000000000000001) that would otherwise ceil it a
   // whole purchase unit up.
   const toReceive =
     conversionFactor > 0
@@ -2732,3 +2768,9 @@ export function purchaseOrderStatusAfterReversal(
   if (allReceived) return "To Invoice";
   return "To Receive and Invoice";
 }
+
+/** `purchasing.finalizePurchasingRfqAndNotify`: the posting writes the supplier quotes as the system. */
+export const finalizePurchasingRfqAndNotifyPermission = {
+  "purchasing.rfqs": "Edit",
+  "purchasing.supplierQuotes": "Create"
+} satisfies PageGate;

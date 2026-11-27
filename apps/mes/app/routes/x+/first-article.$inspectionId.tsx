@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -72,7 +72,7 @@ async function getFirstArticleLot(
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request, {});
 
   const { inspectionId } = params;
   if (!inspectionId) {
@@ -113,6 +113,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getRecentInspectionGauges(getDatabaseClient(), { inspectionId, companyId })
   ]);
 
+  if (!viewData.data) {
+    logger.error("Failed to read the first article's units", {
+      inspectionId,
+      companyId,
+      error: viewData.error
+    });
+    throw new Response(viewData.message, { status: 500 });
+  }
+
   if (job.error || !job.data) {
     logger.error("First article job not found", {
       inspectionId,
@@ -124,7 +133,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    ...viewData,
+    ...viewData.data,
     recentGaugeIds: recentGauges.data ?? [],
     job: job.data as Job,
     inspection,
@@ -134,8 +143,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "quality"
+  const { companyId, userId } = await authorize(request, {
+    "quality.firstArticles": "Edit"
   });
 
   const { inspectionId } = params;

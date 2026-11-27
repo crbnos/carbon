@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders, redirect } from "@carbon/utils";
@@ -17,8 +17,8 @@ const logger = getLogger("erp", "first-article", "approve");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality"
+  const { client, companyId, userId } = await authorize(request, {
+    "quality.firstArticles": "Edit"
   });
 
   const { id } = params;

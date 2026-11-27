@@ -67,13 +67,27 @@ RLS lets authenticated users read global rows and employees read their company's
 ## Item linkage (important)
 
 A material is an `item` of `type = 'Material'`. `material.id` is set to the item's `readableId`,
-**not** the item's `id`. Creating a material inserts the `item` row(s) first then the `material` row
-with the shared id — see `upsertMaterial` in
-`apps/erp/app/modules/items/items.service.ts` (the readable id is `material.id`, or the id derived
-from the properties when `companySettings.materialGeneratedIds` is on, then
-`client.from("material").upsert({ id: readableId, ... })`). Because the join is on `readableId`,
-one material can have multiple item **revisions** (and per-size item rows); the `materials` view
-de-dupes to the latest item per `(readableId, companyId)` and aggregates the revisions.
+**not** the item's `id`. Creating a material (`insertMaterial` in
+`apps/erp/app/modules/items/items.service.ts`, behind the New Material route and
+`createMaterial`) writes the `item` row(s), their `itemCost` and the `material` row with the shared
+id in ONE Kysely transaction, gated by Create on `parts.materials` (`parts.materials_create`) through
+the caller's client. The readable id is `material.id`, or the id derived from the properties when
+`companySettings.materialGeneratedIds` is on: `planNewMaterial` checks the properties and derives
+the pair once, and the create only writes the pair it is given (`createMaterial` first applies
+`newMaterialIdentity` to it). Each distinct size is one item revision
+(`newMaterialRevisions`, `material-properties.ts`: a repeated or blank size is dropped, and no
+size is the initial revision `0`). An item group of another company is refused
+(`writeItemCost`: the foreign key checks only that the group exists), and a
+requested item group or unit cost that is not saved (`itemCost` row count short) fails and rolls
+back the whole create. The `material` row is an
+insert `ON CONFLICT (id, "companyId") DO UPDATE`: no code deletes it when its items are deleted,
+so a re-created ID takes over the row left behind. The create takes `lockMaterialReadableId`
+(`items.service.ts`, an advisory lock on the company and readable id) before it looks for live
+revisions, so a second create of the same ID refuses without adding any. The pick method and shelf
+life are written in the same transaction: a refused shelf life rolls the create back and leaves the
+ID free. Because the join is on `readableId`, one material can have
+multiple item **revisions** (and per-size item rows); the `materials` view de-dupes to the latest
+item per `(readableId, companyId)` and aggregates the revisions.
 
 `getMaterial` calls the **`get_material_details(item_id)`** RPC (defined/revised in the
 `20250721101110` and `20250725140205_material-details.sql` migrations). There is also
@@ -83,7 +97,7 @@ de-dupes to the latest item per `(readableId, companyId)` and aggregates the rev
 
 `updateMaterialProperties(client, db, material)` is the one path for substance, form, type,
 finish, grade and dimension changes: the properties panel (`x+/items+/update.tsx`, through `setMaterialProperties`),
-`upsertMaterial`'s update branch and MCP all go through it. The rules are pure functions in
+`updateMaterial` and MCP all go through it. The rules are pure functions in
 `apps/erp/app/modules/items/material-properties.ts` (pinned by `apps/erp/test/material-properties.test.ts`);
 the service loads the rows they read and writes what they decide.
 
@@ -98,19 +112,24 @@ the service loads the rows they read and writes what they decide.
   (`generateMaterialIdentity`); until then it keeps its id, so the panel can set them one at a
   time. Clearing a substance or form that is set is refused. Create requires both.
 - Writes go through Kysely in one transaction (`writeMaterialIdentity`): the material row and, on
-  a rename, every revision's item row; `upsertMaterial` adds the item row, custom fields and
-  itemCost to the same transaction. Kysely bypasses RLS, so `requireMaterialUpdatable` first runs
-  an UPDATE through the caller's client (material's policy is parts_update in the company, which
-  also grants the item and itemCost rows). A taken readable id is refused on rename and on create.
-- `upsertMaterial` updates write only the keys present on the payload (a present-but-undefined key,
-  a cleared form field, clears). The MCP schema requires `name`, `replenishmentSystem`,
-  `defaultMethodType`, `itemTrackingType` and `unitOfMeasureCode`, so those are always sent. With
-  `materialGeneratedIds` on, a sent `name` is ignored (`materialItemUpdateFields`): the name is
-  derived and written to every revision. `active` is never touched; `postingGroupId`/`unitCost` go to
-  `itemCost`; `readableId` renames when ids are hand-typed; `sizes` adds a revision per new size
+  a rename, every revision's item row; `updateMaterial` adds the item row, custom fields,
+  itemCost, pick method and shelf life to the same transaction. A create has its own transaction (`insertMaterial`, see "Item
+  linkage"). Kysely bypasses RLS, so `requireMaterialUpdatable` first runs
+  an UPDATE through the caller's client (material's policy is Edit on `parts.materials` in the company, which
+  also grants the item and itemCost rows). A taken readable id is refused on rename and on create; both decide under `lockMaterialReadableId`, so a rename and a create of one ID run one after the other. A rename locks its old and new ID (`lockMaterialReadableIds`, in sorted order), and a new revision (`createRevision`) locks its material's ID and re-reads the readable id, refusing one renamed meanwhile.
+- `updateMaterial` writes only the keys present on the payload (a present-but-undefined key,
+  a cleared form field, clears). The MCP schema requires `replenishmentSystem`,
+  `defaultMethodType`, `itemTrackingType` and `unitOfMeasureCode`, so those are always sent;
+  `name` is optional. With `materialGeneratedIds` on, a call that changes a property derives the
+  readable id and name and writes them to every revision, so the item update leaves `name` out
+  (`materialItemUpdateFields`); a call that changes no property writes a sent `name` to the item,
+  as the panel's name field does. `generatedMaterialUpdateRefusal` refuses a `readableId` other
+  than the one the material ends up with (the panel has no ID field there), and a `name` that
+  differs from a derived one. `active` is never touched; `postingGroupId`/`unitCost` go to
+  `itemCost` (a group of another company is refused, as on create); `readableId` renames when ids are hand-typed (`updateMaterial` refuses an empty one, which would read as left out); `sizes` adds a revision per new size
   via `createRevision` after the transaction, refused before any write while the material is open
-  in a change notice. The pick method and shelf life are also written after the transaction, so a
-  failure there leaves the transaction's writes in place. An update by readable id is refused when
+  in a change notice. The pick method and shelf life are written in the transaction, so a refused
+  shelf life leaves the material as it was. An update by readable id is refused when
   the material has several revisions (sizes are revisions); pass the item id.
 - `materialDimension`, `materialFinish`, `materialGrade` and `materialType` have no audit columns,
   so their service functions in `items.server.ts` stamp only `companyId`
@@ -121,7 +140,7 @@ the service loads the rows they read and writes what they decide.
 ## Code map
 
 - Service: `apps/erp/app/modules/items/items.service.ts` — `getMaterial`, `getMaterials`
-  (queries `materials` view), `upsertMaterial`, and full CRUD for each taxonomy table
+  (queries `materials` view), `planNewMaterial` / `insertMaterial` / `updateMaterial`, and full CRUD for each taxonomy table
   (`get/upsert/deleteMaterialForm|Substance|Dimension|Finish|Grade|Type`, plus `*List` helpers
   that feed the cascading selects).
 - Validator: `materialValidator` in `apps/erp/app/modules/items/items.models.ts` — merges

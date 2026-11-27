@@ -17,7 +17,7 @@ import { usePermissions } from "~/hooks";
 import type { getRevenueRecognitionRuns } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 import RevenueRecognitionRunStatus from "./RevenueRecognitionRunStatus";
-import { RUN_PAGES } from "./runPages";
+import { RUN_PAGES, runPage } from "./runPages";
 
 export type RevenueRecognitionRunListItem = NonNullable<
   Awaited<ReturnType<typeof getRevenueRecognitionRuns>>["data"]
@@ -102,7 +102,7 @@ const RevenueRecognitionRunsTable = memo(
       (row: RevenueRecognitionRunListItem) => (
         <>
           <MenuItem
-            disabled={!permissions.can("view", "accounting")}
+            disabled={!permissions.has({ [runPage(type)]: "View" })}
             onClick={() => navigate(path.to.revenueRecognitionRun(row.id))}
           >
             <MenuIcon icon={<LuEye />} />
@@ -110,7 +110,7 @@ const RevenueRecognitionRunsTable = memo(
           </MenuItem>
           {row.status === "Draft" && (
             <MenuItem
-              disabled={!permissions.can("delete", "accounting")}
+              disabled={!permissions.has({ [runPage(type)]: "Full" })}
               destructive
               onClick={() => {
                 setSelectedRun(row);
@@ -123,7 +123,7 @@ const RevenueRecognitionRunsTable = memo(
           )}
         </>
       ),
-      [deleteModal, navigate, permissions]
+      [deleteModal, navigate, permissions, type]
     );
 
     return (

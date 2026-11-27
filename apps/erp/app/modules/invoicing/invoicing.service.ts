@@ -8,7 +8,7 @@ import {
   NotFoundError,
   ServerFnError
 } from "@carbon/api/errors";
-import type { PermissionRule } from "@carbon/api/permissions";
+import { type PermissionRule, rowRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import { withStripe } from "@carbon/api/stock-stripes";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -24,7 +24,9 @@ import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import {
   DOCUMENT_JOURNAL_STATUSES,
   OPEN_ITEM_JOURNAL_STATUSES,
-  PRE_CUTOVER_JOURNAL_STATUSES
+  PRE_CUTOVER_JOURNAL_STATUSES,
+  REVERSE_CHARGE_TAX_POSTING_DESCRIPTION,
+  TAX_PAID_POSTING_DESCRIPTION
 } from "@carbon/database/accounting-posting";
 import {
   type Kysely,
@@ -90,9 +92,16 @@ import type {
   SalesRevenueLeg
 } from "@carbon/database/sales-posting-amounts";
 import { getNextSequence } from "@carbon/database/sequence";
+import {
+  buildTaxLedgerRows,
+  type TaxLedgerDocument
+} from "@carbon/database/tax-ledger";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
-import { isCompanyAdmin } from "@carbon/ee/approvals.server";
+import {
+  getCompanyAdminIds,
+  isCompanyAdmin
+} from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   dedupeViolations,
@@ -131,10 +140,12 @@ import {
   assertCurrencyDecimals,
   assertExchangeRate,
   buildSalesPostingLines,
+  type ComponentTax,
   CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION,
   CUSTOMER_DEPOSIT_DESCRIPTION,
   calculateDueDate,
   calculateSalesIntercompanyAmount,
+  chargedTaxPercent,
   chunkArray,
   classifyIntercompanyPostingLines,
   credit,
@@ -146,6 +157,7 @@ import {
   distributeRoundingResidual,
   EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
+  effectiveTaxPercent,
   equals,
   type FundingConsumptionRow,
   type FundingPaymentRow,
@@ -164,9 +176,11 @@ import {
   type LegacyDepositRefund,
   onAccountCreditDescription,
   PAYABLE_POSTING_DESCRIPTIONS,
+  purchaseLineTaxParts,
   RECEIVABLE_POSTING_DESCRIPTIONS,
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
   type ReceiptLayerLike,
+  recoverableTax,
   reduceInvoiceSettlements,
   remainingFundingSources,
   requireAffected,
@@ -174,12 +188,15 @@ import {
   round,
   roundSalesPostingAmounts,
   type SalesPostingMetadata,
+  SCALE,
   type ScheduleRow,
   type SettlementBalanceRow,
   SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION,
   SUPPLIER_PREPAYMENT_DESCRIPTION,
   searchFilter,
+  splitLineTax,
   spreadStraightLine,
+  type TaxCodeInput,
   toBaseAmount,
   toDocumentAmount,
   unchecked,
@@ -223,7 +240,6 @@ import {
   deletePurchaseInvoiceReleasingLeases,
   type ForceDeleteReversalAccounting,
   forceDeleteReceiptRefusal,
-  getCompanyAdminIds,
   getPurchaseOrderFundsRefusal,
   getSupplierPayment,
   getSupplierShipping,
@@ -256,6 +272,7 @@ import {
   bookAdjustment,
   calculateCOGS,
   copyJournalLineDimensions,
+  currencyDecimals,
   documentJournalLines,
   FixedAssetWrites,
   getCompanyTimeZone as getCachedCompanyTimeZone,
@@ -266,26 +283,39 @@ import {
   journalLineDimensionRows,
   loadContractPositions,
   loadPartyDimensions,
+  loadTaxAccountClasses,
+  loadTaxCodes,
+  loadTaxCodesInForce,
   lockContractPositions,
+  lockOrderLines,
+  lockOrderLinesAsRead,
+  lockPostable,
+  negateDocumentTaxLedger,
   PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
   partyDimensionValues,
   partyDimensionValuesFrom,
+  purchaseTaxLedgerLines,
+  refuseLineRateMismatches,
   refuseUnlessOwned,
   refuseVoidBeforeCutover,
   resolveAccountingPeriod,
   resolveInventoryAccount,
   SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
   salesInvoiceStandIns,
+  salesTaxLedgerLines,
   samePosition,
   signedCreditAmount,
-  syncDraftRecognitionRuns
+  syncDraftRecognitionRuns,
+  taxCodesInForceOn,
+  withPurchaseTax
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { searchTerms, withSearchLines } from "~/utils/search";
 import { ruleError, sanitize } from "~/utils/supabase";
-import { getExchangeRate } from "../accounting/accounting.service";
+import { getExchangeRate, getTaxCode } from "../accounting/accounting.service";
+import { toTaxCodeInput } from "../accounting/accounting.utils";
 import { getEmployeeJob } from "../people/people.service";
 import { OPEN_PURCHASE_ORDER_STATUSES } from "../purchasing/purchasing.models";
 import { OPEN_SALES_ORDER_STATUSES } from "../sales/sales.models";
@@ -321,12 +351,16 @@ import {
   isSalesInvoiceLocked,
   paymentJournalDifference,
   purchaseInvoiceRoundingAmount,
+  purchaseInvoiceSupplierChange,
   purchaseLineAccountClasses,
+  salesInvoiceCustomerChange,
   type stripeCustomerActions
 } from "./invoicing.models";
 import {
   ORDER_LINE_CHARGE_FIELDS,
-  type SalesInvoicePostFacts
+  resolveMemoTaxAmounts,
+  type SalesInvoicePostFacts,
+  type StoredMemoTax
 } from "./invoicing.utils";
 import {
   type InvoiceProjectCharges,
@@ -1540,7 +1574,8 @@ export async function upsertPurchaseInvoiceLine(
   const existing = await client
     .from("purchaseInvoiceLine")
     .select("sortOrder")
-    .eq("invoiceId", line.invoiceId);
+    .eq("invoiceId", line.invoiceId)
+    .eq("companyId", line.companyId);
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -1571,6 +1606,12 @@ export async function updatePurchaseInvoiceLineOrder(
   });
 }
 
+/**
+ * Inserts a sales invoice with its opportunity and shipment. Sales owns
+ * `opportunity`, so pass the system client as `system` once the caller's
+ * invoicing permission has passed: the opportunity is written with it,
+ * scoped to `input.companyId`.
+ */
 export async function insertSalesInvoice(
   client: SupabaseClient<Database>,
   input: {
@@ -1591,7 +1632,8 @@ export async function insertSalesInvoice(
     exchangeRate?: number;
     exchangeRateUpdatedAt?: string;
     customFields?: Json;
-  }
+  },
+  system: SupabaseClient<Database> = client
 ): Promise<{
   data: { id: string; invoiceId: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
@@ -1619,7 +1661,7 @@ export async function insertSalesInvoice(
 
   const [opportunity, customerPayment, customerShipping, salesPerson] =
     await Promise.all([
-      client
+      system
         .from("opportunity")
         .insert({
           companyId: input.companyId,
@@ -1943,7 +1985,8 @@ export async function upsertSalesInvoiceLine(
   const existing = await client
     .from("salesInvoiceLine")
     .select("sortOrder")
-    .eq("invoiceId", line.invoiceId);
+    .eq("invoiceId", line.invoiceId)
+    .eq("companyId", line.companyId);
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -5092,28 +5135,139 @@ export async function upsertMemo(
     | (Omit<z.infer<typeof memoValidator>, "id" | "memoId"> & {
         memoId: string;
         companyId: string;
+        companyGroupId: string;
         createdBy: string;
         customFields?: Json;
       })
     | (Omit<z.infer<typeof memoValidator>, "id"> & {
         id: string;
+        companyId: string;
+        companyGroupId: string;
         updatedBy: string;
         customFields?: Json;
       })
-) {
-  if ("createdBy" in memo) {
+): Promise<{
+  data: { id: string; memoId: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  const { companyGroupId, netAmount, taxCodeId, amount, ...rest } = memo;
+
+  // An update keeps the tax the memo already stores unless its code changes;
+  // read it before deciding.
+  let stored: StoredMemoTax | null = null;
+  if (!("createdBy" in memo)) {
+    const existing = await client
+      .from("memo")
+      .select("amount, taxAmount, taxCodeId")
+      .eq("id", memo.id)
+      .eq("companyId", memo.companyId)
+      .single();
+    if (existing.error) return { data: null, error: existing.error };
+    stored = {
+      amount: Number(existing.data.amount ?? 0),
+      taxAmount: Number(existing.data.taxAmount ?? 0),
+      taxCodeId: existing.data.taxCodeId ?? null
+    };
+  }
+
+  const amounts = await memoTaxAmounts(client, {
+    companyId: memo.companyId,
+    companyGroupId,
+    currencyCode: memo.currencyCode,
+    memoDate: memo.memoDate,
+    netAmount,
+    taxCodeId,
+    amount,
+    stored
+  });
+  if ("error" in amounts) {
+    return {
+      data: null,
+      error: {
+        message: amounts.error
+      } as import("@supabase/supabase-js").PostgrestError
+    };
+  }
+  const values = { ...rest, ...amounts };
+
+  if ("createdBy" in values) {
     return client
       .from("memo")
-      .insert([sanitize(memo)])
+      .insert([sanitize(values)])
       .select("id, memoId")
       .single();
   }
+  const { companyId, ...update } = values;
   return client
     .from("memo")
-    .update(sanitize(memo))
-    .eq("id", memo.id)
+    .update(sanitize(update))
+    .eq("id", update.id)
+    .eq("companyId", companyId)
     .select("id, memoId")
     .single();
+}
+
+/**
+ * The stored amounts of a memo (spec "Memo tax"). The tax is computed here,
+ * forward from the net — a tax sent by a client is never trusted, and tax is
+ * never worked out backwards from a gross. `amount` is the gross on AR or AP.
+ * Which rate applies, and when a gross-only update is refused, is decided by
+ * `resolveMemoTaxAmounts`.
+ */
+async function memoTaxAmounts(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    currencyCode: string;
+    memoDate: string;
+    netAmount: number | undefined;
+    taxCodeId: string | undefined;
+    amount: number | undefined;
+    stored: StoredMemoTax | null;
+  }
+): Promise<
+  | { amount: number; taxAmount: number; taxCodeId: string | null }
+  | { error: string }
+> {
+  const taxCodeId = args.taxCodeId || null;
+
+  const currency = await getCurrencyByCode(
+    client,
+    args.companyGroupId,
+    args.currencyCode
+  );
+  if (currency.error || currency.data?.decimalPlaces == null) {
+    return {
+      error: `Currency ${args.currencyCode} has no decimal places configured`
+    };
+  }
+
+  let codeRate = 0;
+  if (taxCodeId && args.netAmount !== undefined) {
+    const taxCode = await getTaxCode(client, taxCodeId);
+    if (taxCode.error || taxCode.data?.companyId !== args.companyId) {
+      return { error: "Tax code not found" };
+    }
+    // The charged rate: 0 for a Reverse Charge code, which only posting
+    // self-assesses.
+    codeRate = chargedTaxPercent(toTaxCodeInput(taxCode.data), args.memoDate);
+  }
+
+  const resolved = resolveMemoTaxAmounts({
+    stored: args.stored,
+    netAmount: args.netAmount,
+    amount: args.amount,
+    taxCodeId,
+    codeRate,
+    decimals: currency.data.decimalPlaces
+  });
+  if ("error" in resolved) return resolved;
+  return {
+    amount: resolved.amount,
+    taxAmount: resolved.taxAmount,
+    taxCodeId
+  };
 }
 
 // RLS DELETE policy on memo restricts to status='Draft'.
@@ -6157,66 +6311,137 @@ export async function unlockedSalesInvoice(
   return null;
 }
 
+// Both tables hold `status`, the party currency and the audit columns; a cast
+// to one of them only names a table for supabase-js and Kysely.
 type InvoiceTable = "salesInvoice" | "purchaseInvoice";
 
 /** The dates a posted invoice still takes; every other field needs a Draft. */
 const POSTED_INVOICE_FIELDS = ["dateIssued", "dateDue", "datePaid"];
 
-/** Why `field` cannot be set on these invoices, or null when it can. */
-export async function refuseLockedInvoices(
-  ctx: ServiceContext,
-  table: InvoiceTable,
-  ids: string[],
-  field: string,
-  message: string
-) {
-  if (POSTED_INVOICE_FIELDS.includes(field)) return null;
-  // Both tables hold `status`; the cast only names one for supabase-js.
-  const invoices = await ctx.asCaller.supabase
-    .from(table as "salesInvoice")
-    .select("status")
-    .in("id", ids)
-    .eq("companyId", ctx.company.id);
-  if (invoices.error) {
-    return ctx.error("internal", "Failed to load the invoices", invoices.error);
+/** The refusal of a field a posted invoice no longer takes. */
+const LOCKED_INVOICE_MESSAGES: Record<InvoiceTable, string> = {
+  salesInvoice: "Cannot modify a locked sales invoice.",
+  purchaseInvoice: "Cannot modify a confirmed purchase invoice."
+};
+
+/** The party field of each kind of invoice, which brings its currency. */
+const INVOICE_PARTIES: Record<
+  InvoiceTable,
+  {
+    partyField: string;
+    partyTable: "customer" | "supplier";
+    partyChange: (
+      partyId: string,
+      currency: Parameters<typeof salesInvoiceCustomerChange>[1]
+    ) => Record<string, unknown>;
+    message: string;
   }
-  return invoices.data.some((invoice) => isSalesInvoiceLocked(invoice.status))
-    ? ctx.error("rule", message)
-    : null;
-}
+> = {
+  salesInvoice: {
+    partyField: "invoiceCustomerId",
+    partyTable: "customer",
+    partyChange: salesInvoiceCustomerChange,
+    message: "Invoice customer is required"
+  },
+  purchaseInvoice: {
+    partyField: "invoiceSupplierId",
+    partyTable: "supplier",
+    partyChange: purchaseInvoiceSupplierChange,
+    message: "Invoice supplier is required"
+  }
+};
 
 /**
- * Write one field on invoices of either kind. A new issue date or payment
- * term on a single invoice recomputes its due date (with several, nothing is
- * written); a new currency brings today's exchange rate; an empty value
- * clears the field.
+ * The id fields an invoice field write takes, and the table each names. Their
+ * foreign keys name the id alone, so they accept another company's row.
  */
-export async function writeInvoiceField(
+const INVOICE_FIELD_REFERENCES: Partial<
+  Record<string, Parameters<typeof refuseUnlessOwned>[1]>
+> = {
+  paymentTermId: "paymentTerm",
+  locationId: "location",
+  invoiceCustomerContactId: "customerContact",
+  invoiceCustomerLocationId: "customerLocation",
+  invoiceSupplierContactId: "supplierContact",
+  invoiceSupplierLocationId: "supplierLocation",
+  supplierId: "supplier"
+};
+
+/**
+ * Set one field on invoices of either kind. The party field (invoice customer
+ * or supplier) cannot be cleared, must be the company's and brings its
+ * currency; any other field takes the columns `invoiceFieldChanges` gives.
+ * The issue, due and paid dates are written on posted invoices too; every
+ * other field only on Drafts (`writeDraftInvoices`). A sales invoice's
+ * customer is `changeSalesInvoiceCustomer`'s.
+ */
+export async function updateInvoiceField(
   ctx: ServiceContext,
   table: InvoiceTable,
   { ids, field, value }: { ids: string[]; field: string; value?: string | null }
 ) {
-  const client = ctx.asCaller.supabase;
-  const companyId = ctx.company.id;
-  let changes: Record<string, unknown> = { [field]: value || null };
+  const party = INVOICE_PARTIES[table];
+  if (field === party.partyField) {
+    if (!value) return ctx.error("validation", party.message);
+    const currency = await partyCurrency(ctx, party.partyTable, value);
+    if (currency instanceof Error) return currency;
+    return writeDraftInvoices(
+      ctx,
+      table,
+      ids,
+      party.partyChange(value, currency)
+    );
+  }
 
-  if (field === "dateIssued" || field === "paymentTermId") {
-    if (ids.length !== 1) return { ids };
-    const invoice = await client
-      .from(table as "salesInvoice")
-      .select("dateIssued, paymentTermId")
-      .eq("id", ids[0]!)
-      .eq("companyId", companyId)
-      .single();
-    const dateDue = await computeInvoiceDateDue(client, {
-      dateIssued: field === "dateIssued" ? value : invoice.data?.dateIssued,
-      paymentTermId:
-        field === "paymentTermId" ? value : invoice.data?.paymentTermId,
-      companyId
-    });
-    if (dateDue) changes = { ...changes, dateDue };
-  } else if (field === "currencyCode" && value) {
-    const rate = await getExchangeRate(client, companyId, value);
+  const changes = await invoiceFieldChanges(ctx, table, ids, field, value);
+  if (changes instanceof Error) return changes;
+  if (POSTED_INVOICE_FIELDS.includes(field)) {
+    return writeInvoiceDates(ctx, table, ids, changes);
+  }
+  return writeDraftInvoices(ctx, table, ids, changes);
+}
+
+/**
+ * The columns one field write sets, or why it is refused. A new issue date
+ * or payment term recomputes the due date, so it takes one invoice; a new
+ * currency brings today's exchange rate; an empty value clears the field,
+ * except the issue date. An id must name a row of this company.
+ */
+async function invoiceFieldChanges(
+  ctx: ServiceContext,
+  table: InvoiceTable,
+  ids: string[],
+  field: string,
+  value?: string | null
+) {
+  // The panels' issue date is required: a cleared one would keep the due
+  // date it set.
+  if (field === "dateIssued" && !value) {
+    return ctx.error("validation", "Invoice date is required");
+  }
+  // Each invoice's due date follows its own issue date and term.
+  const [invoiceId] = ids;
+  const setsDueDate = field === "dateIssued" || field === "paymentTermId";
+  if (setsDueDate && (ids.length !== 1 || !invoiceId)) {
+    return ctx.error(
+      "validation",
+      "Set the issue date or payment term on one invoice at a time"
+    );
+  }
+  const reference = INVOICE_FIELD_REFERENCES[field];
+  if (value && reference) {
+    const refused = await refuseUnlessOwned(ctx, reference, { id: value });
+    if (refused) return refused;
+  }
+  if (invoiceId && (field === "dateIssued" || field === "paymentTermId")) {
+    return dueDateChanges(ctx, table, invoiceId, field, value);
+  }
+  if (field === "currencyCode" && value) {
+    const rate = await getExchangeRate(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      value
+    );
     if (rate.error) {
       return ctx.error(
         "internal",
@@ -6224,10 +6449,58 @@ export async function writeInvoiceField(
         rate.error
       );
     }
-    changes = { currencyCode: value, exchangeRate: rate.data };
+    return { currencyCode: value, exchangeRate: rate.data };
   }
+  return { [field]: value || null };
+}
 
-  const update = await client
+/** A new issue date or payment term, with the due date they give. */
+async function dueDateChanges(
+  ctx: ServiceContext,
+  table: InvoiceTable,
+  invoiceId: string,
+  field: "dateIssued" | "paymentTermId",
+  value?: string | null
+) {
+  const companyId = ctx.company.id;
+  const invoice = await ctx.asCaller.supabase
+    .from(table as "salesInvoice")
+    .select("dateIssued, paymentTermId")
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (invoice.error) {
+    return ctx.error("internal", "Failed to load the invoice", invoice.error);
+  }
+  if (!invoice.data) {
+    return ctx.error("notFound", "None of the invoices was found");
+  }
+  const changes = { [field]: value || null };
+  // Read the term as the system: the write is gated on invoicing, and the
+  // term table needs accounting, sales or purchasing view, without which
+  // the term would read as missing and the due date fall back to Net 30.
+  // The read is scoped by companyId.
+  const dateDue = await computeInvoiceDateDue(ctx.asSystem.supabase, {
+    dateIssued: field === "dateIssued" ? value : invoice.data.dateIssued,
+    paymentTermId:
+      field === "paymentTermId" ? value : invoice.data.paymentTermId,
+    companyId
+  });
+  return dateDue ? { ...changes, dateDue } : changes;
+}
+
+/**
+ * Write a date a posted invoice still takes, with the caller's client. The
+ * invoices it reached; none is a refusal: the ids are not the company's, or
+ * the caller's RLS hides them.
+ */
+async function writeInvoiceDates(
+  ctx: ServiceContext,
+  table: InvoiceTable,
+  ids: string[],
+  changes: Record<string, unknown>
+) {
+  const update = await ctx.asCaller.supabase
     .from(table as "salesInvoice")
     .update(
       unchecked({
@@ -6237,26 +6510,150 @@ export async function writeInvoiceField(
       })
     )
     .in("id", ids)
-    .eq("companyId", companyId);
+    .eq("companyId", ctx.company.id)
+    .select("id");
   if (update.error) {
     return ctx.error("internal", "Failed to update the invoices", update.error);
   }
-  return { ids };
+  if (update.data.length === 0) {
+    return ctx.error("notFound", "None of the invoices was found");
+  }
+  return { ids: update.data.map((row) => row.id) };
 }
 
-/** A party's currency at today's rate, or null when it has none. */
+/**
+ * Lock the company's invoices among `ids` `FOR UPDATE`, in id order, inside
+ * `tx`'s transaction: their ids, or the refusal when none is found or any is
+ * no longer a Draft. A post that claimed one first keeps the invoice it
+ * posts.
+ */
+async function lockDraftInvoices(
+  tx: ServiceContext,
+  table: InvoiceTable,
+  ids: string[]
+) {
+  const invoices = await tx.asSystem.pg
+    .selectFrom(table as "salesInvoice")
+    .select(["id", "status"])
+    .where("id", "in", ids)
+    .where("companyId", "=", tx.company.id)
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+  if (invoices.length === 0) {
+    return tx.error("notFound", "None of the invoices was found");
+  }
+  if (invoices.some((invoice) => isSalesInvoiceLocked(invoice.status))) {
+    return tx.error("rule", LOCKED_INVOICE_MESSAGES[table]);
+  }
+  return invoices.map((invoice) => invoice.id);
+}
+
+/**
+ * Write `changes` on invoices that are still Draft (`lockDraftInvoices`), as
+ * the system. One transaction, so a refusal writes none of them.
+ */
+async function writeDraftInvoices(
+  ctx: ServiceContext,
+  table: InvoiceTable,
+  ids: string[],
+  changes: Record<string, unknown>
+) {
+  if (ids.length === 0) {
+    return ctx.error("notFound", "None of the invoices was found");
+  }
+  const settled = await ctx.transaction(async (tx) => {
+    const reached = await lockDraftInvoices(tx, table, ids);
+    if (reached instanceof Error) return reached;
+    await tx.asSystem.pg
+      .updateTable(table as "salesInvoice")
+      .set(
+        unchecked({
+          ...changes,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .where("id", "in", reached)
+      .where("companyId", "=", ctx.company.id)
+      .execute();
+    return { ids: reached };
+  });
+  if (settled.error) return settled.error;
+  return settled.data;
+}
+
+/**
+ * Set the customer of sales invoices that are still Draft
+ * (`lockDraftInvoices`), and clear the ship-to of each whose customer
+ * changes: a ship-to is one of the old customer's locations, which sales
+ * rules would otherwise evaluate. One transaction, so a failed write keeps
+ * both.
+ */
+export async function changeSalesInvoiceCustomer(
+  ctx: ServiceContext,
+  { ids, customerId }: { ids: string[]; customerId: string }
+) {
+  const companyId = ctx.company.id;
+  if (ids.length === 0) {
+    return ctx.error("notFound", "None of the invoices was found");
+  }
+  const audit = {
+    updatedBy: ctx.auditUserId,
+    updatedAt: datetime.timestamp()
+  };
+  const settled = await ctx.transaction(async (tx) => {
+    const reached = await lockDraftInvoices(tx, "salesInvoice", ids);
+    if (reached instanceof Error) return reached;
+    const db = tx.asSystem.pg;
+    // Read under the lock just taken.
+    const customers = await db
+      .selectFrom("salesInvoice")
+      .select(["id", "customerId"])
+      .where("id", "in", reached)
+      .where("companyId", "=", companyId)
+      .execute();
+    const changed = customers
+      .filter((invoice) => invoice.customerId !== customerId)
+      .map((invoice) => invoice.id);
+    if (changed.length > 0) {
+      await db
+        .updateTable("salesInvoiceShipment")
+        .set({ customerLocationId: null, ...audit })
+        .where("id", "in", changed)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await db
+      .updateTable("salesInvoice")
+      .set({ customerId, ...audit })
+      .where("id", "in", reached)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { ids: reached };
+  });
+  if (settled.error) return settled.error;
+  return settled.data;
+}
+
+/**
+ * A party's currency at today's rate, or null when it has none. Refused when
+ * the party is not this company's.
+ */
 export async function partyCurrency(
   ctx: ServiceContext,
   table: "customer" | "supplier",
   id: string
 ) {
   const client = ctx.asCaller.supabase;
-  const party = await client
+  // Read as the system: the write is gated on invoicing, and the party tables
+  // need sales or purchasing view, which would hide the party.
+  const party = await ctx.asSystem.supabase
     .from(table as "customer")
     .select("currencyCode")
     .eq("id", id)
     .eq("companyId", ctx.company.id)
-    .single();
+    .maybeSingle();
   if (party.error) {
     return ctx.error(
       "internal",
@@ -6264,6 +6661,7 @@ export async function partyCurrency(
       party.error
     );
   }
+  if (!party.data) return ctx.error("notFound", `The ${table} was not found`);
   if (!party.data.currencyCode) return null;
   const rate = await getExchangeRate(
     client,
@@ -6518,6 +6916,7 @@ export async function sendPostedSalesInvoice(
   try {
     const document = await loadSalesInvoiceDocument({
       client: serviceRole,
+      taxClient: serviceRole,
       companyId,
       companyGroupId: ctx.company.groupId,
       invoiceId,
@@ -7853,7 +8252,7 @@ export function planSalesInvoiceAccounts(
     receivables.intercompany,
     defaults.salesAccount,
     shippingAccountId,
-    defaults.salesTaxPayableAccount
+    defaults.taxReceivedAccount
   );
 
   // A dated line with no deferral account refuses to post rather than book
@@ -8111,7 +8510,7 @@ export function resolveSalesInvoiceAccounts(
       receivables: account(receivablesAccountId(intercompany)),
       sales: account(plan.defaults.salesAccount),
       shipping: account(plan.shippingAccountId),
-      tax: account(plan.defaults.salesTaxPayableAccount),
+      tax: account(plan.defaults.taxReceivedAccount),
       serviceRevenue: serviceJob?.serviceRevenue ?? null
     }),
     deferredRevenue,
@@ -8174,6 +8573,7 @@ export type SalesInvoiceLine = Pick<
   | "addOnCost"
   | "nonTaxableAddOnCost"
   | "taxPercent"
+  | "taxCodeId"
   | "salesOrderLineId"
   | "methodType"
   | "locationId"
@@ -8190,7 +8590,8 @@ export type SalesInvoiceLine = Pick<
   // Read by the service job book only (`planServiceJobRevenue`).
   Partial<
     Pick<Tables["salesInvoiceLine"]["Row"], "serviceJobId" | "sortOrder">
-  >;
+  > &
+  Partial<Pick<Tables["salesInvoiceLine"]["Row"], "taxesShipping">>;
 
 /** The line types that sell an item. */
 export const ITEM_LINE_TYPES: ReadonlySet<string> = new Set([
@@ -8219,6 +8620,59 @@ export function isDirectItemLine(line: SalesInvoiceLine): boolean {
     line.customerContractLineId === null &&
     line.methodType !== "Make to Order"
   );
+}
+
+/** An untracked direct invoice line that takes stock out. */
+type DirectStockDraw = {
+  /** The line's ledger row; its bin is set once the bin is chosen. */
+  ledger: Database["public"]["Tables"]["itemLedger"]["Insert"];
+  lineId: string;
+  itemId: string;
+  locationId: string | null;
+  storageUnitId: string | null;
+  quantity: number;
+};
+
+/**
+ * The bin each untracked direct invoice line ships from, by line id: the bin
+ * the line names, else one that holds its common stock
+ * (`shipmentSourceBinChooser`, as a sales order shipment line takes one).
+ * Quarantine and lineside units are never guessed, and lines are planned in
+ * order, so two lines of one item do not count the same stock. Locks the
+ * draws first, so two postings never plan from the same on-hand. Call it
+ * inside the posting transaction.
+ */
+async function directInvoiceSourceBins(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  draws: DirectStockDraw[]
+): Promise<Map<string, string | null>> {
+  const bins = new Map<string, string | null>();
+  if (draws.length === 0) return bins;
+  const locationIds = [
+    ...new Set(
+      draws.map((draw) => draw.locationId).filter((id): id is string => !!id)
+    )
+  ].sort();
+  // One lock per location: an invoice ships from one or two.
+  for (const locationId of locationIds) {
+    await sharedPostings.lockUntrackedDraws(trx, {
+      companyId,
+      locationId,
+      itemIds: draws
+        .filter((draw) => draw.locationId === locationId)
+        .map((draw) => draw.itemId)
+    });
+  }
+  // A negative line puts stock back: it keeps the bin it names.
+  const outgoing = draws.filter((draw) => draw.quantity > 0);
+  const choose = await sharedPostings.shipmentSourceBinChooser(trx, {
+    companyId,
+    lines: outgoing.filter((draw) => !draw.storageUnitId),
+    inspectionHolds: "all"
+  });
+  for (const draw of outgoing) bins.set(draw.lineId, choose(draw));
+  return bins;
 }
 
 /**
@@ -8391,6 +8845,10 @@ export type SalesInvoiceJournalFacts = {
   lines: readonly SalesInvoiceLine[];
   /** The header shipping of each line (`allocateSalesHeaderShipping`). */
   headerShipping: ReadonlyMap<string, number>;
+  /** The lines' tax codes, each with the components in force on the
+   *  invoice's tax point (`loadTaxCodesInForce`). A line with no code posts
+   *  one tax leg. */
+  taxCodes?: ReadonlyMap<string, TaxCodeInput>;
   items: ReadonlyMap<
     string,
     Pick<Tables["item"]["Row"], "itemTrackingType" | "replenishmentSystem">
@@ -8658,9 +9116,34 @@ export function buildSalesInvoiceJournal(
     if (line.invoiceLineType === "Comment") continue;
     const revenue = facts.revenue(line);
     const metadata = lineMetadata(facts, line);
+    const taxCode = line.taxCodeId
+      ? facts.taxCodes?.get(line.taxCodeId)
+      : undefined;
+    const taxComponents = taxCode?.components ?? [];
     const postingLine = {
       ...line,
-      allocatedHeaderShipping: facts.headerShipping.get(line.id) ?? 0
+      allocatedHeaderShipping: facts.headerShipping.get(line.id) ?? 0,
+      // The line's snapshot of its code's "taxes shipping", as the
+      // salesInvoices view reads it.
+      taxesShipping: line.taxesShipping ?? false
+    };
+    const lineCharges = {
+      ...charges,
+      componentTax: new Map(
+        taxComponents.flatMap((component) => {
+          if (!component.taxReceivedAccountId) return [];
+          // The accounts were read by the company group, so a named account
+          // that is missing belongs to another group. Falling back to the
+          // default would split the GL from the tax ledger.
+          const account = accounts.account(component.taxReceivedAccountId);
+          if (!account) {
+            throw new Error(
+              `Tax component ${component.name} names a Tax Received account outside this company group`
+            );
+          }
+          return [[component.id, account] as const];
+        })
+      )
     };
     const context = {
       companyId,
@@ -8689,7 +9172,8 @@ export function buildSalesInvoiceJournal(
                 : line.invoiceLineType
           },
           context,
-          accounts: charges,
+          accounts: lineCharges,
+          taxComponents,
           revenueLegs: revenue.book === "legs" ? revenue.legs : undefined,
           metadata
         });
@@ -8706,7 +9190,8 @@ export function buildSalesInvoiceJournal(
         const built = buildSalesPostingLines({
           line: postingLine,
           context,
-          accounts: charges,
+          accounts: lineCharges,
+          taxComponents,
           deferredRevenueAccount: deferredRevenue,
           metadata
         });
@@ -8759,7 +9244,8 @@ export function buildSalesInvoiceJournal(
         const built = buildSalesPostingLines({
           line: postingLine,
           context,
-          accounts: charges,
+          accounts: lineCharges,
+          taxComponents,
           revenueLegs: plan.revenueLegs,
           metadata
         });
@@ -8864,7 +9350,8 @@ export function buildSalesInvoiceJournal(
         const built = buildSalesPostingLines({
           line: postingLine,
           context,
-          accounts: charges,
+          accounts: lineCharges,
+          taxComponents,
           metadata,
           disposal:
             wasShipped && disposal
@@ -8967,7 +9454,8 @@ export function buildSalesInvoiceJournal(
         const built = buildSalesPostingLines({
           line: postingLine,
           context,
-          accounts: charges,
+          accounts: lineCharges,
+          taxComponents,
           revenueLegs: plan.revenueLegs,
           metadata
         });
@@ -9509,7 +9997,7 @@ const RECOGNIZED_REVENUE_VOID_ERROR =
   "Invoice has recognized revenue; reverse the revenue recognition or lease run that posted it first";
 
 export const postSalesInvoicePermission = {
-  update: "invoicing"
+  "invoicing.salesInvoices": "Edit"
 } satisfies PermissionRule<z.output<typeof postSalesInvoiceInput>>;
 
 /** Posts or voids a sales invoice: its ledger, cost and journal rows, atomically. */
@@ -9669,6 +10157,9 @@ export async function postSalesInvoice(
           "shipmentId"
         >[] = [];
 
+        // The untracked lines that take stock out, each with its ledger row:
+        // their bins are chosen inside the transaction.
+        const directStockDraws: DirectStockDraw[] = [];
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
 
@@ -9886,11 +10377,71 @@ export async function postSalesInvoice(
             )
           )
         );
+        // The lines' tax codes on the invoice's tax point (the date issued,
+        // when its rates were taken), and their own Tax Received accounts,
+        // which load with the defaults.
+        const taxPointDate = invoiceHeader.dateIssued ?? today;
+        const taxCodes = await loadTaxCodesInForce(db, {
+          companyId,
+          taxCodeIds: salesInvoiceLines.data.map(
+            (line: InvoiceLineRecord) => line.taxCodeId
+          ),
+          taxPointDate,
+          document: "sales invoice"
+        });
+        // A line rated on another date (an order's, or before the date
+        // issued changed) would file its tax under the wrong components.
+        await refuseLineRateMismatches(db, {
+          companyId,
+          lines: salesInvoiceLines.data,
+          taxCodes,
+          taxPointDate,
+          document: "sales invoice"
+        });
+        // What the tax ledger snapshots: the customer's exemption and the
+        // lines' non-taxable items.
+        const invoiceItemIds = [
+          ...new Set(
+            salesInvoiceLines.data
+              .map((line: InvoiceLineRecord) => line.itemId)
+              .filter((id: string | null): id is string => !!id)
+          )
+        ];
+        const [customerTaxRecord, nonTaxableItems] = await Promise.all([
+          invoiceHeader.customerId
+            ? db
+                .selectFrom("customerTax")
+                .select([
+                  "taxExempt",
+                  "taxExemptionReason",
+                  "taxExemptionCertificateNumber"
+                ])
+                .where("customerId", "=", invoiceHeader.customerId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
+            : undefined,
+          invoiceItemIds.length > 0
+            ? db
+                .selectFrom("item")
+                .select("id")
+                .where("companyId", "=", companyId)
+                .where("id", "in", invoiceItemIds)
+                .where("taxable", "=", false)
+                .execute()
+            : []
+        ]);
+        const taxAccountIds = [...taxCodes.values()].flatMap((code) =>
+          code.components.flatMap((component) =>
+            component.taxReceivedAccountId
+              ? [component.taxReceivedAccountId]
+              : []
+          )
+        );
         const postingAccounts = await many(
           db,
           "account",
           {
-            id: accountPlan.accountIds,
+            id: [...accountPlan.accountIds, ...taxAccountIds],
             companyGroupId: companyGroupId!
           },
           {
@@ -10179,6 +10730,7 @@ export async function postSalesInvoice(
           intercompanyPartnerId,
           lines: salesInvoiceLines.data,
           headerShipping: headerShippingAllocations,
+          taxCodes,
           items: new Map(items.data.map((item) => [item.id, item])),
           postingGroups: new Map(
             itemCosts.data.map((cost) => [cost.itemId, cost.itemPostingGroupId])
@@ -10236,6 +10788,7 @@ export async function postSalesInvoice(
             shipmentLineInserts.push({
               itemId: invoiceLine.itemId!,
               lineId: invoiceLine.id,
+              partNumberDisplay: invoiceLine.partNumberDisplay,
               orderQuantity: invoiceLine.quantity,
               outstandingQuantity: invoiceLine.quantity,
               shippedQuantity: invoiceLine.quantity,
@@ -10252,18 +10805,29 @@ export async function postSalesInvoice(
             items.data.find((item) => item.id === invoiceLine.itemId)
               ?.itemTrackingType ?? "Inventory";
           if (itemTrackingType === "Inventory") {
-            itemLedgerInserts.push({
-              postingDate: today,
+            const ledger: Database["public"]["Tables"]["itemLedger"]["Insert"] =
+              {
+                postingDate: today,
+                itemId: invoiceLine.itemId!,
+                quantity: round(-invoiceLine.quantity),
+                locationId: invoiceLine.locationId,
+                storageUnitId: invoiceLine.storageUnitId,
+                entryType: "Negative Adjmt.",
+                documentType: "Sales Shipment",
+                documentId: invoiceHeader.id ?? undefined,
+                externalDocumentId:
+                  invoiceHeader.customerReference ?? undefined,
+                createdBy: userId,
+                companyId
+              };
+            itemLedgerInserts.push(ledger);
+            directStockDraws.push({
+              ledger,
+              lineId: invoiceLine.id,
               itemId: invoiceLine.itemId!,
-              quantity: round(-invoiceLine.quantity),
               locationId: invoiceLine.locationId,
               storageUnitId: invoiceLine.storageUnitId,
-              entryType: "Negative Adjmt.",
-              documentType: "Sales Shipment",
-              documentId: invoiceHeader.id ?? undefined,
-              externalDocumentId: invoiceHeader.customerReference ?? undefined,
-              createdBy: userId,
-              companyId
+              quantity: invoiceLine.quantity
             });
           }
         }
@@ -10291,6 +10855,13 @@ export async function postSalesInvoice(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOrderLinesAsRead(
+            trx,
+            "salesOrderLine",
+            companyId,
+            salesOrderLines,
+            "A sales order line changed while this invoice was posting. Post the invoice again."
+          );
           // The movements above were computed from positions read before
           // this transaction; refuse if another writer moved one since.
           if (contractPositionsRead.size > 0) {
@@ -10305,6 +10876,30 @@ export async function postSalesInvoice(
                 );
               }
             }
+          }
+
+          // A line with no bin ships from a bin that holds its stock, never
+          // from "no storage unit" while a bin holds it. Its shipment line
+          // and ledger row both name that bin, so the void puts the stock
+          // back where it came from (it reverses the ledger rows).
+          const sourceBins = await directInvoiceSourceBins(
+            trx,
+            companyId,
+            directStockDraws
+          );
+          const sourceBinOf = (lineId: string, named: string | null) =>
+            sourceBins.has(lineId) ? (sourceBins.get(lineId) ?? null) : named;
+          for (const line of shipmentLineInserts) {
+            line.storageUnitId = sourceBinOf(
+              line.lineId!,
+              line.storageUnitId ?? null
+            );
+          }
+          for (const draw of directStockDraws) {
+            draw.ledger.storageUnitId = sourceBinOf(
+              draw.lineId,
+              draw.ledger.storageUnitId ?? null
+            );
           }
 
           if (shipmentLineInserts.length > 0) {
@@ -10529,6 +11124,39 @@ export async function postSalesInvoice(
               )
               .returning(["id"])
               .execute();
+
+            const taxLedgerRows = buildTaxLedgerRows({
+              companyId,
+              createdBy: userId,
+              source: "Sales",
+              documentType: "Sales Invoice",
+              documentId: invoiceId,
+              journalId: journalResult.id,
+              postingDate: today,
+              customerId: invoiceHeader.customerId,
+              currencyCode: invoiceCurrencyCode,
+              exchangeRate: invoiceExchangeRate,
+              currencyDecimals: invoiceCurrencyDecimals,
+              sign: 1,
+              lines: salesTaxLedgerLines({
+                lines: salesInvoiceLines.data,
+                headerShipping: headerShippingAllocations,
+                taxCodes,
+                nonTaxableItemIds: new Set(
+                  nonTaxableItems.map((item) => item.id)
+                ),
+                exemption: customerTaxRecord?.taxExempt
+                  ? {
+                      reason: customerTaxRecord.taxExemptionReason,
+                      certificateNumber:
+                        customerTaxRecord.taxExemptionCertificateNumber
+                    }
+                  : null
+              })
+            });
+            if (taxLedgerRows.length > 0) {
+              await trx.insertInto("taxLedger").values(taxLedgerRows).execute();
+            }
 
             const journalLineDimensionInserts = journalLineDimensionRows({
               journalLineIds: journalLineResults.map((line) => line.id),
@@ -11069,13 +11697,23 @@ export async function postSalesInvoice(
           // Locked before the journal is read, as a line account change locks
           // it before it adds lines: those are reversed with the rest, never
           // left on a voided invoice.
-          await trx
+          const locked = await trx
             .selectFrom("salesInvoice")
-            .select("id")
+            .select("status")
             .where("id", "=", invoiceId)
             .where("companyId", "=", companyId)
             .forUpdate()
-            .execute();
+            .executeTakeFirst();
+          if (locked?.status === "Voided") {
+            throw new InvalidInputError("Sales invoice is already voided");
+          }
+          await lockOrderLinesAsRead(
+            trx,
+            "salesOrderLine",
+            companyId,
+            salesOrderLines,
+            "A sales order line changed while this invoice was voiding. Void the invoice again."
+          );
           const journalEntries = await documentJournalLines(trx, companyId, {
             documentId: invoiceId,
             documentType: "Invoice"
@@ -11572,6 +12210,15 @@ export async function postSalesInvoice(
               }))
             });
 
+            await negateDocumentTaxLedger(trx, {
+              companyId,
+              documentType: "Sales Invoice",
+              documentId: invoiceId,
+              journalId: voidJournalResult.id,
+              postingDate: today,
+              createdBy: userId
+            });
+
             if (contractVoidEntries.length > 0) {
               await trx
                 .insertInto("customerContractLedgerEntry")
@@ -11666,6 +12313,156 @@ export type MemoRow = Selectable<KyselyDatabase["memo"]>;
 export type MemoJournalLineWithRole = MemoJournalLine & {
   accountDefaultRole: OptionalDefaultRole | null;
 };
+
+/** How a memo's tax posts (`planMemoTax`). */
+export type MemoTaxPlan = {
+  netAmount: number;
+  /** Base amount through Tax Received (all of a customer memo's tax) or Tax
+   *  Paid (a supplier memo's recoverable share, summed from `parts`, so the
+   *  GL moves exactly what the ledger records). */
+  taxToAccountBase: number;
+  /** The tax split by the code's components: the memo's own tax, or the
+   *  tax a Reverse Charge supplier memo self-assesses. */
+  parts: ComponentTax[];
+  /** A supplier memo on a Reverse Charge code: `parts` is self-assessed tax,
+   *  owed to the authority on the reverse-charge account. */
+  selfAssessed: boolean;
+  /** All of the self-assessed tax, base; 0 unless `selfAssessed`. */
+  selfAssessedBase: number;
+};
+
+/**
+ * How a memo's tax posts (spec "Memo tax"). `amount` is the gross on AR or
+ * AP and `taxAmount` the tax inside it, both in document currency.
+ * - A customer memo moves all of its tax through Tax Received.
+ * - A supplier memo moves only the recoverable share through Tax Paid and
+ *   leaves the rest in the reason leg.
+ * - A supplier memo on a Reverse Charge code carries no tax, but reverses
+ *   (or adds) the tax its bill self-assessed, as the purchase invoice does.
+ * - With no code a supplier memo moves no tax, as a legacy purchase line
+ *   folded its tax into cost.
+ * `taxCode` carries only the components in force on the memo's tax point. A
+ * coded memo is split even at 0 tax, so its ledger rows name the authority.
+ * Shared by the posting and the pre-cutover rebuild, so both build the same
+ * journal.
+ */
+export function planMemoTax(args: {
+  isAR: boolean;
+  amount: number;
+  taxAmount: number;
+  exchangeRate: number;
+  decimals: number;
+  taxCode: TaxCodeInput | undefined;
+}): MemoTaxPlan {
+  const { isAR, amount, taxAmount, exchangeRate, decimals, taxCode } = args;
+  const netAmount = round(amount - taxAmount, decimals);
+  const base = toBaseAmount(netAmount, exchangeRate);
+  const none = { selfAssessed: false, selfAssessedBase: 0 };
+  if (!taxCode || taxCode.components.length === 0) {
+    return {
+      netAmount,
+      taxToAccountBase:
+        isAR && taxAmount > 0 ? toBaseAmount(taxAmount, exchangeRate) : 0,
+      parts: [],
+      ...none
+    };
+  }
+  if (!isAR && taxCode.calculationType === "Reverse Charge") {
+    const parts =
+      purchaseLineTaxParts({ base, taxAmount: 0, code: taxCode })
+        .selfAssessedParts ?? [];
+    return {
+      netAmount,
+      taxToAccountBase: recoverableTax(parts),
+      parts,
+      selfAssessed: true,
+      selfAssessedBase: parts.reduce((total, part) => total + part.taxAmount, 0)
+    };
+  }
+  const lineTax = taxAmount > 0 ? toBaseAmount(taxAmount, exchangeRate) : 0;
+  const parts = splitLineTax({
+    base,
+    lineTax,
+    components: taxCode.components,
+    scale: SCALE
+  });
+  return {
+    netAmount,
+    taxToAccountBase: isAR ? lineTax : recoverableTax(parts),
+    parts,
+    ...none
+  };
+}
+
+/**
+ * The tax-ledger input of a coded or taxed memo: one line at its net. A
+ * customer credit and a supplier debit reverse tax the invoice recorded, so
+ * they write negative; the other two add to it. Shared by the posting and
+ * the cutover backfill.
+ */
+export function memoTaxLedger(args: {
+  memo: {
+    id: string;
+    direction: "Credit" | "Debit";
+    currencyCode: string;
+    taxCodeId: string | null;
+  };
+  isAR: boolean;
+  partyId: string;
+  exchangeRate: number;
+  taxAmount: number;
+  plan: MemoTaxPlan;
+  taxCode: TaxCodeInput | undefined;
+}): TaxLedgerDocument {
+  const { memo, isAR, partyId, exchangeRate, plan } = args;
+  return {
+    source: isAR ? "Sales" : "Purchase",
+    documentType: "Memo",
+    documentId: memo.id,
+    customerId: isAR ? partyId : null,
+    supplierId: isAR ? null : partyId,
+    currencyCode: memo.currencyCode,
+    exchangeRate,
+    sign: (memo.direction === "Credit") === isAR ? -1 : 1,
+    lines: [
+      {
+        documentLineId: null,
+        taxCodeId: memo.taxCodeId,
+        taxableBase: toBaseAmount(plan.netAmount, exchangeRate),
+        components: plan.parts,
+        taxPercent: args.taxCode
+          ? effectiveTaxPercent(args.taxCode.components)
+          : 0,
+        taxAmount: plan.selfAssessed
+          ? plan.selfAssessedBase
+          : toBaseAmount(args.taxAmount, exchangeRate),
+        exempt: null,
+        selfAssessed: plan.selfAssessed
+      }
+    ]
+  };
+}
+
+/**
+ * A memo's tax legs (`buildMemoJournal` `taxLegs`): one per component, on
+ * the component's own Tax Received (customer) or Tax Paid (supplier)
+ * account, weighted by the tax the ledger records for it, so each account
+ * moves as its ledger rows do. Empty for a memo with no code.
+ */
+export function memoTaxLegs(
+  parts: ComponentTax[],
+  isAR: boolean
+): Array<{ accountId: string | null; weight: number }> {
+  return parts
+    .map((part) => ({
+      accountId:
+        (isAR
+          ? part.component.taxReceivedAccountId
+          : part.component.taxPaidAccountId) ?? null,
+      weight: isAR ? part.taxAmount : part.recoverableAmount
+    }))
+    .filter((leg) => leg.weight !== 0);
+}
 
 /** A credit memo that credits a contract or a rental agreement. */
 export function isContractOrRentalCredit(memo: MemoRow): boolean {
@@ -11980,6 +12777,14 @@ export function postMemoTransaction(
         const rebuilt = await rebuildMemoJournal(trx, memo, postingStatus);
         const reversedId = await insertVoidJournal();
         journalId = reversedId;
+        await negateDocumentTaxLedger(trx, {
+          companyId,
+          documentType: "Memo",
+          documentId: memoId,
+          journalId: reversedId,
+          postingDate: today,
+          createdBy: userId
+        });
         const lines = await trx
           .insertInto("journalLine")
           .values(
@@ -12047,6 +12852,14 @@ export function postMemoTransaction(
         }
         const reversedId = await insertVoidJournal();
         journalId = reversedId;
+        await negateDocumentTaxLedger(trx, {
+          companyId,
+          documentType: "Memo",
+          documentId: memoId,
+          journalId: reversedId,
+          postingDate: today,
+          createdBy: userId
+        });
         const lines = await trx
           .insertInto("journalLine")
           .values(
@@ -12165,6 +12978,30 @@ export function postMemoTransaction(
     if (company.baseCurrencyCode === memo.currencyCode && exchangeRate !== 1) {
       throw new Error("Base-currency memo must use exchange rate 1");
     }
+    // The tax inside the memo (spec "Memo tax"): `amount` is the gross on AR
+    // or AP, `taxAmount` the tax the form computed forward from the net. The
+    // code splits on the memo's tax point, its memo date; a coded memo with
+    // no component in force then is refused, whatever its tax.
+    const memoTax = Number(memo.taxAmount ?? 0);
+    const memoTaxCode = memo.taxCodeId
+      ? (
+          await loadTaxCodesInForce(trx, {
+            companyId,
+            taxCodeIds: [memo.taxCodeId],
+            taxPointDate: memo.memoDate,
+            document: "memo"
+          })
+        ).get(memo.taxCodeId)
+      : undefined;
+    const memoTaxPlan = planMemoTax({
+      isAR,
+      amount,
+      taxAmount: memoTax,
+      exchangeRate,
+      decimals: currency.decimalPlaces,
+      taxCode: memoTaxCode
+    });
+    const { netAmount, taxToAccountBase, parts: memoTaxParts } = memoTaxPlan;
     const party = isAR
       ? await trx
           .selectFrom("customer")
@@ -12209,7 +13046,7 @@ export function postMemoTransaction(
             memoId,
             companyId,
             customerContractId: memo.customerContractId,
-            amount,
+            amount: netAmount,
             exchangeRate
           })
         : null;
@@ -12222,7 +13059,7 @@ export function postMemoTransaction(
             memoId,
             companyId,
             rentalAgreementId: memo.rentalAgreementId,
-            amount,
+            amount: netAmount,
             decimals: currency.decimalPlaces
           })
         : null;
@@ -12267,11 +13104,27 @@ export function postMemoTransaction(
         );
       }
     }
+    const memoTaxAccountId = isAR
+      ? defaults.taxReceivedAccount
+      : defaults.taxPaidAccount;
+    const memoTaxLegAccounts =
+      taxToAccountBase > 0 ? memoTaxLegs(memoTaxParts, isAR) : [];
+    const reverseChargeAccountId = memoTaxPlan.selfAssessedBase
+      ? defaults.reverseChargeSalesTaxPayableAccount
+      : null;
+    if (memoTaxPlan.selfAssessedBase && !reverseChargeAccountId) {
+      throw new InvalidInputError(
+        "Set the Reverse Charge Sales Tax account default before posting a memo on a reverse charge code"
+      );
+    }
     const accountIds = [
       ...new Set(
         [
           controlAccountId,
           reasonAccountId,
+          ...(taxToAccountBase > 0 ? [memoTaxAccountId] : []),
+          ...memoTaxLegAccounts.map((leg) => leg.accountId),
+          reverseChargeAccountId,
           ...contractLegs.map((leg) => leg.accountId)
         ].filter((id): id is string => !!id)
       )
@@ -12315,6 +13168,22 @@ export function postMemoTransaction(
       reasonAccountClass: reason.class,
       reasonAmountBase,
       varianceAccountId: defaults.purchaseVarianceAccount,
+      taxAmount: memoTax,
+      taxAmountBase: taxToAccountBase,
+      taxAccountId: memoTaxAccountId,
+      taxAccountClass: accounts.find((a) => a.id === memoTaxAccountId)?.class,
+      taxLegs: memoTaxLegAccounts.map((leg) => ({
+        ...leg,
+        accountClass: accounts.find((a) => a.id === leg.accountId)?.class
+      })),
+      selfAssessed: reverseChargeAccountId
+        ? {
+            amountBase: memoTaxPlan.selfAssessedBase,
+            accountId: reverseChargeAccountId,
+            accountClass: accounts.find((a) => a.id === reverseChargeAccountId)
+              ?.class
+          }
+        : undefined,
       reasonDescription: memo.purchaseReturnOrderId
         ? "Goods Received Not Invoiced"
         : contractCredit || rentalCredit
@@ -12363,6 +13232,25 @@ export function postMemoTransaction(
       )
       .returning("id")
       .execute();
+    if (memoTax > 0 || memoTaxCode) {
+      const memoLedgerRows = buildTaxLedgerRows({
+        ...memoTaxLedger({
+          memo: { ...memo, taxCodeId: memo.taxCodeId ?? null },
+          isAR,
+          partyId,
+          exchangeRate,
+          taxAmount: memoTax,
+          plan: memoTaxPlan,
+          taxCode: memoTaxCode
+        }),
+        companyId,
+        createdBy: userId,
+        journalId: journal.id,
+        postingDate: today,
+        currencyDecimals: currency.decimalPlaces
+      });
+      await trx.insertInto("taxLedger").values(memoLedgerRows).execute();
+    }
     if (rentalCredit && rentalCredit.scheduleRows.length > 0) {
       await trx
         .insertInto("revenueRecognitionSchedule")
@@ -12687,6 +13575,8 @@ export const MEMO_CREDIT_VOID_BEFORE_CUTOVER_ERROR =
 export type RebuiltMemoJournal = {
   lines: MemoJournalLineWithRole[];
   dimensions: { dimensionId: string; valueId: string }[];
+  /** The memo's tax-ledger input; null for a memo with no tax. */
+  taxLedger: TaxLedgerDocument | null;
 };
 
 /**
@@ -12796,16 +13686,58 @@ export async function rebuildMemoJournals(
       reasonAccountDefaultRole: reason.accountDefaultRole
     };
   });
+  // Memo tax plans exactly as the posting did (planMemoTax): the codes on
+  // each memo's tax point (its memo date) and each currency's precision,
+  // read once.
+  const taxedMemos = memos.filter(
+    (memo) => Number(memo.taxAmount ?? 0) > 0 || memo.taxCodeId
+  );
+  const taxCodes = await loadTaxCodes(
+    trx,
+    companyId,
+    taxedMemos.map((memo) => memo.taxCodeId),
+    null
+  );
   const reasonAccounts = await trx
     .selectFrom("account")
     .select(["id", "class"])
-    .where("id", "in", [...new Set(plans.map((plan) => plan.reasonAccountId))])
+    .where("id", "in", [
+      ...new Set(
+        [
+          ...plans.map((plan) => plan.reasonAccountId),
+          defaults.taxReceivedAccount,
+          defaults.taxPaidAccount,
+          defaults.reverseChargeSalesTaxPayableAccount,
+          ...[...taxCodes.values()].flatMap((code) =>
+            code.components.flatMap((component) => [
+              component.taxReceivedAccountId,
+              component.taxPaidAccountId
+            ])
+          )
+        ].filter((id): id is string => !!id)
+      )
+    ])
     .where("companyGroupId", "=", companyGroupId)
     .execute();
   const classByAccount = new Map(
     reasonAccounts.map((row) => [row.id, row.class])
   );
   const carriedCosts = await supplierReturnCarriedCosts(trx, memos, companyId);
+  const currencyCodes = [
+    ...new Set(taxedMemos.map((memo) => memo.currencyCode).filter(Boolean))
+  ] as string[];
+  const decimalsByCurrency = new Map(
+    currencyCodes.length > 0
+      ? (
+          await trx
+            .selectFrom("currency")
+            .select(["code", "decimalPlaces"])
+            .where("companyGroupId", "=", companyGroupId)
+            .where("code", "in", currencyCodes)
+            .execute()
+        ).map((row) => [row.code, row.decimalPlaces ?? 2])
+      : []
+  );
   const dimensions = await loadPartyDimensions(trx, companyGroupId);
 
   return plans.map((plan) => {
@@ -12814,6 +13746,30 @@ export async function rebuildMemoJournals(
     if (!reasonClass) {
       throw new Error(
         "Memo accounts must be active posting accounts in this company group with the correct control class"
+      );
+    }
+    const memoTax = Number(memo.taxAmount ?? 0);
+    const taxCode = memo.taxCodeId
+      ? taxCodesInForceOn(taxCodes, {
+          taxCodeIds: [memo.taxCodeId],
+          taxPointDate: memo.memoDate,
+          document: `Memo ${memo.memoId}`
+        }).get(memo.taxCodeId)
+      : undefined;
+    const taxPlan = planMemoTax({
+      isAR,
+      amount: Number(memo.amount),
+      taxAmount: memoTax,
+      exchangeRate: Number(memo.exchangeRate),
+      decimals: decimalsByCurrency.get(memo.currencyCode ?? "") ?? 2,
+      taxCode
+    });
+    const reverseChargeAccountId = taxPlan.selfAssessedBase
+      ? defaults.reverseChargeSalesTaxPayableAccount
+      : null;
+    if (taxPlan.selfAssessedBase && !reverseChargeAccountId) {
+      throw new InvalidInputError(
+        "Set the Reverse Charge Sales Tax account default before posting a memo on a reverse charge code"
       );
     }
     const { lines } = buildMemoJournal({
@@ -12831,6 +13787,28 @@ export async function rebuildMemoJournals(
       varianceAccountId: defaults.purchaseVarianceAccount,
       reasonDescription: memo.purchaseReturnOrderId
         ? "Goods Received Not Invoiced"
+        : undefined,
+      taxAmount: memoTax,
+      taxAmountBase: taxPlan.taxToAccountBase,
+      taxAccountId: isAR
+        ? defaults.taxReceivedAccount
+        : defaults.taxPaidAccount,
+      taxAccountClass: classByAccount.get(
+        (isAR ? defaults.taxReceivedAccount : defaults.taxPaidAccount) ?? ""
+      ),
+      taxLegs: (taxPlan.taxToAccountBase > 0
+        ? memoTaxLegs(taxPlan.parts, isAR)
+        : []
+      ).map((leg) => ({
+        ...leg,
+        accountClass: leg.accountId ? classByAccount.get(leg.accountId) : null
+      })),
+      selfAssessed: reverseChargeAccountId
+        ? {
+            amountBase: taxPlan.selfAssessedBase,
+            accountId: reverseChargeAccountId,
+            accountClass: classByAccount.get(reverseChargeAccountId)
+          }
         : undefined
     });
     assertNoMigrationClearing(lines, defaults.migrationClearingAccount);
@@ -12844,7 +13822,19 @@ export async function rebuildMemoJournals(
         isAR,
         partyId,
         typeId: typeByParty.get(partyId) ?? null
-      })
+      }),
+      taxLedger:
+        (memoTax > 0 || taxCode) && memo.currencyCode
+          ? memoTaxLedger({
+              memo: { ...memo, currencyCode: memo.currencyCode },
+              isAR,
+              partyId,
+              exchangeRate: Number(memo.exchangeRate),
+              taxAmount: memoTax,
+              plan: taxPlan,
+              taxCode
+            })
+          : null
     };
   });
 }
@@ -12997,9 +13987,9 @@ export const postMemoInput = z.object({
   memoId: z.string()
 });
 
-export const postMemoPermission = {
-  update: "invoicing"
-} satisfies PermissionRule<z.output<typeof postMemoInput>>;
+export const postMemoPermission = rowRule("memo", "Edit", {
+  id: "memoId"
+}) satisfies PermissionRule<z.output<typeof postMemoInput>>;
 
 /** Posts or voids a credit/debit memo and its journal, atomically. */
 export async function postMemo(
@@ -13124,8 +14114,8 @@ export function paymentKind(
     isDeposit: isAR
       ? Boolean(
           payment.rentalAgreementId ??
-            payment.salesOrderId ??
-            payment.customerContractId
+          payment.salesOrderId ??
+          payment.customerContractId
         )
       : !isReimbursement && Boolean(payment.purchaseOrderId),
     partyId,
@@ -15402,7 +16392,7 @@ export const postPaymentInput = z.object({
 });
 
 export const postPaymentPermission = {
-  update: "invoicing"
+  "invoicing.payments": "Edit"
 } satisfies PermissionRule<z.output<typeof postPaymentInput>>;
 
 /** Posts or voids a payment: settlements, funding and its journal, atomically. */
@@ -15693,6 +16683,8 @@ export type PurchaseInvoiceAccountDefaults = Pick<
   | "workInProgressAccount"
   | "rawMaterialsAccount"
   | "finishedGoodsAccount"
+  | "taxPaidAccount"
+  | "reverseChargeSalesTaxPayableAccount"
 >;
 
 /** What the journal reads of a line's item. */
@@ -15749,6 +16741,10 @@ type LineBase = {
     | "nominalBaseCost"
     | "totalBaseCost"
     | "inventoryUnitCost"
+    | "payableBaseCost"
+    | "payableUnitCost"
+    | "selfAssessedTaxBase"
+    | "taxLegs"
   >;
 };
 
@@ -15817,6 +16813,15 @@ export type BuildPurchaseInvoicePostingLinesInput = {
   };
   /** The invoice's lines in order, comments left out. */
   lines: PurchaseInvoicePostingLine[];
+  /**
+   * The class of each tax account a line can post to (Tax Paid defaults and
+   * components, the reverse charge account). A company may keep one VAT
+   * control account for both directions, so Tax Paid is not always an asset
+   * (spec "Accounts"); the legs are signed by the real class. An account
+   * missing here is taken as its usual class (Tax Paid an asset, reverse
+   * charge a liability).
+   */
+  taxAccountClasses?: ReadonlyMap<string, string>;
   /** The project charges of the invoice's lines (`loadInvoiceProjectCharges`).
    *  Absent: no line is charged to a project. */
   projectCharges?: InvoiceProjectCharges | null;
@@ -16113,7 +17118,11 @@ export function buildPurchaseInvoicePostingLines(
   });
 
   for (const line of input.lines) {
-    const { inventoryQuantity: quantity, totalBaseCost: total } = line.amounts;
+    const {
+      inventoryQuantity: quantity,
+      totalBaseCost: total,
+      payableBaseCost: payableTotal
+    } = line.amounts;
 
     switch (line.kind) {
       case "direct": {
@@ -16189,7 +17198,7 @@ export function buildPurchaseInvoicePostingLines(
               }
             : meta
         );
-        push(payable(total, quantity, { journalLineReference }), meta);
+        push(payable(payableTotal, quantity, { journalLineReference }), meta);
         break;
       }
 
@@ -16444,7 +17453,14 @@ export function buildPurchaseInvoicePostingLines(
               journalLineIndex: inventoryVarianceLineIndex ?? ppvLineIndex
             });
           }
-          push(payable(clearing.invoiceCost, clearing.quantity, keys), meta);
+          push(
+            payable(
+              clearing.quantity * line.amounts.payableUnitCost,
+              clearing.quantity,
+              keys
+            ),
+            meta
+          );
         }
 
         // Units not yet received accrue GR/IR. A service is never received,
@@ -16507,10 +17523,14 @@ export function buildPurchaseInvoicePostingLines(
               : meta
           );
           push(
-            payable(accrualCost, quantityToAccrue, {
-              ...keys,
-              ...(isService ? {} : { accrual: true })
-            }),
+            payable(
+              quantityToAccrue * line.amounts.payableUnitCost,
+              quantityToAccrue,
+              {
+                ...keys,
+                ...(isService ? {} : { accrual: true })
+              }
+            ),
             meta
           );
         }
@@ -16585,7 +17605,7 @@ export function buildPurchaseInvoicePostingLines(
             meta
           );
         }
-        push(payable(total, quantity, keys), meta);
+        push(payable(payableTotal, quantity, keys), meta);
         break;
       }
 
@@ -16643,7 +17663,7 @@ export function buildPurchaseInvoicePostingLines(
           },
           meta
         );
-        push(payable(total, quantity, keys), meta);
+        push(payable(payableTotal, quantity, keys), meta);
         break;
       }
 
@@ -16692,8 +17712,84 @@ export function buildPurchaseInvoicePostingLines(
             meta
           );
         }
-        push(payable(total, quantity, keys), meta);
+        push(payable(payableTotal, quantity, keys), meta);
         break;
+      }
+    }
+
+    // Recoverable tax goes to Tax Paid (the component's account, else the
+    // default); self-assessed tax is owed to the authority, not the supplier.
+    const recoverable = line.amounts.taxLegs.filter(
+      (leg) => !equals(leg.part.recoverableAmount, 0)
+    );
+    if (
+      recoverable.length > 0 ||
+      !equals(line.amounts.selfAssessedTaxBase, 0)
+    ) {
+      const taxMeta: Dimensions = {
+        supplierTypeId,
+        itemPostingGroupId: null,
+        itemId: null,
+        locationId: line.locationId,
+        costCenterId: null,
+        projectId: null,
+        processId: null,
+        fixedAssetClassId: null
+      };
+      const keys = {
+        quantity: round(quantity),
+        documentLineReference: null,
+        journalLineReference: nanoid()
+      };
+      for (const leg of recoverable) {
+        const accountId =
+          leg.part.component.taxPaidAccountId ?? accounts.taxPaidAccount;
+        if (!accountId) {
+          throw new InvalidInputError(
+            "Set the Tax Paid account default before posting recoverable tax"
+          );
+        }
+        push(
+          {
+            accountId,
+            description: TAX_PAID_POSTING_DESCRIPTION,
+            amount: round(
+              debit(
+                accountTypeFromClass(
+                  input.taxAccountClasses?.get(accountId) ?? "Asset"
+                ),
+                leg.part.recoverableAmount
+              )
+            ),
+            ...keys
+          },
+          taxMeta
+        );
+      }
+      if (!equals(line.amounts.selfAssessedTaxBase, 0)) {
+        if (!accounts.reverseChargeSalesTaxPayableAccount) {
+          throw new InvalidInputError(
+            "Set the Reverse Charge Sales Tax account default before posting a reverse charge"
+          );
+        }
+        push(
+          {
+            accountId: accounts.reverseChargeSalesTaxPayableAccount,
+            description: REVERSE_CHARGE_TAX_POSTING_DESCRIPTION,
+            amount: round(
+              credit(
+                accountTypeFromClass(
+                  input.taxAccountClasses?.get(
+                    accounts.reverseChargeSalesTaxPayableAccount
+                  ) ?? "Liability"
+                ),
+                line.amounts.selfAssessedTaxBase
+              )
+            ),
+            ...keys
+          },
+          taxMeta
+        );
       }
     }
   }
@@ -16713,6 +17809,20 @@ export type PurchasePostingLine = {
   /** Supplier-currency fields used only for the existing pretax IC matching basis. */
   supplierUnitPrice?: number | null;
   supplierShippingCost?: number | null;
+  /** The supplier's tax (`taxAmount`) split by tax code component
+   *  (`splitLineTax`, base). Its recoverable share goes to Tax Paid instead
+   *  of cost. Empty or absent: all of `taxAmount` is cost, as before. */
+  taxParts?: ComponentTax[];
+  /** Tax the company self-assesses on a Reverse Charge code (the supplier
+   *  charged none), split by component. Its recoverable share goes to Tax
+   *  Paid, the rest to cost, and the whole to the reverse-charge account. */
+  selfAssessedParts?: ComponentTax[];
+};
+
+export type PurchaseTaxLeg = {
+  part: ComponentTax;
+  /** Charged by the supplier (in AP) or self-assessed (reverse charge). */
+  selfAssessed: boolean;
 };
 
 export type PurchasePostingAmounts = {
@@ -16720,10 +17830,23 @@ export type PurchasePostingAmounts = {
   inventoryQuantity: number;
   nominalBaseCost: number;
   headerShippingBase: number;
+  /** Cost: net, shipping, header freight and the tax that is not
+   *  recoverable. Inventory, expense and acquisition take this. */
   totalBaseCost: number;
   inventoryUnitCost: number;
+  /** What AP owes: the cost plus the recoverable tax the supplier charged,
+   *  less self-assessed tax (never owed to the supplier). */
+  payableBaseCost: number;
+  payableUnitCost: number;
+  /** The recoverable tax, to Tax Paid. */
+  recoverableTaxBase: number;
+  /** All self-assessed tax, to the reverse-charge account. */
+  selfAssessedTaxBase: number;
+  taxLegs: PurchaseTaxLeg[];
   intercompanyDocumentAmount: number;
 };
+
+const sum = (values: number[]) => values.reduce((t, v) => t + v, 0);
 
 /** Both the PO counter and invoice quantity are in purchase units. */
 export function getInvoicedPurchaseQuantityAfterVoid(
@@ -16753,7 +17876,18 @@ export function calculatePurchasePostingAmounts(input: {
       );
     }
     const nominal = line.quantity * (line.unitPrice ?? 0);
-    const cost = nominal + (line.shippingCost ?? 0) + (line.taxAmount ?? 0);
+    const charged = line.taxParts ?? [];
+    const selfAssessed = line.selfAssessedParts ?? [];
+    const recoverableCharged = sum(charged.map((p) => p.recoverableAmount));
+    const recoverableSelf = sum(selfAssessed.map((p) => p.recoverableAmount));
+    const nonRecoverableSelf = sum(
+      selfAssessed.map((p) => p.nonRecoverableAmount)
+    );
+    // Header freight is weighted on the gross line, as before recoverable tax
+    // existed, so a company with no recoverable code allocates exactly as
+    // today.
+    const gross = nominal + (line.shippingCost ?? 0) + (line.taxAmount ?? 0);
+    const cost = gross - recoverableCharged + nonRecoverableSelf;
     const inventoryQuantity = line.quantity * factor;
     const intercompanyDocumentAmount =
       line.quantity * (line.supplierUnitPrice ?? 0) +
@@ -16765,15 +17899,39 @@ export function calculatePurchasePostingAmounts(input: {
     ) {
       throw new Error(`Purchase line ${line.id} amounts must be finite`);
     }
-    return { nominal, cost, inventoryQuantity, intercompanyDocumentAmount };
+    return {
+      nominal,
+      gross,
+      cost,
+      inventoryQuantity,
+      intercompanyDocumentAmount,
+      recoverableCharged,
+      recoverableSelf,
+      nonRecoverableSelf,
+      selfAssessedTotal: sum(selfAssessed.map((p) => p.taxAmount)),
+      taxLegs: [
+        ...charged.map((part) => ({ part, selfAssessed: false })),
+        ...selfAssessed.map((part) => ({ part, selfAssessed: true }))
+      ]
+    };
   });
-  const totalLinesCost = costs.reduce((sum, row) => sum + row.cost, 0);
+  const totalLinesCost = costs.reduce((total, row) => total + row.gross, 0);
   let allocatedHeader = 0;
   return lines.map((line, index) => {
-    const { nominal, cost, inventoryQuantity, intercompanyDocumentAmount } =
-      costs[index]!;
+    const {
+      nominal,
+      gross,
+      cost,
+      inventoryQuantity,
+      intercompanyDocumentAmount,
+      recoverableCharged,
+      recoverableSelf,
+      nonRecoverableSelf,
+      selfAssessedTotal,
+      taxLegs
+    } = costs[index]!;
     const weight =
-      totalLinesCost === 0 ? 1 / lines.length : cost / totalLinesCost;
+      totalLinesCost === 0 ? 1 / lines.length : gross / totalLinesCost;
     // Reconcile the final share to the converted header, so all posted shares
     // retain the total even when an equal allocation crosses internal precision.
     const headerShippingBase = round(
@@ -16785,6 +17943,9 @@ export function calculatePurchasePostingAmounts(input: {
     // Generated line fields are already base; only supplier header freight is
     // converted. These same amounts fund AP, inventory/expense and acquisition.
     const totalBaseCost = round(cost + headerShippingBase);
+    const payableBaseCost = round(
+      totalBaseCost + recoverableCharged - nonRecoverableSelf
+    );
     return {
       id: line.id,
       inventoryQuantity,
@@ -16793,6 +17954,12 @@ export function calculatePurchasePostingAmounts(input: {
       totalBaseCost,
       inventoryUnitCost:
         inventoryQuantity === 0 ? 0 : totalBaseCost / inventoryQuantity,
+      payableBaseCost,
+      payableUnitCost:
+        inventoryQuantity === 0 ? 0 : payableBaseCost / inventoryQuantity,
+      recoverableTaxBase: round(recoverableCharged + recoverableSelf),
+      selfAssessedTaxBase: round(selfAssessedTotal),
+      taxLegs,
       intercompanyDocumentAmount
     };
   });
@@ -16861,7 +18028,7 @@ export const postPurchaseInvoiceInput = z.object({
 });
 
 export const postPurchaseInvoicePermission = {
-  update: "invoicing"
+  "invoicing.purchaseInvoices": "Edit"
 } satisfies PermissionRule<z.output<typeof postPurchaseInvoiceInput>>;
 
 /** Posts or voids a purchase invoice: receipts, cost, ledger and journal rows. */
@@ -17307,13 +18474,24 @@ export async function postPurchaseInvoice(
         // Locked before the journal is read, as a line account change locks
         // it before it adds lines: those are reversed with the rest, never
         // left on a voided invoice.
-        await trx
+        const locked = await trx
           .selectFrom("purchaseInvoice")
-          .select("id")
+          .select("status")
           .where("id", "=", invoiceId)
           .where("companyId", "=", companyId)
           .forUpdate()
-          .execute();
+          .executeTakeFirst();
+        if (locked?.status === "Voided") {
+          throw new InvalidInputError("Purchase invoice is already voided");
+        }
+        // Every line of the orders: the order's status is set from them.
+        await lockOrderLinesAsRead(
+          trx,
+          "purchaseOrderLine",
+          companyId,
+          purchaseOrderLinesVoid.data,
+          "A purchase order line changed while this invoice was voiding. Void the invoice again."
+        );
         const originalJournalLines = await documentJournalLines(
           trx,
           companyId,
@@ -17459,6 +18637,15 @@ export async function postPurchaseInvoice(
                 reversingLineId
               })
             )
+          });
+
+          await negateDocumentTaxLedger(trx, {
+            companyId,
+            documentType: "Purchase Invoice",
+            documentId: invoiceId,
+            journalId,
+            postingDate: today,
+            createdBy: userId
           });
         }
 
@@ -17700,9 +18887,21 @@ export async function postPurchaseInvoice(
       if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
     }
 
+    // Each line's tax split by its code's components on the invoice's tax
+    // point (the date issued, else the posting date): the recoverable share
+    // leaves cost for Tax Paid, and a Reverse Charge code self-assesses tax
+    // the supplier did not charge.
+    const taxCodes = await loadTaxCodesInForce(db, {
+      companyId,
+      taxCodeIds: purchaseInvoiceLines.data.map((line) => line.taxCodeId),
+      taxPointDate: purchaseInvoice.data.dateIssued ?? today,
+      document: "purchase invoice"
+    });
+    const linesWithTax = withPurchaseTax(purchaseInvoiceLines.data, taxCodes);
+
     const amountsByLineId = new Map(
       calculatePurchasePostingAmounts({
-        lines: purchaseInvoiceLines.data,
+        lines: linesWithTax,
         exchangeRate: purchaseInvoice.data.exchangeRate ?? 1,
         supplierShippingCost:
           purchaseInvoiceDelivery.data.supplierShippingCost ?? 0
@@ -18324,6 +19523,11 @@ export async function postPurchaseInvoice(
       accounts: accountDefaults.data,
       payables,
       lines: postingLines,
+      taxAccountClasses: await loadTaxAccountClasses(db, {
+        companyId,
+        defaults: accountDefaults.data,
+        taxCodes
+      }),
       projectCharges
     });
     const journalLineInserts = posting.lines.map(
@@ -18600,6 +19804,7 @@ export async function postPurchaseInvoice(
       .filter((id): id is string => Boolean(id));
 
     await db.transaction().execute(async (trx) => {
+      await lockPostable(trx, "purchaseInvoice", invoiceId, companyId);
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
       // The gate above ran before this transaction. Lock the invoice's orders
@@ -18641,6 +19846,13 @@ export async function postPurchaseInvoice(
           throw new ServerFnError(lockedFundsRefused.message, 422);
         }
       }
+      await lockOrderLinesAsRead(
+        trx,
+        "purchaseOrderLine",
+        companyId,
+        purchaseOrderLines.data,
+        "A purchase order line changed while this invoice was posting. Post the invoice again."
+      );
 
       await fixedAssetWrites.apply(trx, companyId);
       if (receiptLineInserts.length > 0) {
@@ -18812,6 +20024,43 @@ export async function postPurchaseInvoice(
           .returning(["id"])
           .execute();
         invoiceJournalLineIds = journalLineResults.map((jl) => jl.id);
+
+        // The tax ledger: one row per line per component, from the same
+        // split the journal posted (the amounts' tax legs).
+        const ledgerCurrencyCode =
+          purchaseInvoice.data?.currencyCode ??
+          (
+            await trx
+              .selectFrom("company")
+              .select("baseCurrencyCode")
+              .where("id", "=", companyId)
+              .executeTakeFirstOrThrow()
+          ).baseCurrencyCode;
+        const taxLedgerRows = buildTaxLedgerRows({
+          companyId,
+          createdBy: userId,
+          source: "Purchase",
+          documentType: "Purchase Invoice",
+          documentId: invoiceId,
+          journalId,
+          postingDate: today,
+          supplierId: purchaseInvoice.data?.supplierId ?? null,
+          currencyCode: ledgerCurrencyCode,
+          exchangeRate: purchaseInvoice.data?.exchangeRate ?? 1,
+          currencyDecimals: await currencyDecimals(
+            trx,
+            companyId,
+            ledgerCurrencyCode
+          ),
+          sign: 1,
+          lines: purchaseTaxLedgerLines(
+            purchaseInvoiceLines.data,
+            amountsByLineId
+          )
+        });
+        if (taxLedgerRows.length > 0) {
+          await trx.insertInto("taxLedger").values(taxLedgerRows).execute();
+        }
 
         if (dimensionMap.size > 0) {
           const journalLineDimensionInserts = journalLineDimensionRows({
@@ -19132,13 +20381,15 @@ export async function postPurchaseInvoice(
       receiptIds: createdReceiptIds
     };
   } catch (err) {
-    // A failed VOID leaves the invoice Posted: its rows still stand.
+    // A failed VOID leaves the invoice Posted: its rows still stand. Only
+    // from Pending: a second post refused because the first one won must
+    // leave it Open.
     if (type !== "void") {
       await updateRows(
         db,
         "purchaseInvoice",
         { status: "Draft" },
-        { id: invoiceId, companyId }
+        { id: invoiceId, companyId, status: "Pending" }
       );
     }
     throw err;
@@ -19931,7 +21182,7 @@ export async function notifyDocumentForceDelete(
   try {
     const userIds =
       event === "Requested"
-        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+        ? (await getCompanyAdminIds(ctx.asSystem.supabase, companyId)).filter(
             (id) => id !== requestedBy
           )
         : requestedBy === ctx.auditUserId
@@ -20201,6 +21452,24 @@ export async function reverseDocumentByJournal(
           reversingLineId: ids[index]!
         }))
       });
+      // The invoice's tax-ledger rows, negated with its journal, as a void
+      // negates them.
+      if (
+        document.documentType === "salesInvoice" ||
+        document.documentType === "purchaseInvoice"
+      ) {
+        await negateDocumentTaxLedger(tx as Trx, {
+          companyId,
+          documentType:
+            document.documentType === "salesInvoice"
+              ? "Sales Invoice"
+              : "Purchase Invoice",
+          documentId: document.id,
+          journalId: id,
+          postingDate: today,
+          createdBy: userId
+        });
+      }
     }
     if (beforeCutover) {
       await reverseBeforeCutover(tx, {
@@ -20771,6 +22040,14 @@ async function restorePurchaseOrderInvoiced(
     .where("purchaseOrderLineId", "is not", null)
     .execute();
   if (invoiceLines.length === 0) return;
+  // The orders before every line of them, as each writer of the lines'
+  // counters takes them.
+  await lockOrderLines(
+    tx as Kysely<KyselyDatabase>,
+    "purchaseOrderLine",
+    companyId,
+    invoiceLines.map((line) => line.purchaseOrderLineId as string)
+  );
   const orderLines = await tx
     .selectFrom("purchaseOrderLine")
     .selectAll()
@@ -20786,6 +22063,7 @@ async function restorePurchaseOrderInvoiced(
           invoiceLines.map((line) => line.purchaseOrderLineId as string)
         )
     )
+    .orderBy("id")
     .forUpdate()
     .execute();
   const invoicedByLine = new Map<string, number>();
@@ -20880,6 +22158,14 @@ async function restoreSalesOrderInvoiced(
       .where("salesOrderLineId", "is not", null)
       .execute()
   ]);
+  // The orders before every line of them and before their shipments, as an
+  // invoice post takes them.
+  await lockOrderLines(
+    tx as Kysely<KyselyDatabase>,
+    "salesOrderLine",
+    companyId,
+    invoiceLines.map((line) => line.salesOrderLineId as string)
+  );
 
   await tx
     .updateTable("shipment")
@@ -20922,6 +22208,7 @@ async function restoreSalesOrderInvoiced(
         .where("l.companyId", "=", companyId)
         .where("l.id", "in", [...invoicedByLine.keys()])
     )
+    .orderBy("id")
     .forUpdate()
     .execute();
   const updated = orderLines.map((line) => {
@@ -21601,7 +22888,14 @@ async function purchaseLineAccountFacts(
 ): Promise<LineAccountFacts> {
   const invoice = await db
     .selectFrom("purchaseInvoice")
-    .select(["id", "invoiceId", "status", "postingDate", "exchangeRate"])
+    .select([
+      "id",
+      "invoiceId",
+      "status",
+      "postingDate",
+      "dateIssued",
+      "exchangeRate"
+    ])
     .where("id", "=", invoiceId)
     .where("companyId", "=", companyId)
     .$if(lock, (query) => query.forUpdate())
@@ -21630,8 +22924,17 @@ async function purchaseLineAccountFacts(
     );
   }
 
+  // Split the lines' tax as the posting did, on the invoice's tax point:
+  // the recoverable share went to Tax Paid, not to the line's account.
+  const taxPoint = invoice.dateIssued ?? invoice.postingDate;
+  const taxCodes = await loadTaxCodes(
+    db,
+    companyId,
+    lines.data.map((row) => row.taxCodeId),
+    taxPoint ? String(taxPoint) : null
+  );
   const amounts = calculatePurchasePostingAmounts({
-    lines: lines.data,
+    lines: withPurchaseTax(lines.data, taxCodes),
     exchangeRate: invoice.exchangeRate ?? 1,
     supplierShippingCost: delivery.data?.supplierShippingCost ?? 0
   }).find((row) => row.id === line.id);
@@ -22115,9 +23418,9 @@ export async function adjustPurchaseInvoiceRounding(
     const posted = invoice.status !== "Draft";
     if (posted) {
       // A posted invoice's adjustment posts a journal.
-      if (!ctx.can({ update: "accounting" })) {
+      if (!ctx.can({ "accounting.journalEntries": "Edit" })) {
         throw new ForbiddenError(
-          "Adjusting a posted invoice needs accounting update permission."
+          "Adjusting a posted invoice needs Edit on Journal Entries."
         );
       }
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);

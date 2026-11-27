@@ -61,6 +61,7 @@ import {
   releaseJobs
 } from "../app/modules/production/production.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 type Row = Record<string, unknown>;
 
@@ -121,10 +122,11 @@ const contextFor = (client: any) =>
   createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "user-1",
-      permissions: {
+      permissions: pageClaims({
         production: { view: [], create: [], update: ["company-1"], delete: [] }
-      }
+      })
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: client,

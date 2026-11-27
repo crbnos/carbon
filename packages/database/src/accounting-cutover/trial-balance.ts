@@ -192,33 +192,29 @@ export async function getCutoverOpeningInputs(
         description: "Inventory"
       })
     ),
-    ...[...costByAccount].map(
-      ([accountId, value]): DraftItem => ({
-        openItemType: "Fixed Asset Cost",
-        accountId,
-        basis: "debit",
-        original: value,
-        settled: 0,
-        documentType: null,
-        documentId: null,
-        documentLineReference: null,
-        description: "Fixed Asset Cost"
-      })
-    ),
-    ...[...depreciationByAccount].map(
-      ([accountId, value]): DraftItem => ({
-        openItemType: "Accumulated Depreciation",
-        accountId,
-        basis: "debit",
-        // A credit balance.
-        original: -value,
-        settled: 0,
-        documentType: null,
-        documentId: null,
-        documentLineReference: null,
-        description: "Accumulated Depreciation"
-      })
-    )
+    ...[...costByAccount].map(([accountId, value]): DraftItem => ({
+      openItemType: "Fixed Asset Cost",
+      accountId,
+      basis: "debit",
+      original: value,
+      settled: 0,
+      documentType: null,
+      documentId: null,
+      documentLineReference: null,
+      description: "Fixed Asset Cost"
+    })),
+    ...[...depreciationByAccount].map(([accountId, value]): DraftItem => ({
+      openItemType: "Accumulated Depreciation",
+      accountId,
+      basis: "debit",
+      // A credit balance.
+      original: -value,
+      settled: 0,
+      documentType: null,
+      documentId: null,
+      documentLineReference: null,
+      description: "Accumulated Depreciation"
+    }))
   ];
   const items = [
     ...openItems.filter((item) => !isIgnored(item)),

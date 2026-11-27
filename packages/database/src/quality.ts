@@ -167,9 +167,8 @@ async function lockOpenLot(
     .select("status")
     .where("id", "=", inspectionId)
     .where("companyId", "=", companyId);
-  const lot = await (mode === "update"
-    ? query.forUpdate()
-    : query.forShare()
+  const lot = await (
+    mode === "update" ? query.forUpdate() : query.forShare()
   ).executeTakeFirst();
   if (!lot) throw new Error("Inspection not found");
   if (isInspectionClosed(lot.status)) throw new Error("Inspection is closed");
@@ -734,7 +733,7 @@ export async function upsertInspectionMeasurement(
       if (dependentFeatures.length > 0) {
         const dependentMeasurements = await trx
           .selectFrom("inspectionMeasurement")
-          .select(["id", "inspectionFeatureId", "value"])
+          .select(["id", "inspectionFeatureId", "value", "status"])
           .where("inspectionSampleId", "=", sample.id)
           .where(
             "inspectionFeatureId",
@@ -759,7 +758,9 @@ export async function upsertInspectionMeasurement(
             Number(dependent.value),
             sizeReading
           );
-          await trx
+          // The sample row lock above serialises every reading of this unit,
+          // so the status read here is still the row's; the predicate says so.
+          const revalued = await trx
             .updateTable("inspectionMeasurement")
             .set({
               status: valuation.status,
@@ -769,7 +770,14 @@ export async function upsertInspectionMeasurement(
               updatedAt: nowIso
             })
             .where("id", "=", dependent.id)
-            .execute();
+            .where("companyId", "=", args.companyId)
+            .where("status", "=", dependent.status)
+            .executeTakeFirst();
+          if (Number(revalued.numUpdatedRows) === 0) {
+            throw new Error(
+              "A reading on this unit changed while it was saved. Save it again."
+            );
+          }
           dependents.push({
             inspectionFeatureId: dependent.inspectionFeatureId,
             measurementId: dependent.id,

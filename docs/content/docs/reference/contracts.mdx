@@ -29,7 +29,7 @@ A new service contract opens a five-step setup. A project contract has four, wit
 **Revenue.** How each line earns its revenue, and the monthly [revenue plan](#revenue).
 </Step>
 <Step>
-**Review.** A summary, and a linked list of anything that blocks **"Confirm"**.
+**Review.** A summary, and a linked list of anything that blocks **"Confirm"**. The summary shows each line's tax rate on the next invoice, then that invoice's **Tax** and total, taxed as the drafted invoice will be. The **"Confirm"** dialog shows the first invoice with tax.
 </Step>
 </Steps>
 
@@ -47,7 +47,7 @@ The daily billing job sets a contract to Ended once its end date has passed and 
 
 ## Lines
 
-Each line is a **Service** item, **One-time** or **Recurring**, with a quantity, rate, discount, and its own start and end dates (an empty end runs to the contract's end). **"Edit Details"** opens the full line form.
+Each line is a **Service** item, **One-time** or **Recurring**, with a quantity, rate, discount, tax, and its own start and end dates (an empty end runs to the contract's end). **"Edit Details"** opens the full line form.
 
 - **One-time** lines bill their whole amount on the first invoice dated on or after their start date.
 - **Recurring** lines bill every billing period at the rate **"Per"** Day, Week, Month, Quarter or Year. The rate unit is independent of how often you invoice: a rate per Day can be invoiced monthly.
@@ -187,7 +187,7 @@ The action does not apply in the contract's status. Draft: Confirm, schedule edi
 Service-level guards (code `CONTRACT_NOT_DRAFT`; these writers are also MCP tools). On an Active contract only Contract Type, Invoicing and Notes can change directly.
 
 ### "Only Service items can be on a service contract" / "Only Part and Service items can be on a project contract" / "This line does not belong to this contract"
-`upsertContractLine` guards (`CONTRACT_LINE_NOT_SERVICE`, `CONTRACT_LINE_WRONG_CONTRACT`). The service wizard's Add Products (`insertContractLines`) still says "A contract line must be a Service item".
+`insertContractLine` and `updateContractLine` guards (`CONTRACT_LINE_NOT_SERVICE`, `CONTRACT_LINE_WRONG_CONTRACT`). The service wizard's Add Products (`insertContractLines`) still says "A contract line must be a Service item".
 
 ### "Add an invoice contact with an email to send invoices"
 Setting Invoicing to *Post and Email* in the properties panel needs an invoice contact with an email (`CONTRACT_INVOICE_EMAIL_NO_CONTACT`).

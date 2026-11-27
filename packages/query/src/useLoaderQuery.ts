@@ -10,7 +10,6 @@ import { loaderQuery, loaderRetry } from "./cache";
  * (as `useFetcher<typeof loader>` takes): then it is what that loader returns,
  * without the `data()` wrapper.
  */
-// biome-ignore lint/suspicious/noExplicitAny: any loader signature
 export type LoaderData<T> = T extends (...args: any[]) => infer R
   ? Unwrapped<Awaited<R>>
   : T;
@@ -34,6 +33,9 @@ type Unwrapped<R> = R extends {
  * the entry out of what those mark stale, and `refetchInterval` refreshes it.
  * `keepPreviousData` shows the last URL's answer while a new URL loads, so a
  * read that follows the user's edits does not empty and refill on each one.
+ * `refetchOnMount: "always"` reads again on every mount even when the cached
+ * answer is still fresh: for a component that acts on what it reads (passes
+ * it up, builds a submission from it) rather than only showing it.
  */
 export function useLoaderQuery<T>(
   url: string | null,
@@ -42,11 +44,16 @@ export function useLoaderQuery<T>(
     invalidate?: boolean;
     refetchInterval?: number;
     keepPreviousData?: boolean;
+    refetchOnMount?: "always";
   }
 ) {
   return useQuery<LoaderData<T>>({
     ...loaderQuery<LoaderData<T>>(url ?? "", options),
     refetchInterval: options?.refetchInterval,
+    // only when asked: otherwise the client's default applies
+    ...(options?.refetchOnMount
+      ? { refetchOnMount: options.refetchOnMount }
+      : {}),
     placeholderData: options?.keepPreviousData ? keepPreviousData : undefined,
     enabled: url !== null,
     retry: loaderRetry

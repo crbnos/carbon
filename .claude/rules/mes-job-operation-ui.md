@@ -10,6 +10,8 @@ paths:
   - "apps/mes/app/utils/trackedMaterials.ts"
   - "apps/mes/app/utils/workUnit.ts"
   - "apps/mes/app/services/work-unit.server.ts"
+  - "apps/mes/app/services/unit-hold.server.ts"
+  - "apps/mes/app/utils/unitHold.ts"
   - "apps/mes/app/services/kanban-scan.server.ts"
 ---
 
@@ -125,6 +127,53 @@ banner.
 before the page hydrates) back to the referrer with the flash, so the operator never
 lands on the bare resource route.
 
+## Quality hold
+
+With `companySettings.holdUnitsWithOpenIssues` on (Settings → Quality, default
+off), a serial unit is **on hold** while an issue that is not `Closed` links it
+in `nonConformanceTrackedEntity`. The hold follows the issue and its per-serial disposition. "On hold", never "held": a held unit
+is the one on the operator's screen. Spec:
+`.ai/specs/implemented/2026-11-23-unit-quality-hold.md`.
+
+- **One reader:** `readUnitHolds` (`services/unit-hold.server.ts`) returns
+  `UnitHolds` (`~/utils/unitHold`): the blocking issues and dispositions per unit, oldest first. With
+  the setting off it reads the settings row and nothing else.
+- **The server:** `resolveWorkUnit` reads the holds of the units still to do
+  (not in `member` mode, never for a lot) and `decideWorkUnit` treats a unit on
+  hold as not open. A write that names it is refused with "This unit is on
+  hold for issue <number>"; "the next unit" and "the one left" skip it; with
+  only units on hold left the answer is "Every unit left at this operation is
+  on hold". A timer drops it like any unit not open. `member` writes (quality
+  issue, unconsume, part scrap) still name it. A failed read
+  refuses.
+- **The screens:** both loaders read `readScreenUnitHolds` in the first wave
+  (chained on the units and make method reads; a failed read shows none, like
+  the ability gate) and pass `unitHolds` to the view. `useWorkUnit` takes
+  `isOnHold`: such a unit is not open (`writesBlocked`), and a picked unit that
+  goes on hold stays on screen. With only units on hold left and none on
+  screen, `canPick` stays true so the picker opens on them (`onHoldUnits`).
+  `UnitHoldBanner` shows the unit's issues,
+  `SerialSelectorModal` lists units on hold after the open ones with a badge,
+  and the Issue dialog's notice reads "This unit is on hold" (`parentOnHold`).
+  The operation loader's first-operation redirect skips a unit on hold.
+- **Receipt to stock:** the final operation uses its serial completion markers
+  to receive the units worked. A manual finish without unit-specific work can
+  receive an eligible quantity. The ERP Complete dialog binds its confirmation
+  to the preview, including deferred numbering, under either hold setting.
+  The receipt excludes held serials and Quality can release an accepted unit
+  once its other holds clear. See `job-receipt-unit-hold.test.ts` and
+  `job-receipt-preview.test.ts` in the ERP database tests.
+- **Inspection lots:** `getInspectionOutcomeState` (`quality.server.ts`) reads
+  the holds. The inspection preview and disposition use the same eligible units.
+  A passed sample on an accepted or partially accepted serial lot can complete once its hold clears.
+- **Dispatch:** rework and correction postings that credit the source operation refuse any held serial.
+- **Not gated:** batch step records and `finish` itself (it names no unit; the
+  receipt above is what keeps the unit out of stock).
+- **After the issue closes:** `unitQualityHold` keeps only serials linked to a
+  Scrap or Return to Supplier disposition row blocked. The serial completion and scrap
+  postings check the view under the tracked entity lock before recording output.
+  Other serials on the same issue follow their own dispositions.
+
 ## Batch mode (operation batching)
 
 **Floor gate (membership handoff), enforced server-side.** An operation is
@@ -169,7 +218,7 @@ single job: Details (`BatchOverview view="details"`: stats, a load list only whe
 kept apart (the jobs make different items, or each job gets its own output lot)
 — each job's quantity to run with due date/customer and a total — materials grouped "To pick" / "Used automatically at completion",
 and files) and Instructions
-(`view="instructions"`: the batch's steps and process parameters); Chat is
+(`view="instructions"`: the batch's steps and process parameters); Notes is
 disabled on the batch because notes (`jobOperationNote`) belong to one job
 operation. The job scope
 opens with a banner saying the job runs in the batch — timer and completion are
@@ -415,8 +464,9 @@ new one has to be reviewed.
 pure `serialUnitSelection` and `workUnitReducer` (`~/utils/workUnit`, tested),
 the same for `JobOperation` and `AssemblyView`.
 
-- **The units** are `operationUnits`: those in the operation's scope, capped to
-  its quantity. Both views use the same list, and so does the server for
+- **The units** are `operationUnits`. Completed serials consume operation capacity.
+  A serial on quality hold stays viewable and leaves a place for an eligible replacement.
+  Each serial keeps its original axis position for step records. Both views use the same list, and so does the server for
   "next" and "the one left". The loaders read it with
   `getTrackedEntitiesForOperation`, which pages through the same reader as
   `getOperationUnitAxis` (same order), so the screens and the server agree
@@ -800,7 +850,7 @@ while its serial or batch materials are not scanned in.
 ## Tabs
 
 `useOperation`'s `activeTab` drives a `Tabs`; exact values: `"details"`, `"model"`,
-`"procedure"`, `"chat"`. The Procedure tab has nested tabs `"attributes"` (Steps) and
+`"procedure"`, `"chat"` (labelled **Notes**, with a `Count` of the operation's notes; `useOperationNotes` in `Chat.tsx` loads them and the tab and `OperationChat` share them; `jobOperationNote.jobOperationId` has no foreign key, so realtime messages carry no operation id and the hook re-reads every note insert and keeps only this operation's). The Procedure tab has nested tabs `"attributes"` (Steps) and
 `"parameters"`. Details renders Steps, Process Parameters, Materials, Files, and (only
 when `parentIsSerial`) Serial Numbers.
 

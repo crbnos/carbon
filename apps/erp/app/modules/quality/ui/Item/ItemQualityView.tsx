@@ -55,7 +55,7 @@ const ItemQualityView = ({
 }: ItemQualityViewProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "quality");
+  const canUpdate = permissions.has({ "quality.inspectionPlans": "Edit" });
   const newDocumentDisclosure = useDisclosure();
   // Archived plans are retired versions — hide them from the list. They stay
   // reachable from Quality → Inspection Plans.
@@ -85,7 +85,7 @@ const ItemQualityView = ({
             </CardDescription>
           </CardHeader>
           <CardAction>
-            {permissions.can("create", "quality") && (
+            {permissions.has({ "quality.inspectionPlans": "Create" }) && (
               <Button
                 variant="secondary"
                 leftIcon={<LuPlus />}

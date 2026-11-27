@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
@@ -13,18 +13,16 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import { itemPlanningValidator } from "~/modules/items/items.models";
-import { getItemPlanning } from "~/modules/items/items.service";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "parts"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "parts.tools": "View"
   });
 
   const { itemId } = params;
@@ -50,7 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await api.resources.getLocationsList({});
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.tool(itemId),
@@ -63,12 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let toolPlanning = await getItemPlanning(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  const toolPlanning = await api.items.getItemPlanning({ itemId, locationId });
 
   if (toolPlanning.error || !toolPlanning.data) {
     throw redirect(
@@ -80,8 +73,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const { locationPlanningTimeFenceDays, ...planning } = toolPlanning.data;
   return {
-    toolPlanning: toolPlanning.data,
+    toolPlanning: planning,
+    // the placeholder of the item's empty fence; a failed read shows none
+    locationTimeFenceDays: locationPlanningTimeFenceDays ?? undefined,
     locationId
   };
 }
@@ -92,9 +88,11 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { itemId } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.items.updateItemPlanning({
     ...input.data,
+    // the form always posts the fence: an emptied field inherits
+    planningTimeFenceDays: input.data.planningTimeFenceDays ?? null,
     itemId,
     customFields: input.formData && setCustomFields(input.formData)
   });
@@ -114,7 +112,8 @@ export default function ToolPlanningRoute() {
     locations: ListItem[];
   }>(path.to.toolRoot);
 
-  const { toolPlanning, locationId } = useLoaderData<typeof loader>();
+  const { toolPlanning, locationTimeFenceDays, locationId } =
+    useLoaderData<typeof loader>();
 
   if (!sharedToolsData) throw new Error("Could not load shared tools data");
 
@@ -126,10 +125,19 @@ export default function ToolPlanningRoute() {
           ...toolPlanning,
           ...getCustomFields(toolPlanning.customFields)
         }}
+        locationTimeFenceDays={locationTimeFenceDays}
         locations={sharedToolsData.locations ?? []}
         type="Tool"
       />
-      <ItemPlanningChart itemId={toolPlanning.itemId} locationId={locationId} />
+      <ItemPlanningChart
+        itemId={toolPlanning.itemId}
+        locationId={locationId}
+        safetyStock={
+          toolPlanning.reorderingPolicy === "Demand-Based Reorder"
+            ? (toolPlanning.demandAccumulationSafetyStock ?? 0)
+            : undefined
+        }
+      />
     </VStack>
   );
 }

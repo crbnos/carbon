@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -19,8 +19,8 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, userId } = await authorize(request, {
+    "sales.customers": "Edit"
   });
 
   const formData = await request.formData();
@@ -73,6 +73,7 @@ export default function CustomerEditRoute() {
     customerStatusId: routeData?.customer?.customerStatusId ?? undefined,
     accountManagerId: routeData?.customer?.accountManagerId ?? undefined,
     currencyCode: routeData?.customer?.currencyCode ?? undefined,
+    partNumberDisplay: routeData?.customer?.partNumberDisplay ?? undefined,
     taxPercent: routeData?.customer?.taxPercent ?? 0,
     website: routeData?.customer?.website ?? "",
     salesContactId: routeData?.customer?.salesContactId ?? undefined,

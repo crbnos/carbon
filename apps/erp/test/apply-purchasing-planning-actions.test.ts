@@ -58,11 +58,11 @@ describe("planningQuantityChange", () => {
     ).toMatchObject({ ok: true, quantity: 6, receivedComplete: true });
   });
 
-  // 1.1 / 0.1 is 11.000000000000002 in floating point; a bare ceil makes 12.
+  // 0.07 / 0.01 is 7.000000000000001 in floating point; a bare ceil makes 8.
   it("does not round float noise up a whole purchase unit", () => {
     expect(
-      planningQuantityChange(base({ conversionFactor: 0.1 }), decimals, 1.1)
-    ).toMatchObject({ ok: true, quantity: 11 });
+      planningQuantityChange(base({ conversionFactor: 0.01 }), decimals, 0.07)
+    ).toMatchObject({ ok: true, quantity: 7 });
   });
 
   it("treats a line with no conversion factor as one to one", () => {

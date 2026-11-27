@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -31,12 +31,8 @@ import type {
 } from "react-router";
 import { useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import {
-  getContract,
-  getContractAmendments,
-  getContractInvoiceSchedule,
-  getContractLines
-} from "~/modules/sales/sales.service";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
+import { previewContractInvoiceTotals } from "~/modules/sales/sales.service";
 import type {
   Contract,
   ContractCreditMemoLinks,
@@ -52,6 +48,7 @@ import {
   toContractTerms
 } from "~/modules/sales/ui/Contracts";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -72,8 +69,7 @@ export const handle: Handle = {
   breadcrumb: (params: unknown, data: ContractRouteData | undefined) =>
     data?.contract?.billingBasis === "Project"
       ? projectContractsCrumb(params, data)
-      : serviceContractsCrumb(params, data),
-  module: "sales"
+      : serviceContractsCrumb(params, data)
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
@@ -90,9 +86,11 @@ export async function loader({
   request,
   params
 }: LoaderFunctionArgs): Promise<ContractRouteData> {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    CONTRACT_READ_GATE
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -106,10 +104,10 @@ export async function loader({
     timeZone,
     researchFlags
   ] = await Promise.all([
-    getContract(client, id, companyId),
-    getContractLines(client, id, companyId),
-    getContractInvoiceSchedule(client, id, companyId),
-    getContractAmendments(client, id, companyId),
+    api.sales.getContract({ customerContractId: id }),
+    api.sales.getContractLines({ customerContractId: id }),
+    api.sales.getContractInvoiceSchedule({ customerContractId: id }),
+    api.sales.getContractAmendments({ customerContractId: id }),
     client
       .from("customerContractRevenue")
       .select("customerContractLineId, periodStart, periodEnd, amount, status")
@@ -240,7 +238,10 @@ export async function loader({
   const memoIds = [
     ...new Set(credits.flatMap((row) => (row.memoId ? [row.memoId] : [])))
   ];
-  const [salesInvoices, memos] = await Promise.all([
+  // The invoices still to be drafted, with the net and tax each will bill:
+  // the drafting's own pricing and rates, so the page shows the invoice's tax.
+  // Null when the tax codes cannot be read; the page then shows nets only.
+  const [salesInvoices, memos, plannedInvoices] = await Promise.all([
     salesInvoiceIds.length > 0
       ? client
           .from("salesInvoice")
@@ -254,7 +255,21 @@ export async function loader({
           .select("id, memoId, status")
           .eq("companyId", companyId)
           .in("id", memoIds)
-      : Promise.resolve({ data: [], error: null })
+      : Promise.resolve({ data: [], error: null }),
+    previewContractInvoiceTotals(getDatabaseClient(), {
+      companyId,
+      today,
+      lines: contractLines,
+      schedule: invoices,
+      computedSchedule
+    }).catch((err: unknown): ContractRouteData["plannedInvoices"] => {
+      logger.error("Failed to price the contract's planned invoices", {
+        companyId,
+        customerContractId: id,
+        error: err
+      });
+      return null;
+    })
   ]);
   if (salesInvoices.error || memos.error) {
     throw redirect(
@@ -378,6 +393,7 @@ export async function loader({
     credits,
     amendments: amendments.data ?? [],
     computedSchedule,
+    plannedInvoices,
     residuals,
     invoiceLinks,
     creditMemoLinks,

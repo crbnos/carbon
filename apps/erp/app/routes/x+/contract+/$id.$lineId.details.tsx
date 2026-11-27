@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect, round } from "@carbon/utils";
@@ -11,14 +11,13 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
+  CONTRACT_READ_GATE,
   contractLineBillingFormValues,
   customerContractLineValidator
 } from "~/modules/sales/sales.models";
 import {
   getContract,
-  getContractLine,
-  projectRevenueRefusal,
-  upsertContractLine
+  projectRevenueRefusal
 } from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
@@ -28,15 +27,19 @@ import {
 import { path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    CONTRACT_READ_GATE
+  );
 
   const { id, lineId } = params;
   if (!id) throw notFound("id not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const line = await getContractLine(client, lineId, companyId);
+  const line = await api.sales.getContractLine({
+    customerContractLineId: lineId
+  });
   if (
     line.error ||
     line.data.companyId !== companyId ||
@@ -104,8 +107,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { api, client, companyId } = await authorize(request, {
+    "sales.serviceContracts": "Edit"
   });
 
   const { id, lineId } = params;
@@ -140,13 +143,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw redirect(back, await flash(request, error(null, upgrade)));
   }
 
-  // `upsertContractLine` refuses a line of another contract, a contract that
-  // is not a Draft and an item that is not a Service.
-  const update = await upsertContractLine(client, {
-    ...line,
+  // The form posts the whole line, so a field it left empty is cleared, not
+  // kept. `updateContractLine` refuses a line of another contract, a
+  // contract that is not a Draft and an item its basis does not take, and
+  // decides the tax.
+  const update = await api.sales.updateContractLine({
+    ...clearedLineFields(),
+    ...withoutUndefined(line),
+    // The form always posts the field: an empty one clears the code.
+    taxCodeId: formData.has("taxCodeId") ? (line.taxCodeId ?? null) : undefined,
     customerContractId: id,
-    id: lineId,
-    updatedBy: userId
+    id: lineId
   });
   if (update.error) {
     throw redirect(
@@ -156,6 +163,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(back, await flash(request, success("Updated line")));
+}
+
+/** Every field of a line, cleared. */
+function clearedLineFields() {
+  return Object.fromEntries(
+    Object.keys(customerContractLineValidator.shape).map((field) => [
+      field,
+      null
+    ])
+  );
+}
+
+function withoutUndefined<T extends object>(values: T) {
+  return Object.fromEntries(
+    Object.entries(values).filter(([, value]) => value !== undefined)
+  );
 }
 
 /** One line of the contract. Editable while the contract is a Draft; an
@@ -205,6 +228,7 @@ export default function ContractLineRoute() {
         discountPercent: round(Number(line.discountPercent) * 100),
         discountEndsOn: line.discountEndsOn ?? undefined,
         taxPercent: round(Number(line.taxPercent) * 100),
+        taxCodeId: line.taxCodeId ?? undefined,
         startDate: line.startDate,
         endDate: line.endDate ?? undefined,
         goLiveDate: line.goLiveDate ?? undefined,

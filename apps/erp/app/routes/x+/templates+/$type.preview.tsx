@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { DOCUMENT_PDFS, ensureFont } from "@carbon/documents/pdf";
 import {
   blockSchema,
@@ -14,7 +14,8 @@ import {
   isFigureProblem,
   sectionConfigSchema,
   themeSchema,
-  validateTemplateText
+  validateTemplateText,
+  withoutDocumentValues
 } from "@carbon/documents/template";
 import { getPreferenceHeaders, labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
@@ -29,8 +30,8 @@ import { resolveSections } from "~/modules/settings/settings.service";
  * Buffer/streams) and guarantees the preview matches the real PDF route.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId } = await authorize(request, {
+    "settings.documentTemplates": "View"
   });
 
   const documentType = documentTemplateTypeSchema.parse(params.type);
@@ -53,10 +54,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!parsed.success || !theme.success) {
     return new Response("Invalid template", { status: 400 });
   }
+  const blocks = withoutDocumentValues(parsed.data);
 
   const figureProblems = validateTemplateText({
     documentType,
-    blocks: parsed.data,
+    blocks,
     settings
   }).filter(isFigureProblem);
   if (figureProblems.length > 0) {
@@ -71,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds({ blocks: parsed.data, headerSectionId, footerSectionId })
+    collectSectionIds({ blocks, headerSectionId, footerSectionId })
   );
 
   // Apply the live (unsaved) header config draft so logo/header edits show in
@@ -114,7 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       template={{
         formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
         documentType,
-        blocks: parsed.data,
+        blocks,
         theme: theme.data,
         settings,
         headerSectionId,

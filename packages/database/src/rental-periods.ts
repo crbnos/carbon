@@ -470,3 +470,42 @@ export function generateRentalBillingPeriods(args: {
 
   return { create, recut, adjustments };
 }
+
+/** `generateRentalBillingPeriods` for an open-ended line, with `through`
+ *  moved forward until the line holds at least `minPending` Pending
+ *  non-adjustment periods (its rows plus the periods cut now). An early
+ *  invoice bills that many periods ahead. Each pass adds one period. A
+ *  fixed term or a returned line is generated as it is. */
+export function generatePeriodsForPending(
+  args: Parameters<typeof generateRentalBillingPeriods>[0] & {
+    minPending: number;
+  }
+): RentalBillingPlan {
+  const { minPending, ...generateArgs } = args;
+  if (generateArgs.endDate !== null || generateArgs.returnedAt !== null) {
+    return generateRentalBillingPeriods(generateArgs);
+  }
+
+  const held = generateArgs.existing.filter(
+    (row) => row.status === "Pending" && !row.isAdjustment
+  ).length;
+  const lastExistingEnd = generateArgs.existing
+    .filter((row) => !row.isAdjustment)
+    .reduce<string | null>(
+      (last, row) =>
+        last === null || row.periodEnd > last ? row.periodEnd : last,
+      null
+    );
+
+  let through = generateArgs.through;
+  let plan = generateRentalBillingPeriods({ ...generateArgs, through });
+  for (let pass = 1; pass <= minPending; pass++) {
+    if (held + plan.create.length >= minPending) break;
+    const lastEnd =
+      plan.create[plan.create.length - 1]?.periodEnd ?? lastExistingEnd;
+    if (lastEnd === null) break;
+    through = lastEnd;
+    plan = generateRentalBillingPeriods({ ...generateArgs, through });
+  }
+  return plan;
+}

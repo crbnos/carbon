@@ -37,7 +37,7 @@ const Shape = (props: ShapeSelectProps) => {
     onCreate: () => create.open("")
   });
 
-  return permissions.can("create", "parts") ? (
+  return permissions.has({ "parts.shapes": "Create" }) ? (
     <>
       <CreatableCombobox
         ref={triggerRef}

@@ -60,15 +60,26 @@ describe("DOCUMENT_PDFS", () => {
   // it changes by reissue, never by an edit.
   const pageDocuments = documentTypes.filter(isDocumentEditType);
 
-  /** What makes each document print the tables its sample leaves out. */
+  /** Empty notes, so the Notes block prints its "None" word. */
+  const withoutNotes = (sample: any, owner: string) => ({
+    [owner]: { ...sample[owner], externalNotes: {} }
+  });
+
+  /**
+   * What makes each document print the tables and texts its sample leaves out.
+   * A list holds one prop set per variant, for texts that exclude each other.
+   */
   const everyTable: Partial<
-    Record<DocumentTemplateType, (sample: any) => Record<string, unknown>>
+    Record<
+      DocumentTemplateType,
+      (sample: any) => Record<string, unknown> | Record<string, unknown>[]
+    >
   > = {
     // A delivery ticket prints its units instead of the shipment's lines, which
-    // the plain slip's table already covers below.
-    packingSlip: () => ({
-      documentType: "deliveryTicket",
-      rentalUnits: [
+    // the plain slip's table already covers below. A contract delivery prints
+    // as a Receiving Report, with the contract number.
+    packingSlip: () => {
+      const rentalUnits = [
         {
           id: "unit-1",
           name: "Flight unit",
@@ -76,47 +87,110 @@ describe("DOCUMENT_PDFS", () => {
           serialNumber: "SN-9",
           quantity: "3 EA"
         }
-      ]
-    }),
-    quote: (sample) => ({
-      quoteLines: sample.quoteLines.map((line: any, index: number) =>
-        index === 0
-          ? {
-              ...line,
-              additionalCharges: {
-                freight: {
-                  description: "Crating",
-                  amounts: { [line.quantity[0]]: 5 }
-                }
-              }
-            }
-          : line
-      )
-    }),
-    jobTraveler: (sample) => ({
-      includeMaterials: true,
-      materials: [
+      ];
+      return [
+        { documentType: "deliveryTicket", rentalUnits },
         {
-          id: "material-1",
-          itemReadableId: "BOLT-9",
-          description: "Bolt",
-          quantity: 4,
-          unitOfMeasureCode: "EA"
+          documentType: "receivingReport",
+          customerReference: "CONTRACT-1",
+          rentalUnits
         }
-      ],
-      jobOperations: sample.jobOperations.map(
-        (operation: any, index: number) =>
+      ];
+    },
+    // The samples print a row per tax component; without codes, the single
+    // tax row prints instead. An invoice for two orders prints the plural.
+    salesInvoice: (sample) => ({
+      taxSummary: [],
+      salesOrderIds: ["SO-001042", "SO-001043"],
+      ...withoutNotes(sample, "salesInvoice")
+    }),
+    salesOrder: (sample) => ({
+      taxCodes: [],
+      ...withoutNotes(sample, "salesOrder")
+    }),
+    purchaseOrder: (sample) => withoutNotes(sample, "purchaseOrder"),
+    purchaseReturnOrder: (sample) =>
+      withoutNotes(sample, "purchaseReturnOrder"),
+    salesReturnOrder: (sample) => withoutNotes(sample, "salesReturnOrder"),
+    // A line with two quantities prints the Tax & Fees column instead of the
+    // summary, so it is a variant of its own.
+    quote: (sample) => [
+      {
+        taxCodes: [],
+        ...withoutNotes(sample, "quote"),
+        quoteLines: sample.quoteLines.map((line: any, index: number) =>
           index === 0
             ? {
-                ...operation,
-                jobOperationStep: [
-                  { id: "step-1", sortOrder: 1, name: "Check torque" }
-                ]
+                ...line,
+                additionalCharges: {
+                  freight: {
+                    description: "Crating",
+                    amounts: { [line.quantity[0]]: 5 }
+                  }
+                }
               }
-            : operation
-      )
-    }),
+            : line
+        )
+      },
+      {
+        quoteLines: sample.quoteLines.map((line: any, index: number) =>
+          index === 0 ? { ...line, quantity: [10, 25] } : line
+        ),
+        quoteLinePrices: [
+          ...sample.quoteLinePrices,
+          {
+            quoteLineId: "line-1",
+            quantity: 25,
+            convertedUnitPrice: 22,
+            convertedNetExtendedPrice: 550,
+            convertedShippingCost: 0,
+            leadTime: 14
+          }
+        ]
+      }
+    ],
+    // A service, a sales order line with no readable order, and an inventory
+    // job each print a word the others do not.
+    jobTraveler: (sample) => [
+      {
+        includeMaterials: true,
+        materials: [
+          {
+            id: "material-1",
+            itemReadableId: "BOLT-9",
+            description: "Bolt",
+            quantity: 4,
+            unitOfMeasureCode: "EA"
+          }
+        ],
+        jobOperations: sample.jobOperations.map(
+          (operation: any, index: number) =>
+            index === 0
+              ? {
+                  ...operation,
+                  jobOperationStep: [
+                    { id: "step-1", sortOrder: 1, name: "Check torque" }
+                  ]
+                }
+              : operation
+        )
+      },
+      {
+        item: { ...sample.item, type: "Service" },
+        job: { ...sample.job, salesOrderReadableId: null }
+      },
+      {
+        job: {
+          ...sample.job,
+          salesOrderId: null,
+          salesOrderLineId: null,
+          salesOrderReadableId: null
+        }
+      }
+    ],
+    // Neither the initiator nor the inspector is a known user.
     issue: (sample) => ({
+      nonConformance: { ...sample.nonConformance, createdBy: null },
       jobOperationStepRecords: [
         {
           name: "Check finish",
@@ -126,7 +200,7 @@ describe("DOCUMENT_PDFS", () => {
             {
               id: "record-1",
               booleanValue: true,
-              createdBy: "user-1",
+              createdBy: "user-2",
               createdAt: "2026-06-01T00:00:00Z"
             }
           ]
@@ -134,8 +208,14 @@ describe("DOCUMENT_PDFS", () => {
       ]
     })
   };
+  const variantsWithEveryTable = (documentType: DocumentTemplateType) => {
+    const props = everyTable[documentType]?.(
+      DOCUMENT_PDFS[documentType].sample
+    );
+    return props === undefined ? [] : Array.isArray(props) ? props : [props];
+  };
   const propsWithEveryTable = (documentType: DocumentTemplateType) =>
-    everyTable[documentType]?.(DOCUMENT_PDFS[documentType].sample) ?? {};
+    variantsWithEveryTable(documentType)[0] ?? {};
 
   /** The template with whatever option a table prints behind switched on. */
   function templateWithEveryTable(documentType: DocumentTemplateType) {
@@ -260,7 +340,7 @@ describe("DOCUMENT_PDFS", () => {
       };
       const page = (
         await Promise.all(
-          [{}, propsWithEveryTable(documentType)].map((props) =>
+          [{}, ...variantsWithEveryTable(documentType)].map((props) =>
             printed(documentType, { ...props, template: words })
           )
         )
@@ -311,6 +391,36 @@ describe("DOCUMENT_PDFS", () => {
     },
     30000
   );
+
+  it("prints a custom field block's own value from a document edit", async () => {
+    const { Component, sample } = DOCUMENT_PDFS.purchaseOrder;
+    const base = resolveTemplate("purchaseOrder", null);
+    const template = applyDocumentEdit(
+      {
+        ...base,
+        blocks: [
+          ...base.blocks,
+          {
+            id: "cf",
+            type: "customField",
+            visible: true,
+            fieldId: "f1",
+            label: "Project"
+          }
+        ]
+      },
+      { blocks: { cf: { value: "Typed on this document" } }, settings: {} }
+    );
+    const pdf = await renderToBuffer(
+      createElement(Component, {
+        locale: "en-US",
+        ...sample,
+        template
+      }) as ReactElement
+    );
+    const { text } = await extractText(new Uint8Array(pdf));
+    expect(text.join(" ")).toContain("Typed on this document");
+  }, 30000);
 
   it("prints a contract delivery as a Receiving Report", async () => {
     const { Component, sample } = DOCUMENT_PDFS.packingSlip;

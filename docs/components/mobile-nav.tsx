@@ -74,7 +74,6 @@ export function MobileNav({ active, children }: { active?: Active; children?: Re
 
   // A real route change (Reference/API/MCP links) means the drawer's job is done.
   // The Guide never changes route, so it dismisses itself via useMobileNavClose().
-  // biome-ignore lint/correctness/useExhaustiveDependencies: close on every navigation
   useEffect(() => {
     setOpen(false);
   }, [pathname]);

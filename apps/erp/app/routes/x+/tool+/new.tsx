@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -12,8 +12,9 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { toolValidator } from "~/modules/items/items.models";
-import { upsertTool } from "~/modules/items/items.service";
+import { insertTypedItem } from "~/modules/items/items.service";
 import { ToolForm } from "~/modules/items/ui/Tools";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { newRecordMeta } from "~/utils/meta";
@@ -23,14 +24,13 @@ export const meta = newRecordMeta("Tool");
 
 export const handle: Handle = {
   breadcrumb: msg`Tools`,
-  to: path.to.tools,
-  module: "items"
+  to: path.to.tools
 };
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts"
+  const { client, companyId, userId } = await authorize(request, {
+    "parts.tools": "Create"
   });
 
   const formData = await request.formData();
@@ -42,12 +42,17 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const createTool = await upsertTool(client, {
-    ...validation.data,
-    companyId,
-    customFields: setCustomFields(formData),
-    createdBy: userId
-  });
+  const createTool = await insertTypedItem(
+    client,
+    getDatabaseClient(),
+    "Tool",
+    {
+      ...validation.data,
+      companyId,
+      customFields: setCustomFields(formData),
+      createdBy: userId
+    }
+  );
   if (createTool.error) {
     return modal
       ? data(

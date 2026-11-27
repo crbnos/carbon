@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { originOf } from "@carbon/api/service-fn.server";
 import {
   CONTROLLED_ENVIRONMENT,
   error,
   getAppUrl,
-  getPermissionCacheKey,
   success as successFlash
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -22,12 +22,7 @@ import { trigger } from "@carbon/jobs";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { Heading as _Heading, Button, VStack } from "@carbon/react";
-import {
-  datetime,
-  getClientIp,
-  redirect,
-  redirectExternal
-} from "@carbon/utils";
+import { datetime, redirect, redirectExternal } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
@@ -40,6 +35,7 @@ import type {
 import { Form, Link, useLoaderData, useNavigation } from "react-router";
 import {
   acceptInvite,
+  inviteOrigin,
   isControlledInviteExpired
 } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -120,9 +116,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // `acceptInvite` already cleared the invitee's cached claims after its commit.
   if (authSession) {
-    await redis.del(getPermissionCacheKey(authSession.userId));
-
     const { data: companyRecord } = await serviceRole
       .from("company")
       .select("companyGroupId")
@@ -172,8 +167,7 @@ async function requestNewInvite(
   code: string,
   serviceRole: ReturnType<typeof getCarbonServiceRole>
 ) {
-  const ip = getClientIp(request) ?? "127.0.0.1";
-  const location = request.headers.get("x-vercel-ip-city") ?? "Unknown";
+  const { ip, location } = inviteOrigin(originOf(request));
 
   const invite = await serviceRole
     .from("invite")

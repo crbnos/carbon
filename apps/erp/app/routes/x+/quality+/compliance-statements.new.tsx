@@ -3,10 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { isUniqueViolation, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { complianceStatementValidator } from "~/modules/quality/quality.models";
@@ -16,8 +16,8 @@ import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    create: "quality"
+  await authorize(request, {
+    "quality.complianceStatements": "Create"
   });
 
   return null;
@@ -25,8 +25,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "quality"
+  const { companyId, userId } = await authorize(request, {
+    "quality.complianceStatements": "Create"
   });
 
   const formData = await request.formData();
@@ -46,7 +46,7 @@ export async function action({ request }: ActionFunctionArgs) {
     companyId,
     userId
   });
-  if (insertStatement.error?.code === "23505") {
+  if (insertStatement.error && isUniqueViolation(insertStatement.error)) {
     return validationError({
       fieldErrors: {
         name: "A compliance statement with this name already exists"

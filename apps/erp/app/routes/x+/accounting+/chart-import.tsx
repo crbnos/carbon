@@ -8,9 +8,9 @@
 // files would do; `apply` runs the same plan in one transaction through the
 // apply-account-import server function.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   type AccountImportResolutions,
@@ -39,13 +39,15 @@ import {
   parseChartCsv,
   parseDefaultsCsv
 } from "~/modules/accounting/account-import-csv";
-import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import {
+  hasAccountingCutover,
+  importChartOfAccountsPermission
+} from "~/modules/accounting/accounting.utils";
 import {
   type AccountImportAccount,
   AccountImportCsvErrors,
   AccountImportReview
 } from "~/modules/accounting/ui/ChartOfAccounts";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -69,10 +71,11 @@ function returnPath(params: URLSearchParams) {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "accounting"
-  });
-  const settings = await getCompanySettings(client, companyId);
+  const { companyId, api } = await authorize(
+    request,
+    importChartOfAccountsPermission
+  );
+  const settings = await api.settings.getCompanySettings({});
   if (settings.error) {
     logger.error("Failed to read the company settings", {
       companyId,
@@ -117,9 +120,10 @@ function readFile<Row>(
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { companyId, companyGroupId } = await requirePermissions(request, {
-    update: "accounting"
-  });
+  const { companyId, companyGroupId } = await authorize(
+    request,
+    importChartOfAccountsPermission
+  );
 
   const formData = await request.formData();
   const chart = readFile(formData.get("chart"), parseChartCsv);
@@ -137,7 +141,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const resolutions = readResolutions(formData.get("resolutions"));
 
   if (formData.get("intent") === "apply") {
-    const api = await carbon(request);
+    const { api } = await authorize(request);
     const result = await api.accounting.importChartOfAccounts({
       chart: chart.rows,
       defaults: defaults.rows,

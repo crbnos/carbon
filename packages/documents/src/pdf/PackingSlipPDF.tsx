@@ -12,9 +12,10 @@ import {
   type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
+import type { PartNumberDisplay } from "../utils/part-number";
 import { resolveRegistrationLine } from "../utils/shared";
-import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
+import { DocumentPage } from "./blocks/DocumentPage";
 import type {
   PackingSlipData,
   PackingSlipDocumentType,
@@ -46,6 +47,8 @@ interface PackingSlipProps extends PDF {
   sections?: Record<string, ResolvedSection>;
   /** Which title prints, and what the customer reference is called. */
   documentType?: PackingSlipDocumentType;
+  /** The Edit document modal's unsaved display choice for every line. */
+  partNumberDisplayDraft?: PartNumberDisplay;
 }
 
 const PackingSlipPDF = ({
@@ -68,7 +71,8 @@ const PackingSlipPDF = ({
   rentalUnits,
   thumbnails,
   template,
-  sections = {}
+  sections = {},
+  partNumberDisplayDraft
 }: PackingSlipProps) => {
   const resolved = resolveTemplate("packingSlip", template);
   const { theme, settings, footerSectionId } = resolved;
@@ -134,7 +138,8 @@ const PackingSlipPDF = ({
     sections,
     values,
     vars,
-    headerOptions
+    headerOptions,
+    partNumberDisplayDraft
   };
 
   return (

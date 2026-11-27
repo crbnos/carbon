@@ -13,16 +13,18 @@ export type {
   CatalogIntegration,
   CatalogOperation,
   EventMatch,
+  EventPermission,
   FixtureCatalogOptions,
   LinkFormat,
   LinksDeclaration,
   OptionsSource,
-  PermissionAction,
-  RequiredPermission,
   WorkflowCatalog
 } from "./definition/catalog";
 export {
   createFixtureCatalog,
+  eventGate,
+  gateOn,
+  gatePages,
   INTEGRATION_CONNECTION_INPUT,
   integrationAppLabelKey,
   isMultiSelect,

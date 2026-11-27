@@ -529,10 +529,8 @@ async function buildEventContent(
         return {
           description: `New message on ${jobOperation?.data?.job?.jobId} operation: ${jobOperation?.data?.description}`,
           reference: jobOperation?.data?.job?.jobId ?? undefined,
-          // The email body shows the reference (job id), so surface the message
-          // text itself as a row — otherwise it's only in the subject.
           details: buildDetails([
-            { label: "Message", value: jobOperation.data?.description },
+            { label: "Message", value: opts.body },
             ...details
           ])
         };

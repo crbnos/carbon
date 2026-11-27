@@ -97,7 +97,8 @@ export function ServiceJobExplorer({
   const job = routeData?.job;
   const permissions = usePermissions();
   const canUpdate =
-    permissions.can("update", "service") && !isServiceJobLocked(job?.status);
+    permissions.has({ "service.jobs": "Edit" }) &&
+    !isServiceJobLocked(job?.status);
   // Only a Billable job has an estimate, and a Sent or Accepted one is fixed.
   const canEditEstimate =
     canUpdate &&
@@ -360,7 +361,7 @@ function ServiceJobExplorerChildItem({
   const formatRate = useCurrencyFormatter({ rate: true });
   const editLink = getEditLink(jobId, child);
   const link = editLink ?? getItemLink(child, items);
-  const canDelete = isEditable && permissions.can("delete", "service");
+  const canDelete = isEditable && permissions.has({ "service.jobs": "Full" });
 
   const amount = getChildAmount(child);
   const costSource = getCostSource(child);

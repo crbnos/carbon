@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { createMaterialRequest } from "@carbon/database/material-request";
 import { validationError, validator } from "@carbon/form";
@@ -17,7 +17,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   assertIsPost(request);
   // The user's own client: the materialRequest RLS policy decides who may
   // raise a request.
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await authorize(request, {});
 
   const formData = await request.formData();
   const validation = await validator(materialRequestValidator).validate(

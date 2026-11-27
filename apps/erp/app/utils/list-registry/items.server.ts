@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import {
   CHANGE_NOTICE_REQUIRED_ACTIONS_PAGING,
   CHANGE_NOTICE_TYPES_PAGING,
@@ -46,7 +47,7 @@ import { searchList } from "./index.server";
 
 export const partsList = searchList({
   key: "parts",
-  permission: { view: "parts" },
+  gate: { "parts.parts": "View" },
   paging: PARTS_PAGING,
   service: getParts,
   params: { supplierId: "supplierId" }
@@ -54,7 +55,7 @@ export const partsList = searchList({
 
 export const materialsList = searchList({
   key: "materials",
-  permission: { view: "parts" },
+  gate: { "parts.materials": "View" },
   paging: MATERIALS_PAGING,
   service: getMaterials,
   params: { supplierId: "supplierId" }
@@ -62,7 +63,7 @@ export const materialsList = searchList({
 
 export const toolsList = searchList({
   key: "tools",
-  permission: { view: "parts" },
+  gate: { "parts.tools": "View" },
   paging: TOOLS_PAGING,
   service: getTools,
   params: { supplierId: "supplierId" }
@@ -70,7 +71,7 @@ export const toolsList = searchList({
 
 export const consumablesList = searchList({
   key: "consumables",
-  permission: { view: "parts" },
+  gate: { "parts.consumables": "View" },
   paging: CONSUMABLES_PAGING,
   service: getConsumables,
   params: { supplierId: "supplierId" }
@@ -78,7 +79,7 @@ export const consumablesList = searchList({
 
 export const servicesList = searchList({
   key: "services",
-  permission: { view: "parts" },
+  gate: { "parts.services": "View" },
   paging: SERVICES_PAGING,
   service: getServices,
   params: { supplierId: "supplierId", group: "group" }
@@ -86,28 +87,28 @@ export const servicesList = searchList({
 
 export const changeNoticesList = searchList({
   key: "change-notices",
-  permission: { view: "parts", role: "employee" },
+  gate: { "parts.changeNotices": "View" },
   paging: CHANGE_NOTICES_PAGING,
   service: getChangeNotices
 });
 
 export const changeNoticeRequiredActionsList = searchList({
   key: "change-notice-actions",
-  permission: { view: "parts", role: "employee" },
+  gate: { "parts.changeNoticeActions": "View" },
   paging: CHANGE_NOTICE_REQUIRED_ACTIONS_PAGING,
   service: getChangeNoticeRequiredActions
 });
 
 export const changeNoticeTypesList = searchList({
   key: "change-notice-types",
-  permission: { view: "parts", role: "employee" },
+  gate: { "parts.changeNoticeTypes": "View" },
   paging: CHANGE_NOTICE_TYPES_PAGING,
   service: getChangeNoticeTypes
 });
 
 export const materialDimensionsList = {
   key: "material-dimensions",
-  permission: { view: "parts", role: "employee" },
+  gate: { "parts.dimensions": "View" },
   ...MATERIAL_DIMENSIONS_PAGING,
   // The list shows the dimensions of the company's unit system only.
   query: async (
@@ -130,63 +131,63 @@ export const materialDimensionsList = {
 
 export const materialFinishesList = searchList({
   key: "material-finishes",
-  permission: { view: "parts", role: "employee" },
+  gate: { "parts.finishes": "View" },
   paging: MATERIAL_FINISHES_PAGING,
   service: getMaterialFinishes
 });
 
 export const materialFormsList = searchList({
   key: "material-forms",
-  permission: { view: "parts", role: "employee" },
+  gate: { "parts.shapes": "View" },
   paging: MATERIAL_FORMS_PAGING,
   service: getMaterialForms
 });
 
 export const materialGradesList = searchList({
   key: "material-grades",
-  permission: { view: "parts", role: "employee" },
+  gate: { "parts.grades": "View" },
   paging: MATERIAL_GRADES_PAGING,
   service: getMaterialGrades
 });
 
 export const itemPostingGroupsList = searchList({
   key: "item-posting-groups",
-  permission: { view: "parts", role: "employee" },
+  gate: { "parts.itemGroups": "View" },
   paging: ITEM_POSTING_GROUPS_PAGING,
   service: getItemPostingGroups
 });
 
 export const materialSubstancesList = searchList({
   key: "material-substances",
-  permission: { view: "parts", role: "employee" },
+  gate: { "parts.substances": "View" },
   paging: MATERIAL_SUBSTANCES_PAGING,
   service: getMaterialSubstances
 });
 
 export const materialTypesList = searchList({
   key: "material-types",
-  permission: { view: "parts", role: "employee" },
+  gate: { "parts.types": "View" },
   paging: MATERIAL_TYPES_PAGING,
   service: getMaterialTypes
 });
 
 export const unitOfMeasuresList = searchList({
   key: "units-of-measure",
-  permission: { view: "parts", role: "employee" },
+  gate: { "parts.units": "View" },
   paging: UNIT_OF_MEASURES_PAGING,
   service: getUnitOfMeasures
 });
 
 export const methodMaterialsList = searchList({
   key: "method-materials",
-  permission: { view: "production", role: "employee" },
+  gate: anyOf(ITEM_PAGES, "View"),
   paging: METHOD_MATERIALS_PAGING,
   service: getMethodMaterials
 });
 
 export const methodOperationsList = searchList({
   key: "method-operations",
-  permission: { view: "production", role: "employee" },
+  gate: anyOf(ITEM_PAGES, "View"),
   paging: METHOD_OPERATIONS_PAGING,
   service: getMethodOperations
 });

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,13 +11,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
-import {
-  getActiveDimensionsWithValues,
-  getCompaniesInGroup,
-  getJournalEntry,
-  getJournalEntryRelatedItems,
-  getJournalLineDimensions
-} from "~/modules/accounting/accounting.service";
+import { getJournalEntryRelatedItems } from "~/modules/accounting/accounting.service";
 import {
   JournalEntryDocuments,
   JournalEntryHeader
@@ -30,28 +24,24 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Journal Entries`, to: path.to.accountingJournals },
     (data) => data?.journalEntry?.journalEntryId
-  ),
-  module: "accounting"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.journalEntry?.journalEntryId, "Journal Entry");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting"
-    }
-  );
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.journalEntries": "View"
+  });
 
   const { journalEntryId } = params;
   if (!journalEntryId) throw new Error("Could not find journalEntryId");
 
   const [journalEntry, companies, dimensions] = await Promise.all([
-    getJournalEntry(client, journalEntryId),
-    getCompaniesInGroup(client, companyGroupId),
-    getActiveDimensionsWithValues(client, companyGroupId, companyId)
+    api.accounting.getJournalEntry({ id: journalEntryId }),
+    api.accounting.getCompaniesInGroup({}),
+    api.accounting.getActiveDimensionsWithValues({})
   ]);
 
   if (journalEntry.error) {
@@ -69,7 +59,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const journalLineIds = (journalEntry.data.journalLine ?? []).map((l) => l.id);
-  const lineDimensions = await getJournalLineDimensions(client, journalLineIds);
+  const lineDimensions = await api.accounting.getJournalLineDimensions({
+    journalLineIds
+  });
 
   return {
     journalEntry: journalEntry.data,

@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { ResourceTimelineReservation } from "./resourceTimeline";
+import type {
+  ResourceTimelineOperationWithoutWorkCenter,
+  ResourceTimelineReservation
+} from "./resourceTimeline";
 import {
   buildResourceTimeline,
   collapseToLanes,
@@ -36,6 +39,19 @@ function reservation(
   if (overrides.operationId === undefined)
     merged.operationId = `op-${merged.id}`;
   return merged;
+}
+
+function operationWithoutWorkCenter(
+  overrides: Partial<ResourceTimelineOperationWithoutWorkCenter> = {}
+): ResourceTimelineOperationWithoutWorkCenter {
+  return {
+    operationId: "op-weld",
+    jobId: "job-11",
+    jobReadableId: "J000011",
+    operationDescription: "Weld bracket assemblies",
+    conflictReason: "No work centers found for process Welding",
+    ...overrides
+  };
 }
 
 describe("buildResourceTimeline", () => {
@@ -324,6 +340,79 @@ describe("buildResourceTimeline", () => {
     expect(result.detailsById["res-blocked"].unschedulable).toBe(true);
   });
 
+  it("puts operations with no work center in their own lane after the work centers", () => {
+    const result = buildResourceTimeline({
+      window: {
+        start: Date.parse("2026-07-14T00:00:00.000Z"),
+        end: Date.parse("2026-07-15T00:00:00.000Z")
+      },
+      reservations: [
+        reservation({ id: "res-a" }),
+        reservation({
+          id: "res-pool",
+          resourceKind: "OperatorPool",
+          resourceId: "ab-1",
+          resourceName: "Welding"
+        })
+      ],
+      operationsWithoutWorkCenter: [operationWithoutWorkCenter()]
+    });
+
+    expect(
+      result.events
+        .filter((e) => e.parentId === "resources-root")
+        .map((e) => e.id)
+    ).toEqual([
+      "lane:WorkCenter:wc-1",
+      "lane:NoWorkCenter",
+      "lane:OperatorPool:ab-1"
+    ]);
+    const lane = result.events.find((e) => e.id === "lane:NoWorkCenter")!;
+    expect(lane.children).toEqual(["noWorkCenter:op-weld"]);
+    expect(lane.data.isUnschedulable).toBe(true);
+
+    // No time to draw: the row spans the window, so the compact lane shows it.
+    const row = result.events.find((e) => e.id === "noWorkCenter:op-weld")!;
+    expect(row.data).toMatchObject({
+      offset: 0,
+      duration: 24 * HOUR,
+      message: "J000011 · Weld bracket assemblies",
+      isError: true,
+      isUnschedulable: true
+    });
+    expect(result.detailsById["noWorkCenter:op-weld"]).toEqual({
+      kind: "operation",
+      title: "J000011 · Weld bracket assemblies",
+      start: null,
+      end: null,
+      durationMs: 0,
+      approximate: false,
+      noWorkCenter: true,
+      unschedulable: true,
+      conflictReason: "No work centers found for process Welding",
+      jobId: "job-11",
+      jobReadableId: "J000011",
+      operationId: "op-weld",
+      operationDescription: "Weld bracket assemblies",
+      itemReadableId: null,
+      itemName: null,
+      thumbnailPath: null,
+      itemType: null
+    });
+  });
+
+  it("shows operations with no work center when the plant has no other lanes", () => {
+    const result = buildResourceTimeline({
+      reservations: [],
+      operationsWithoutWorkCenter: [operationWithoutWorkCenter()]
+    });
+    expect(result.events.map((e) => e.id)).toEqual([
+      "resources-root",
+      "lane:NoWorkCenter",
+      "noWorkCenter:op-weld"
+    ]);
+  });
+
   it("carries each reservation's owning job into its detail", () => {
     const result = buildResourceTimeline({
       reservations: [
@@ -559,6 +648,39 @@ describe("forecastCounts", () => {
         conflicts: 1,
         unschedulable: 1
       }
+    );
+  });
+
+  it("counts an operation with no work center as can't be scheduled, not as a resource or booking", () => {
+    const withLane = buildResourceTimeline({
+      workCenters: [{ id: "wc-1", name: "CNC Router" }],
+      reservations: [reservation({ id: "res-1", operationId: "op-1" })],
+      operationsWithoutWorkCenter: [
+        operationWithoutWorkCenter(),
+        operationWithoutWorkCenter({
+          operationId: "op-paint",
+          jobId: "job-12",
+          jobReadableId: "J000012"
+        })
+      ]
+    });
+    const expected = {
+      resources: 1,
+      reservations: 1,
+      jobs: 3,
+      conflicts: 0,
+      unschedulable: 2
+    };
+    expect(
+      forecastCounts(
+        withLane.events,
+        withLane.detailsById,
+        all(withLane.events)
+      )
+    ).toEqual(expected);
+    const compact = collapseToLanes(withLane.events);
+    expect(forecastCounts(compact, withLane.detailsById, all(compact))).toEqual(
+      expected
     );
   });
 

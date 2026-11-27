@@ -27,7 +27,11 @@ vi.mock("@carbon/ee/accounting", async (importOriginal) => ({
   getUnmappedRequiredAccounts: unmappedRequiredAccounts
 }));
 vi.mock("@carbon/kv", () => ({
-  redis: { del: vi.fn(), keys: vi.fn(async () => []), pipeline: vi.fn() }
+  redis: {
+    del: vi.fn(),
+    keys: vi.fn(async () => []),
+    pipeline: vi.fn(() => ({ del: vi.fn(), exec: vi.fn(async () => []) }))
+  }
 }));
 vi.mock("@carbon/stripe/send-sales-invoice.server", () => ({
   getStripeConnectAccountId: stripeAccount
@@ -42,14 +46,25 @@ vi.mock("@carbon/printing/printing.server", () => ({
   invalidatePrinterCache: vi.fn()
 }));
 vi.mock("@carbon/jobs", () => ({ batchTrigger, trigger }));
+// The plan check behind the API-key lock: the real answer unless a test says.
+vi.mock("@carbon/ee/plan.server", async (importOriginal) => {
+  const plan = await importOriginal<typeof import("@carbon/ee/plan.server")>();
+  return { ...plan, companyHasFeature: vi.fn(plan.companyHasFeature) };
+});
 
-import { EntitlementError } from "@carbon/ee/entitlements.server";
-import { createServiceContext } from "@carbon/api/service-fn.server";
+import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
+import { redis } from "@carbon/kv";
+import { pageClaims } from "./page-claims";
 
 import {
+  createItemSerialSequence,
+  deleteCustomField,
   removePrinterRoute,
+  revokeApiKey,
   savePrinterRoute,
   setIntegrationSyncEnabled,
+  setRecordCustomFields,
   transitionSyncOperations,
   updateInventorySettings,
   updateInvoicingSettings,
@@ -57,18 +72,27 @@ import {
   updatePlanningSettings,
   updatePostingSync,
   updateProductionSettings,
+  updateCustomField,
+  updateItemSerialSequence,
+  updatePurchasingSettings,
+  updateResourcesSettings,
   updateSecuritySettings,
   updateSubsidiaryDetails
 } from "../app/modules/settings/settings.server";
+import {
+  type CustomFieldType,
+  consolePinUserId
+} from "../app/modules/settings/settings.service";
+import { DataType } from "../app/modules/shared/types";
 
-const settings = {
+const settings = pageClaims({
   settings: {
     view: ["company-1"],
     create: ["company-1"],
     update: ["company-1"],
     delete: ["company-1"]
   }
-};
+});
 
 type Write = { table: string; method: string; values: unknown };
 
@@ -113,7 +137,7 @@ function contextWith(
 ) {
   const db = client(rows, options);
   const ctx = createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions: settings },
+    actor: { type: "user", role: "employee", userId: "user-1", permissions: settings },
     company: { id: "company-1", groupId: "group-1" },
     caller: db as never,
     system: () => db as never,
@@ -157,7 +181,7 @@ describe("a settings page update", () => {
   it("is refused without the settings permission", async () => {
     const db = client({});
     const ctx = createServiceContext({
-      actor: { type: "user", userId: "user-1", permissions: {} },
+      actor: { type: "user", role: "employee", userId: "user-1", permissions: {} },
       company: { id: "company-1", groupId: "group-1" },
       caller: db as never,
       system: () => db as never,
@@ -171,6 +195,62 @@ describe("a settings page update", () => {
 
     expect(result.error?.category).toBe("forbidden");
     expect(db.writes).toEqual([]);
+  });
+});
+
+// Settings → Company owns the settings row, its billing addresses and the
+// company row; a module's settings page writes its own fields there as the
+// system, after its own permission.
+// The writes these pages make as the system, past RLS, are pinned against the
+// database in `test/database/settings-scoping.test.ts`.
+describe("a caller with one settings page only", () => {
+  function pageOnly(page: string, rows: Record<string, unknown> = {}) {
+    const db = client(rows);
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: {
+          [page]: {
+            view: ["company-1"],
+            create: ["company-1"],
+            update: ["company-1"],
+            delete: []
+          }
+        }
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: db as never,
+      system: () => db as never,
+      pg: () => ({}) as never,
+      kv: () => ({}) as never
+    });
+    return { ctx, writes: db.writes };
+  }
+
+  it("refuses a location that is not the company's", async () => {
+    const { ctx } = pageOnly("settings.planning", { location: [] });
+
+    const result = await updatePlanningSettings(ctx, {
+      locationResponsibleEmployee: {
+        locationId: "loc-9",
+        responsibleEmployee: null
+      }
+    });
+
+    expect(result.error?.category).toBe("notFound");
+  });
+
+  it("is refused on another settings page's operation", async () => {
+    const { ctx, writes } = pageOnly("settings.inventory");
+
+    const result = await updatePurchasingSettings(ctx, {
+      requireSupplierContactEmail: true
+    });
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
   });
 });
 
@@ -225,7 +305,11 @@ describe("planning settings", () => {
 
 describe("people settings", () => {
   it("answers a company without the plan with an entitlement error", async () => {
-    consoleSetting.mockRejectedValue(new EntitlementError("PERMISSIONS"));
+    consoleSetting.mockResolvedValue({
+      error: { code: "entitlement", message: "Requires the Business plan" },
+      pin: null,
+      pinError: null
+    });
     const { ctx } = contextWith();
 
     const result = await updatePeopleSettings(ctx, { consoleEnabled: true });
@@ -233,22 +317,23 @@ describe("people settings", () => {
     expect(result.error?.category).toBe("entitlement");
   });
 
-  it("generates no console PIN for a key caller: the key holder may not be its creator", async () => {
-    consoleSetting.mockResolvedValue({ error: null, pin: null, pinError: null });
-    const db = client({});
-    const ctx = createServiceContext({
-      actor: { type: "apiKey", createdBy: "user-1", scopes: settings },
-      company: { id: "company-1", groupId: "group-1" },
-      caller: db as never,
-      system: () => db as never,
-      pg: () => ({}) as never,
-      kv: () => ({}) as never
-    });
-
-    const result = await updatePeopleSettings(ctx, { consoleEnabled: true });
-
-    expect(result.data).toMatchObject({ pin: null });
-    expect(consoleSetting.mock.calls[0]![4]).toBeUndefined();
+  it("generates a console PIN for a person only, never for an API key", () => {
+    const permissions = settings;
+    expect(
+      consolePinUserId({
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions
+      })
+    ).toBe("user-1");
+    // Whoever holds the key may not be its creator.
+    expect(
+      consolePinUserId({ type: "apiKey", createdBy: "user-1", permissions })
+    ).toBeUndefined();
+    expect(
+      consolePinUserId({ type: "system", onBehalfOf: "user-1" })
+    ).toBeUndefined();
   });
 });
 
@@ -573,7 +658,7 @@ describe("retrying or skipping sync operations", () => {
       global: { fetch: fetchStub as typeof fetch }
     });
     const ctx = createServiceContext({
-      actor: { type: "user", userId: "user-1", permissions: settings },
+      actor: { type: "user", role: "employee", userId: "user-1", permissions: settings },
       company: { id: "company-1", groupId: "group-1" },
       caller: caller as never,
       system: () => caller as never,
@@ -663,5 +748,579 @@ describe("a location's staffing requirement", () => {
 
     expect(writes.filter((w) => w.table === "location")).toEqual([]);
     expect(scheduleNotices()).toEqual([]);
+  });
+});
+
+describe("setting a record's custom field values", () => {
+  // The boundary is PostgREST: a real supabase-js client whose fetch answers
+  // the custom field table's module and the save (`set_record_custom_fields`)
+  // with the rows it changed.
+  function recordCustomFields({
+    actor = {
+      type: "user",
+      role: "employee",
+      userId: "user-1",
+      permissions: settings
+    },
+    module = "Items",
+    changed = ["P-1"],
+    fields = [{ id: "color", dataTypeId: DataType.Text, listOptions: null }],
+    stored = []
+  }: {
+    actor?: Actor;
+    module?: string | null;
+    changed?: string[];
+    fields?: CustomFieldType[];
+    stored?: { id: string; customFields: Record<string, unknown> }[];
+  } = {}) {
+    const sent: { method: string; url: URL; body: unknown }[] = [];
+    const fetchStub = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      const url = new URL(String(input));
+      sent.push({
+        method,
+        url,
+        body: init?.body ? JSON.parse(String(init.body)) : null
+      });
+      const rows = url.pathname.endsWith("/customFieldTable")
+        ? module
+          ? [{ module }]
+          : []
+        : url.pathname.endsWith("/customField")
+          ? fields
+          : method === "GET"
+            ? stored
+            : changed.map((id) => ({ id }));
+      return new Response(JSON.stringify(rows), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+    const caller = createClient("http://localhost:54321", "anon-key", {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: fetchStub as typeof fetch }
+    });
+    const ctx = createServiceContext({
+      actor,
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => caller as never,
+      pg: () => ({}) as never,
+      kv: () => ({}) as never
+    });
+    const updates = () =>
+      sent.filter((request) =>
+        request.url.pathname.endsWith("/rpc/set_record_custom_fields")
+      );
+    return { ctx, updates };
+  }
+
+  const key = (grants: Record<string, { view?: string[]; update?: string[] }>) =>
+    ({
+      type: "apiKey",
+      createdBy: "user-1",
+      permissions: pageClaims(
+        Object.fromEntries(
+          Object.entries(grants).map(([subject, actions]) => [
+            subject,
+            { view: [], create: [], update: [], delete: [], ...actions }
+          ])
+        )
+      )
+    }) as Actor;
+
+  const partValues = {
+    table: "part",
+    ids: ["P-1", "P-2"],
+    customFields: { color: "Red" }
+  };
+
+  // A part number repeats across companies, so an unscoped write would change
+  // another company's part of the same number.
+  it("changes only this company's records and answers the ids it changed", async () => {
+    const { ctx, updates } = recordCustomFields({ changed: ["P-1"] });
+
+    const result = await setRecordCustomFields(ctx, partValues);
+
+    expect(result).toEqual({ data: { ids: ["P-1"] }, error: null });
+    expect(updates().map((update) => update.body)).toEqual([
+      {
+        p_table: "part",
+        p_ids: ["P-1", "P-2"],
+        p_scope_column: "companyId",
+        p_scope_id: "company-1",
+        p_set: { color: "Red" },
+        p_clear: [],
+        p_updated_by: "user-1"
+      }
+    ]);
+  });
+
+  // The panel sends the one field it changed; writing that as the whole map
+  // dropped every field another person saved since the panel loaded.
+  it("writes only the fields sent, and clears a field sent as null", async () => {
+    const { ctx, updates } = recordCustomFields({
+      fields: [
+        { id: "color", dataTypeId: DataType.Text, listOptions: null },
+        { id: "due", dataTypeId: DataType.Date, listOptions: null }
+      ]
+    });
+
+    const result = await setRecordCustomFields(ctx, {
+      table: "part",
+      ids: ["P-1"],
+      customFields: { color: "Red", due: null }
+    });
+
+    expect(result.error).toBeNull();
+    expect(updates().map((update) => update.body)).toEqual([
+      expect.objectContaining({ p_set: { color: "Red" }, p_clear: ["due"] })
+    ]);
+  });
+
+  it("scopes a table shared by the company group by the group", async () => {
+    const { ctx, updates } = recordCustomFields({
+      module: "Accounting",
+      changed: ["acc-1"]
+    });
+
+    await setRecordCustomFields(ctx, {
+      table: "account",
+      ids: ["acc-1"],
+      customFields: {}
+    });
+
+    expect(updates().map((update) => update.body)).toEqual([
+      expect.objectContaining({
+        p_scope_column: "companyGroupId",
+        p_scope_id: "group-1"
+      })
+    ]);
+  });
+
+  it.each([
+    ["only view on parts", { parts: { view: ["company-1"] } }],
+    ["update on items, the table's module name", { items: { update: ["company-1"] } }],
+    [
+      "Edit on another item page",
+      { "parts.materials": { update: ["company-1"] } }
+    ],
+    ["update on another module", { sales: { update: ["company-1"] } }]
+  ])("refuses an API key with %s and writes nothing", async (_name, scopes) => {
+    const { ctx, updates } = recordCustomFields({ actor: key(scopes) });
+
+    const result = await setRecordCustomFields(ctx, partValues);
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(updates()).toEqual([]);
+  });
+
+  it("lets an API key with Edit on the table's page change its records", async () => {
+    const { ctx, updates } = recordCustomFields({
+      actor: key({ parts: { update: ["company-1"] } })
+    });
+
+    const result = await setRecordCustomFields(ctx, partValues);
+
+    expect(result.error).toBeNull();
+    expect(updates()).toHaveLength(1);
+  });
+
+  it("refuses a table that has no custom fields", async () => {
+    const { ctx, updates } = recordCustomFields({ module: null });
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      table: "apiKey"
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(updates()).toEqual([]);
+  });
+
+  it("refuses a key that is not one of the table's custom fields", async () => {
+    const { ctx, updates } = recordCustomFields({
+      stored: [{ id: "P-1", customFields: { color: "Blue" } }]
+    });
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      customFields: { color: "Red", notAField: "junk" }
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(updates()).toEqual([]);
+  });
+
+  it("takes a deleted field's stored value sent back unchanged", async () => {
+    const { ctx, updates } = recordCustomFields({
+      stored: [{ id: "P-1", customFields: { color: "Blue", retired: "x" } }]
+    });
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      ids: ["P-1"],
+      customFields: { color: "Red", retired: "x" }
+    });
+
+    expect(result.error).toBeNull();
+    expect(updates()).toHaveLength(1);
+  });
+
+  // Taken only because the records hold it: written back, it would undo a
+  // save another person made to that field since this call read the records.
+  it.each([
+    ["a List value its options no longer hold", { shade: "Blue" }],
+    ["a deleted field's stored null", { retired: null }]
+  ])("leaves %s out of the write, and still clears a Date sent as null", async (_name, held) => {
+    const { ctx, updates } = recordCustomFields({
+      fields: [
+        { id: "color", dataTypeId: DataType.Text, listOptions: null },
+        { id: "shade", dataTypeId: DataType.List, listOptions: ["Red"] },
+        { id: "due", dataTypeId: DataType.Date, listOptions: null }
+      ],
+      stored: [{ id: "P-1", customFields: held }]
+    });
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      ids: ["P-1"],
+      customFields: { color: "Red", due: null, ...held }
+    });
+
+    expect(result.error).toBeNull();
+    expect(updates().map((update) => update.body)).toEqual([
+      expect.objectContaining({ p_set: { color: "Red" }, p_clear: ["due"] })
+    ]);
+  });
+
+  it("refuses a write that changed no record", async () => {
+    const { ctx } = recordCustomFields({ changed: [] });
+
+    const result = await setRecordCustomFields(ctx, partValues);
+
+    expect(result.error?.category).toBe("notFound");
+  });
+
+  it("refuses a value its field's panel input never sends, and writes nothing", async () => {
+    const { ctx, updates } = recordCustomFields({
+      fields: [{ id: "weight", dataTypeId: DataType.Numeric, listOptions: null }],
+      stored: [{ id: "P-1", customFields: { weight: 3 } }]
+    });
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      ids: ["P-1"],
+      customFields: { weight: { kg: 3 } }
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(updates()).toEqual([]);
+  });
+
+  it("refuses more than 100 records in one call", async () => {
+    const { ctx, updates } = recordCustomFields();
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      ids: Array.from({ length: 101 }, (_, i) => `P-${i}`)
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(updates()).toEqual([]);
+  });
+});
+
+describe("custom field definitions and serial sequences", () => {
+  // The boundary is PostgREST: a real supabase-js client whose fetch answers
+  // every request with the rows `respond` gives, and records what was sent.
+  function postgrest(
+    respond: (method: string, url: URL) => { status?: number; body: unknown },
+    actor: Actor = {
+      type: "user",
+      role: "employee",
+      userId: "user-1",
+      permissions: settings
+    }
+  ) {
+    const sent: { method: string; url: URL; body: unknown }[] = [];
+    const fetchStub = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      const url = new URL(String(input));
+      sent.push({
+        method,
+        url,
+        body: init?.body ? JSON.parse(String(init.body)) : null
+      });
+      const { status = 200, body } = respond(method, url);
+      return new Response(JSON.stringify(body), {
+        status,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+    const caller = createClient("http://localhost:54321", "anon-key", {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: fetchStub as typeof fetch }
+    });
+    const ctx = createServiceContext({
+      actor,
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => caller as never,
+      pg: () => ({}) as never,
+      kv: () => ({}) as never
+    });
+    const writes = () => sent.filter((request) => request.method !== "GET");
+    const reads = () => sent.filter((request) => request.method === "GET");
+    return { ctx, reads, writes };
+  }
+
+  const sequence = {
+    itemId: "item-1",
+    prefix: "SN",
+    next: 0,
+    step: 1,
+    size: 5
+  };
+
+  it("creates a serial sequence without an id it was sent", async () => {
+    const { ctx, writes } = postgrest(() => ({ body: { id: "seq-new" } }));
+
+    const result = await createItemSerialSequence(ctx, {
+      ...sequence,
+      id: "seq-chosen"
+    } as never);
+
+    expect(result.error).toBeNull();
+    const [insert] = writes();
+    expect(insert?.body).toEqual([
+      { ...sequence, companyId: "company-1", createdBy: "user-1" }
+    ]);
+  });
+
+  // The sequence's item reference is not company-scoped in the database.
+  it("refuses a serial sequence for an item that is not the company's", async () => {
+    const { ctx, reads, writes } = postgrest(() => ({ body: [] }));
+
+    const result = await createItemSerialSequence(ctx, {
+      ...sequence,
+      itemId: "item-other"
+    });
+
+    expect(result.error?.category).toBe("notFound");
+    expect(writes()).toEqual([]);
+    const [owned] = reads();
+    expect(owned?.url.pathname).toBe("/rest/v1/item");
+    expect(owned?.url.searchParams.get("id")).toBe("eq.item-other");
+    expect(owned?.url.searchParams.get("companyId")).toBe("eq.company-1");
+  });
+
+  it("updates a serial sequence only on its own item", async () => {
+    const { ctx, writes } = postgrest(() => ({ body: [] }));
+
+    const result = await updateItemSerialSequence(ctx, {
+      ...sequence,
+      id: "seq-1",
+      itemId: "item-2"
+    });
+
+    expect(result.error?.category).toBe("notFound");
+    const [update] = writes();
+    expect(update?.url.searchParams.get("id")).toBe("eq.seq-1");
+    expect(update?.url.searchParams.get("companyId")).toBe("eq.company-1");
+    expect(update?.url.searchParams.get("itemId")).toBe("eq.item-2");
+  });
+
+  it("answers the serial sequence's id when it is on its item", async () => {
+    const { ctx } = postgrest(() => ({ body: [{ id: "seq-1" }] }));
+
+    const result = await updateItemSerialSequence(ctx, {
+      ...sequence,
+      id: "seq-1"
+    });
+
+    expect(result).toEqual({ data: { id: "seq-1" }, error: null });
+  });
+
+  it("deletes a custom field only in this company, and refuses one it did not delete", async () => {
+    const { ctx, writes } = postgrest(() => ({ body: [] }));
+
+    const result = await deleteCustomField(ctx, { id: "field-1" });
+
+    expect(result.error?.category).toBe("notFound");
+    const [deleted] = writes();
+    expect(deleted?.method).toBe("DELETE");
+    expect(deleted?.url.searchParams.get("id")).toBe("eq.field-1");
+    expect(deleted?.url.searchParams.get("companyId")).toBe("eq.company-1");
+  });
+
+  it("updates a custom field only in this company", async () => {
+    const { ctx, writes } = postgrest((method) =>
+      method === "GET"
+        ? {
+            body: {
+              name: "Color",
+              table: "part",
+              dataTypeId: DataType.Text,
+              listOptions: null,
+              tags: null,
+              required: false
+            }
+          }
+        : { body: [{ id: "field-1" }] }
+    );
+
+    const result = await updateCustomField(ctx, { id: "field-1", name: "Hue" });
+
+    expect(result).toEqual({ data: { id: "field-1" }, error: null });
+    const [update] = writes();
+    expect(update?.url.searchParams.get("id")).toBe("eq.field-1");
+    expect(update?.url.searchParams.get("companyId")).toBe("eq.company-1");
+    expect(update?.body).toMatchObject({ name: "Hue" });
+  });
+
+  // The merged definition is validated, but a field left out is not written:
+  // a change saved since the read keeps its value.
+  it("writes only the custom field definition fields sent", async () => {
+    const { ctx, writes } = postgrest((method) =>
+      method === "GET"
+        ? {
+            body: {
+              name: "Color",
+              table: "part",
+              dataTypeId: DataType.List,
+              listOptions: ["Red"],
+              tags: ["paint"],
+              required: true
+            }
+          }
+        : { body: [{ id: "field-1" }] }
+    );
+
+    const renamed = await updateCustomField(ctx, { id: "field-1", name: "Hue" });
+    const listed = await updateCustomField(ctx, {
+      id: "field-1",
+      listOptions: ["Red", "Blue"]
+    });
+
+    expect(renamed.error).toBeNull();
+    expect(listed.error).toBeNull();
+    expect(writes().map((write) => write.body)).toEqual([
+      { name: "Hue", updatedBy: "user-1" },
+      { listOptions: ["Red", "Blue"], updatedBy: "user-1" }
+    ]);
+  });
+
+  // The edit form posts no tags once the last one is removed; its route sends
+  // that as an empty list.
+  it("clears a custom field's tags sent as an empty list, and keeps them when not sent", async () => {
+    const { ctx, writes } = postgrest((method) =>
+      method === "GET"
+        ? {
+            body: {
+              name: "Color",
+              table: "part",
+              dataTypeId: DataType.Text,
+              listOptions: null,
+              tags: ["paint"],
+              required: false
+            }
+          }
+        : { body: [{ id: "field-1" }] }
+    );
+
+    const cleared = await updateCustomField(ctx, { id: "field-1", tags: [] });
+    const renamed = await updateCustomField(ctx, { id: "field-1", name: "Hue" });
+
+    expect(cleared.error).toBeNull();
+    expect(renamed.error).toBeNull();
+    expect(writes().map((write) => write.body)).toEqual([
+      { tags: [], updatedBy: "user-1" },
+      { name: "Hue", updatedBy: "user-1" }
+    ]);
+  });
+
+  // Row-level security updates a custom field only with Edit on Custom Fields.
+  it("refuses a custom field change to a user with Create on Custom Fields alone", async () => {
+    const { ctx, writes } = postgrest(() => ({ body: [] }), {
+      type: "user",
+      role: "employee",
+      userId: "user-1",
+      permissions: pageClaims({
+        settings: {
+          view: ["company-1"],
+          create: ["company-1"],
+          update: [],
+          delete: []
+        }
+      })
+    });
+
+    const result = await updateCustomField(ctx, { id: "field-1", name: "Hue" });
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(writes()).toEqual([]);
+  });
+});
+
+describe("revoking an API key", () => {
+  // API Keys at Edit: RLS lets this role update a key but not delete it.
+  const editor = {
+    "settings.apiKeys": {
+      view: ["company-1"],
+      create: ["company-1"],
+      update: ["company-1"],
+      delete: []
+    }
+  };
+
+  function revoke(deleted: { keyHash: string } | undefined) {
+    const caller = client({});
+    const where: [string, string, string][] = [];
+    const query = {
+      where: (...args: [string, string, string]) => {
+        where.push(args);
+        return query;
+      },
+      returning: () => query,
+      executeTakeFirst: async () => deleted
+    };
+    const pg = { deleteFrom: vi.fn(() => query) };
+    vi.mocked(companyHasFeature).mockResolvedValueOnce(true);
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: editor
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => caller as never,
+      pg: () => pg as never,
+      kv: () => ({}) as never
+    });
+    return { result: revokeApiKey(ctx, { id: "key-1" }), caller, pg, where };
+  }
+
+  it("deletes the company's key as the system, then drops its cached authentication", async () => {
+    const { result, caller, pg, where } = revoke({ keyHash: "hash-1" });
+
+    expect(await result).toEqual({ data: { id: "key-1" }, error: null });
+    expect(pg.deleteFrom).toHaveBeenCalledWith("apiKey");
+    expect(where).toEqual([
+      ["id", "=", "key-1"],
+      ["companyId", "=", "company-1"]
+    ]);
+    // Never through the caller's client, whose RLS would delete nothing.
+    expect(caller.writes).toEqual([]);
+    expect(redis.del).toHaveBeenCalledWith(expect.stringContaining("hash-1"));
+  });
+
+  it("refuses a key no row was deleted for, and reports no success", async () => {
+    const { result } = revoke(undefined);
+
+    expect((await result).error?.category).toBe("notFound");
+    expect(redis.del).not.toHaveBeenCalled();
   });
 });

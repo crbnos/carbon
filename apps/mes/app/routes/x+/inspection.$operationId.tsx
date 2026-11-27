@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -68,7 +68,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, companyId } = await authorize(request, {});
 
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
@@ -80,7 +80,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // this company before any of them runs.
   const scopedOperation = await serviceRole
     .from("jobOperation")
-    .select("id, jobId, jobOperationBatchId")
+    .select(
+      "id, jobId, jobOperationBatchId, jobMakeMethod(requiresSerialTracking)"
+    )
     .eq("id", operationId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -209,7 +211,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getInspectionViewData(serviceRole, {
       inspection,
       jobMakeMethodId: op.jobMakeMethodId,
-      companyId
+      companyId,
+      operation: {
+        operationId,
+        jobId: scopedOperation.data.jobId,
+        includeSerialOutputs:
+          scopedOperation.data.jobMakeMethod?.requiresSerialTracking === true
+      }
     }),
     getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
     getProductionQuantitiesForJobOperation(serviceRole, operationId),
@@ -241,6 +249,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     { scrap: 0, production: 0, rework: 0 }
   );
 
+  if (!viewData.data || linkedQuantities.error) {
+    throw redirect(
+      path.to.operations,
+      await flash(
+        request,
+        error(
+          viewData.error ?? linkedQuantities.error,
+          viewData.message ?? "Failed to read the inspection's production units"
+        )
+      )
+    );
+  }
+
   const abilityWarning = await getAbilityShortfall(serviceRole, {
     operationId,
     employeeId: userId,
@@ -248,7 +269,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 
   return {
-    ...viewData,
+    ...viewData.data,
     abilityWarning,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,

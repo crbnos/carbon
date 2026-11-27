@@ -20,7 +20,7 @@ function getCookieValue(
   try {
     const json = JSON.parse(cookieValue);
     return resizableConfig.parse(json);
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+    // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   } catch (e) {
     return { layout: undefined };
   }

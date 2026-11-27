@@ -48,13 +48,13 @@ rules — this file does not repeat them:
   at the call site. Leaving the origin on purpose (OAuth provider, Stripe, ERP ↔
   MES) is `redirectExternal`, with a URL the server built. Enforced by the
   `no-raw-redirect` check (`@carbon/checks`).
-- Server-only auth helpers come from subpaths:
-  `@carbon/auth/auth.server` (`requirePermissions`), `@carbon/auth/session.server`
-  (`flash`), and `@carbon/auth` (`error`, `success`, `assertIsPost`).
+- Every app authenticates a request with `authorize` (`@carbon/auth/auth.server`).
+  Other server-only auth helpers: `@carbon/auth/session.server` (`flash`) and
+  `@carbon/auth` (`error`, `success`, `assertIsPost`).
 
 ```typescript
 import { Button, VStack } from "@carbon/react";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { usePermissions } from "~/hooks";
 ```
@@ -102,15 +102,15 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   `_index.tsx`, `_layout.tsx` and `_public+/` (pathless), `x+/`, `api+/`, `file+/`
   (folder groups), `$param` (dynamic segments), `[.]pdf` (escaped literals).
 - Loaders/actions destructure args typed by `react-router`. The first thing an
-  authenticated loader does is `await requirePermissions(request, { ... })`,
-  destructuring `{ client, companyId, userId }` (also `email`, `companyGroupId`).
+  authenticated ERP loader does is `await authorize(request, { ... })`,
+  destructuring `{ api, client, companyId, userId }` (also `email`, `companyGroupId`).
 - An action checks the request with `validator(schema).request(args, …)`
-  (`@carbon/form`), calls ONE service function through `carbon(request)`
+  (`@carbon/form`), calls ONE service function through `authorize(request)`
   (`@carbon/api/carbon.server`) and returns its result, or
   `respond(request, result).redirect(...)` for a navigating form. The service
   function holds the permission and the write. See
   [conventions-forms.md](conventions-forms.md) and [module-files.md](module-files.md).
-  Older actions still run `assertIsPost` → `requirePermissions` → a building block.
+  Older actions still run `assertIsPost` → `authorize(request, gate)` → a building block.
 - Loaders/actions return **plain objects** or `data(value, responseInit)`.
   Do NOT use `json(...)` — that is the old Remix helper and is not the convention here.
 - A layout does NOT export `shouldRevalidate` to skip its loader. Single fetch
@@ -143,7 +143,10 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   `<Outlet />`. React Router keeps a page mounted when only its params change, so
   a form's default values, an editor's content or a `useState` copy would stay the
   previous record's. `RecordOutlet` remounts the page for another record and
-  leaves it mounted when a drawer opens over it. Enforced by `no-bare-outlet`.
+  leaves it mounted when a drawer opens over it. A table or card the route
+  renders then has no outlet of its own, or the child route mounts in both and
+  its dialog opens twice. Enforced by `no-bare-outlet`, which follows the
+  route's imports to see a component's outlet.
 - An index route that only redirects (`/x/issue/:id` → `…/details`, a module root →
   its first page) also exports `middleware = [redirectBeforeLoaders(loader)]` from
   `@carbon/utils`. The loaders of a matched branch run in parallel, so without it every
@@ -167,11 +170,11 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   Pass the record ids as its third argument; do not log before calling it.
 - Also log failures you deliberately swallow (best-effort cleanup, ignored
   `{ error }` results, `.catch(() => {})`).
-- Never `console.*` — Biome's `noConsole` is an error. `console.error(msg, err)`
+- Never `console.*` — oxlint's `no-console` is an error. `console.error(msg, err)`
   prints a multi-line stack that the log collector stores as one levelless entry
   per line; the logger writes one JSON record with the error inside. Message is
   a fixed sentence, values go in the properties (`{ companyId, error }`).
-  Terminal tools are exempt in `biome.jsonc` / `packages/biome.jsonc` (scripts,
+  Terminal tools are exempt in `oxlint.config.ts` (scripts,
   `src/scripts`, the CLIs, seeds, Deno edge functions). Until an app configures
   logging, a logger writes plain lines to the console, so a script needs no setup.
 - The body of a thrown 4xx `Response` is shown to the user on the route error
