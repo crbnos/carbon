@@ -6,7 +6,11 @@ name: Database tests
 #
 # On every pull request that can change what they test: the ERP, any package
 # it loads (the migrations among them) and the lockfile. A docs or MES-only
-# pull request does not wait for them.
+# pull request does not wait for them. A pull request runs only the test files
+# its change can affect (`vitest --changed`): those that import a changed file,
+# or all of them when it changes a file every test depends on without importing
+# it (`forceRerunTriggers` in apps/erp/vitest.config.ts). A manual run and the
+# nightly run on main run the whole suite.
 #
 # Two runners each take half the test files (`vitest --shard`). The tests are
 # bound by the runner's CPUs, which Postgres shares, so a second runner about
@@ -20,10 +24,19 @@ on:
       - "packages/**"
       - "package.json"
       - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - "patches/**"
       - ".nvmrc"
+      - "lingui.config.js"
       - ".github/workflows/database-tests.yml"
       - "!**/*.md"
   workflow_dispatch:
+  # Nothing runs on a push to main, and a pull request runs only what its
+  # change can affect. This catches what that selection misses: a dependency
+  # neither a test's imports nor the trigger list name.
+  schedule:
+    - cron: "0 3 * * *"
 
 permissions:
   contents: read
@@ -51,9 +64,13 @@ jobs:
     steps:
       # This job runs the pull request's code, so the token is not left in
       # .git/config for it to read.
+      # On a pull request HEAD is the pull request merged into its base;
+      # depth 2 keeps that base (HEAD^1), which `--changed` diffs against.
+      # The base branch fetched at depth 1 would have no merge base with HEAD.
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          fetch-depth: 2
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
@@ -73,16 +90,66 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @carbon/config build
 
-      # With CI set, boots only the shared Postgres and Storage, GoTrue and Realtime,
+      # Writes the files to run to SELECTED (count) and the `--changed`
+      # argument to CHANGED, and says why. With none, the database is not built.
+      - name: Choose the test files
+        working-directory: apps/erp
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          count() { node -p "require('$1').length"; }
+          pnpm exec vitest list --filesOnly test/database --json="$RUNNER_TEMP/all.json"
+          total=$(count "$RUNNER_TEMP/all.json")
+          if [ "$EVENT" != pull_request ]; then
+            echo "The whole suite, $total test files: a $EVENT run"
+            echo "SELECTED=$total" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          if [ "$(git rev-list --parents -n 1 HEAD | wc -w)" -ne 3 ]; then
+            echo "::error::HEAD is not the pull request's merge commit, so what it changed is unknown" >&2
+            exit 1
+          fi
+          base=$(git rev-parse HEAD^1)
+          pnpm exec vitest list --filesOnly test/database --changed="$base" --json="$RUNNER_TEMP/selected.json"
+          selected=$(count "$RUNNER_TEMP/selected.json")
+          echo "CHANGED=--changed=$base" >> "$GITHUB_ENV"
+          echo "SELECTED=$selected" >> "$GITHUB_ENV"
+          if [ "$selected" -eq 0 ]; then
+            echo "No database test is affected by this change"
+          elif [ "$selected" -lt "$total" ]; then
+            echo "$selected of $total database test files are affected by this change"
+          else
+            # For the log: the changed files that match the config's triggers.
+            triggers=$(git diff --name-only "$base" | node --input-type=module -e '
+              import { readFileSync } from "node:fs";
+              import { matchesGlob, resolve } from "node:path";
+              const { default: config } = await import(resolve("vitest.config.ts"));
+              const changed = readFileSync(0, "utf8").split("\n").filter(Boolean);
+              const matches = (file) =>
+                config.test.forceRerunTriggers.some((glob) => matchesGlob(resolve("../..", file), glob));
+              const found = changed.filter(matches);
+              const more = found.length > 5 ? ` and ${found.length - 5} more` : "";
+              console.log(found.slice(0, 5).join(", ") + more);
+            ')
+            if [ -n "$triggers" ]; then
+              echo "The whole suite, $total test files: every database test depends on $triggers"
+            else
+              echo "The whole suite, $total test files: every one imports a changed file"
+            fi
+          fi
+
+      # With CI set, boots only the shared Postgres, Storage and Redis, GoTrue and Realtime,
       # applies every migration to a fresh database, then starts PostgREST and
       # the gateway and returns once they answer, leaving them running. The
       # types and swagger are Database types' to check.
       - name: Migrate an empty database and start PostgREST
+        if: env.SELECTED != '0'
         run: packages/dev/bin/crbn migrate --no-regen
 
       # Without a local database the suite skips every test and passes, so
       # this fails the job instead.
       - name: The database and PostgREST answer
+        if: env.SELECTED != '0'
         run: |
           value() { grep -E "^$1=" .env.local | tail -1 | cut -d= -f2-; }
           db_url=$(value SUPABASE_DB_URL)
@@ -113,14 +180,21 @@ jobs:
           echo "SUPABASE_DB_URL=$db_url" >> "$GITHUB_ENV"
 
       - name: Database tests
+        if: env.SELECTED != '0'
         working-directory: apps/erp
         run: |
           report="$RUNNER_TEMP/database-tests.json"
-          pnpm exec vitest run test/database --shard=${{ matrix.shard }}/2 --reporter=default --reporter=json --outputFile="$report"
+          pnpm exec vitest run test/database $CHANGED --shard=${{ matrix.shard }}/2 --reporter=default --reporter=json --outputFile="$report"
           # A run whose cases skipped passes too: hold it to having run them.
+          # Vitest splits two or more files so each runner gets one; only a
+          # single chosen file leaves a runner with none.
           REPORT="$report" node -e '
             const r = JSON.parse(require("node:fs").readFileSync(process.env.REPORT, "utf8"));
-            console.log(`${r.numPassedTests} passed, ${r.numPendingTests} skipped`);
+            if (r.testResults.length === 0 && Number(process.env.SELECTED) < 2) {
+              console.log("The one affected test file runs on the other runner");
+              process.exit(0);
+            }
+            console.log(`${r.testResults.length} files: ${r.numPassedTests} passed, ${r.numPendingTests} skipped`);
             if (r.numPassedTests === 0 || r.numPendingTests > r.numPassedTests / 10) {
               console.error("::error::The database tests skipped: they found no database or PostgREST");
               process.exit(1);
