@@ -1042,6 +1042,9 @@ msgstr "已创建 {created} 条，已更新 {updated} 条。"
 msgid "{created} created."
 msgstr "已创建 {created} 个。"
 
+msgid "{customerName} contacts"
+msgstr "{customerName} 的联系人"
+
 msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
 msgstr "{customersWithoutTaxCode, plural, one {# 个客户有税率但没有税码。选择它并选择「分配税码」。} other {# 个客户有税率但没有税码。选择它们并选择「分配税码」。}}"
 
@@ -23270,6 +23273,9 @@ msgstr "选择一个 Carbon 维度和它过账到的提供商目标。自动创�
 msgid "Pick a column to sort by"
 msgstr "选择要排序的列"
 
+msgid "Pick a customer contact or teammate, or type an email and press Enter"
+msgstr "选择客户联系人或同事，或输入电子邮件后按 Enter"
+
 msgid "Pick a customer, a customer type, or All Customers to view their pricing."
 msgstr "选择一个客户、一种客户类型或“所有客户”以查看其价格。"
 
@@ -36715,6 +36721,9 @@ msgstr "您的签名"
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "您的源数据可访问且相对干净"
+
+msgid "Your team"
+msgstr "你的团队"
 
 msgid "Your team can free up time to learn Carbon and load your data"
 msgstr "您的班组可以腾出时间来学习 Carbon 并加载您的数据"

@@ -1042,6 +1042,9 @@ msgstr "{created} 件作成、{updated} 件更新されました。"
 msgid "{created} created."
 msgstr "{created} 件作成しました。"
 
+msgid "{customerName} contacts"
+msgstr "{customerName} の連絡先"
+
 msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
 msgstr "{customersWithoutTaxCode, plural, one {# 得意先は税率を持っていますが、税コードがありません。それを選択してから「税コードを割り当て」を選択してください。} other {# 得意先は税率を持っていますが、税コードがありません。それらを選択してから「税コードを割り当て」を選択してください。}}"
 
@@ -23270,6 +23273,9 @@ msgstr "Carbonディメンションと、それを投稿するプロバイダー
 msgid "Pick a column to sort by"
 msgstr "ソート対象の列を選択"
 
+msgid "Pick a customer contact or teammate, or type an email and press Enter"
+msgstr "顧客の連絡先またはチームメンバーを選択するか、メールアドレスを入力して Enter キーを押してください"
+
 msgid "Pick a customer, a customer type, or All Customers to view their pricing."
 msgstr "得意先、得意先タイプ、または「すべての得意先」を選択して、その価格を表示します。"
 
@@ -36714,6 +36720,9 @@ msgstr "署名"
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "あなたのソースデータはアクセス可能で、適切にクリーンです"
+
+msgid "Your team"
+msgstr "あなたのチーム"
 
 msgid "Your team can free up time to learn Carbon and load your data"
 msgstr "あなたのチームはCarbonを学び、データをロードするための時間を確保できます"

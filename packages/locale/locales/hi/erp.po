@@ -1042,6 +1042,9 @@ msgstr "{created} बनाया गया, {updated} अपडेट किय
 msgid "{created} created."
 msgstr "{created} बनाए गए।"
 
+msgid "{customerName} contacts"
+msgstr "{customerName} के संपर्क"
+
 msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
 msgstr "{customersWithoutTaxCode, plural, one {# ग्राहक के पास कर प्रतिशत है और कोई कर कोड नहीं है। इसे चुनें और कर कोड असाइन करें चुनें।} other {# ग्राहकों के पास कर प्रतिशत है और कोई कर कोड नहीं है। उन्हें चुनें और कर कोड असाइन करें चुनें।}}"
 
@@ -23270,6 +23273,9 @@ msgstr "एक Carbon आयाम चुनें और वह प्रदा
 msgid "Pick a column to sort by"
 msgstr "सॉर्ट करने के लिए एक कॉलम चुनें"
 
+msgid "Pick a customer contact or teammate, or type an email and press Enter"
+msgstr "ग्राहक संपर्क या टीम सदस्य चुनें, या ईमेल टाइप करके Enter दबाएँ"
+
 msgid "Pick a customer, a customer type, or All Customers to view their pricing."
 msgstr "कोई ग्राहक, ग्राहक प्रकार, या सभी ग्राहक चुनें, उनके मूल्य देखने के लिए।"
 
@@ -36714,6 +36720,9 @@ msgstr "आपका हस्ताक्षर"
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "आपका स्रोत डेटा सुलभ है और उचित रूप से स्वच्छ है"
+
+msgid "Your team"
+msgstr "आपकी टीम"
 
 msgid "Your team can free up time to learn Carbon and load your data"
 msgstr "आपकी टीम Carbon सीखने और अपना डेटा लोड करने के लिए समय निकाल सकती है"

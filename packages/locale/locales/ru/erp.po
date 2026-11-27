@@ -1042,6 +1042,9 @@ msgstr "{created} создано, {updated} обновлено."
 msgid "{created} created."
 msgstr "Создано: {created}."
 
+msgid "{customerName} contacts"
+msgstr "Контакты {customerName}"
+
 msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
 msgstr "{customersWithoutTaxCode, plural, one {# покупатель имеет налоговый процент без кода налога. Выберите его и нажмите Назначить код налога.} other {# покупателей имеют налоговые проценты без кодов налога. Выберите их и нажмите Назначить код налога.}}"
 
@@ -23270,6 +23273,9 @@ msgstr "Выберите измерение Carbon и целевого пров�
 msgid "Pick a column to sort by"
 msgstr "Выберите столбец для сортировки"
 
+msgid "Pick a customer contact or teammate, or type an email and press Enter"
+msgstr "Выберите контакт клиента или коллегу либо введите адрес электронной почты и нажмите Enter"
+
 msgid "Pick a customer, a customer type, or All Customers to view their pricing."
 msgstr "Выберите покупателя, тип покупателя или «Все покупатели», чтобы просмотреть их цены."
 
@@ -36714,6 +36720,9 @@ msgstr "Ваша подпись"
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "Ваши исходные данные доступны и находятся в приемлемом состоянии"
+
+msgid "Your team"
+msgstr "Ваша команда"
 
 msgid "Your team can free up time to learn Carbon and load your data"
 msgstr "Ваша команда может выделить время для изучения Carbon и загрузки ваших данных"

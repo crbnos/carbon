@@ -720,7 +720,12 @@ const SalesInvoicePostBody = ({
             />
           )}
           {notificationType === "Email" && (
-            <EmailRecipients name="cc" label={t`CC`} type="employee" />
+            <EmailRecipients
+              name="cc"
+              label={t`CC`}
+              type="employee"
+              customerId={customerId ?? undefined}
+            />
           )}
         </VStack>
       </ModalBody>

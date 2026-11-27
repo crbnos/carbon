@@ -1042,6 +1042,9 @@ msgstr "{created} oluşturuldu, {updated} güncellendi."
 msgid "{created} created."
 msgstr "{created} oluşturuldu."
 
+msgid "{customerName} contacts"
+msgstr "{customerName} kişileri"
+
 msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
 msgstr "{customersWithoutTaxCode, plural, one {# müşterinin bir vergi yüzdesi var, ancak vergi kodu yok. Bunu seçin ve Vergi Kodu Ata'yı seçin.} other {# müşterinin bir vergi yüzdesi var, ancak vergi kodu yok. Bunları seçin ve Vergi Kodu Ata'yı seçin.}}"
 
@@ -23270,6 +23273,9 @@ msgstr "Bir Carbon boyutu ve gönderdiği sağlayıcı hedefini seçin. Otomatik
 msgid "Pick a column to sort by"
 msgstr "Sıralamak için bir sütun seçin"
 
+msgid "Pick a customer contact or teammate, or type an email and press Enter"
+msgstr "Bir müşteri kişisi veya ekip arkadaşı seçin ya da bir e-posta yazıp Enter'a basın"
+
 msgid "Pick a customer, a customer type, or All Customers to view their pricing."
 msgstr "Fiyatlarını görüntülemek için bir müşteri, bir müşteri türü veya Tüm Müşteriler seçin."
 
@@ -36715,6 +36721,9 @@ msgstr "İmzanız"
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "Kaynak verileriniz erişilebilir ve makul ölçüde temizdir"
+
+msgid "Your team"
+msgstr "Ekibiniz"
 
 msgid "Your team can free up time to learn Carbon and load your data"
 msgstr "Ekibiniz Carbon'u öğrenmek ve verilerinizi yüklemek için zaman ayırabilir"
