@@ -48,11 +48,12 @@ const MIGRATION_SERVICES: Record<StackMode, string[]> = {
 // What swagger reads: PostgREST through the gateway.
 const API_SERVICES = ["postgrest", "api-gw"];
 
-// In CI, migrate needs only these of crbn-shared: Postgres, and Storage, which
+// In CI, migrate needs only these of crbn-shared: Postgres, Storage, which
 // holds the worktree's tenant and builds the storage schema the migrations
-// write into. The pooler, mail, imgproxy, redis and the edge runtime serve
-// the apps.
-const CI_SHARED_SERVICES = ["postgres", "storage"];
+// write into, and Redis, which the database tests' permission-cache cases
+// reach through the REDIS_URL in .env.local. The pooler, mail, imgproxy and
+// the edge runtime serve the apps.
+const CI_SHARED_SERVICES = ["postgres", "storage", "redis"];
 
 /** What a standalone migrate boots: crbn-shared's services in shared mode
  *  (empty: all of them), the worktree's before migrating, and the API's after. */

@@ -10,10 +10,11 @@ describe("standaloneServices", () => {
     expect(standaloneServices("shared", false).shared).toEqual([]);
   });
 
-  it("boots only Postgres and Storage of crbn-shared in CI", () => {
+  it("boots only Postgres, Storage and Redis of crbn-shared in CI", () => {
     expect(standaloneServices("shared", true).shared).toEqual([
       "postgres",
-      "storage"
+      "storage",
+      "redis"
     ]);
   });
 

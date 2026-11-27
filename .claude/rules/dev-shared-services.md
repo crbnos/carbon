@@ -212,7 +212,7 @@ types read.
 | `crbn remove` | Drops the database and the tenant with the stack. |
 | `crbn prune` | Also drops each `wt_` database that no live slot owns, and the old private volumes of worktrees now in shared mode. |
 | `crbn prune --all` | Drops every `wt_` database and stops `crbn-shared`. |
-| `crbn migrate` | Runs against `wt_<slug>`. Without the service schemas, it boots `gotrue` and `realtime` first. With `CI` set (GitHub's runners), it boots only `postgres` and `storage` of `crbn-shared` plus `gotrue` and `realtime`, applies every migration, then starts `postgrest` and `api-gw` and leaves them running. |
+| `crbn migrate` | Runs against `wt_<slug>`. Without the service schemas, it boots `gotrue` and `realtime` first. With `CI` set (GitHub's runners), it boots only `postgres`, `storage` and `redis` of `crbn-shared` plus `gotrue` and `realtime`, applies every migration, then starts `postgrest` and `api-gw` and leaves them running. |
 | `crbn restore` | Restores into `wt_<slug>`. It passes `PORT_DB` and `DB_NAME` to the script. |
 | Hibernation | Stops the worktree containers only. |
 
