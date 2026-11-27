@@ -326,7 +326,7 @@ export class AccountingApiError extends Error {
  * { "error": "invalid_grant", "error_description": "Token expired" }
  *
  * 4. RFC 7807 problem+json:
- * { "type": "...", "title": "...", "detail": "..." }
+ * { "type": "...", "title": "...", "detail": "..." } (Xero: "Title", "Detail")
  */
 export function extractXeroErrorDetails(
   statusCode: number,
@@ -372,9 +372,9 @@ export function extractXeroErrorDetails(
     details.providerMessage = obj.Message;
   } else if (typeof obj.message === "string") {
     details.providerMessage = obj.message;
-  } else if (typeof obj.detail === "string") {
-    // RFC 7807 format
-    details.providerMessage = obj.detail;
+  } else if (typeof obj.detail === "string" || typeof obj.Detail === "string") {
+    // RFC 7807 format; Xero's own problem responses capitalise it.
+    details.providerMessage = (obj.detail ?? obj.Detail) as string;
   } else if (typeof obj.error_description === "string") {
     // OAuth format
     details.providerMessage = obj.error_description;

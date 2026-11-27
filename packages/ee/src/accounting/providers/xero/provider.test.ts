@@ -656,6 +656,43 @@ describe("XeroProvider invoice and bill writes", () => {
     });
   });
 
+  // Xero refuses an edit to a document it has applied a payment or a credit
+  // note to, so an update would fail every retry and never link it.
+  it.each([
+    { Status: "PAID", AmountPaid: 30 },
+    { Status: "AUTHORISED", AmountPaid: 10 },
+    { Status: "AUTHORISED", AmountPaid: 0, AmountCredited: 5 }
+  ])(
+    "links an earlier attempt's invoice that Xero has settled (%o) without writing it",
+    async (settled) => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({
+          Invoices: [
+            {
+              InvoiceID: "invoice-remote",
+              Type: "ACCREC",
+              InvoiceNumber: "INV000001",
+              Contact: { ContactID: SUPPLIER },
+              ...settled
+            }
+          ]
+        })
+      );
+
+      const id = await makeProvider().upsertInvoiceDocument({
+        type: "ACCREC",
+        data: invoice,
+        existingRemoteId: null,
+        mayExist: true,
+        key: key("invoice-1")
+      });
+
+      expect(id).toBe("invoice-remote");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(sent(0).method).toBe("GET");
+    }
+  );
+
   it("creates a sales invoice on a first attempt without looking it up", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ Invoices: [{ InvoiceID: "invoice-remote" }] })
@@ -682,6 +719,73 @@ describe("XeroProvider invoice and bill writes", () => {
 
   // One request for the batch keeps a drain inside Xero's call limit; a
   // document Xero refuses fails on its own, and the others are returned.
+  // Xero keeps a key for six minutes and refuses it on a different request,
+  // so the same documents re-sent with a fix must not reuse the first key.
+  it("keys a batch by the request it sends", async () => {
+    fetchMock.mockImplementation(async () =>
+      jsonResponse({ Invoices: [{ InvoiceID: "bill-a" }] })
+    );
+    const write = (description: string) =>
+      makeProvider().upsertInvoiceDocuments({
+        type: "ACCPAY",
+        documents: [
+          {
+            localId: "a",
+            data: {
+              ...(bill("AP-a") as object),
+              LineItems: [
+                { Description: description, Quantity: 1, UnitAmount: 12 }
+              ]
+            } as never,
+            existingRemoteId: null,
+            mayExist: false,
+            key: key("a")
+          }
+        ],
+        batchKey: key("a")
+      });
+
+    await write("First");
+    await write("First");
+    await write("Fixed");
+
+    const [first, repeat, fixed] = [0, 1, 2].map((call) => sent(call).key);
+    expect(first).toMatch(/^[a-f0-9]{64}$/);
+    expect(repeat).toBe(first);
+    expect(fixed).not.toBe(first);
+  });
+
+  it("reports Xero's problem detail when it refuses a whole batch", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          Title: "BadRequest",
+          Status: 400,
+          Detail: "Idempotency Key: abc is used with a different request."
+        },
+        400
+      )
+    );
+
+    const outcomes = await makeProvider().upsertInvoiceDocuments({
+      type: "ACCPAY",
+      documents: [
+        {
+          localId: "a",
+          data: bill("AP-a"),
+          existingRemoteId: null,
+          mayExist: false,
+          key: key("a")
+        }
+      ],
+      batchKey: key("a")
+    });
+
+    expect(
+      String((outcomes.get("a") as { error: Error }).error.message)
+    ).toContain("is used with a different request");
+  });
+
   it("writes a batch's first attempts in one request and reports each document's refusal on its own", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
@@ -712,8 +816,7 @@ describe("XeroProvider invoice and bill writes", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(sent(0)).toMatchObject({
       method: "POST",
-      path: "/Invoices?unitdp=4&summarizeErrors=false",
-      key: key("a,b,c")
+      path: "/Invoices?unitdp=4&summarizeErrors=false"
     });
     expect(outcomes.get("a")).toBe("bill-a");
     expect(outcomes.get("b")).toEqual({

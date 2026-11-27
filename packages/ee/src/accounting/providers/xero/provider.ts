@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { createHash } from "node:crypto";
 import { getLogger } from "@carbon/logger";
 import type {
   CounterpartSearchKeys,
@@ -565,7 +566,7 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     type: "ACCREC" | "ACCPAY";
     invoiceNumber: string;
     contactId: string;
-  }): Promise<string | null> {
+  }): Promise<{ invoiceId: string; settled: boolean } | null> {
     // Narrowed in Xero to this contact's live documents: a number can repeat
     // across contacts (ACCPAY numbers are the supplier's), and a first page of
     // other contacts' bills would hide this one.
@@ -602,7 +603,16 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
         `Multiple Xero ${args.type === "ACCPAY" ? "bills" : "invoices"} carry the number ${args.invoiceNumber}; resolve the duplicates before retrying`
       );
     }
-    return live[0]?.InvoiceID ?? null;
+    const found = live[0];
+    if (!found?.InvoiceID) return null;
+    return {
+      invoiceId: found.InvoiceID,
+      // Xero refuses edits once a payment or credit note is applied.
+      settled:
+        found.Status === "PAID" ||
+        (found.AmountPaid ?? 0) > 0 ||
+        (found.AmountCredited ?? 0) > 0
+    };
   }
 
   /**
@@ -610,8 +620,9 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
    * `existingRemoteId` when it is mapped, else a create under `key`. When an
    * earlier attempt may have created it (`mayExist`), the create first looks
    * it up by its InvoiceNumber, and a document found there is updated with
-   * this payload, since the earlier attempt may have sent an older one.
-   * Returns the InvoiceID.
+   * this payload, since the earlier attempt may have sent an older one,
+   * unless Xero has applied a payment or credit note to it: then it is linked
+   * as it is. Returns the InvoiceID.
    */
   async upsertInvoiceDocument(args: {
     type: "ACCREC" | "ACCPAY";
@@ -622,15 +633,21 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
   }): Promise<string> {
     const { data } = args;
     const label = args.type === "ACCPAY" ? "bill" : "invoice";
-    const remoteId =
-      args.existingRemoteId ??
-      (args.mayExist && data.InvoiceNumber && data.Contact?.ContactID
+    const recovered =
+      !args.existingRemoteId &&
+      args.mayExist &&
+      data.InvoiceNumber &&
+      data.Contact?.ContactID
         ? await this.recoverInvoice({
             type: args.type,
             invoiceNumber: data.InvoiceNumber,
             contactId: data.Contact.ContactID
           })
-        : null);
+        : null;
+    // A payment or credit note already applied in Xero means the earlier
+    // attempt's document stands: Xero refuses an edit, so link it as it is.
+    if (recovered?.settled) return recovered.invoiceId;
+    const remoteId = args.existingRemoteId ?? recovered?.invoiceId ?? null;
 
     const result = remoteId
       ? await this.request<{ Invoices: Xero.Invoice[] }>(
@@ -664,7 +681,7 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
   /**
    * Write several invoices (ACCREC) or bills (ACCPAY). The documents that
    * need no lookup (mapped, or never attempted before) go in one request
-   * under `batchKey`, with each document's validation reported on its own
+   * keyed by `batchKey` and the request body, with each document's validation reported on its own
    * (`summarizeErrors=false`). An unmapped one an earlier attempt may have
    * created goes alone through `upsertInvoiceDocument`, which looks it up
    * first. A rate limit or a dead grant stops the writes; the documents not
@@ -695,18 +712,25 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
 
     if (together.length > 0) {
       try {
+        const body = JSON.stringify({
+          Invoices: together.map(({ data, existingRemoteId }) =>
+            existingRemoteId ? { ...data, InvoiceID: existingRemoteId } : data
+          )
+        });
         const result = await this.request<{ Invoices: Xero.Invoice[] }>(
           "POST",
           "/Invoices?unitdp=4&summarizeErrors=false",
           {
-            body: JSON.stringify({
-              Invoices: together.map(({ data, existingRemoteId }) =>
-                existingRemoteId
-                  ? { ...data, InvoiceID: existingRemoteId }
-                  : data
-              )
-            }),
-            headers: { "Idempotency-Key": args.batchKey }
+            body,
+            // Xero refuses a key reused on a different request for six
+            // minutes, so a fixed or edited re-send of the same documents
+            // takes a key of its own. A document an earlier batch may have
+            // created never comes back here: it goes alone, after a lookup.
+            headers: {
+              "Idempotency-Key": createHash("sha256")
+                .update(`${args.batchKey}:${body}`)
+                .digest("hex")
+            }
           }
         );
         if (result.error) throwXeroApiError(`write ${label}s`, result);
