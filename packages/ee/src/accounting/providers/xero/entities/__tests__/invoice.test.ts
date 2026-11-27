@@ -320,6 +320,19 @@ describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
     expect(payload.CurrencyRate).toBeCloseTo(0.8, 6);
   });
 
+  // Xero creates an invoice only as DRAFT, SUBMITTED or AUTHORISED; it marks
+  // one PAID itself once the payment push applies the payments.
+  it.each(["Paid", "Partially Paid"] as const)(
+    "sends a %s invoice as AUTHORISED",
+    async (status) => {
+      const payload = await makeInvoiceSyncer(db()).mapToRemote({
+        ...invoice(),
+        status
+      });
+      expect(payload.Status).toBe("AUTHORISED");
+    }
+  );
+
   it("omits CurrencyRate on a base-currency invoice rather than sending 1", async () => {
     const payload = await makeInvoiceSyncer(db()).mapToRemote(invoice());
     // Xero: "Setting a CurrencyRate of 1 is redundant and considered incorrect."

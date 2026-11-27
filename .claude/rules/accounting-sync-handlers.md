@@ -1006,7 +1006,9 @@ both; QBO is not in it, so a QBO document voided in Carbon stays live there. Xer
 invoice and bill syncers call `pushXeroVoids` (`xero/entities/void.ts`) before the
 normal push: `POST /Invoices/{id}` with `Status: "VOIDED"`, then the mapping gets
 `metadata.voided = true` so the reconciler stops asking. Xero refuses to void a
-document with a payment applied; that fails with Xero's message.
+document with a payment applied; that fails with Xero's message. A Paid invoice or bill goes out
+`AUTHORISED`, never `PAID`: Xero refuses `PAID` on a write and marks the document
+paid itself once the payment push applies the payment.
 
 ## Credit memos and supplier credits as provider documents
 

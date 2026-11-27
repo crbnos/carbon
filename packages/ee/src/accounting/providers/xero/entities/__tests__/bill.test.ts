@@ -421,6 +421,18 @@ describe("BillSyncer.mapToRemote (FX + guards)", () => {
     expect(payload.CurrencyRate).toBe(1);
   });
 
+  // Xero creates a bill only as DRAFT, SUBMITTED or AUTHORISED; it marks one
+  // PAID itself once the payment push applies the payments.
+  it.each(["Paid", "Partially Paid"] as const)(
+    "sends a %s bill as AUTHORISED",
+    async (status) => {
+      const payload = await makeBillSyncer(fxDb(), null).mapToRemote(
+        bill({ status })
+      );
+      expect(payload.Status).toBe("AUTHORISED");
+    }
+  );
+
   it("lands a DOC_HAS_PAYMENTS Warning when re-pushing a paid bill", async () => {
     try {
       await makeBillSyncer(fxDb(), "xero-bill-1").mapToRemote(

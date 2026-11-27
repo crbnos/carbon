@@ -89,7 +89,9 @@ const CARBON_TO_XERO_STATUS: Record<BillRow["status"], Xero.Invoice["Status"]> =
     Open: "AUTHORISED",
     Return: "DRAFT", // No direct equivalent, map to DRAFT
     "Debit Note Issued": "AUTHORISED",
-    Paid: "PAID",
+    // Xero refuses PAID on a write; it marks the bill paid itself once the
+    // payment push applies the payments.
+    Paid: "AUTHORISED",
     "Partially Paid": "AUTHORISED", // Xero tracks partial payment via AmountDue
     Overdue: "AUTHORISED", // Xero doesn't have overdue status
     Voided: "VOIDED"

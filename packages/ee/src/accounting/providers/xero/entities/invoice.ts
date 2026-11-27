@@ -53,7 +53,9 @@ const CARBON_TO_XERO_STATUS: Record<
   Pending: "SUBMITTED",
   Submitted: "AUTHORISED",
   "Partially Paid": "AUTHORISED",
-  Paid: "PAID",
+  // Xero refuses PAID on a write; it marks the invoice paid itself once the
+  // payment push applies the payments.
+  Paid: "AUTHORISED",
   Overdue: "AUTHORISED",
   Voided: "VOIDED",
   "Credit Note Issued": "AUTHORISED",
