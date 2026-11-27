@@ -11,7 +11,8 @@ import { sql } from "kysely";
 import { expect, it } from "vitest";
 import {
   connectLocalTestDatabase,
-  hasLocalDatabase
+  hasLocalDatabase,
+  removeTestRows
 } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 import * as sales from "../../app/modules/sales/sales.server";
@@ -101,7 +102,7 @@ async function fixture() {
         .where("companyId", "in", [own.id, other.id])
         .execute(),
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx
           .deleteFrom("company")

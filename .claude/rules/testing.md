@@ -179,6 +179,13 @@ Interaction belongs in a browser playbook.
   PostgREST's schema reload behind it stalls their PostgREST calls.
 - Test files run in parallel against one database. Assert on your own
   company's rows; a count over a whole table changes under you.
+- A teardown removes the test's rows through `removeTestRows`
+  (`fixtures/local-database.ts`), never a bare delete. CI's database is
+  thrown away with the job, so there (`CI` is set) it does nothing and the
+  rows stay. Never rely on any cleanup, another test's or your own earlier
+  one: make every id from a random prefix, so a second run cannot collide.
+  State a later test in the same file needs restored (a shared fixture's
+  setting) is not cleanup: restore it directly.
 - A posting run from handles (`invokePosting(handlesOf(…))`) builds its
   service-role client from `@carbon/env`, which the unit-test config stubs.
   If the posting reads through PostgREST (the purchase order funds gate),

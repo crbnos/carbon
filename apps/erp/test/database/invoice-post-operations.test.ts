@@ -24,7 +24,7 @@ import {
   seed,
   USER
 } from "./fixtures/always-post";
-import { hasLocalDatabase } from "./fixtures/local-database";
+import { hasLocalDatabase, removeTestRows } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 import { reimbursementFixture } from "./fixtures/post-reimbursement";
 
@@ -282,16 +282,18 @@ localTest(
       expect(row.sendError).toEqual(expect.any(String));
     } finally {
       // The PDF the post filed, when it got that far.
-      const filed = await f.db
-        .deleteFrom("document")
-        .where("companyId", "=", f.companyId)
-        .returning("path")
-        .execute();
-      if (filed.length > 0) {
-        await client!.storage
-          .from(f.companyId)
-          .remove(filed.map((document) => document.path));
-      }
+      await removeTestRows(f.db, async (trx) => {
+        const filed = await trx
+          .deleteFrom("document")
+          .where("companyId", "=", f.companyId)
+          .returning("path")
+          .execute();
+        if (filed.length > 0) {
+          await client!.storage
+            .from(f.companyId)
+            .remove(filed.map((document) => document.path));
+        }
+      });
       await f.cleanup();
     }
   }
@@ -392,7 +394,7 @@ localTest(
         applied.map((row) => [row.targetReimbursementId, Number(row.sourceAmount)])
       ).toEqual([[f.reimbursementId, 620]]);
     } finally {
-      await f.db.transaction().execute(async (trx) => {
+      await removeTestRows(f.db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx
           .deleteFrom("invoiceSettlement")

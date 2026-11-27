@@ -6,7 +6,7 @@ import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
 import { importMethods } from "../../../app/modules/shared/shared.service";
 import type { MethodRowsAdded } from "../../../app/modules/shared/types";
-import { connectLocalTestDatabase } from "./local-database";
+import { connectLocalTestDatabase, removeTestRows } from "./local-database";
 import { localServiceRoleClient } from "./local-supabase";
 
 const USER = "system";
@@ -233,7 +233,7 @@ export async function methodImportFixture() {
       return summary;
     },
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx.deleteFrom("company").where("id", "=", companyId).execute();
         await trx

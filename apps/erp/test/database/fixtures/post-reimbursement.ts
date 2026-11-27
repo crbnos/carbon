@@ -5,7 +5,7 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { Insertable } from "kysely";
 import { sql } from "kysely";
-import { connectLocalTestDatabase } from "./local-database";
+import { connectLocalTestDatabase, removeTestRows } from "./local-database";
 
 // Every NOT NULL account column on `accountDefault` other than the two this
 // suite actually exercises. They are pointed at one filler posting account so
@@ -338,7 +338,7 @@ export async function reimbursementFixture(
     projectDimensionId,
     connect: connectLocalTestDatabase,
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         // The draft guard and the posted-journal immutability triggers both
         // refuse the teardown writes below; disabling them is the same escape

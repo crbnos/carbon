@@ -19,7 +19,7 @@ import { OPTIONAL_DEFAULT_ROLES } from "@carbon/database/journal-posting-status"
 import { datetime } from "@carbon/utils";
 import { type Insertable, type Kysely, sql } from "kysely";
 import { expect } from "vitest";
-import { connectLocalTestDatabase } from "./local-database";
+import { connectLocalTestDatabase, removeTestRows } from "./local-database";
 import { postPayment, postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
 import { postReceipt, postShipment } from "../../../app/modules/inventory/inventory.service";
 import { postReimbursement, activateAccounting } from "../../../app/modules/accounting/accounting.service";
@@ -255,7 +255,7 @@ export async function activationFixture() {
     supplierId,
     account,
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         // Posted and Superseded journals are immutable, and a Closed period
         // refuses their delete. Walk them back with triggers off, then let

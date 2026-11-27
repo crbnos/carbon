@@ -9,6 +9,7 @@
 // row needs refuses the posting in both states.
 
 import { MissingAccountDefaultError } from "@carbon/database/journal-posting-status";
+import { sql } from "kysely";
 import { expect } from "vitest";
 import {
   alwaysPostFixture,
@@ -25,7 +26,8 @@ import {
 } from "./fixtures/always-post";
 import {
   connectLocalTestDatabase,
-  databaseTest
+  databaseTest,
+  removeTestRows
 } from "./fixtures/local-database";
 import { postSalesInvoice } from "../../app/modules/invoicing/invoicing.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
@@ -189,7 +191,8 @@ databaseTest(
       ).toContain(f.account("receivables"));
     } finally {
       // The partner rows refuse the cleanup's deletes while they trade.
-      await seed(f, async (trx) => {
+      await removeTestRows(f.db, async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         const transactions = trx
           .selectFrom("intercompanyTransaction")
           .select("id")
@@ -215,10 +218,12 @@ databaseTest(
       });
       await f.cleanup();
       const db = await connectLocalTestDatabase();
-      await db
-        .deleteFrom("company")
-        .where("id", "=", `${f.prefix}-partner`)
-        .execute();
+      await removeTestRows(db, (trx) =>
+        trx
+          .deleteFrom("company")
+          .where("id", "=", `${f.prefix}-partner`)
+          .execute()
+      );
       await db.destroy();
     }
   }

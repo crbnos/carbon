@@ -7,7 +7,7 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { databaseTest } from "../fixtures/local-database";
+import { databaseTest, removeTestRows } from "../fixtures/local-database";
 import { paymentFixture } from "../fixtures/payment";
 import { postPaymentTransaction, rebuildPaymentJournals } from "../../../app/modules/invoicing/invoicing.service";
 type Fixture = Awaited<ReturnType<typeof paymentFixture>>;
@@ -151,12 +151,14 @@ databaseTest(
       expect(await rebuilt(f, paymentId)).toEqual(posted);
     } finally {
       // An intercompany customer refuses its delete.
-      await f.db
-        .updateTable("customer")
-        .set({ intercompanyCompanyId: null })
-        .where("id", "=", f.customerId)
-        .where("companyId", "=", f.companyId)
-        .execute();
+      await removeTestRows(f.db, (trx) =>
+        trx
+          .updateTable("customer")
+          .set({ intercompanyCompanyId: null })
+          .where("id", "=", f.customerId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
       await f.cleanup();
     }
   }

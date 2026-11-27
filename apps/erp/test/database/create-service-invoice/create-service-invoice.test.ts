@@ -12,7 +12,7 @@ import {
 import { createServiceInvoice } from "../../../app/modules/service/service.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
-import { databaseTest } from "../fixtures/local-database";
+import { databaseTest, removeTestRows } from "../fixtures/local-database";
 import { PROJECT_TEST_USER } from "../fixtures/project-posting";
 import { serviceJobFixture } from "../fixtures/service-job";
 
@@ -93,7 +93,7 @@ async function invoiceFixture() {
     },
     async cleanup() {
       // A posted invoice refuses its delete.
-      await f.db.transaction().execute(async (trx) => {
+      await removeTestRows(f.db, async (trx) => {
         await sql`SET LOCAL session_replication_role = replica`.execute(trx);
         await trx
           .updateTable("salesInvoice")

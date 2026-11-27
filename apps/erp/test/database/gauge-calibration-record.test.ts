@@ -17,7 +17,8 @@ import {
 } from "../../app/modules/quality/quality.server";
 import {
   connectLocalTestDatabase,
-  hasLocalDatabase
+  hasLocalDatabase,
+  removeTestRows
 } from "./fixtures/local-database";
 
 const describeLocal = describe.skipIf(!hasLocalDatabase);
@@ -232,7 +233,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!hasLocalDatabase) return;
-  await db.transaction().execute(async (trx) => {
+  await removeTestRows(db, async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
     for (const companyId of [ids.ours, ids.theirs]) {
       await trx.deleteFrom("company").where("id", "=", companyId).execute();

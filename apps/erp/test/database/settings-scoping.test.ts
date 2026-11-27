@@ -15,7 +15,8 @@ import { afterAll, beforeAll, describe, expect } from "vitest";
 import {
   connectLocalTestDatabase,
   databaseTest,
-  hasLocalDatabase
+  hasLocalDatabase,
+  removeTestRows
 } from "./fixtures/local-database";
 import {
   localAnonClient,
@@ -193,7 +194,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!client) return;
-  await db.transaction().execute(async (trx) => {
+  await removeTestRows(db, async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
     // A subsidiary exists only when its test failed.
     const subsidiaries = await trx

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { sql } from "kysely";
-import { connectLocalTestDatabase } from "./local-database";
+import { connectLocalTestDatabase, removeTestRows } from "./local-database";
 
 export async function paymentFixture() {
   const db = await connectLocalTestDatabase();
@@ -548,7 +548,7 @@ export async function paymentFixture() {
       return id;
     },
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         // Test-owned committed journals are immutable. Temporarily bypass only
         // for their cleanup status update; restore normal FK cascades immediately.

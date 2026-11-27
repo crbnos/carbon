@@ -11,7 +11,8 @@ import { afterAll, beforeAll, describe, expect } from "vitest";
 import {
   connectLocalTestDatabase,
   databaseTest,
-  hasLocalDatabase
+  hasLocalDatabase,
+  removeTestRows
 } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 import {
@@ -114,7 +115,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!client) return;
-  await db.transaction().execute(async (trx) => {
+  await removeTestRows(db, async (trx) => {
     await sql`SET LOCAL session_replication_role = replica`.execute(trx);
     await trx.deleteFrom("tableView").where("companyId", "=", ids.company).execute();
     await trx.deleteFrom("company").where("id", "=", ids.company).execute();

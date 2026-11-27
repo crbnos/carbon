@@ -13,7 +13,8 @@ import { sql } from "kysely";
 import { expect } from "vitest";
 import {
   connectLocalTestDatabase,
-  databaseTest
+  databaseTest,
+  removeTestRows
 } from "./fixtures/local-database";
 import { rentalFixture } from "./fixtures/rental";
 import {
@@ -287,7 +288,7 @@ async function closedAgreementFixture({
     chargeId,
     taxCodeId,
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx.deleteFrom("company").where("id", "=", companyId).execute();
         await trx

@@ -21,7 +21,7 @@ import {
   insertProjectLedgerRows
 } from "../../../app/modules/projects/project-posting";
 import { systemServiceOf } from "./handles";
-import { connectLocalTestDatabase } from "./local-database";
+import { connectLocalTestDatabase, removeTestRows } from "./local-database";
 
 const USER = "system";
 
@@ -519,7 +519,7 @@ export async function projectBillingTestFixture() {
     post,
     items,
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         // A Posted journal (a real Project Issue) refuses a delete.
         await sql`SET LOCAL session_replication_role = replica`.execute(trx);

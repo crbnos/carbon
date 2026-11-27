@@ -8,7 +8,11 @@
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
 import { it } from "vitest";
-import { connectLocalTestDatabase, hasLocalDatabase } from "./local-database";
+import {
+  connectLocalTestDatabase,
+  hasLocalDatabase,
+  removeTestRows
+} from "./local-database";
 import { localServiceRoleClient } from "./local-supabase";
 
 export const client = hasLocalDatabase ? localServiceRoleClient() : null;
@@ -150,7 +154,7 @@ export async function fixture(setup: Setup = {}) {
         .orderBy("requestedAt")
         .execute(),
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx
           .deleteFrom("company")

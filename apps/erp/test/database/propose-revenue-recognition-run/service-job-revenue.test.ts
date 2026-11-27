@@ -11,7 +11,7 @@ import {
   SERVICE_REVENUE_CONTRACT_ASSETS_MISSING,
   synthesizeServiceJobRevenue
 } from "../../../app/modules/accounting/accounting.service";
-import { databaseTest } from "../fixtures/local-database";
+import { databaseTest, removeTestRows } from "../fixtures/local-database";
 import { serviceJobFixture } from "../fixtures/service-job";
 
 type Fixture = Awaited<ReturnType<typeof serviceJobFixture>>;
@@ -326,11 +326,13 @@ databaseTest(
         expect(await amounts(f, switched.id)).toEqual([95, -95]);
       } finally {
         // A posted invoice refuses the company's delete.
-        await f.db
-          .updateTable("salesInvoice")
-          .set({ status: "Draft" })
-          .where("id", "=", invoiceId)
-          .execute();
+        await removeTestRows(f.db, (trx) =>
+          trx
+            .updateTable("salesInvoice")
+            .set({ status: "Draft" })
+            .where("id", "=", invoiceId)
+            .execute()
+        );
       }
     } finally {
       await f.cleanup();

@@ -12,7 +12,8 @@ import { resolvePermissions } from "@carbon/api/permissions";
 import { claimsFor, type PageGate, pageById } from "@carbon/database/access";
 import {
   connectLocalTestDatabase,
-  databaseTest
+  databaseTest,
+  removeTestRows
 } from "./fixtures/local-database";
 import { ForbiddenError } from "@carbon/api/errors";
 import { SUPABASE_SERVICE_ROLE_KEY } from "@carbon/env";
@@ -90,7 +91,7 @@ async function deleteMember(
   db: Kysely<KyselyDatabase>,
   member: { prefix: string; companyId: string; userId: string }
 ) {
-  await db.transaction().execute(async (trx) => {
+  await removeTestRows(db, async (trx) => {
     await sql`SET LOCAL session_replication_role = replica`.execute(trx);
     await sql`DELETE FROM "permission" WHERE "companyId" = ${member.companyId}`.execute(trx);
     await sql`DELETE FROM "apiKey" WHERE "companyId" = ${member.companyId}`.execute(trx);

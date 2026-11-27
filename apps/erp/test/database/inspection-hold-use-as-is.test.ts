@@ -32,7 +32,7 @@ import {
   USER
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
-import { hasLocalDatabase } from "./fixtures/local-database";
+import { hasLocalDatabase, removeTestRows } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 describe.skipIf(!hasLocalDatabase)("Use As Is goes to Put Away", () => {
@@ -158,7 +158,8 @@ describe.skipIf(!hasLocalDatabase)("Use As Is goes to Put Away", () => {
 
   afterAll(async () => {
     if (!f) return;
-    await seed(f, async (trx) => {
+    await removeTestRows(f.db, async (trx) => {
+      await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
       await trx
         .deleteFrom("inspection")
         .where("companyId", "=", f.companyId)

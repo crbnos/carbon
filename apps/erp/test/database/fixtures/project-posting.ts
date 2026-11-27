@@ -13,7 +13,7 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import type { Insertable } from "kysely";
 import { sql } from "kysely";
 import { systemServiceOf } from "./handles";
-import { connectLocalTestDatabase } from "./local-database";
+import { connectLocalTestDatabase, removeTestRows } from "./local-database";
 
 export const PROJECT_TEST_USER = "system";
 
@@ -985,7 +985,7 @@ export async function projectPostingFixture(
       return { invoiceId, lineIds };
     },
     async cleanup() {
-      await db.transaction().execute(async (trx) => {
+      await removeTestRows(db, async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await sql`SET LOCAL session_replication_role = replica`.execute(trx);
         // Posted and voided charges and reimbursements refuse a delete.

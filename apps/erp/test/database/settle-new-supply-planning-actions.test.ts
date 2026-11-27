@@ -20,7 +20,11 @@ import {
   seed,
   USER
 } from "./fixtures/always-post";
-import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
+import {
+  databaseTest,
+  hasLocalDatabase,
+  removeTestRows
+} from "./fixtures/local-database";
 
 type ActionType = "Order" | "Make";
 type Status = "Open" | "Dismissed" | "Actioned";
@@ -129,7 +133,9 @@ describe.skipIf(!hasLocalDatabase)("settleNewSupplyPlanningActions", () => {
 
   afterEach(async () => {
     // the actions go with the periods (ON DELETE CASCADE)
-    await f.db.deleteFrom("period").where("id", "in", [week1, week2]).execute();
+    await removeTestRows(f.db, (trx) =>
+      trx.deleteFrom("period").where("id", "in", [week1, week2]).execute()
+    );
     await f.cleanup();
   });
 
