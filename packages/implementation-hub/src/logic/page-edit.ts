@@ -5,11 +5,13 @@
 // Editing a person's page in the app: every change Carbon staff make to a
 // page is one of these, applied to the page as the editor has it, and the
 // whole page is saved. Pure, so the page and the server place cards the same
-// way. A page needs a section; a section may be left with no cards, and the
-// page shows that it has none. A change that would remove the last section
-// returns null and nothing is saved.
+// way. The app shows a page as one list of cards: the editor first puts every
+// card in the first section (`singleSection`), so it saves one. The section
+// helpers stay for page files and for the day sections come back. A page
+// needs a section; a change that would remove the last one returns null and
+// nothing is saved.
 
-import type { MemberPage, MemberPageCard } from "../models";
+import type { MemberPage, MemberPageCard, MemberPageField } from "../models";
 
 // Where a new card goes: the end of a section, or a new section at the end.
 export type PageTarget = { section: number } | { newSection: string };
@@ -122,6 +124,26 @@ export interface CardPatch {
   link?: string;
   note?: string;
   due?: string;
+  // The card's fields, replaced whole; an empty list removes them.
+  fields?: MemberPageField[];
+  askForFile?: boolean;
+}
+
+// Pure: the fields as staff typed them, kept only with a label and something
+// in them. A checklist's points are trimmed, blank ones and repeats dropped.
+export function cleanFields(fields: MemberPageField[]): MemberPageField[] {
+  return fields.flatMap((field): MemberPageField[] => {
+    const label = clean(field.label);
+    if (!label) return [];
+    if ("points" in field) {
+      const points = Array.from(
+        new Set(field.points.map(clean).filter(Boolean))
+      );
+      return points.length ? [{ label, points }] : [];
+    }
+    const value = clean(field.value);
+    return value ? [{ label, value }] : [];
+  });
 }
 
 export function editCard(
@@ -136,6 +158,15 @@ export function editCard(
       "due",
       patch.due
     );
+    if (patch.fields !== undefined) {
+      const { fields: _fields, ...rest } = next;
+      const fields = cleanFields(patch.fields);
+      next = fields.length ? { ...rest, fields } : rest;
+    }
+    if (patch.askForFile !== undefined) {
+      const { askForFile: _askForFile, ...rest } = next;
+      next = patch.askForFile ? { ...rest, askForFile: true } : rest;
+    }
     if (next.custom) {
       const title = patch.title === undefined ? "" : clean(patch.title);
       next = {
@@ -315,6 +346,38 @@ export function newCustomKey(title: string, taken: Iterable<string>): string {
   let key = base;
   for (let n = 2; used.has(key); n += 1) key = `${base}-${n}`;
   return key;
+}
+
+// Pure: a card of the page by its id (the item key, or custom:<key>).
+export function findPageCard(
+  page: MemberPage,
+  cardId: string
+): MemberPageCard | undefined {
+  for (const section of page.sections) {
+    for (const card of section.cards) {
+      if ((card.item ?? `custom:${card.custom?.key ?? ""}`) === cardId) {
+        return card;
+      }
+    }
+  }
+  return undefined;
+}
+
+// Pure: the page with every card in its first section, in page order: the
+// page as the editor shows it. The first section's title and intro stay; a
+// page already in one section is returned as it is.
+export function singleSection(page: MemberPage): MemberPage {
+  const [first, ...rest] = page.sections;
+  if (!first || rest.length === 0) return page;
+  return {
+    ...page,
+    sections: [
+      {
+        ...first,
+        cards: page.sections.flatMap((section) => section.cards)
+      }
+    ]
+  };
 }
 
 // The custom card keys already on the page.

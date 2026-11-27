@@ -692,6 +692,12 @@ export const manifest = {
     create: "employee",
     update: "employee"
   }),
+  implementationFile: company({
+    read: "employee",
+    create: "employee",
+    update: "employee",
+    delete: "employee"
+  }),
   implementationHub: company({
     read: "employee",
     update: "employee",

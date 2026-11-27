@@ -14,12 +14,14 @@ import {
   type HubPagePerson,
   type HubPeopleGroups,
   type HubPersonStatus,
+  type ImplementationFileRow,
   type MemberPage,
   memberPageValidator,
   PAGE_CARD_KIND_LABEL,
   PRIORITY_CARD,
   PRIORITY_FEATURES,
   pageDraftPrompt,
+  pageFilePath,
   pageOverdue,
   pageProgress,
   prioritySetHolder,
@@ -28,12 +30,16 @@ import {
   resolveMemberPage,
   starterMemberPage
 } from "@carbon/implementation-hub";
-import { getImplementationMembers } from "@carbon/implementation-hub/server";
+import {
+  getImplementationFiles,
+  getImplementationMembers
+} from "@carbon/implementation-hub/server";
 import {
   MemberPageEmpty,
   MemberPageView,
   PageBoard,
   type PageEditor,
+  type PageFiles,
   ProgressPill,
   toFormFields,
   useCheckMap,
@@ -75,6 +81,7 @@ import { isInternalEmail } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { MessageDescriptor } from "@lingui/core";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { nanoid } from "nanoid";
 import { useEffect, useMemo, useState } from "react";
 import {
   LuCheck,
@@ -93,7 +100,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link, useFetcher, useLoaderData, useSearchParams } from "react-router";
 import { FileDropzone } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { useUser } from "~/hooks";
+import { useFileUpload, useUser } from "~/hooks";
 import {
   setImplementationPreview,
   useImplementationPreview
@@ -120,15 +127,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ? (await authorize(request, {}, { bypassRls: true })).client
     : null;
 
-  const [members, employees] = await Promise.all([
+  // Staff see every page's files; a person, those on their own page.
+  const [members, employees, files] = await Promise.all([
     getImplementationMembers(client, companyId),
     peopleClient
       ? peopleClient
           .from("employees")
           .select("id, name, firstName, email, status")
           .eq("companyId", companyId)
-      : null
+      : null,
+    getImplementationFiles(client, {
+      companyId,
+      memberId: isInternal ? undefined : userId
+    })
   ]);
+  if (files.error) {
+    logger.error("Failed to load the files on Implementation Hub pages", {
+      companyId,
+      error: files.error
+    });
+  }
   if (employees?.error) {
     logger.error(
       "Failed to load the people for the Implementation Hub staff bar",
@@ -162,6 +180,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     members: rows,
     people,
+    files: (files.data ?? []) as ImplementationFileRow[],
     isInternal,
     userId
   };
@@ -169,8 +188,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function GetStartedRoute() {
   const { t } = useLingui();
-  const { members, people, isInternal, userId } =
+  const { members, people, files, isInternal, userId } =
     useLoaderData<typeof loader>();
+  const { company } = useUser();
   const [livePeople] = usePeople();
   const hubState = useRouteData<{
     implementationHub2: boolean;
@@ -327,6 +347,65 @@ export default function GetStartedRoute() {
     };
   }, [isInternal, selectedId, submitPage]);
 
+  // The page's files. A file is stored in the company's bucket first, then
+  // recorded on its card in one write per upload, on a fetcher of its own so
+  // a tick on the shared state fetcher never cancels it.
+  const fileFetcher = useFetcher<{ success: boolean; message?: string }>();
+  const fileResult = fileFetcher.data;
+  useEffect(() => {
+    if (fileResult && !fileResult.success && fileResult.message) {
+      toast.error(fileResult.message);
+    }
+  }, [fileResult]);
+  const submitFiles = fileFetcher.submit;
+  const { upload: uploadFiles, isUploading } = useFileUpload();
+  const [uploadingCard, setUploadingCard] = useState<string | null>(null);
+  const pageFiles = useMemo<PageFiles | undefined>(() => {
+    if (!selectedId) return undefined;
+    const submit = (fields: Record<string, string>) =>
+      submitFiles(fields, {
+        method: "post",
+        action: path.to.implementationState
+      });
+    return {
+      files: files.filter((file) => file.userId === selectedId),
+      uploading: isUploading ? uploadingCard : null,
+      href: (file) => path.to.file.previewFile(`private/${file.path}`),
+      upload: async (cardId, chosen) => {
+        setUploadingCard(cardId);
+        const folder = nanoid();
+        const stored: { path: string; name: string; size: number }[] = [];
+        await uploadFiles(chosen, {
+          getPath: (file) =>
+            pageFilePath(company.id, selectedId, folder, file.name),
+          onSuccess: (file, storedPath) => {
+            stored.push({ path: storedPath, name: file.name, size: file.size });
+          }
+        });
+        if (stored.length) {
+          submit(
+            toFormFields({
+              intent: "attachFile",
+              memberId: selectedId,
+              cardId,
+              files: stored
+            })
+          );
+        }
+      },
+      remove: (file) =>
+        submit(toFormFields({ intent: "removeFile", fileId: file.id }))
+    };
+  }, [
+    selectedId,
+    files,
+    isUploading,
+    uploadingCard,
+    uploadFiles,
+    submitFiles,
+    company.id
+  ]);
+
   const select = (id: string) =>
     setParams(
       (current) => {
@@ -387,6 +466,7 @@ export default function GetStartedRoute() {
             memberId={selectedId}
             memberName={nameOf(selectedId)}
             editor={editor}
+            files={pageFiles}
           />
         ) : member && isInternal ? (
           <p className="w-full max-w-xl mx-auto py-24 text-center text-sm text-muted-foreground">

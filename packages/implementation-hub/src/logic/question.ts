@@ -51,12 +51,14 @@ export function readQuestion(
       ? Array.from(new Set(picked))
       : picked.slice(0, 1);
   const answer = text(payload.answer);
+  const longAnswer = !options && payload.longAnswer === true;
   return {
     question: typeof payload.question === "string" ? payload.question : "",
     ...(answer ? { answer } : {}),
     ...(options ? { options } : {}),
     ...(multiple ? { multiple } : {}),
-    ...(options && selected.length ? { selected } : {})
+    ...(options && selected.length ? { selected } : {}),
+    ...(longAnswer ? { longAnswer } : {})
   };
 }
 

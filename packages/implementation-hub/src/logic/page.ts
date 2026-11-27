@@ -33,6 +33,7 @@ import { TRAINING_TRACKS } from "../content/training";
 import {
   type MemberPage,
   type MemberPageCard,
+  type MemberPageField,
   memberPageValidator
 } from "../models";
 import type { ImplementationRowData, ReadinessRule, StateKind } from "../types";
@@ -40,6 +41,7 @@ import { isOverdue } from "./assignments";
 import { isCustomizationKind, readCustomization } from "./customization";
 import { checkKey, flagKey, productStepKey, taskKey } from "./keys";
 import { readObjective } from "./objectives";
+import { pointKey } from "./page-files";
 import type { OnboardingCountKey } from "./status";
 
 type Text = MessageDescriptor | string;
@@ -95,6 +97,10 @@ export interface PageCard extends Omit<PageCatalogueEntry, "kind" | "item"> {
   kind: PageCardKind;
   note?: string;
   due?: string;
+  // Fields Carbon staff added to the card: values and checklists.
+  fields?: MemberPageField[];
+  // The person attaches files to the card.
+  askForFile?: boolean;
   // The item was removed from the hub after the page was loaded.
   missing?: boolean;
 }
@@ -592,6 +598,10 @@ export function resolveMemberPage(
     title: section.title,
     intro: section.intro,
     cards: section.cards.map((card): PageCard => {
+      const extra = {
+        ...(card.fields ? { fields: card.fields } : {}),
+        ...(card.askForFile ? { askForFile: true } : {})
+      };
       if (card.custom) {
         return {
           id: cardId(card),
@@ -602,7 +612,8 @@ export function resolveMemberPage(
           evidence: [],
           href: card.custom.link,
           note: card.note,
-          due: card.due
+          due: card.due,
+          ...extra
         };
       }
       const item = card.item ?? "";
@@ -616,7 +627,8 @@ export function resolveMemberPage(
           evidence: [],
           note: card.note,
           due: card.due,
-          missing: true
+          missing: true,
+          ...extra
         };
       }
       const { item: _item, kind, ...rest } = entry;
@@ -626,34 +638,60 @@ export function resolveMemberPage(
         kind,
         title: card.title ?? entry.title,
         note: card.note,
-        due: card.due ?? entry.targetDate
+        due: card.due ?? entry.targetDate,
+        ...extra
       };
     })
   }));
 }
 
-// Pure: a page's questions come out of their sections into one list, in page
-// order, so they are answered in one place. A section whose only cards were
-// questions is dropped; one the page left with no cards stays, and says so. A
-// question removed from the hub stays where the page put it.
-export function splitPageQuestions(sections: PageSection[]): {
-  questions: PageCard[];
-  sections: PageSection[];
-} {
-  const isQuestion = (card: PageCard) =>
-    card.kind === "question" && Boolean(card.rowId) && !card.missing;
-  return {
-    questions: sections.flatMap((section) => section.cards.filter(isQuestion)),
-    sections: sections
-      .map((section) => ({
-        ...section,
-        cards: section.cards.filter((card) => !isQuestion(card))
-      }))
-      .filter(
-        (section, s) =>
-          section.cards.length > 0 || sections[s]?.cards.length === 0
-      )
-  };
+// Pure: every card of a page, in page order. The app shows a page as one
+// list; its sections are kept in the file only.
+export function pageCards(sections: PageSection[]): PageCard[] {
+  return sections.flatMap((section) => section.cards);
+}
+
+// A card's checklists, each point with the key its person's tick is stored
+// under.
+export interface PageChecklist {
+  label: string;
+  points: { text: string; itemKey: string }[];
+}
+
+export function cardChecklists(
+  card: Pick<PageCard, "id" | "fields">,
+  userId: string
+): PageChecklist[] {
+  return (card.fields ?? []).flatMap((field) =>
+    "points" in field
+      ? [
+          {
+            label: field.label,
+            points: field.points.map((text) => ({
+              text,
+              itemKey: pointKey(userId, card.id, text)
+            }))
+          }
+        ]
+      : []
+  );
+}
+
+// Pure: how many of a card's checklist points its person has ticked. A card
+// with a checklist is marked done only once every point is ticked.
+export function checklistProgress(
+  checklists: PageChecklist[],
+  states: Map<string, string>
+): { ticked: number; total: number } {
+  let ticked = 0;
+  let total = 0;
+  for (const checklist of checklists) {
+    for (const point of checklist.points) {
+      total += 1;
+      if (states.get(point.itemKey) === "1") ticked += 1;
+    }
+  }
+  return { ticked, total };
 }
 
 // Pure: is the card on or done? `done` is null when the card has no done state

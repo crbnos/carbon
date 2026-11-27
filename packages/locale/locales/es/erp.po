@@ -125,6 +125,10 @@ msgstr "{0, plural, one {# día de holgura} other {# días de holgura}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# día de atraso} other {# días de atraso}}"
 
+#. placeholder {0}: customization.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr "{0, plural, one {# día} other {# días}}"
+
 #. placeholder {0}: -daysLeft
 msgid "{0, plural, one {# day} other {# days}} past {due}"
 msgstr "{0, plural, one {# día} other {# días}} pasado {due}"
@@ -136,6 +140,10 @@ msgstr "{0, plural, one {# elemento cambió} other {# elementos cambiaron}}"
 #. placeholder {0}: baseline.elementCount
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr "{0, plural, one {# elemento} other {# elementos}}"
+
+#. placeholder {0}: files.length
+msgid "{0, plural, one {# file} other {# files}}"
+msgstr "{0, plural, one {# archivo} other {# archivos}}"
 
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
@@ -189,6 +197,10 @@ msgstr "{0, plural, one {# operación de este proceso no se puede programar. El 
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
 msgstr "{0, plural, one {# operación} other {# operaciones}}"
+
+#. placeholder {0}: question.options.length
+msgid "{0, plural, one {# option} other {# options}}"
+msgstr "{0, plural, one {# opción} other {# opciones}}"
 
 #. placeholder {0}: progress.overdue
 msgid "{0, plural, one {# overdue} other {# overdue}}"
@@ -265,6 +277,10 @@ msgstr "{0, plural, one {Se copió # asignación} other {Se copiaron # asignacio
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {Creates # element} other {Creates # elements}}"
 msgstr "{0, plural, one {Crea # elemento} other {Crea # elementos}}"
+
+#. placeholder {0}: view.estimateDays
+msgid "{0, plural, one {Estimate # day} other {Estimate # days}}"
+msgstr "{0, plural, one {Estimar # día} other {Estimar # días}}"
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -534,9 +550,17 @@ msgstr "{0} es {1}, no Borrador o Planificado"
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} está cerrado. Su tiempo no puede cambiar."
 
+#. placeholder {0}: file.name
+msgid "{0} is larger than 50 MB"
+msgstr "{0} supera los 50 MB"
+
 #. placeholder {0}: chipName(active.id)
 msgid "{0} is no longer over a cell"
 msgstr "{0} ya no está sobre una celda"
+
+#. placeholder {0}: file.name
+msgid "{0} is not a type of file the page takes"
+msgstr "{0} no es un tipo de archivo que admite la página"
 
 #. placeholder {0}: chipName(active.id)
 #. placeholder {1}: placeName(over.data.current)
@@ -927,6 +951,9 @@ msgstr "{bucket3Start}-{b3} días"
 msgid "{bucket4Start}+ Days"
 msgstr "{bucket4Start}+ días"
 
+msgid "{by}, {on}"
+msgstr "{by}, {on}"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "Recargo de {categoryLabel} para la cantidad {quantity}"
 
@@ -1092,9 +1119,6 @@ msgstr "{errors, plural, one {# fila necesita corrección} other {# filas necesi
 
 msgid "{errors} failed"
 msgstr "{errors} falló"
-
-msgid "{estimateDays, plural, one {# day} other {# days}}"
-msgstr "{estimateDays, plural, one {# día} other {# días}}"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# fila excluida} other {# filas excluidas}}"
@@ -1533,7 +1557,7 @@ msgid "{who} reversed {amount} on {element}"
 msgstr "{who} Revirtió {amount} en {element}"
 
 msgid "{withoutPage, plural, one {# active person has no page yet and will not see the Implementation Hub until you load one.} other {# active people have no page yet and will not see the Implementation Hub until you load one.}}"
-msgstr ""
+msgstr "{withoutPage, plural, one {# persona activa aún no tiene página y no verá Implementation Hub hasta que le cargues una.} other {# personas activas aún no tienen página y no verán Implementation Hub hasta que les cargues una.}}"
 
 msgid "{years}yr"
 msgstr "{years}yr"
@@ -1849,6 +1873,9 @@ msgstr "Un aviso de cambio rastrea un cambio de ingeniería o manufactura contro
 
 msgid "A chargeable element below a control account that has an earned value technique, such as 0/100, 50/50 or Percent Complete."
 msgstr "Un elemento facturable por debajo de una cuenta de control que tiene una técnica de valor ganado, como 0/100, 50/50 o porcentaje completado."
+
+msgid "A checklist takes up to {PAGE_CHECKLIST_MAX_POINTS} points"
+msgstr "Una lista de verificación admite hasta {PAGE_CHECKLIST_MAX_POINTS} puntos"
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Una cuenta de compensación que mantiene el valor de bienes recibidos pero aún no facturados; la factura del proveedor la cancela."
@@ -2170,9 +2197,6 @@ msgstr "Se creará una nueva orden de compra para cada proveedor. Alternativamen
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "Se creará una nueva revisión utilizando una copia de la revisión actual"
-
-msgid "A new section at the end of the page, with its first card."
-msgstr "Una nueva sección al final de la página, con su primera tarjeta."
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "Una nueva orden de servicio copia la tarifa de facturación. Cada entrada de tiempo contabiliza su costo a la tarifa de costo."
@@ -3276,9 +3300,6 @@ msgstr "Agregar una fila"
 msgid "Add a row for each charge number you worked on."
 msgstr "Agregar una fila para cada número de cargo en el que trabajó."
 
-msgid "Add a section"
-msgstr "Agregar una sección"
-
 msgid "Add a step"
 msgstr "Agregar un paso"
 
@@ -3366,6 +3387,9 @@ msgstr "Agregar Cargo"
 msgid "Add Charge Number"
 msgstr "Agregar Número de Cargo"
 
+msgid "Add checklist"
+msgstr "Agregar lista de verificación"
+
 msgid "Add child"
 msgstr "Agregar hijo"
 
@@ -3416,6 +3440,9 @@ msgstr "Agregar entrada"
 
 msgid "Add Event"
 msgstr "Agregar Evento"
+
+msgid "Add field"
+msgstr "Agregar campo"
 
 msgid "Add filter"
 msgstr "Agregar filtro"
@@ -3613,9 +3640,6 @@ msgstr "Agregar regla desde la biblioteca"
 
 msgid "Add Sample"
 msgstr "Agregar muestra"
-
-msgid "Add section"
-msgstr "Agregar sección"
 
 msgid "Add Selector"
 msgstr "Agregar selector"
@@ -4272,9 +4296,6 @@ msgstr "Un Número de Cuenta Bancaria Internacional: una cadena que contiene el 
 msgid "An introduction for this person (optional)"
 msgstr "Una introducción para esta persona (opcional)"
 
-msgid "An introduction for this section (optional)"
-msgstr "Una introducción para esta sección (opcional)"
-
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "Una invitación está pendiente. Se hacen activas una vez que la aceptan."
 
@@ -4484,14 +4505,20 @@ msgstr "Otra unidad de almacenamiento dentro de la que está anidada esta (p. ej
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "Otro sistema está conectado a Ramp como su sistema contable"
 
+msgid "Answer"
+msgstr "Respuesta"
+
+msgid "Answer or status"
+msgstr "Respuesta o estado"
+
 msgid "Answer the priority set questionnaire"
 msgstr "Responder el cuestionario de conjuntos de prioridades"
 
 msgid "Answer what you can. Each answer moves Carbon features between categories, and the panel beside the questions shows what your company needs before go-live. \"Not sure\" moves nothing and is kept as an open question."
 msgstr "Responda lo que pueda. Cada respuesta mueve funciones de Carbon entre categorías, y el panel junto a las preguntas muestra lo que su empresa necesita antes de la puesta en marcha. «No sé» no mueve nada y se guarda como pregunta abierta."
 
-msgid "Answered"
-msgstr "Respondida"
+msgid "Answer:"
+msgstr "Respuesta:"
 
 msgid "Any"
 msgstr "Cualquiera"
@@ -5419,6 +5446,9 @@ msgstr "Ascendente"
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Pida a un administrador con permiso {0} que agregue el primer {1}."
 
+msgid "Ask the person for a file"
+msgstr "Pedir a la persona un archivo"
+
 msgid "Ask your Carbon admin to set up the Implementation Hub for you."
 msgstr "Pide a tu administrador de Carbon que configure el Centro de Implementación por ti."
 
@@ -5427,6 +5457,9 @@ msgstr "Se pregunta cuando {number} es {options}."
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "Pregunta a depreciación qué nueva ejecución para este período depreciaría ahora, y verifica ejecuciones en Borrador que terminan en el período. Crea la ejecución y contabilízala para que el período tenga su gasto de depreciación y depreciación acumulada. Omite con una razón si la depreciación no aplica este período."
+
+msgid "Asks for a file"
+msgstr "Pide un archivo"
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Pregunta al reconocimiento de ingresos qué reconocería ahora una nueva ejecución para este período — ingresos de facturas diferidas e ingresos por contrato — y verifica las ejecuciones en Borrador que contienen ingresos vencidos al final del período. Cree la ejecución y contabilícela para que los ingresos lleguen al libro mayor. Omita con una razón si nada debe ser reconocido."
@@ -5634,6 +5667,9 @@ msgstr "Adjuntar"
 
 msgid "Attach File"
 msgstr "Adjuntar archivo"
+
+msgid "Attach files"
+msgstr "Adjuntar archivos"
 
 msgid "Attach Job"
 msgstr "Adjuntar orden de trabajo"
@@ -7166,12 +7202,6 @@ msgstr "Tarjeta"
 msgid "Card Holder"
 msgstr "Titular de la Tarjeta"
 
-msgid "Card options"
-msgstr "Opciones de tarjeta"
-
-msgid "Card title"
-msgstr "Título de la tarjeta"
-
 msgid "Cards"
 msgstr "Tarjetas"
 
@@ -7380,6 +7410,9 @@ msgstr "Boletín de cambios"
 msgid "Changes"
 msgstr "Cambios"
 
+msgid "Changes to the item's title, details and answers show on every page that has it."
+msgstr "Los cambios en el título, los detalles y las respuestas del elemento se muestran en cada página que lo incluya."
+
 msgid "Changing the base currency converts no amounts"
 msgstr "Cambiar la moneda base no convierte ningún importe"
 
@@ -7559,6 +7592,9 @@ msgstr "Comprobando el programa del taller…"
 msgid "Checking the Stripe customer link…"
 msgstr "Verificando el enlace del cliente de Stripe…"
 
+msgid "Checklist"
+msgstr "Lista de verificación"
+
 msgid "Checkpoint ·"
 msgstr "Punto de control ·"
 
@@ -7637,6 +7673,12 @@ msgstr "Elegir un año fiscal"
 
 msgid "Choose a template"
 msgstr "Elegir una plantilla"
+
+msgid "Choose all that apply"
+msgstr "Elige todas las que correspondan"
+
+msgid "Choose an answer"
+msgstr "Elige una respuesta"
 
 msgid "Choose an item"
 msgstr "Elegir un artículo"
@@ -12561,6 +12603,9 @@ msgstr "Editar {name}"
 msgid "Edit {riskTitle}"
 msgstr "Editar {riskTitle}"
 
+msgid "Edit {title}"
+msgstr "Editar {title}"
+
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Editar Flujo de Trabajo <0>Problema</0>"
 
@@ -12575,6 +12620,9 @@ msgstr "Editar Cuenta"
 
 msgid "Edit Action"
 msgstr "Editar acción"
+
+msgid "Edit answer"
+msgstr "Editar respuesta"
 
 msgid "Edit API Key"
 msgstr "Editar Clave API"
@@ -12602,6 +12650,9 @@ msgstr "Editar Categoría de Atributo"
 
 msgid "Edit Bank Account"
 msgstr "Editar cuenta bancaria"
+
+msgid "Edit card"
+msgstr "Editar tarjeta"
 
 msgid "Edit Category"
 msgstr "Editar Categoría"
@@ -13423,6 +13474,9 @@ msgstr "Ingrese el código de 6 dígitos de su aplicación de autenticación par
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr "Introduzca el importe que cobró el proveedor. La diferencia se añade como línea en la cuenta de redondeo, hasta {0}. El resto de líneas conserva sus precios."
+
+msgid "Enter the due date in full"
+msgstr "Escribe la fecha de vencimiento completa"
 
 msgid "Enter the estimate as a number of days"
 msgstr "Introduzca la estimación como número de días"
@@ -14706,6 +14760,9 @@ msgstr "Información del campo"
 msgid "Field Mapping"
 msgstr "Mapeo de campos"
 
+msgid "Field type"
+msgstr "Tipo de campo"
+
 msgid "Fields"
 msgstr "Campos"
 
@@ -14720,6 +14777,9 @@ msgstr "Extensión de Archivo"
 
 msgid "File is already in the selected bucket"
 msgstr "El archivo ya está en el bucket seleccionado"
+
+msgid "File requested"
+msgstr "Archivo solicitado"
 
 #. placeholder {0}: ( logo.size / 1024 / 1024 ).toFixed(2)
 msgid "File size exceeds {maxSizeMB}MB limit. Current size: {0}MB"
@@ -15540,17 +15600,20 @@ msgstr "Configuración en curso"
 msgid "Give every asset a payment."
 msgstr "Dar a cada activo un pago."
 
+msgid "Give every field a label and a value"
+msgstr "Dale a cada campo una etiqueta y un valor"
+
 msgid "Give it an owner and a date"
 msgstr "Asígnale un propietario y una fecha"
+
+msgid "Give the card a title"
+msgstr "Dale un título a la tarjeta"
 
 msgid "Give the lease a <0>fixed duration on its Details step</0>."
 msgstr "Dale al arrendamiento una <0>duración fija en su paso de Detalles</0>."
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "Dale al hito una fecha de inicio y una fecha de fin para ver su consumo."
-
-msgid "Give the new section a title"
-msgstr "Dé un título a la nueva sección"
 
 msgid "GL"
 msgstr "Libro mayor"
@@ -16489,7 +16552,7 @@ msgid "Implementation Hub 2.0 is off for this company. Add it to the implementat
 msgstr "El Centro de Implementación 2.0 está desactivado para esta empresa. Primero agrégala al flag implementation-hub-2 en el panel CSA."
 
 msgid "Implementation Hub 2.0 is on for this company. After enrolling, each person sees it once you give them a page."
-msgstr ""
+msgstr "Implementation Hub 2.0 está activado para esta empresa. Tras inscribirla, cada persona lo verá cuando le cargues una página."
 
 msgid "Implementation Hub Settings"
 msgstr "Configuración del Centro de Implementación"
@@ -16677,7 +16740,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "Las categorías inactivas no se pueden seleccionar para nuevo tiempo"
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "Las unidades inactivas no se ofrecen al elegir una unidad."
 
 msgid "inbound customer requests for quote, converted to quotes"
 msgstr "solicitudes de cotización de clientes convertidas en cotizaciones"
@@ -17897,6 +17960,9 @@ msgstr "Mantener datos de demostración"
 msgid "Keep demo data and delete your previous data?"
 msgstr "¿Mantener datos de demostración y eliminar los datos anteriores?"
 
+msgid "Keep each point under 500 characters"
+msgstr "Mantén cada punto por debajo de 500 caracteres"
+
 msgid "Keep editing"
 msgstr "Seguir editando"
 
@@ -18945,6 +19011,12 @@ msgstr "Logos"
 #. placeholder {0}: auditConfig.retentionDays
 msgid "Logs older than {0} days are automatically archived."
 msgstr "Los registros más antiguos que {0} días se archivan automáticamente."
+
+msgid "Long answer"
+msgstr "Respuesta larga"
+
+msgid "Long answer: answered in the card, not in its row"
+msgstr "Respuesta larga: se responde en la tarjeta, no en su fila"
 
 msgid "Long Description"
 msgstr "Descripción Larga"
@@ -20129,12 +20201,6 @@ msgstr "Mover elemento"
 msgid "Move Out of Sub-Assembly"
 msgstr "Sacar de Sub-ensamblaje"
 
-msgid "Move section down"
-msgstr "Mover sección hacia abajo"
-
-msgid "Move section up"
-msgstr "Mover sección hacia arriba"
-
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Mover parte de la cantidad a una nueva línea de disposición para que MRB pueda decidir cada porción por separado (por ejemplo, desperdiciar parte, retrabajar parte)."
 
@@ -20152,9 +20218,6 @@ msgstr "Mover a otra unidad de almacenamiento"
 
 msgid "Move to Group"
 msgstr "Mover a Grupo"
-
-msgid "Move to section"
-msgstr "Mover a sección"
 
 msgid "Move to tax codes"
 msgstr "Mover a códigos de impuesto"
@@ -20359,7 +20422,11 @@ msgstr "Se necesitan las horas de preparación y mano de obra que el programa re
 msgid "Needed when the date is before the entry window"
 msgstr "Necesario cuando la fecha es anterior a la ventana de entrada"
 
-#. placeholder {0}: waitingFor.join(", ")
+#. placeholder {0}: view.waitingFor.join(", ")
+msgid "Needs {0} first"
+msgstr "Requiere primero {0}"
+
+#. placeholder {0}: view.waitingFor.join(", ")
 msgid "Needs {0} first."
 msgstr "Necesita {0} primero."
 
@@ -21452,6 +21519,9 @@ msgstr "Sin archivos para este elemento."
 msgid "No files uploaded"
 msgstr "No hay archivos cargados"
 
+msgid "No files yet."
+msgstr "Aún no hay archivos."
+
 msgid "No findings"
 msgstr "Sin hallazgos"
 
@@ -22429,6 +22499,9 @@ msgstr "Notas para {taskTitle}"
 msgid "Notes for {title}"
 msgstr "Notas para {title}"
 
+msgid "Notes, a due date, fields and file requests are added by editing the card."
+msgstr "Las notas, una fecha de vencimiento, los campos y las solicitudes de archivos se agregan editando la tarjeta."
+
 msgid "Nothing"
 msgstr "Nada"
 
@@ -22469,9 +22542,6 @@ msgstr "Nada aquí aún"
 msgid "Nothing in the archive"
 msgstr "Nada en el archivo"
 
-msgid "Nothing in this section yet."
-msgstr "Nada en esta sección todavía."
-
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
 msgstr "Todavía no se elimina nada. La solicitud pasa a las aprobaciones de los demás administradores y se elimina cuando uno de ellos la apruebe."
 
@@ -22499,6 +22569,9 @@ msgstr "Nada coincide con la búsqueda o filtro"
 
 msgid "Nothing needs stock"
 msgstr "No hay nada que necesite existencias"
+
+msgid "Nothing on this page yet."
+msgstr "Aún no hay nada en esta página."
 
 msgid "Nothing owed"
 msgstr "Nada adeudado"
@@ -22875,6 +22948,9 @@ msgstr "Un periodo es un mes desde la fecha de inicio."
 msgid "One person's page as JSON. It replaces any page they already have."
 msgstr "La página de una persona en JSON. Reemplaza cualquier página que ya tenga."
 
+msgid "One point per line"
+msgstr "Un punto por línea"
+
 msgid "One promise per line, in plain words."
 msgstr "Una promesa por línea, con palabras sencillas."
 
@@ -23067,6 +23143,10 @@ msgstr "Abrir"
 
 msgid "Open ({paymentCurrency})"
 msgstr "Abierto ({paymentCurrency})"
+
+#. placeholder {0}: view.title
+msgid "Open {0}"
+msgstr "Abrir {0}"
 
 #. placeholder {0}: readableId ?? ""
 msgid "Open {0} details"
@@ -23481,6 +23561,9 @@ msgstr "Opciones"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "Opciones para {0}"
+
+msgid "Options for {title}"
+msgstr "Opciones para {title}"
 
 msgid "Options, one per line (leave empty for a typed answer)"
 msgstr "Opciones, una por línea (dejar vacío para una respuesta escrita)"
@@ -24276,10 +24359,10 @@ msgid "People"
 msgstr "Personas"
 
 msgid "People with a page see the Implementation Hub."
-msgstr ""
+msgstr "Las personas con una página ven Implementation Hub."
 
 msgid "People with a page will see it in Implementation Hub 2.0 instead of Implementation Hub 1.0. Everyone else will see no Implementation Hub. Ticks, answers and rows carry over."
-msgstr ""
+msgstr "Las personas con una página lo verán en Implementation Hub 2.0 en lugar de Implementation Hub 1.0. El resto no verá Implementation Hub. Las marcas, respuestas y filas se conservan."
 
 msgid "Per"
 msgstr "Por"
@@ -24837,6 +24920,9 @@ msgstr "Número de PO (sin revisión)"
 
 msgid "PO PDF"
 msgstr "PDF de PO"
+
+msgid "Points, one per line"
+msgstr "Puntos, uno por línea"
 
 msgid "Policy"
 msgstr "Política"
@@ -27166,6 +27252,9 @@ msgstr "Quitar datos dañados y restaurar"
 msgid "Remove Employee"
 msgstr "Eliminar Empleado"
 
+msgid "Remove field"
+msgstr "Quitar campo"
+
 msgid "Remove filter"
 msgstr "Quitar filtro"
 
@@ -27223,9 +27312,6 @@ msgstr "Quitar PDF"
 msgid "Remove row"
 msgstr "Quitar fila"
 
-msgid "Remove section"
-msgstr "Quitar sección"
-
 msgid "Remove slide"
 msgstr "Quitar diapositiva"
 
@@ -27275,6 +27361,9 @@ msgstr "Quitar Video"
 
 msgid "Removed"
 msgstr "Eliminado"
+
+msgid "Removed from the Implementation Hub"
+msgstr "Quitado de Implementation Hub"
 
 msgid "Removed line"
 msgstr "Línea quitada"
@@ -29325,9 +29414,6 @@ msgstr "Línea 38 de la Sección E, QREs de salarios de ejecutivos: {0}"
 msgid "Section saved"
 msgstr "Sección guardada"
 
-msgid "Section title"
-msgstr "Título de la sección"
-
 msgid "Secure your account with 2FA"
 msgstr "Asegura tu cuenta con 2FA"
 
@@ -29916,8 +30002,9 @@ msgstr "Serie"
 msgid "Serves requirement"
 msgstr "Cubre el requisito"
 
-msgid "Serves: {serves}"
-msgstr "Cubre: {serves}"
+#. placeholder {0}: view.serves
+msgid "Serves: {0}"
+msgstr "Para: {0}"
 
 msgid "service"
 msgstr "servicio"
@@ -30711,6 +30798,9 @@ msgstr "Se muestra al pie de cada página."
 
 msgid "Shown to the customer on the invoice"
 msgstr "Se muestra al cliente en la factura"
+
+msgid "Shown to the person in the card. A checklist's points are ticked by them, and the card is marked done once every point is ticked."
+msgstr "Se muestra a la persona en la tarjeta. La persona marca los puntos de la lista de verificación, y la tarjeta se marca como terminada cuando todos los puntos están marcados."
 
 msgid "Shown to the user when this rule fails."
 msgstr "Mostrado al usuario cuando falla esta regla."
@@ -32939,8 +33029,8 @@ msgstr "El usuario de Carbon responsable de esta relación con el proveedor; los
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "El usuario de Carbon que es propietario de esta RFQ; las respuestas del proveedor y los recordatorios se enrutan a ellos."
 
-msgid "The card goes at the end of the section."
-msgstr "La tarjeta va al final de la sección."
+msgid "The card goes at the end of the page."
+msgstr "La tarjeta va al final de la página."
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "El transportista y el servicio por el cual sale un envío, proporcionando la plantilla de URL de rastreo que convierte un número de rastreo en un enlace y a donde se registran los cargos de envío de la cuenta."
@@ -33024,7 +33114,7 @@ msgid "The company template stays the same."
 msgstr "La plantilla de la empresa no cambia."
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling puts the company on Implementation Hub 2.0. Each person sees it once you load their page."
-msgstr ""
+msgstr "Las personas de la empresa aún no ven Implementation Hub. Inscribir a la empresa la pasa a Implementation Hub 2.0. Cada persona lo verá cuando le cargues su página."
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 1.0, because Implementation Hub 2.0 is off for this company, and emails the company's admins."
 msgstr "El personal de la empresa todavía no ve el Centro de Implementación. Inscribirla les muestra el Centro de Implementación 1.0, porque el 2.0 está desactivado para esta empresa, y envía un correo a sus administradores."
@@ -34052,9 +34142,6 @@ msgstr "El cronograma utilizado para distribuir el costo de este activo durante 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "El programador utiliza la primera Regla a continuación que se aplica, luego resta el Tiempo de paro y la dotación de personal."
 
-msgid "The section and its cards leave this page. Items on it stay in the catalogue and can be added again."
-msgstr "La sección y sus tarjetas salen de esta página. Los elementos de la sección permanecen en el catálogo y pueden volver a añadirse."
-
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "La clase de activo predefinida para unidades que construyes o capitalizas para alquilar en lugar de vender; se contabiliza en su propia cuenta de activo de Flota de alquiler y cuentas de depreciación acumulada, y cada activo vinculado a un artículo aparece en el Registro de flota."
 
@@ -35072,6 +35159,9 @@ msgstr "Miniatura cargada"
 msgid "Thursday"
 msgstr "Jueves"
 
+msgid "Tick every point of the checklist first"
+msgstr "Marca primero todos los puntos de la lista de verificación"
+
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Vincular envíos a una factura sin re-ingreso de datos"
 
@@ -35891,6 +35981,9 @@ msgstr "Escribe para buscar en tu espacio de trabajo"
 
 msgid "Type:"
 msgstr "Tipo:"
+
+msgid "Typed answer"
+msgstr "Respuesta escrita"
 
 msgid "Types"
 msgstr "Tipos"
@@ -38426,6 +38519,9 @@ msgstr "Tu cuenta permanece segura incluso si tu inicio de sesión es robado"
 
 msgid "Your answer"
 msgstr "Su respuesta"
+
+msgid "Your answer: pick all that apply"
+msgstr "Tu respuesta: elige todas las que correspondan"
 
 msgid "Your backups"
 msgstr "Tus copias de seguridad"

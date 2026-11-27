@@ -17,6 +17,7 @@ export * from "./overlay";
 export * from "./page";
 export * from "./page-board";
 export * from "./page-edit";
+export * from "./page-files";
 export * from "./page-prompt";
 export * from "./priority-set";
 export * from "./question";

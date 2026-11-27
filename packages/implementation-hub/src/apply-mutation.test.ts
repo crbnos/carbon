@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   applyHubMutation,
+  attachFileRefusal,
   parseItemKeys,
   parseJsonObject,
   parsePlacement,
@@ -613,5 +614,43 @@ describe("addRow placed on a page", () => {
     ["text that is not JSON", "{"]
   ])("refuses %s", (_, json) => {
     expect(parsePlacement(json)).toHaveProperty("error");
+  });
+});
+
+describe("attachFileRefusal", () => {
+  const asks = { item: "setup:parts", askForFile: true as const };
+  const plain = { item: "setup:parts" };
+
+  it("lets a person attach to a card of their own page that asks for a file", () => {
+    expect(
+      attachFileRefusal(
+        { isInternal: false, userId: "user_1" },
+        { memberId: "user_1", card: asks }
+      )
+    ).toBeNull();
+  });
+
+  it("keeps a person off another person's page and off cards that ask for none", () => {
+    expect(
+      attachFileRefusal(
+        { isInternal: false, userId: "user_1" },
+        { memberId: "user_2", card: asks }
+      )
+    ).toBe("You can attach files to your own page only");
+    expect(
+      attachFileRefusal(
+        { isInternal: false, userId: "user_1" },
+        { memberId: "user_1", card: plain }
+      )
+    ).toBe("This card does not ask for a file");
+  });
+
+  it("lets Carbon staff attach to any card of any page", () => {
+    expect(
+      attachFileRefusal(
+        { isInternal: true, userId: "staff" },
+        { memberId: "user_2", card: plain }
+      )
+    ).toBeNull();
   });
 });

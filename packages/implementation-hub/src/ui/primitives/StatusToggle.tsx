@@ -16,6 +16,8 @@ export function StatusToggle({
   inactiveLabel,
   onToggle,
   withIcon = true,
+  isDisabled = false,
+  title,
   className
 }: {
   active: boolean;
@@ -23,14 +25,19 @@ export function StatusToggle({
   inactiveLabel: string;
   onToggle: () => void;
   withIcon?: boolean;
+  // Shown, not changeable; `title` says why.
+  isDisabled?: boolean;
+  title?: string;
   className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onToggle}
+      disabled={isDisabled}
+      title={title}
       className={cn(
-        "shrink-0 cursor-pointer active:scale-[0.96] transition-transform",
+        "shrink-0 cursor-pointer active:scale-[0.96] transition-transform disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
         className
       )}
     >

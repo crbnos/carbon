@@ -125,6 +125,10 @@ msgstr "{0, plural, one {# 天的松弛} other {# 天的松弛}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
 
+#. placeholder {0}: customization.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr "{0, plural, one {# 天} other {# 天}}"
+
 #. placeholder {0}: -daysLeft
 msgid "{0, plural, one {# day} other {# days}} past {due}"
 msgstr "{0, plural, one {逾期 # 天} other {逾期 # 天}}（相对于 {due}）"
@@ -136,6 +140,10 @@ msgstr "{0, plural, one {# 元素已更改} other {# 元素已更改}}"
 #. placeholder {0}: baseline.elementCount
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr "{0, plural, one {# 元素} other {# 元素}}"
+
+#. placeholder {0}: files.length
+msgid "{0, plural, one {# file} other {# files}}"
+msgstr "{0, plural, one {# 个文件} other {# 个文件}}"
 
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
@@ -189,6 +197,10 @@ msgstr "{0, plural, one {该工艺的 # 道工序无法排程。预测显示原�
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
 msgstr "{0, plural, one {# 工序} other {# 工序}}"
+
+#. placeholder {0}: question.options.length
+msgid "{0, plural, one {# option} other {# options}}"
+msgstr "{0, plural, one {# 个选项} other {# 个选项}}"
 
 #. placeholder {0}: progress.overdue
 msgid "{0, plural, one {# overdue} other {# overdue}}"
@@ -265,6 +277,10 @@ msgstr "{0, plural, one {已复制 # 个分配} other {已复制 # 个分配}}"
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {Creates # element} other {Creates # elements}}"
 msgstr "{0, plural, one {创建 # 个元素} other {创建 # 个元素}}"
+
+#. placeholder {0}: view.estimateDays
+msgid "{0, plural, one {Estimate # day} other {Estimate # days}}"
+msgstr "{0, plural, one {预计 # 天} other {预计 # 天}}"
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -534,9 +550,17 @@ msgstr "{0} 是 {1}，不是草稿或已计划"
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} 已关闭。其时间无法更改。"
 
+#. placeholder {0}: file.name
+msgid "{0} is larger than 50 MB"
+msgstr "{0} 超过 50 MB"
+
 #. placeholder {0}: chipName(active.id)
 msgid "{0} is no longer over a cell"
 msgstr "{0} 不再位于单元格上"
+
+#. placeholder {0}: file.name
+msgid "{0} is not a type of file the page takes"
+msgstr "页面不接受 {0} 这种类型的文件"
 
 #. placeholder {0}: chipName(active.id)
 #. placeholder {1}: placeName(over.data.current)
@@ -927,6 +951,9 @@ msgstr "{bucket3Start}-{b3}天"
 msgid "{bucket4Start}+ Days"
 msgstr "{bucket4Start}天以上"
 
+msgid "{by}, {on}"
+msgstr "{by}，{on}"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel} 加价，数量 {quantity}"
 
@@ -1092,9 +1119,6 @@ msgstr "{errors, plural, one {# 行需要修复} other {# 行需要修复}}"
 
 msgid "{errors} failed"
 msgstr "{errors} 失败"
-
-msgid "{estimateDays, plural, one {# day} other {# days}}"
-msgstr "{estimateDays, plural, one {# 天} other {# 天}}"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
@@ -1533,7 +1557,7 @@ msgid "{who} reversed {amount} on {element}"
 msgstr "需要后续跟进 {warnings}"
 
 msgid "{withoutPage, plural, one {# active person has no page yet and will not see the Implementation Hub until you load one.} other {# active people have no page yet and will not see the Implementation Hub until you load one.}}"
-msgstr ""
+msgstr "{withoutPage, plural, one {# 位当前人员尚未分配页面，在您为其分配页面之前，将看不到实施中心。} other {# 位当前人员尚未分配页面，在您为其分配页面之前，将看不到实施中心。}}"
 
 msgid "{years}yr"
 msgstr "{years}年"
@@ -1849,6 +1873,9 @@ msgstr "变更通知跟踪通过评审和实施的受控工程或制造变更。
 
 msgid "A chargeable element below a control account that has an earned value technique, such as 0/100, 50/50 or Percent Complete."
 msgstr "控制账户下的应计费用单位，采用挣值法，如 0/100、50/50 或百分比完成。"
+
+msgid "A checklist takes up to {PAGE_CHECKLIST_MAX_POINTS} points"
+msgstr "清单最多可包含 {PAGE_CHECKLIST_MAX_POINTS} 个要点"
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "持有已收但未开票商品价值的结算账户；供应商发票将其结清。"
@@ -2170,9 +2197,6 @@ msgstr "将为每个供应商创建一个新的采购订单。或者，您可以
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "将使用当前修订版的副本创建新的修订版"
-
-msgid "A new section at the end of the page, with its first card."
-msgstr "页面末尾的新分区，包含其第一张卡片。"
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "新的服务工单复制账单费率。每个时间条目以成本费率过账其成本。"
@@ -3276,9 +3300,6 @@ msgstr "添加一行"
 msgid "Add a row for each charge number you worked on."
 msgstr "为你工作的每个计费号添加一行。"
 
-msgid "Add a section"
-msgstr "添加分区"
-
 msgid "Add a step"
 msgstr "添加步骤"
 
@@ -3366,6 +3387,9 @@ msgstr "添加 费用"
 msgid "Add Charge Number"
 msgstr "添加计费代码"
 
+msgid "Add checklist"
+msgstr "添加清单"
+
 msgid "Add child"
 msgstr "添加子项"
 
@@ -3416,6 +3440,9 @@ msgstr "添加条目"
 
 msgid "Add Event"
 msgstr "添加事件"
+
+msgid "Add field"
+msgstr "添加字段"
 
 msgid "Add filter"
 msgstr "添加筛选条件"
@@ -3613,9 +3640,6 @@ msgstr "从库中添加规则"
 
 msgid "Add Sample"
 msgstr "添加样品"
-
-msgid "Add section"
-msgstr "添加分区"
 
 msgid "Add Selector"
 msgstr "添加选择器"
@@ -4272,9 +4296,6 @@ msgstr "国际银行账户号码：包含国家、银行、支行和账户的一
 msgid "An introduction for this person (optional)"
 msgstr "此人员的简介（可选）"
 
-msgid "An introduction for this section (optional)"
-msgstr "此分区的简介（可选）"
-
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "邀请待处理。他们接受后就会启用"
 
@@ -4484,14 +4505,20 @@ msgstr "此存储单元嵌套在其中的另一个存储单元（例如，架内
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "另一个系统已连接到 Ramp 作为其会计系统"
 
+msgid "Answer"
+msgstr "答案"
+
+msgid "Answer or status"
+msgstr "答案或状态"
+
 msgid "Answer the priority set questionnaire"
 msgstr "回答优先级集问卷"
 
 msgid "Answer what you can. Each answer moves Carbon features between categories, and the panel beside the questions shows what your company needs before go-live. \"Not sure\" moves nothing and is kept as an open question."
 msgstr "尽量回答。每个答案都会将 Carbon 功能调整到不同类别，问题旁边的面板会显示上线前贵公司需要的内容。选择“不确定”不会调整任何功能，并将其保留为待解决问题。"
 
-msgid "Answered"
-msgstr "已回答"
+msgid "Answer:"
+msgstr "答案："
 
 msgid "Any"
 msgstr "任何"
@@ -5419,6 +5446,9 @@ msgstr "升序"
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "请求具有{0}权限的管理员添加第一个{1}。"
 
+msgid "Ask the person for a file"
+msgstr "要求对方提供文件"
+
 msgid "Ask your Carbon admin to set up the Implementation Hub for you."
 msgstr "请让您的 Carbon 管理员为您设置实施中心。"
 
@@ -5427,6 +5457,9 @@ msgstr "当 {number} 为 {options} 时提问。"
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "向折旧查询本期的新运行现在会折旧什么，并检查本期结束的草稿运行。创建运行并过账，以便本期具有其折旧费用和累计折旧。如果本期不适用折旧，请跳过并说明理由。"
+
+msgid "Asks for a file"
+msgstr "要求提供文件"
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "询问收入确认本期的新运行现在应确认什么——递延发票收入和合同收入——并检查是否有在期末前应确认收入的草稿运行。创建运行并过账，以便收入到达总账。如果不应确认任何内容，请跳过并说明原因。"
@@ -5633,6 +5666,9 @@ msgid "Attach"
 msgstr "关联"
 
 msgid "Attach File"
+msgstr "附加文件"
+
+msgid "Attach files"
 msgstr "附加文件"
 
 msgid "Attach Job"
@@ -7166,12 +7202,6 @@ msgstr "卡片"
 msgid "Card Holder"
 msgstr "持卡人"
 
-msgid "Card options"
-msgstr "卡片选项"
-
-msgid "Card title"
-msgstr "卡片标题"
-
 msgid "Cards"
 msgstr "卡片"
 
@@ -7380,6 +7410,9 @@ msgstr "更新日志通讯"
 msgid "Changes"
 msgstr "更改"
 
+msgid "Changes to the item's title, details and answers show on every page that has it."
+msgstr "对卡片标题、详情和答案的更改，将显示在所有包含该卡片的页面上。"
+
 msgid "Changing the base currency converts no amounts"
 msgstr "更改本位货币不会转换任何金额"
 
@@ -7559,6 +7592,9 @@ msgstr "正在检查车间排程…"
 msgid "Checking the Stripe customer link…"
 msgstr "正在检查 Stripe 客户链接…"
 
+msgid "Checklist"
+msgstr "清单"
+
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
 
@@ -7637,6 +7673,12 @@ msgstr "选择税年"
 
 msgid "Choose a template"
 msgstr "选择模板"
+
+msgid "Choose all that apply"
+msgstr "选择所有适用项"
+
+msgid "Choose an answer"
+msgstr "选择答案"
 
 msgid "Choose an item"
 msgstr "选择物料"
@@ -12561,6 +12603,9 @@ msgstr "编辑{name}"
 msgid "Edit {riskTitle}"
 msgstr "编辑{riskTitle}"
 
+msgid "Edit {title}"
+msgstr "编辑 {title}"
+
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "编辑<0>问题</0>工作流"
 
@@ -12575,6 +12620,9 @@ msgstr "编辑账户"
 
 msgid "Edit Action"
 msgstr "编辑操作"
+
+msgid "Edit answer"
+msgstr "编辑答案"
 
 msgid "Edit API Key"
 msgstr "编辑API密钥"
@@ -12602,6 +12650,9 @@ msgstr "编辑属性类别"
 
 msgid "Edit Bank Account"
 msgstr "编辑银行账户"
+
+msgid "Edit card"
+msgstr "编辑卡片"
 
 msgid "Edit Category"
 msgstr "编辑分类"
@@ -13423,6 +13474,9 @@ msgstr "输入您的身份验证器应用中的 6 位数字代码以继续。"
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr "请输入供应商收取的金额。差额将作为一行添加到舍入科目，上限为 {0}。其他行保持原价格。"
+
+msgid "Enter the due date in full"
+msgstr "请输入完整的到期日"
 
 msgid "Enter the estimate as a number of days"
 msgstr "以天数输入估算"
@@ -14706,6 +14760,9 @@ msgstr "字段信息"
 msgid "Field Mapping"
 msgstr "字段映射"
 
+msgid "Field type"
+msgstr "字段类型"
+
 msgid "Fields"
 msgstr "字段"
 
@@ -14720,6 +14777,9 @@ msgstr "文件扩展名"
 
 msgid "File is already in the selected bucket"
 msgstr "文件已在选定的存储桶中"
+
+msgid "File requested"
+msgstr "已请求文件"
 
 #. placeholder {0}: ( logo.size / 1024 / 1024 ).toFixed(2)
 msgid "File size exceeds {maxSizeMB}MB limit. Current size: {0}MB"
@@ -15540,17 +15600,20 @@ msgstr "正在设置"
 msgid "Give every asset a payment."
 msgstr "为每项资产分配付款。"
 
+msgid "Give every field a label and a value"
+msgstr "每个字段都需填写标签和值"
+
 msgid "Give it an owner and a date"
 msgstr "给它分配一个负责人和截止日期"
+
+msgid "Give the card a title"
+msgstr "请为卡片添加标题"
 
 msgid "Give the lease a <0>fixed duration on its Details step</0>."
 msgstr "在其详细信息步骤中为租赁指定<0>固定期限</0>。"
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "给里程碑设置开始日期和结束日期以查看其消耗。"
-
-msgid "Give the new section a title"
-msgstr "为新章节设置标题"
 
 msgid "GL"
 msgstr "总账"
@@ -16489,7 +16552,7 @@ msgid "Implementation Hub 2.0 is off for this company. Add it to the implementat
 msgstr "本公司未开启实施中心 2.0。请先在 CSA 仪表板中将其添加到 implementation-hub-2 标志。"
 
 msgid "Implementation Hub 2.0 is on for this company. After enrolling, each person sees it once you give them a page."
-msgstr ""
+msgstr "本公司已启用实施中心 2.0。加入后，您为每位人员分配页面，该人员即可看到实施中心。"
 
 msgid "Implementation Hub Settings"
 msgstr "实施中心设置"
@@ -16677,7 +16740,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "已停用的分类无法为新工时选择"
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "选择计量单位时不提供已停用的单位。"
 
 msgid "inbound customer requests for quote, converted to quotes"
 msgstr "来自客户的询价请求，转为报价单"
@@ -17897,6 +17960,9 @@ msgstr "保留演示数据"
 msgid "Keep demo data and delete your previous data?"
 msgstr "保留演示数据并删除您之前的数据？"
 
+msgid "Keep each point under 500 characters"
+msgstr "每个要点请控制在 500 个字符以内"
+
 msgid "Keep editing"
 msgstr "继续编辑"
 
@@ -18945,6 +19011,12 @@ msgstr "徽标"
 #. placeholder {0}: auditConfig.retentionDays
 msgid "Logs older than {0} days are automatically archived."
 msgstr "超过{0}天的日志将自动归档。"
+
+msgid "Long answer"
+msgstr "长文本回答"
+
+msgid "Long answer: answered in the card, not in its row"
+msgstr "长文本回答：在卡片中作答，而非在其所在行中"
 
 msgid "Long Description"
 msgstr "长描述"
@@ -20129,12 +20201,6 @@ msgstr "移动项目"
 msgid "Move Out of Sub-Assembly"
 msgstr "从子装配移出"
 
-msgid "Move section down"
-msgstr "下移章节"
-
-msgid "Move section up"
-msgstr "上移章节"
-
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "将部分数量移动到新的处置行，以便MRB可以分别决定每一部分（例如报废部分、返工部分）。"
 
@@ -20152,9 +20218,6 @@ msgstr "移动到其他存储单元"
 
 msgid "Move to Group"
 msgstr "移动到组"
-
-msgid "Move to section"
-msgstr "移至章节"
 
 msgid "Move to tax codes"
 msgstr "转移到税码"
@@ -20359,7 +20422,11 @@ msgstr "需要的是排程在该工作站该天安排的换型和人工小时数
 msgid "Needed when the date is before the entry window"
 msgstr "当日期在输入窗口之前时需要"
 
-#. placeholder {0}: waitingFor.join(", ")
+#. placeholder {0}: view.waitingFor.join(", ")
+msgid "Needs {0} first"
+msgstr "需先完成 {0}"
+
+#. placeholder {0}: view.waitingFor.join(", ")
 msgid "Needs {0} first."
 msgstr "需先完成 {0}。"
 
@@ -21452,6 +21519,9 @@ msgstr "此项目没有文件。"
 msgid "No files uploaded"
 msgstr "未上传任何文件"
 
+msgid "No files yet."
+msgstr "暂无文件。"
+
 msgid "No findings"
 msgstr "无检查结果"
 
@@ -22429,6 +22499,9 @@ msgstr "{taskTitle} 的备注"
 msgid "Notes for {title}"
 msgstr "{title} 的备注"
 
+msgid "Notes, a due date, fields and file requests are added by editing the card."
+msgstr "备注、到期日、字段和文件请求需通过编辑卡片添加。"
+
 msgid "Nothing"
 msgstr "无"
 
@@ -22469,9 +22542,6 @@ msgstr "暂无内容"
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
-msgid "Nothing in this section yet."
-msgstr "本节暂无内容。"
-
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
 msgstr "目前尚未删除任何内容。该请求将提交至其他管理员审批，经其中一位审批通过后将被删除。"
 
@@ -22499,6 +22569,9 @@ msgstr "没有匹配搜索或筛选的内容"
 
 msgid "Nothing needs stock"
 msgstr "没有需要库存的物料"
+
+msgid "Nothing on this page yet."
+msgstr "此页面暂无内容。"
 
 msgid "Nothing owed"
 msgstr "没有欠任何东西"
@@ -22875,6 +22948,9 @@ msgstr "一个期间为从开始日期起的一个月。"
 msgid "One person's page as JSON. It replaces any page they already have."
 msgstr "单个人员的页面（JSON 格式）。将替换其现有页面。"
 
+msgid "One point per line"
+msgstr "每行一个要点"
+
 msgid "One promise per line, in plain words."
 msgstr "每行一项承诺，用通俗的语言表述。"
 
@@ -23067,6 +23143,10 @@ msgstr "未结"
 
 msgid "Open ({paymentCurrency})"
 msgstr "未结 ({paymentCurrency})"
+
+#. placeholder {0}: view.title
+msgid "Open {0}"
+msgstr "打开 {0}"
 
 #. placeholder {0}: readableId ?? ""
 msgid "Open {0} details"
@@ -23481,6 +23561,9 @@ msgstr "选项"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "{0} 的选项"
+
+msgid "Options for {title}"
+msgstr "{title} 的选项"
 
 msgid "Options, one per line (leave empty for a typed answer)"
 msgstr "选项，每行一个（留空则为手动输入答案）"
@@ -24276,10 +24359,10 @@ msgid "People"
 msgstr "人员"
 
 msgid "People with a page see the Implementation Hub."
-msgstr ""
+msgstr "拥有页面的人员可以看到实施中心。"
 
 msgid "People with a page will see it in Implementation Hub 2.0 instead of Implementation Hub 1.0. Everyone else will see no Implementation Hub. Ticks, answers and rows carry over."
-msgstr ""
+msgstr "拥有页面的人员将在实施中心 2.0 中看到实施中心，而非 1.0。其他人员将看不到实施中心。勾选状态、答案和行将保留。"
 
 msgid "Per"
 msgstr "每"
@@ -24837,6 +24920,9 @@ msgstr "采购订单编号（不含修订版）"
 
 msgid "PO PDF"
 msgstr "采购订单 PDF"
+
+msgid "Points, one per line"
+msgstr "要点，每行一个"
 
 msgid "Policy"
 msgstr "政策"
@@ -27166,6 +27252,9 @@ msgstr "移除损坏数据并恢复"
 msgid "Remove Employee"
 msgstr "移除员工"
 
+msgid "Remove field"
+msgstr "移除字段"
+
 msgid "Remove filter"
 msgstr "移除筛选"
 
@@ -27223,9 +27312,6 @@ msgstr "移除 PDF"
 msgid "Remove row"
 msgstr "移除行"
 
-msgid "Remove section"
-msgstr "移除章节"
-
 msgid "Remove slide"
 msgstr "移除幻灯片"
 
@@ -27275,6 +27361,9 @@ msgstr "移除视频"
 
 msgid "Removed"
 msgstr "已移除"
+
+msgid "Removed from the Implementation Hub"
+msgstr "已从实施中心移除"
 
 msgid "Removed line"
 msgstr "已移除的行"
@@ -29325,9 +29414,6 @@ msgstr "第E部分第38行，管理人员工资QRE：{0}"
 msgid "Section saved"
 msgstr "部分已保存"
 
-msgid "Section title"
-msgstr "章节标题"
-
 msgid "Secure your account with 2FA"
 msgstr "使用2FA保护您的账户"
 
@@ -29916,8 +30002,9 @@ msgstr "序列"
 msgid "Serves requirement"
 msgstr "满足要求"
 
-msgid "Serves: {serves}"
-msgstr "满足：{serves}"
+#. placeholder {0}: view.serves
+msgid "Serves: {0}"
+msgstr "适用对象：{0}"
 
 msgid "service"
 msgstr "服务"
@@ -30711,6 +30798,9 @@ msgstr "显示在每页底部。"
 
 msgid "Shown to the customer on the invoice"
 msgstr "在发票上向客户显示"
+
+msgid "Shown to the person in the card. A checklist's points are ticked by them, and the card is marked done once every point is ticked."
+msgstr "显示给卡片中的人员。清单要点由其勾选，全部勾选后，卡片将标记为已完成。"
 
 msgid "Shown to the user when this rule fails."
 msgstr "当此规则失败时向用户显示。"
@@ -32939,8 +33029,8 @@ msgstr "负责此供应商关系的Carbon用户；关于此供应商的电子邮
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "拥有此RFQ的Carbon用户；供应商响应和提醒会路由给他们。"
 
-msgid "The card goes at the end of the section."
-msgstr "卡片放在该部分末尾。"
+msgid "The card goes at the end of the page."
+msgstr "卡片将添加到页面末尾。"
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "发货所用的承运商和服务，提供跟踪 URL 模板，将跟踪号转换为链接，以及应付运费所过账的账户。"
@@ -33024,7 +33114,7 @@ msgid "The company template stays the same."
 msgstr "公司模板保持不变。"
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling puts the company on Implementation Hub 2.0. Each person sees it once you load their page."
-msgstr ""
+msgstr "公司人员暂时看不到实施中心。加入后，公司将切换至实施中心 2.0。您为每位人员加载页面后，该人员即可看到。"
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 1.0, because Implementation Hub 2.0 is off for this company, and emails the company's admins."
 msgstr "本公司员工尚未看到实施中心。由于本公司未开启实施中心 2.0，注册后他们将看到实施中心 1.0，并会向公司管理员发送邮件。"
@@ -34052,9 +34142,6 @@ msgstr "用于在其使用年限内分摊此资产成本的排程（直线法、
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "调度程序应用以下适用的第一条规则，然后减去停机时间和人员配置。"
 
-msgid "The section and its cards leave this page. Items on it stay in the catalogue and can be added again."
-msgstr "该分组及其卡片将从本页面移除。其中的条目仍保留在目录中，可再次添加。"
-
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "用于您制造或资本化以出租而非销售的单位的预置资产类别；它过账至其自有的租赁舰队资产和累计折旧账户，每项关联到物料的资产都显示在舰队寄存器中。"
 
@@ -35072,6 +35159,9 @@ msgstr "缩略图已上传"
 msgid "Thursday"
 msgstr "星期四"
 
+msgid "Tick every point of the checklist first"
+msgstr "请先勾选清单中的所有要点"
+
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "将发货与发票关联，无需重新输入"
 
@@ -35891,6 +35981,9 @@ msgstr "输入以搜索您的工作区"
 
 msgid "Type:"
 msgstr "类型："
+
+msgid "Typed answer"
+msgstr "输入的答案"
 
 msgid "Types"
 msgstr "类型"
@@ -38425,6 +38518,9 @@ msgstr "即使您的登录被盗，您的账户也保持安全"
 
 msgid "Your answer"
 msgstr "您的回答"
+
+msgid "Your answer: pick all that apply"
+msgstr "您的答案：选择所有适用项"
 
 msgid "Your backups"
 msgstr "您的备份"

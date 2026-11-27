@@ -3,8 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { PageCard, PageSection } from "./page";
-import { splitPageQuestions } from "./page";
 import {
   answerQuestionPayload,
   nextQuestionSelection,
@@ -128,52 +126,15 @@ describe("withQuestionAnswer", () => {
   });
 });
 
-describe("splitPageQuestions", () => {
-  const card = (
-    id: string,
-    kind: PageCard["kind"],
-    extra: Partial<PageCard> = {}
-  ) =>
-    ({ id, kind, title: id, tick: null, evidence: [], ...extra }) as PageCard;
-  const sections: PageSection[] = [
-    {
-      id: "section-0",
-      title: "Decisions",
-      cards: [
-        card("question:a", "question", { rowId: "a" }),
-        card("question:b", "question", { rowId: "b" })
-      ]
-    },
-    {
-      id: "section-1",
-      title: "Setup",
-      cards: [
-        card("setup:suppliers", "setup"),
-        card("question:c", "question", { rowId: "c" }),
-        card("question:gone", "question", { missing: true })
-      ]
-    }
-  ];
-
-  it("lists the questions in page order and drops emptied sections", () => {
-    const split = splitPageQuestions(sections);
-    expect(split.questions.map((q) => q.id)).toEqual([
-      "question:a",
-      "question:b",
-      "question:c"
-    ]);
-    expect(split.sections.map((s) => s.title)).toEqual(["Setup"]);
-    expect(split.sections[0]?.cards.map((c) => c.id)).toEqual([
-      "setup:suppliers",
-      "question:gone"
-    ]);
-  });
-
-  it("keeps a section the page left with no cards", () => {
-    const later: PageSection = { id: "section-2", title: "Later", cards: [] };
+describe("readQuestion longAnswer", () => {
+  it("reads a long answer only on a question without options", () => {
+    expect(readQuestion({ question: "Q", longAnswer: true })).toEqual({
+      question: "Q",
+      longAnswer: true
+    });
     expect(
-      splitPageQuestions([...sections, later]).sections.map((s) => s.title)
-    ).toEqual(["Setup", "Later"]);
+      readQuestion({ question: "Q", options: ["A"], longAnswer: true })
+    ).toEqual({ question: "Q", options: ["A"] });
   });
 });
 

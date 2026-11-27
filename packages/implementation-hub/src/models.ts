@@ -83,6 +83,44 @@ export const memberPageCustomCardValidator = z.strictObject({
   link: pageLink.optional()
 });
 
+// Fields Carbon staff add to a card, shown to its person in the card's modal:
+// a label with a value, or a label with points the person ticks (a checklist).
+// A point's tick is stored under its text (`pointKey`), so two points of one
+// checklist cannot read the same.
+export const PAGE_CARD_MAX_FIELDS = 20;
+export const PAGE_CHECKLIST_MAX_POINTS = 30;
+
+export const memberPageTextFieldValidator = z.strictObject({
+  label: pageText.max(80),
+  value: pageText.max(2000)
+});
+
+export const memberPageChecklistFieldValidator = z
+  .strictObject({
+    label: pageText.max(80),
+    points: z.array(pageText.max(500)).min(1).max(PAGE_CHECKLIST_MAX_POINTS)
+  })
+  .superRefine((field, ctx) => {
+    const seen = new Set<string>();
+    field.points.forEach((point, index) => {
+      if (seen.has(point)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["points", index],
+          message: "A checklist lists each point once"
+        });
+      }
+      seen.add(point);
+    });
+  });
+
+export const memberPageFieldValidator = z.union([
+  memberPageTextFieldValidator,
+  memberPageChecklistFieldValidator
+]);
+
+export type MemberPageField = z.infer<typeof memberPageFieldValidator>;
+
 export const memberPageCardValidator = z
   .strictObject({
     item: pageText.optional(),
@@ -90,7 +128,14 @@ export const memberPageCardValidator = z
     // Overrides the hub item's own title. Custom cards carry their own.
     title: pageText.max(200).optional(),
     note: pageText.max(2000).optional(),
-    due: pageDay.optional()
+    due: pageDay.optional(),
+    fields: z
+      .array(memberPageFieldValidator)
+      .min(1)
+      .max(PAGE_CARD_MAX_FIELDS)
+      .optional(),
+    // The person attaches files to the card (logic/page-files.ts).
+    askForFile: z.literal(true).optional()
   })
   .superRefine((card, ctx) => {
     if (!card.item === !card.custom) {
@@ -119,7 +164,9 @@ export const memberPageValidator = z.strictObject({
       z.strictObject({
         title: pageText.max(200),
         intro: pageText.max(2000).optional(),
-        // A section may have no cards: the page says it has none.
+        // A section may have no cards. The app shows a page as one list of
+        // cards and saves them in one section; a file may still list several,
+        // which the app shows in order, without their titles.
         cards: z.array(memberPageCardValidator)
       })
     )
@@ -213,6 +260,16 @@ export const stateActionValidator = z.discriminatedUnion("intent", [
     intent: z.literal("deleteMemberPage"),
     userId: z.string().min(1)
   }),
+  // A file stored in the company's bucket, attached to a card on a person's
+  // page (logic/page-files.ts). The person on their own page, and Carbon
+  // staff on any page.
+  z.object({
+    intent: z.literal("attachFile"),
+    memberId: z.string().min(1),
+    cardId: z.string().min(1),
+    files: z.string() // JSON-encoded { path, name, size }[]
+  }),
+  z.object({ intent: z.literal("removeFile"), fileId: z.string().min(1) }),
   // Answers and overrides of the priority set questionnaire, stored as field
   // values. JSON-encoded { fieldKey, value }[]: every write the page has not
   // seen confirmed yet, so a save the shared fetcher cancels loses nothing.
@@ -220,3 +277,15 @@ export const stateActionValidator = z.discriminatedUnion("intent", [
 ]);
 
 export type StateAction = z.infer<typeof stateActionValidator>;
+
+// The files one attachFile records: one upload, up to 20 files.
+export const attachedFilesValidator = z
+  .array(
+    z.strictObject({
+      path: z.string().min(1),
+      name: z.string().min(1),
+      size: z.number().int().min(0)
+    })
+  )
+  .min(1)
+  .max(20);

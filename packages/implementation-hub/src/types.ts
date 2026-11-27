@@ -281,6 +281,22 @@ export interface QuestionPayload {
   options?: string[];
   multiple?: boolean;
   selected?: string[];
+  // A typed answer that needs room: the page answers it in the card's modal,
+  // not in its row. Only for a question without options.
+  longAnswer?: boolean;
+}
+
+// A file a person or Carbon staff attached to a card on a person's page
+// (`implementationFile`). `path` is its key in the company's bucket.
+export interface ImplementationFileRow {
+  id: string;
+  userId: string;
+  cardId: string;
+  path: string;
+  name: string;
+  size: number;
+  createdBy: string;
+  createdAt: string;
 }
 
 export type CustomizationKind =

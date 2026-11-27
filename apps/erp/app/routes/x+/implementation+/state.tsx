@@ -5,6 +5,7 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import {
   changesImplementationHub1,
@@ -17,11 +18,14 @@ import {
   getImplementationMember,
   type HubActor
 } from "@carbon/implementation-hub/server";
+import { getLogger } from "@carbon/logger";
 import { isInternalEmail } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { usesImplementationHub2 } from "~/modules/shared/shared.models";
 import { implementationHub2Enabled } from "~/modules/shared/shared.service";
+
+const logger = getLogger("erp", "implementation");
 
 // Single action endpoint for every Implementation Hub state mutation. The access rules live in
 // `applyHubMutation`, shared with the MCP hub tools: toggles, finishing and a
@@ -120,6 +124,24 @@ export async function action({ request }: ActionFunctionArgs) {
           : error(result.error, "Failed to update")
       )
     );
+  }
+
+  // A file taken off a page leaves the company's bucket too. The record is
+  // gone already, so a file that stays behind is only logged.
+  if (result.removedPath) {
+    const removed = await storage(client)
+      .company(companyId)
+      .remove([result.removedPath]);
+    if (removed.error) {
+      logger.error(
+        "Failed to remove a file taken off an Implementation Hub page",
+        {
+          companyId,
+          path: result.removedPath,
+          error: removed.error
+        }
+      );
+    }
   }
 
   return data({

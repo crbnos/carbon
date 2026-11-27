@@ -77,7 +77,18 @@ export function pageDraftPrompt(input: PagePromptInput): string {
                   title: "Agree approval limits",
                   text: "Optional longer text.",
                   link: "/x/settings/approval-rules"
-                }
+                },
+                fields: [
+                  { label: "Owner", value: "Finance lead" },
+                  {
+                    label: "Done when",
+                    points: [
+                      "Limits agreed per role",
+                      "Limits entered in Carbon"
+                    ]
+                  }
+                ],
+                askForFile: true
               }
             ]
           }
@@ -93,7 +104,9 @@ export function pageDraftPrompt(input: PagePromptInput): string {
     '- A card is either "item", a key from the card list below, or "custom": a key of lowercase letters, digits and hyphens that is unique on the page, a title, and optional "text" and "link" (a Carbon path starting with /x/, or an https link).',
     "- Use each item key once.",
     `- "due" is optional: a date after ${today}, as YYYY-MM-DD. "note" is optional: one or two sentences for this person.`,
-    "- Keep the page short: two to four sections, five to fifteen cards, only what this person owns. Put setup before the work that needs it.",
+    '- "fields" is optional: up to 20, each a "label" with a "value", or a "label" with "points", a checklist the person ticks. A card with a checklist is done once every point is ticked.',
+    '- "askForFile": true only when the person must send a file, such as a price list or a drawing.',
+    "- Use one section, as in the example: the page shows its cards as one list, in order. Keep it to five to fifteen cards, only what this person owns. Put setup before the work that needs it.",
     input.mayHoldPriorityCard
       ? `- Use "${input.priorityCard}" only if this person answers the priority set for the company.`
       : `- Do not use "${input.priorityCard}": someone else answers the priority set.`,

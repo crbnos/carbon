@@ -8,8 +8,10 @@ import type { ImplementationRowData } from "../types";
 import { flagKey } from "./keys";
 import {
   buildPageCatalogue,
+  cardChecklists,
   cardState,
   catalogueByItem,
+  checklistProgress,
   checkMemberPage,
   customCardKey,
   groupHubPeople,
@@ -23,6 +25,7 @@ import {
   starterMemberPage,
   unmetReadiness
 } from "./page";
+import { pointKey } from "./page-files";
 
 const rows: ImplementationRowData[] = [
   {
@@ -482,5 +485,66 @@ describe("prioritySetHolder", () => {
 
   it("is null when no page has it", () => {
     expect(prioritySetHolder(members.slice(0, 1))).toBeNull();
+  });
+});
+
+describe("card fields", () => {
+  const card = {
+    custom: { key: "price-list", title: "Send the price list" },
+    fields: [
+      { label: "Format", value: "One row per part" },
+      { label: "Done when", points: ["Every part priced", "Currency named"] }
+    ],
+    askForFile: true
+  };
+
+  it("accepts a card with values, a checklist and a file request", () => {
+    const checked = checkMemberPage(page([card]), items);
+    expect(checked.problems).toEqual([]);
+    const [resolved] = resolveMemberPage(checked.page!, items, "user_1")[0]!
+      .cards;
+    expect(resolved?.fields).toEqual(card.fields);
+    expect(resolved?.askForFile).toBe(true);
+  });
+
+  it("refuses a checklist that lists a point twice", () => {
+    const twice = {
+      ...card,
+      fields: [{ label: "Done when", points: ["Priced", "Priced"] }]
+    };
+    expect(checkMemberPage(page([twice]), items).problems).toEqual([
+      "sections[0].cards[0].fields[0].points[1]: A checklist lists each point once"
+    ]);
+  });
+
+  it("counts the points its person has ticked", () => {
+    const checked = checkMemberPage(page([card]), items);
+    const [resolved] = resolveMemberPage(checked.page!, items, "user_1")[0]!
+      .cards;
+    const checklists = cardChecklists(resolved!, "user_1");
+    expect(checklists).toEqual([
+      {
+        label: "Done when",
+        points: [
+          {
+            text: "Every part priced",
+            itemKey: pointKey(
+              "user_1",
+              "custom:price-list",
+              "Every part priced"
+            )
+          },
+          {
+            text: "Currency named",
+            itemKey: pointKey("user_1", "custom:price-list", "Currency named")
+          }
+        ]
+      }
+    ]);
+    const states = new Map([[checklists[0]!.points[0]!.itemKey, "1"]]);
+    expect(checklistProgress(checklists, states)).toEqual({
+      ticked: 1,
+      total: 2
+    });
   });
 });

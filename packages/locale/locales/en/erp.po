@@ -125,6 +125,10 @@ msgstr "{0, plural, one {# day of slack} other {# days of slack}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# day short} other {# days short}}"
 
+#. placeholder {0}: customization.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr "{0, plural, one {# day} other {# days}}"
+
 #. placeholder {0}: -daysLeft
 msgid "{0, plural, one {# day} other {# days}} past {due}"
 msgstr "{0, plural, one {# day} other {# days}} past {due}"
@@ -136,6 +140,10 @@ msgstr "{0, plural, one {# element changed} other {# elements changed}}"
 #. placeholder {0}: baseline.elementCount
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr "{0, plural, one {# element} other {# elements}}"
+
+#. placeholder {0}: files.length
+msgid "{0, plural, one {# file} other {# files}}"
+msgstr "{0, plural, one {# file} other {# files}}"
 
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
@@ -189,6 +197,10 @@ msgstr "{0, plural, one {# operation of this process can't be scheduled. The For
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
 msgstr "{0, plural, one {# operation} other {# operations}}"
+
+#. placeholder {0}: question.options.length
+msgid "{0, plural, one {# option} other {# options}}"
+msgstr "{0, plural, one {# option} other {# options}}"
 
 #. placeholder {0}: progress.overdue
 msgid "{0, plural, one {# overdue} other {# overdue}}"
@@ -265,6 +277,10 @@ msgstr "{0, plural, one {Copied # assignment} other {Copied # assignments}}"
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {Creates # element} other {Creates # elements}}"
 msgstr "{0, plural, one {Creates # element} other {Creates # elements}}"
+
+#. placeholder {0}: view.estimateDays
+msgid "{0, plural, one {Estimate # day} other {Estimate # days}}"
+msgstr "{0, plural, one {Estimate # day} other {Estimate # days}}"
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -534,9 +550,17 @@ msgstr "{0} is {1}, not Draft or Planned"
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} is closed. Its time cannot change."
 
+#. placeholder {0}: file.name
+msgid "{0} is larger than 50 MB"
+msgstr "{0} is larger than 50 MB"
+
 #. placeholder {0}: chipName(active.id)
 msgid "{0} is no longer over a cell"
 msgstr "{0} is no longer over a cell"
+
+#. placeholder {0}: file.name
+msgid "{0} is not a type of file the page takes"
+msgstr "{0} is not a type of file the page takes"
 
 #. placeholder {0}: chipName(active.id)
 #. placeholder {1}: placeName(over.data.current)
@@ -927,6 +951,9 @@ msgstr "{bucket3Start}-{b3} Days"
 msgid "{bucket4Start}+ Days"
 msgstr "{bucket4Start}+ Days"
 
+msgid "{by}, {on}"
+msgstr "{by}, {on}"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel} markup for quantity {quantity}"
 
@@ -1092,9 +1119,6 @@ msgstr "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 
 msgid "{errors} failed"
 msgstr "{errors} failed"
-
-msgid "{estimateDays, plural, one {# day} other {# days}}"
-msgstr "{estimateDays, plural, one {# day} other {# days}}"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# row excluded} other {# rows excluded}}"
@@ -1850,6 +1874,9 @@ msgstr "A change notice tracks a controlled engineering or manufacturing change 
 msgid "A chargeable element below a control account that has an earned value technique, such as 0/100, 50/50 or Percent Complete."
 msgstr "A chargeable element below a control account that has an earned value technique, such as 0/100, 50/50 or Percent Complete."
 
+msgid "A checklist takes up to {PAGE_CHECKLIST_MAX_POINTS} points"
+msgstr "A checklist takes up to {PAGE_CHECKLIST_MAX_POINTS} points"
+
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 
@@ -2170,9 +2197,6 @@ msgstr "A new purchase order will be created for each supplier. Alternatively, y
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "A new revision will be created using a copy of the current revision"
-
-msgid "A new section at the end of the page, with its first card."
-msgstr "A new section at the end of the page, with its first card."
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
@@ -3276,9 +3300,6 @@ msgstr "Add a row"
 msgid "Add a row for each charge number you worked on."
 msgstr "Add a row for each charge number you worked on."
 
-msgid "Add a section"
-msgstr "Add a section"
-
 msgid "Add a step"
 msgstr "Add a step"
 
@@ -3366,6 +3387,9 @@ msgstr "Add Charge"
 msgid "Add Charge Number"
 msgstr "Add Charge Number"
 
+msgid "Add checklist"
+msgstr "Add checklist"
+
 msgid "Add child"
 msgstr "Add child"
 
@@ -3416,6 +3440,9 @@ msgstr "Add Entry"
 
 msgid "Add Event"
 msgstr "Add Event"
+
+msgid "Add field"
+msgstr "Add field"
 
 msgid "Add filter"
 msgstr "Add filter"
@@ -3613,9 +3640,6 @@ msgstr "Add rule from library"
 
 msgid "Add Sample"
 msgstr "Add Sample"
-
-msgid "Add section"
-msgstr "Add section"
 
 msgid "Add Selector"
 msgstr "Add Selector"
@@ -4272,9 +4296,6 @@ msgstr "An International Bank Account Number: one string holding the country, ba
 msgid "An introduction for this person (optional)"
 msgstr "An introduction for this person (optional)"
 
-msgid "An introduction for this section (optional)"
-msgstr "An introduction for this section (optional)"
-
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "An invitation is pending. They become active once they accept it."
 
@@ -4484,14 +4505,20 @@ msgstr "Another storage unit this one nests inside (e.g. a bin within a rack); m
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "Another system is connected to Ramp as its accounting system"
 
+msgid "Answer"
+msgstr "Answer"
+
+msgid "Answer or status"
+msgstr "Answer or status"
+
 msgid "Answer the priority set questionnaire"
 msgstr "Answer the priority set questionnaire"
 
 msgid "Answer what you can. Each answer moves Carbon features between categories, and the panel beside the questions shows what your company needs before go-live. \"Not sure\" moves nothing and is kept as an open question."
 msgstr "Answer what you can. Each answer moves Carbon features between categories, and the panel beside the questions shows what your company needs before go-live. \"Not sure\" moves nothing and is kept as an open question."
 
-msgid "Answered"
-msgstr "Answered"
+msgid "Answer:"
+msgstr "Answer:"
 
 msgid "Any"
 msgstr "Any"
@@ -5419,6 +5446,9 @@ msgstr "Ascending"
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Ask an admin with {0} permission to add the first {1}."
 
+msgid "Ask the person for a file"
+msgstr "Ask the person for a file"
+
 msgid "Ask your Carbon admin to set up the Implementation Hub for you."
 msgstr "Ask your Carbon admin to set up the Implementation Hub for you."
 
@@ -5427,6 +5457,9 @@ msgstr "Asked when {number} is {options}."
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
+
+msgid "Asks for a file"
+msgstr "Asks for a file"
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
@@ -5634,6 +5667,9 @@ msgstr "Attach"
 
 msgid "Attach File"
 msgstr "Attach File"
+
+msgid "Attach files"
+msgstr "Attach files"
 
 msgid "Attach Job"
 msgstr "Attach Job"
@@ -7166,12 +7202,6 @@ msgstr "Card"
 msgid "Card Holder"
 msgstr "Card Holder"
 
-msgid "Card options"
-msgstr "Card options"
-
-msgid "Card title"
-msgstr "Card title"
-
 msgid "Cards"
 msgstr "Cards"
 
@@ -7380,6 +7410,9 @@ msgstr "Changelog newsletter"
 msgid "Changes"
 msgstr "Changes"
 
+msgid "Changes to the item's title, details and answers show on every page that has it."
+msgstr "Changes to the item's title, details and answers show on every page that has it."
+
 msgid "Changing the base currency converts no amounts"
 msgstr "Changing the base currency converts no amounts"
 
@@ -7559,6 +7592,9 @@ msgstr "Checking the shop's schedule…"
 msgid "Checking the Stripe customer link…"
 msgstr "Checking the Stripe customer link…"
 
+msgid "Checklist"
+msgstr "Checklist"
+
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
 
@@ -7637,6 +7673,12 @@ msgstr "Choose a tax year"
 
 msgid "Choose a template"
 msgstr "Choose a template"
+
+msgid "Choose all that apply"
+msgstr "Choose all that apply"
+
+msgid "Choose an answer"
+msgstr "Choose an answer"
 
 msgid "Choose an item"
 msgstr "Choose an item"
@@ -12561,6 +12603,9 @@ msgstr "Edit {name}"
 msgid "Edit {riskTitle}"
 msgstr "Edit {riskTitle}"
 
+msgid "Edit {title}"
+msgstr "Edit {title}"
+
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Edit <0>Issue</0> Workflow"
 
@@ -12575,6 +12620,9 @@ msgstr "Edit Account"
 
 msgid "Edit Action"
 msgstr "Edit Action"
+
+msgid "Edit answer"
+msgstr "Edit answer"
 
 msgid "Edit API Key"
 msgstr "Edit API Key"
@@ -12602,6 +12650,9 @@ msgstr "Edit Attribute Category"
 
 msgid "Edit Bank Account"
 msgstr "Edit Bank Account"
+
+msgid "Edit card"
+msgstr "Edit card"
 
 msgid "Edit Category"
 msgstr "Edit Category"
@@ -13423,6 +13474,9 @@ msgstr "Enter the 6-digit code from your authenticator app to resume."
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
+
+msgid "Enter the due date in full"
+msgstr "Enter the due date in full"
 
 msgid "Enter the estimate as a number of days"
 msgstr "Enter the estimate as a number of days"
@@ -14706,6 +14760,9 @@ msgstr "Field info"
 msgid "Field Mapping"
 msgstr "Field Mapping"
 
+msgid "Field type"
+msgstr "Field type"
+
 msgid "Fields"
 msgstr "Fields"
 
@@ -14720,6 +14777,9 @@ msgstr "File Extension"
 
 msgid "File is already in the selected bucket"
 msgstr "File is already in the selected bucket"
+
+msgid "File requested"
+msgstr "File requested"
 
 #. placeholder {0}: ( logo.size / 1024 / 1024 ).toFixed(2)
 msgid "File size exceeds {maxSizeMB}MB limit. Current size: {0}MB"
@@ -15540,17 +15600,20 @@ msgstr "Getting set up"
 msgid "Give every asset a payment."
 msgstr "Give every asset a payment."
 
+msgid "Give every field a label and a value"
+msgstr "Give every field a label and a value"
+
 msgid "Give it an owner and a date"
 msgstr "Give it an owner and a date"
+
+msgid "Give the card a title"
+msgstr "Give the card a title"
 
 msgid "Give the lease a <0>fixed duration on its Details step</0>."
 msgstr "Give the lease a <0>fixed duration on its Details step</0>."
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "Give the milestone a start and an end date to see its burn."
-
-msgid "Give the new section a title"
-msgstr "Give the new section a title"
 
 msgid "GL"
 msgstr "GL"
@@ -17897,6 +17960,9 @@ msgstr "Keep demo data"
 msgid "Keep demo data and delete your previous data?"
 msgstr "Keep demo data and delete your previous data?"
 
+msgid "Keep each point under 500 characters"
+msgstr "Keep each point under 500 characters"
+
 msgid "Keep editing"
 msgstr "Keep editing"
 
@@ -18945,6 +19011,12 @@ msgstr "Logos"
 #. placeholder {0}: auditConfig.retentionDays
 msgid "Logs older than {0} days are automatically archived."
 msgstr "Logs older than {0} days are automatically archived."
+
+msgid "Long answer"
+msgstr "Long answer"
+
+msgid "Long answer: answered in the card, not in its row"
+msgstr "Long answer: answered in the card, not in its row"
 
 msgid "Long Description"
 msgstr "Long Description"
@@ -20129,12 +20201,6 @@ msgstr "Move item"
 msgid "Move Out of Sub-Assembly"
 msgstr "Move Out of Sub-Assembly"
 
-msgid "Move section down"
-msgstr "Move section down"
-
-msgid "Move section up"
-msgstr "Move section up"
-
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 
@@ -20152,9 +20218,6 @@ msgstr "Move to Another Storage Unit"
 
 msgid "Move to Group"
 msgstr "Move to Group"
-
-msgid "Move to section"
-msgstr "Move to section"
 
 msgid "Move to tax codes"
 msgstr "Move to tax codes"
@@ -20359,7 +20422,11 @@ msgstr "Needed is the setup and labor hours the schedule books at the station th
 msgid "Needed when the date is before the entry window"
 msgstr "Needed when the date is before the entry window"
 
-#. placeholder {0}: waitingFor.join(", ")
+#. placeholder {0}: view.waitingFor.join(", ")
+msgid "Needs {0} first"
+msgstr "Needs {0} first"
+
+#. placeholder {0}: view.waitingFor.join(", ")
 msgid "Needs {0} first."
 msgstr "Needs {0} first."
 
@@ -21452,6 +21519,9 @@ msgstr "No files for this item."
 msgid "No files uploaded"
 msgstr "No files uploaded"
 
+msgid "No files yet."
+msgstr "No files yet."
+
 msgid "No findings"
 msgstr "No findings"
 
@@ -22429,6 +22499,9 @@ msgstr "Notes for {taskTitle}"
 msgid "Notes for {title}"
 msgstr "Notes for {title}"
 
+msgid "Notes, a due date, fields and file requests are added by editing the card."
+msgstr "Notes, a due date, fields and file requests are added by editing the card."
+
 msgid "Nothing"
 msgstr "Nothing"
 
@@ -22469,9 +22542,6 @@ msgstr "Nothing here yet"
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
 
-msgid "Nothing in this section yet."
-msgstr "Nothing in this section yet."
-
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
 msgstr "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
 
@@ -22499,6 +22569,9 @@ msgstr "Nothing matches the search or filter"
 
 msgid "Nothing needs stock"
 msgstr "Nothing needs stock"
+
+msgid "Nothing on this page yet."
+msgstr "Nothing on this page yet."
 
 msgid "Nothing owed"
 msgstr "Nothing owed"
@@ -22875,6 +22948,9 @@ msgstr "One period is a month from the start date."
 msgid "One person's page as JSON. It replaces any page they already have."
 msgstr "One person's page as JSON. It replaces any page they already have."
 
+msgid "One point per line"
+msgstr "One point per line"
+
 msgid "One promise per line, in plain words."
 msgstr "One promise per line, in plain words."
 
@@ -23067,6 +23143,10 @@ msgstr "Open"
 
 msgid "Open ({paymentCurrency})"
 msgstr "Open ({paymentCurrency})"
+
+#. placeholder {0}: view.title
+msgid "Open {0}"
+msgstr "Open {0}"
 
 #. placeholder {0}: readableId ?? ""
 msgid "Open {0} details"
@@ -23481,6 +23561,9 @@ msgstr "Options"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "Options for {0}"
+
+msgid "Options for {title}"
+msgstr "Options for {title}"
 
 msgid "Options, one per line (leave empty for a typed answer)"
 msgstr "Options, one per line (leave empty for a typed answer)"
@@ -24837,6 +24920,9 @@ msgstr "PO Number (no revision)"
 
 msgid "PO PDF"
 msgstr "PO PDF"
+
+msgid "Points, one per line"
+msgstr "Points, one per line"
 
 msgid "Policy"
 msgstr "Policy"
@@ -27166,6 +27252,9 @@ msgstr "Remove corrupted data and restore"
 msgid "Remove Employee"
 msgstr "Remove Employee"
 
+msgid "Remove field"
+msgstr "Remove field"
+
 msgid "Remove filter"
 msgstr "Remove filter"
 
@@ -27223,9 +27312,6 @@ msgstr "Remove PDF"
 msgid "Remove row"
 msgstr "Remove row"
 
-msgid "Remove section"
-msgstr "Remove section"
-
 msgid "Remove slide"
 msgstr "Remove slide"
 
@@ -27275,6 +27361,9 @@ msgstr "Remove Video"
 
 msgid "Removed"
 msgstr "Removed"
+
+msgid "Removed from the Implementation Hub"
+msgstr "Removed from the Implementation Hub"
 
 msgid "Removed line"
 msgstr "Removed line"
@@ -29325,9 +29414,6 @@ msgstr "Section E line 38, officers' wage QREs: {0}"
 msgid "Section saved"
 msgstr "Section saved"
 
-msgid "Section title"
-msgstr "Section title"
-
 msgid "Secure your account with 2FA"
 msgstr "Secure your account with 2FA"
 
@@ -29916,8 +30002,9 @@ msgstr "Series"
 msgid "Serves requirement"
 msgstr "Serves requirement"
 
-msgid "Serves: {serves}"
-msgstr "Serves: {serves}"
+#. placeholder {0}: view.serves
+msgid "Serves: {0}"
+msgstr "Serves: {0}"
 
 msgid "service"
 msgstr "service"
@@ -30711,6 +30798,9 @@ msgstr "Shown at the bottom of every page."
 
 msgid "Shown to the customer on the invoice"
 msgstr "Shown to the customer on the invoice"
+
+msgid "Shown to the person in the card. A checklist's points are ticked by them, and the card is marked done once every point is ticked."
+msgstr "Shown to the person in the card. A checklist's points are ticked by them, and the card is marked done once every point is ticked."
 
 msgid "Shown to the user when this rule fails."
 msgstr "Shown to the user when this rule fails."
@@ -32939,8 +33029,8 @@ msgstr "The Carbon user responsible for this supplier relationship; emails and r
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 
-msgid "The card goes at the end of the section."
-msgstr "The card goes at the end of the section."
+msgid "The card goes at the end of the page."
+msgstr "The card goes at the end of the page."
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
@@ -34052,9 +34142,6 @@ msgstr "The schedule used to spread this asset's cost over its useful life (stra
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 
-msgid "The section and its cards leave this page. Items on it stay in the catalogue and can be added again."
-msgstr "The section and its cards leave this page. Items on it stay in the catalogue and can be added again."
-
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 
@@ -35072,6 +35159,9 @@ msgstr "Thumbnail uploaded"
 msgid "Thursday"
 msgstr "Thursday"
 
+msgid "Tick every point of the checklist first"
+msgstr "Tick every point of the checklist first"
+
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Tie shipments through to an invoice with no re-keying"
 
@@ -35891,6 +35981,9 @@ msgstr "Type to search across your workspace"
 
 msgid "Type:"
 msgstr "Type:"
+
+msgid "Typed answer"
+msgstr "Typed answer"
 
 msgid "Types"
 msgstr "Types"
@@ -38427,6 +38520,9 @@ msgstr "Your account stays safe even if your login is stolen"
 
 msgid "Your answer"
 msgstr "Your answer"
+
+msgid "Your answer: pick all that apply"
+msgstr "Your answer: pick all that apply"
 
 msgid "Your backups"
 msgstr "Your backups"

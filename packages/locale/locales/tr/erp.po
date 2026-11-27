@@ -125,6 +125,10 @@ msgstr "{0, plural, one {# gün esneklik payı} other {# gün esneklik payı}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# gün gecikme} other {# gün gecikme}}"
 
+#. placeholder {0}: customization.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr "{0, plural, one {# gün} other {# gün}}"
+
 #. placeholder {0}: -daysLeft
 msgid "{0, plural, one {# day} other {# days}} past {due}"
 msgstr "{0, plural, one {# gün} other {# gün}} {due}'nın geçmişi"
@@ -136,6 +140,10 @@ msgstr "{0, plural, one {# element değişti} other {# elementler değişti}}"
 #. placeholder {0}: baseline.elementCount
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr "{0, plural, one {# element} other {# elementler}}"
+
+#. placeholder {0}: files.length
+msgid "{0, plural, one {# file} other {# files}}"
+msgstr "{0, plural, one {# dosya} other {# dosya}}"
 
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
@@ -189,6 +197,10 @@ msgstr "{0, plural, one {Bu prosesin # operasyonu planlanamıyor. Tahmin neden o
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
 msgstr "{0, plural, one {# operasyon} other {# operasyonlar}}"
+
+#. placeholder {0}: question.options.length
+msgid "{0, plural, one {# option} other {# options}}"
+msgstr "{0, plural, one {# seçenek} other {# seçenek}}"
 
 #. placeholder {0}: progress.overdue
 msgid "{0, plural, one {# overdue} other {# overdue}}"
@@ -265,6 +277,10 @@ msgstr "{0, plural, one {# görevlendirme kopyalandı} other {# görevlendirme k
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {Creates # element} other {Creates # elements}}"
 msgstr "{0, plural, one {# öğe oluştur} other {# öğe oluştur}}"
+
+#. placeholder {0}: view.estimateDays
+msgid "{0, plural, one {Estimate # day} other {Estimate # days}}"
+msgstr "{0, plural, one {Tahmini # gün} other {Tahmini # gün}}"
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -534,9 +550,17 @@ msgstr "{0}, Taslak veya Planlandı değildir; {1}"
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} kapalı. Süresi değişemez."
 
+#. placeholder {0}: file.name
+msgid "{0} is larger than 50 MB"
+msgstr "{0} 50 MB'tan büyük"
+
 #. placeholder {0}: chipName(active.id)
 msgid "{0} is no longer over a cell"
 msgstr "{0} artık hücre üzerinde değil"
+
+#. placeholder {0}: file.name
+msgid "{0} is not a type of file the page takes"
+msgstr "{0} bu sayfanın kabul ettiği bir dosya türü değil"
 
 #. placeholder {0}: chipName(active.id)
 #. placeholder {1}: placeName(over.data.current)
@@ -927,6 +951,9 @@ msgstr "{bucket3Start}-{b3} Gün"
 msgid "{bucket4Start}+ Days"
 msgstr "{bucket4Start}+ Gün"
 
+msgid "{by}, {on}"
+msgstr "{by}, {on}"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{quantity} miktar için {categoryLabel} zammı"
 
@@ -1092,9 +1119,6 @@ msgstr "{errors, plural, one {# satır düzeltme gerekli} other {# satırlar dü
 
 msgid "{errors} failed"
 msgstr "{errors} başarısız"
-
-msgid "{estimateDays, plural, one {# day} other {# days}}"
-msgstr "{estimateDays, plural, one {# gün} other {# gün}}"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç tutuldu}}"
@@ -1533,7 +1557,7 @@ msgid "{who} reversed {amount} on {element}"
 msgstr "{warnings} takip gerekiyor"
 
 msgid "{withoutPage, plural, one {# active person has no page yet and will not see the Implementation Hub until you load one.} other {# active people have no page yet and will not see the Implementation Hub until you load one.}}"
-msgstr ""
+msgstr "{withoutPage, plural, one {# aktif kişinin henüz sayfası yok ve siz bir tane yükleyene kadar Uygulama Merkezi'ni görmeyecek.} other {# aktif kişinin henüz sayfası yok ve siz bir tane yükleyene kadar Uygulama Merkezi'ni görmeyecek.}}"
 
 msgid "{years}yr"
 msgstr "{years}yr"
@@ -1849,6 +1873,9 @@ msgstr "Değişiklik bildirimi, kontrollü bir mühendislik veya üretim değiş
 
 msgid "A chargeable element below a control account that has an earned value technique, such as 0/100, 50/50 or Percent Complete."
 msgstr "Bir kontrol hesabı altında, 0/100, 50/50 veya Yüzde Tamamlanan gibi kazanılan değer tekniğine sahip faturalandırılabilir bir öğe."
+
+msgid "A checklist takes up to {PAGE_CHECKLIST_MAX_POINTS} points"
+msgstr "Bir kontrol listesi en fazla {PAGE_CHECKLIST_MAX_POINTS} madde alabilir"
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Alınan ancak henüz faturalanmayan malların değerini tutan bir takas hesabı; tedarikçi faturası bunu temizler."
@@ -2170,9 +2197,6 @@ msgstr "Her tedarikçi için yeni bir satın alma siparişi oluşturulacaktır. 
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "Yeni bir revizyon, mevcut revizyonun bir kopyası kullanılarak oluşturulacaktır"
-
-msgid "A new section at the end of the page, with its first card."
-msgstr "Sayfanın sonunda, ilk kartıyla birlikte yeni bir bölüm."
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "Yeni bir hizmet iş emri fatura oranını kopyalar. Her zaman girişi maliyeti maliyet oranında muhasebeleştirir."
@@ -3276,9 +3300,6 @@ msgstr "Bir satır ekle"
 msgid "Add a row for each charge number you worked on."
 msgstr "Çalıştığınız her masraf numarası için bir satır ekle."
 
-msgid "Add a section"
-msgstr "Bölüm ekle"
-
 msgid "Add a step"
 msgstr "Bir adım ekle"
 
@@ -3366,6 +3387,9 @@ msgstr "Ücret Ekle"
 msgid "Add Charge Number"
 msgstr "Gider Numarası Ekle"
 
+msgid "Add checklist"
+msgstr "Kontrol listesi ekle"
+
 msgid "Add child"
 msgstr "Alt öğe Ekle"
 
@@ -3416,6 +3440,9 @@ msgstr "Giri Ekle"
 
 msgid "Add Event"
 msgstr "Olay Ekle"
+
+msgid "Add field"
+msgstr "Alan ekle"
 
 msgid "Add filter"
 msgstr "Filtre ekle"
@@ -3613,9 +3640,6 @@ msgstr "Kütüphaneden kural ekle"
 
 msgid "Add Sample"
 msgstr "Örnek Ekle"
-
-msgid "Add section"
-msgstr "Bölüm ekle"
 
 msgid "Add Selector"
 msgstr "Seçici Ekle"
@@ -4272,9 +4296,6 @@ msgstr "Uluslararası Banka Hesap Numarası: ülke, banka, şube ve hesabı tuta
 msgid "An introduction for this person (optional)"
 msgstr "Bu kişi için bir tanıtım metni (isteğe bağlı)"
 
-msgid "An introduction for this section (optional)"
-msgstr "Bu bölüm için bir tanıtım metni (isteğe bağlı)"
-
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "Bir davet beklemede. Kabul ettikleri zaman aktif hale gelirler."
 
@@ -4484,14 +4505,20 @@ msgstr "Bu depolama biriminin yerleştirildiği başka bir depolama birimi (örn
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "Başka bir sistem Ramp'a muhasebe sistemi olarak bağlı"
 
+msgid "Answer"
+msgstr "Yanıt"
+
+msgid "Answer or status"
+msgstr "Yanıt veya durum"
+
 msgid "Answer the priority set questionnaire"
 msgstr "Öncelik kümesi anketini yanıtlayın"
 
 msgid "Answer what you can. Each answer moves Carbon features between categories, and the panel beside the questions shows what your company needs before go-live. \"Not sure\" moves nothing and is kept as an open question."
 msgstr "Yanıtlayabildiklerinizi yanıtlayın. Her yanıt Carbon özelliklerini kategoriler arasında taşır; sorunların yanındaki panel ise canlıya geçişten önce şirketinizin neye ihtiyacı olduğunu gösterir. “Emin değilim” hiçbir şeyi taşımaz ve açık bir soru olarak saklanır."
 
-msgid "Answered"
-msgstr "Yanıtlandı"
+msgid "Answer:"
+msgstr "Yanıt:"
 
 msgid "Any"
 msgstr "Herhangi bir"
@@ -5419,6 +5446,9 @@ msgstr "Artan"
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} İzni olan bir yöneticiden ilk {1} öğesini eklemesini isteyin."
 
+msgid "Ask the person for a file"
+msgstr "Kişiden bir dosya iste"
+
 msgid "Ask your Carbon admin to set up the Implementation Hub for you."
 msgstr "Uygulama Merkezi'ni sizin için kurması amacıyla Carbon yöneticinize başvurun."
 
@@ -5427,6 +5457,9 @@ msgstr "{number} {options} olduğunda sorulur."
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "Amortisman, bu dönem için yeni bir çalışmanın şimdi ne amorti edeceğini sorar ve dönemde sonlanan taslak çalışmaları denetler. Çalışmayı oluşturun ve muhasebeleştirin, böylece dönemin amortisman gideri ve birikmiş amortismanı olur. Bu dönemde amortisman geçerli değilse bir nedense atla."
+
+msgid "Asks for a file"
+msgstr "Bir dosya ister"
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Hasılat muhasebeleştirmesine bu dönem için yeni bir çalıştırmanın şimdi ne tanıyacağını sorar — ertelenen fatura hasılatı ve sözleşme hasılatı — ve dönem sonunda vadesi gelen hasılatı tutan Taslak çalıştırmalarını kontrol eder. Çalıştırmayı oluşturun ve muhasebeleştirin, böylece hasılat Büyük defter'e ulaşır. Hiçbir şey tanınmaması gerekiyorsa bir neden ile atlayın."
@@ -5634,6 +5667,9 @@ msgstr "Bağla"
 
 msgid "Attach File"
 msgstr "Dosya Ekle"
+
+msgid "Attach files"
+msgstr "Dosya ekle"
 
 msgid "Attach Job"
 msgstr "İş Emrini Bağla"
@@ -7166,12 +7202,6 @@ msgstr "Kart"
 msgid "Card Holder"
 msgstr "Kart Sahibi"
 
-msgid "Card options"
-msgstr "Kart seçenekleri"
-
-msgid "Card title"
-msgstr "Kart başlığı"
-
 msgid "Cards"
 msgstr "Kartlar"
 
@@ -7380,6 +7410,9 @@ msgstr "Değişiklik Günlüğü Haber Bülteni"
 msgid "Changes"
 msgstr "Değişiklikler"
 
+msgid "Changes to the item's title, details and answers show on every page that has it."
+msgstr "Stok kartının başlığındaki, ayrıntılarındaki ve yanıtlarındaki değişiklikler, bunu içeren her sayfada görünür."
+
 msgid "Changing the base currency converts no amounts"
 msgstr "Ana para birimini değiştirmek hiçbir tutarı dönüştürmez"
 
@@ -7559,6 +7592,9 @@ msgstr "Atölyenin çizelgesi kontrol ediliyor…"
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe müşteri bağlantısı kontrol ediliyor…"
 
+msgid "Checklist"
+msgstr "Kontrol listesi"
+
 msgid "Checkpoint ·"
 msgstr "Kontrol Noktası ·"
 
@@ -7637,6 +7673,12 @@ msgstr "Bir vergi yılı seç"
 
 msgid "Choose a template"
 msgstr "Bir şablon seç"
+
+msgid "Choose all that apply"
+msgstr "Uygun olanların tümünü seçin"
+
+msgid "Choose an answer"
+msgstr "Bir yanıt seçin"
 
 msgid "Choose an item"
 msgstr "Bir stok kartı seç"
@@ -12561,6 +12603,9 @@ msgstr "{name} düzenle"
 msgid "Edit {riskTitle}"
 msgstr "{riskTitle} düzenle"
 
+msgid "Edit {title}"
+msgstr "{title} düzenle"
+
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>Sorun</0> İş Akışını Düzenle"
 
@@ -12575,6 +12620,9 @@ msgstr "Hesabı Düzenle"
 
 msgid "Edit Action"
 msgstr "İşlemi Düzenle"
+
+msgid "Edit answer"
+msgstr "Yanıtı düzenle"
 
 msgid "Edit API Key"
 msgstr "API Anahtarını Düzenle"
@@ -12602,6 +12650,9 @@ msgstr "Öznitelik Kategorisini Düzenle"
 
 msgid "Edit Bank Account"
 msgstr "Banka Hesabını Düzenle"
+
+msgid "Edit card"
+msgstr "Kartı düzenle"
 
 msgid "Edit Category"
 msgstr "Kategoriyi Düzenle"
@@ -13423,6 +13474,9 @@ msgstr "Devam etmek için kimlik doğrulayıcı uygulamanızdan 6 haneli kodu gi
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr "Tedarikçinin talep ettiği tutarı girin. Fark, en fazla {0} tutarına kadar yuvarlama hesabında bir satır olarak eklenir. Diğer satırlar fiyatlarını korur."
+
+msgid "Enter the due date in full"
+msgstr "Son tarihi tam olarak girin"
 
 msgid "Enter the estimate as a number of days"
 msgstr "Tahmini süreyi gün sayısı olarak girin"
@@ -14706,6 +14760,9 @@ msgstr "Alan bilgisi"
 msgid "Field Mapping"
 msgstr "Alan Adlandırma"
 
+msgid "Field type"
+msgstr "Alan türü"
+
 msgid "Fields"
 msgstr "Alanlar"
 
@@ -14720,6 +14777,9 @@ msgstr "Dosya Uzantısı"
 
 msgid "File is already in the selected bucket"
 msgstr "Dosya zaten seçilen klasörde"
+
+msgid "File requested"
+msgstr "Dosya istendi"
 
 #. placeholder {0}: ( logo.size / 1024 / 1024 ).toFixed(2)
 msgid "File size exceeds {maxSizeMB}MB limit. Current size: {0}MB"
@@ -15540,17 +15600,20 @@ msgstr "Kurulum yapılıyor"
 msgid "Give every asset a payment."
 msgstr "Her varlığa bir ödeme verin."
 
+msgid "Give every field a label and a value"
+msgstr "Her alana bir etiket ve bir değer verin"
+
 msgid "Give it an owner and a date"
 msgstr "Ona bir sahip ve bir tarih verin"
+
+msgid "Give the card a title"
+msgstr "Karta bir başlık verin"
 
 msgid "Give the lease a <0>fixed duration on its Details step</0>."
 msgstr "Kiralama için <0>Detaylar adımında sabit bir dönem</0> belirleyin."
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "Yakılışını görmek için kilometre taşına başlangıç ve bitiş tarihi verin."
-
-msgid "Give the new section a title"
-msgstr "Yeni bölüme bir başlık verin"
 
 msgid "GL"
 msgstr "Büyük defter"
@@ -16489,7 +16552,7 @@ msgid "Implementation Hub 2.0 is off for this company. Add it to the implementat
 msgstr "Uygulama Merkezi 2.0 bu şirket için kapalı. Önce CSA panosunda implementation-hub-2 bayrağına ekleyin."
 
 msgid "Implementation Hub 2.0 is on for this company. After enrolling, each person sees it once you give them a page."
-msgstr ""
+msgstr "Bu şirket için Uygulama Merkezi 2.0 açık. Kaydolunca her kişi, ona bir sayfa verdiğinizde bunu görür."
 
 msgid "Implementation Hub Settings"
 msgstr "Uygulama Merkezi Ayarları"
@@ -16677,7 +16740,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "Pasif kategoriler yeni zaman için seçilemez"
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "Pasif birimler, bir birim seçilirken sunulmaz"
 
 msgid "inbound customer requests for quote, converted to quotes"
 msgstr "gelen müşteri teklif talepleri, tekliflere dönüştürülür"
@@ -17897,6 +17960,9 @@ msgstr "Demo verilerini tut"
 msgid "Keep demo data and delete your previous data?"
 msgstr "Demo verilerini tutun ve önceki verilerinizi silin mi?"
 
+msgid "Keep each point under 500 characters"
+msgstr "Her maddeyi 500 karakterin altında tutun"
+
 msgid "Keep editing"
 msgstr "Düzenlemeye devam et"
 
@@ -18945,6 +19011,12 @@ msgstr "Logolar"
 #. placeholder {0}: auditConfig.retentionDays
 msgid "Logs older than {0} days are automatically archived."
 msgstr "{0} günden eski günlükler otomatik olarak arşivlenir."
+
+msgid "Long answer"
+msgstr "Uzun yanıt"
+
+msgid "Long answer: answered in the card, not in its row"
+msgstr "Uzun yanıt: yanıt satırında değil, kartta verilir"
 
 msgid "Long Description"
 msgstr "Uzun Açıklama"
@@ -20129,12 +20201,6 @@ msgstr "Öğeyi taşı"
 msgid "Move Out of Sub-Assembly"
 msgstr "Alt Montajdan Taşı"
 
-msgid "Move section down"
-msgstr "Bölümü aşağı taşı"
-
-msgid "Move section up"
-msgstr "Bölümü yukarı taşı"
-
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Miktarın bir kısmını yeni bir karar satırına taşıyın, böylece MRB her bölümü ayrı ayrı karar verebilir (örneğin, bazılarını fire edin, bazılarını yeniden işleyin)."
 
@@ -20152,9 +20218,6 @@ msgstr "Başka bir depolama birimine taşı"
 
 msgid "Move to Group"
 msgstr "Gruba Taşı"
-
-msgid "Move to section"
-msgstr "Bölüme taşı"
 
 msgid "Move to tax codes"
 msgstr "Vergi Kodlarına Taşı"
@@ -20359,7 +20422,11 @@ msgstr "Gerekli olan, o gün istasyonda program tarafından ayrılan hazırlık 
 msgid "Needed when the date is before the entry window"
 msgstr "Giriş penceresinden önceki tarihler için gereklidir"
 
-#. placeholder {0}: waitingFor.join(", ")
+#. placeholder {0}: view.waitingFor.join(", ")
+msgid "Needs {0} first"
+msgstr "Önce {0} gerekiyor"
+
+#. placeholder {0}: view.waitingFor.join(", ")
 msgid "Needs {0} first."
 msgstr "Önce {0} gerekiyor."
 
@@ -21452,6 +21519,9 @@ msgstr "Bu öğe için dosya yok."
 msgid "No files uploaded"
 msgstr "Yüklenmiş dosya yok"
 
+msgid "No files yet."
+msgstr "Henüz dosya yok."
+
 msgid "No findings"
 msgstr "Bulgu yok"
 
@@ -22429,6 +22499,9 @@ msgstr "{taskTitle} için notlar"
 msgid "Notes for {title}"
 msgstr "{title} için notlar"
 
+msgid "Notes, a due date, fields and file requests are added by editing the card."
+msgstr "Notlar, bir son tarih, alanlar ve dosya istekleri kartı düzenleyerek eklenir."
+
 msgid "Nothing"
 msgstr "Hiçbir şey"
 
@@ -22469,9 +22542,6 @@ msgstr "Henüz hiçbir şey yok"
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
 
-msgid "Nothing in this section yet."
-msgstr "Bu bölümde henüz bir şey yok."
-
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
 msgstr "Henüz hiçbir şey silinmedi. İstek diğer Yöneticilerin onaylarına gönderilir ve yöneticilerden biri onayladığında silinir."
 
@@ -22499,6 +22569,9 @@ msgstr "Arama veya filtreyle eşleşen hiçbir şey yok"
 
 msgid "Nothing needs stock"
 msgstr "Stok gerektiren bir şey yok"
+
+msgid "Nothing on this page yet."
+msgstr "Bu sayfada henüz bir şey yok."
 
 msgid "Nothing owed"
 msgstr "Ödenmesi gereken bir şey yok"
@@ -22875,6 +22948,9 @@ msgstr "Bir dönem, başlangıç tarihinden itibaren bir aydır."
 msgid "One person's page as JSON. It replaces any page they already have."
 msgstr "Bir kişinin sayfası JSON olarak. Mevcut sayfasının yerini alır."
 
+msgid "One point per line"
+msgstr "Satır başına bir madde"
+
 msgid "One promise per line, in plain words."
 msgstr "Her satıra bir söz, sade bir dille."
 
@@ -23067,6 +23143,10 @@ msgstr "Aç"
 
 msgid "Open ({paymentCurrency})"
 msgstr "Açık ({paymentCurrency})"
+
+#. placeholder {0}: view.title
+msgid "Open {0}"
+msgstr "{0} aç"
 
 #. placeholder {0}: readableId ?? ""
 msgid "Open {0} details"
@@ -23481,6 +23561,9 @@ msgstr "Seçenekler"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "{0} için seçenekler"
+
+msgid "Options for {title}"
+msgstr "{title} için seçenekler"
 
 msgid "Options, one per line (leave empty for a typed answer)"
 msgstr "Seçenekler, her satıra bir tane (yazılı yanıt için boş bırakın)"
@@ -24276,10 +24359,10 @@ msgid "People"
 msgstr "Personel"
 
 msgid "People with a page see the Implementation Hub."
-msgstr ""
+msgstr "Sayfası olan kişiler Uygulama Merkezi'ni görür."
 
 msgid "People with a page will see it in Implementation Hub 2.0 instead of Implementation Hub 1.0. Everyone else will see no Implementation Hub. Ticks, answers and rows carry over."
-msgstr ""
+msgstr "Sayfası olan kişiler Uygulama Merkezi'ni 1.0 yerine 2.0'da görecek. Diğer herkes Uygulama Merkezi'ni görmeyecek. İşaretler, yanıtlar ve satırlar aktarılır."
 
 msgid "Per"
 msgstr "Her"
@@ -24837,6 +24920,9 @@ msgstr "PO Numarası (revizyonsuz)"
 
 msgid "PO PDF"
 msgstr "PO PDF"
+
+msgid "Points, one per line"
+msgstr "Maddeler, satır başına bir tane"
 
 msgid "Policy"
 msgstr "Politika"
@@ -27166,6 +27252,9 @@ msgstr "Bozuk verileri kaldır ve geri yükle"
 msgid "Remove Employee"
 msgstr "Çalışanı Kaldır"
 
+msgid "Remove field"
+msgstr "Alanı kaldır"
+
 msgid "Remove filter"
 msgstr "Filtreyi kaldır"
 
@@ -27223,9 +27312,6 @@ msgstr "PDF'yi Kaldır"
 msgid "Remove row"
 msgstr "Satırı kaldır"
 
-msgid "Remove section"
-msgstr "Bölümü kaldır"
-
 msgid "Remove slide"
 msgstr "Slaytı kaldır"
 
@@ -27275,6 +27361,9 @@ msgstr "Videoyu Kaldır"
 
 msgid "Removed"
 msgstr "Kaldırıldı"
+
+msgid "Removed from the Implementation Hub"
+msgstr "Uygulama Merkezi'nden kaldırıldı"
 
 msgid "Removed line"
 msgstr "Kaldırılan Satır"
@@ -29325,9 +29414,6 @@ msgstr "Bölüm E satır 38, Görevli Ücretleri Nitelikli Araştırma Giderleri
 msgid "Section saved"
 msgstr "Bölüm kaydedildi"
 
-msgid "Section title"
-msgstr "Bölüm başlığı"
-
 msgid "Secure your account with 2FA"
 msgstr "Hesabınızı 2FA ile güvenli hale getirin"
 
@@ -29916,8 +30002,9 @@ msgstr "Seri"
 msgid "Serves requirement"
 msgstr "Gerekliliği karşılar"
 
-msgid "Serves: {serves}"
-msgstr "Karşılar: {serves}"
+#. placeholder {0}: view.serves
+msgid "Serves: {0}"
+msgstr "Hedef kitle: {0}"
 
 msgid "service"
 msgstr "hizmet"
@@ -30711,6 +30798,9 @@ msgstr "Her sayfanın altında gösterilir."
 
 msgid "Shown to the customer on the invoice"
 msgstr "Müşteriye faturada gösterilir"
+
+msgid "Shown to the person in the card. A checklist's points are ticked by them, and the card is marked done once every point is ticked."
+msgstr "Kişiye kartta gösterilir. Kontrol listesinin maddelerini kişi işaretler ve her madde işaretlendiğinde kart tamamlandı olarak işaretlenir."
 
 msgid "Shown to the user when this rule fails."
 msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
@@ -32939,8 +33029,8 @@ msgstr "Bu tedarikçi ilişkisinden sorumlu Carbon kullanıcısı; bu tedarikçi
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "Bu RFQ'ya sahip olan Carbon kullanıcısı; tedarikçi yanıtları ve hatırlatmalar onlara yönlendirilir."
 
-msgid "The card goes at the end of the section."
-msgstr "Kart bölümün sonuna eklenir."
+msgid "The card goes at the end of the page."
+msgstr "Kart sayfanın sonuna eklenir."
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "Sevkiyatın çıktığı taşıyıcı ve hizmet, izleme numarasını bir bağlantıya dönüştüren izleme URL şablonunu ve hesap nakliye masraflarını sağlar."
@@ -33024,7 +33114,7 @@ msgid "The company template stays the same."
 msgstr "Şirket şablonu aynı kalır."
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling puts the company on Implementation Hub 2.0. Each person sees it once you load their page."
-msgstr ""
+msgstr "Şirketin personeli henüz Uygulama Merkezi'ni görmüyor. Kaydolmak şirketi Uygulama Merkezi 2.0'a alır. Her kişi, siz onun sayfasını yükleyince bunu görür."
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 1.0, because Implementation Hub 2.0 is off for this company, and emails the company's admins."
 msgstr "Şirketin personeli henüz Uygulama Merkezi'ni görmüyor. Uygulama Merkezi 2.0 bu şirket için kapalı olduğundan, kaydetmek onlara Uygulama Merkezi 1.0'ı gösterir ve şirket yöneticilerine e-posta gönderir."
@@ -34052,9 +34142,6 @@ msgstr "Bu varlığın Maliyetini Faydalı ömrü boyunca yaymak için kullanıl
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "Zamanlayıcı aşağıda uygulanan ilk Kuralı kullanır, ardından Duruş ve personel atamalarını çıkarır."
 
-msgid "The section and its cards leave this page. Items on it stay in the catalogue and can be added again."
-msgstr "Bölüm ve kartları bu sayfadan kaldırılır. Bölümdeki öğeler katalogda kalır ve yeniden eklenebilir."
-
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "Kiralamak için satış yerine inşa ettiğiniz veya aktifleştirdiğiniz birimler için sistem tarafından sağlanan Varlık sınıfı; kendi Kiralık Filo varlığı ve birikmiş amortisman hesaplarına Muhasebeleştirir ve bir Stok kartı ile bağlantılı her varlık Filo kaydında yer alır."
 
@@ -35072,6 +35159,9 @@ msgstr "Küçük resim yüklendi"
 msgid "Thursday"
 msgstr "Perşembe"
 
+msgid "Tick every point of the checklist first"
+msgstr "Önce kontrol listesinin her maddesini işaretleyin"
+
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Sevkiyatları faturaya bağlayın, yeniden veri girişi olmadan"
 
@@ -35891,6 +35981,9 @@ msgstr "Çalışma alanınızda arama yapmak için yazın"
 
 msgid "Type:"
 msgstr "Tip:"
+
+msgid "Typed answer"
+msgstr "Yazılı yanıt"
 
 msgid "Types"
 msgstr "Tipler"
@@ -38425,6 +38518,9 @@ msgstr "Oturum açma bilgileriniz çalınsa bile hesabınız güvenli kalır"
 
 msgid "Your answer"
 msgstr "Yanıtınız"
+
+msgid "Your answer: pick all that apply"
+msgstr "Yanıtınız: uygun olanların tümünü seçin"
 
 msgid "Your backups"
 msgstr "Sizin Yedeklemeleriniz"

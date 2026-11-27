@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261127094630",
+  "schemaVersion": "20261127094716",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-27T10:48:58.407Z",
+  "exportedAt": "2026-11-27T10:53:03.214Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -1114,6 +1114,23 @@
         "companyId",
         "fieldKey",
         "value",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "implementationFile",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "userId",
+        "cardId",
+        "path",
+        "name",
+        "size",
         "createdBy",
         "createdAt",
         "updatedBy",

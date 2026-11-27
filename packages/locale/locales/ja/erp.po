@@ -125,6 +125,10 @@ msgstr "{0, plural, one {# 日のスラック} other {# 日のスラック}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 日の不足} other {# 日の不足}}"
 
+#. placeholder {0}: customization.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr "{0, plural, one {#日} other {#日}}"
+
 #. placeholder {0}: -daysLeft
 msgid "{0, plural, one {# day} other {# days}} past {due}"
 msgstr "{0, plural, one {# 日} other {# 日}} {due} を超過"
@@ -136,6 +140,10 @@ msgstr "{0, plural, one {# 要素が変更されました} other {# 要素が変
 #. placeholder {0}: baseline.elementCount
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr "{0, plural, one {# 要素} other {# 要素}}"
+
+#. placeholder {0}: files.length
+msgid "{0, plural, one {# file} other {# files}}"
+msgstr "{0, plural, one {#件のファイル} other {#件のファイル}}"
 
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
@@ -189,6 +197,10 @@ msgstr "{0, plural, one {このプロセスの # 工程はスケジュールで�
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
 msgstr "{0, plural, one {# 工程} other {# 工程}}"
+
+#. placeholder {0}: question.options.length
+msgid "{0, plural, one {# option} other {# options}}"
+msgstr "{0, plural, one {#件の選択肢} other {#件の選択肢}}"
 
 #. placeholder {0}: progress.overdue
 msgid "{0, plural, one {# overdue} other {# overdue}}"
@@ -265,6 +277,10 @@ msgstr "{0, plural, one {# 件の割当を複製しました} other {# 件の割
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {Creates # element} other {Creates # elements}}"
 msgstr "{0, plural, one {# 個の要素を作成} other {# 個の要素を作成}}"
+
+#. placeholder {0}: view.estimateDays
+msgid "{0, plural, one {Estimate # day} other {Estimate # days}}"
+msgstr "{0, plural, one {目安 #日} other {目安 #日}}"
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -534,9 +550,17 @@ msgstr "{0}は{1}です。下書きまたは計画済ではありません"
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0}はクローズ済です。その時間は変更できません。"
 
+#. placeholder {0}: file.name
+msgid "{0} is larger than 50 MB"
+msgstr "{0} は 50 MB を超えています"
+
 #. placeholder {0}: chipName(active.id)
 msgid "{0} is no longer over a cell"
 msgstr "{0}はもうセルの上にありません"
+
+#. placeholder {0}: file.name
+msgid "{0} is not a type of file the page takes"
+msgstr "{0} はこのページで受け付けないファイル形式です"
 
 #. placeholder {0}: chipName(active.id)
 #. placeholder {1}: placeName(over.data.current)
@@ -927,6 +951,9 @@ msgstr "{bucket3Start}～{b3}日"
 msgid "{bucket4Start}+ Days"
 msgstr "{bucket4Start}日以上"
 
+msgid "{by}, {on}"
+msgstr "{by}、{on}"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel}のマークアップ（数量 {quantity}）"
 
@@ -1092,9 +1119,6 @@ msgstr "{errors, plural, one {修正が必要な行 # 件} other {修正が必�
 
 msgid "{errors} failed"
 msgstr "{errors} が失敗"
-
-msgid "{estimateDays, plural, one {# day} other {# days}}"
-msgstr "{estimateDays, plural, one {# 日} other {# 日}}"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行除外} other {# 行除外}}"
@@ -1533,7 +1557,7 @@ msgid "{who} reversed {amount} on {element}"
 msgstr "{warnings} はフォローアップが必要"
 
 msgid "{withoutPage, plural, one {# active person has no page yet and will not see the Implementation Hub until you load one.} other {# active people have no page yet and will not see the Implementation Hub until you load one.}}"
-msgstr ""
+msgstr "{withoutPage, plural, one {ページがまだない人員は#人です。ページを読み込むまで Implementation Hub は表示されません。} other {ページがまだない人員は#人です。ページを読み込むまで Implementation Hub は表示されません。}}"
 
 msgid "{years}yr"
 msgstr "{years}年"
@@ -1849,6 +1873,9 @@ msgstr "変更通知は、エンジニアリングまたは製造変更をレビ
 
 msgid "A chargeable element below a control account that has an earned value technique, such as 0/100, 50/50 or Percent Complete."
 msgstr "獲得価値技法（0/100、50/50、パーセント完了など）を持つ統制勘定科目の下の請求可能要素。"
+
+msgid "A checklist takes up to {PAGE_CHECKLIST_MAX_POINTS} points"
+msgstr "チェックリストの項目は最大 {PAGE_CHECKLIST_MAX_POINTS} 件です"
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "受け取ったが請求されていない商品の価値を保有するクリアリング勘定。仕入先請求書がそれを結済します。"
@@ -2170,9 +2197,6 @@ msgstr "仕入先ごとに新しい発注書が作成されます。または、
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "現在のリビジョンのコピーを使用して、新しいリビジョンが作成されます"
-
-msgid "A new section at the end of the page, with its first card."
-msgstr "ページ末尾の新しいセクションと、その最初のカード。"
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "新しい外注サービス製造指図は請求単価をコピーします。各時間エントリは原価単価でコストを転記します。"
@@ -3276,9 +3300,6 @@ msgstr "行を追加"
 msgid "Add a row for each charge number you worked on."
 msgstr "作業した各チャージ番号について行を追加してください。"
 
-msgid "Add a section"
-msgstr "セクションを追加"
-
 msgid "Add a step"
 msgstr "ステップを追加"
 
@@ -3366,6 +3387,9 @@ msgstr "料金を追加"
 msgid "Add Charge Number"
 msgstr "チャージ番号を追加"
 
+msgid "Add checklist"
+msgstr "チェックリストを追加"
+
 msgid "Add child"
 msgstr "子を追加"
 
@@ -3416,6 +3440,9 @@ msgstr "エントリを追加"
 
 msgid "Add Event"
 msgstr "イベント追加"
+
+msgid "Add field"
+msgstr "フィールドを追加"
 
 msgid "Add filter"
 msgstr "絞り込みを追加"
@@ -3613,9 +3640,6 @@ msgstr "ライブラリからルールを追加"
 
 msgid "Add Sample"
 msgstr "サンプルを追加"
-
-msgid "Add section"
-msgstr "セクションを追加"
 
 msgid "Add Selector"
 msgstr "セレクターを追加"
@@ -4272,9 +4296,6 @@ msgstr "国際銀行口座番号（IBAN）：国、銀行、支店、口座を1�
 msgid "An introduction for this person (optional)"
 msgstr "この人員の紹介文（任意）"
 
-msgid "An introduction for this section (optional)"
-msgstr "このセクションの紹介文（任意）"
-
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "招待待機中。承諾後に有効になります。"
 
@@ -4484,14 +4505,20 @@ msgstr "この保管ユニットがネストされる別の保管ユニット（
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "別のシステムがRampの会計システムとして接続されています"
 
+msgid "Answer"
+msgstr "回答"
+
+msgid "Answer or status"
+msgstr "回答またはステータス"
+
 msgid "Answer the priority set questionnaire"
 msgstr "優先度セットの質問票に回答する"
 
 msgid "Answer what you can. Each answer moves Carbon features between categories, and the panel beside the questions shows what your company needs before go-live. \"Not sure\" moves nothing and is kept as an open question."
 msgstr "回答できる項目にお答えください。回答するたびに Carbon の機能がカテゴリ間で移動し、質問の横のパネルに、本番稼働前に貴社に必要なものが表示されます。「わからない」を選択しても何も移動せず、未回答の質問として残ります。"
 
-msgid "Answered"
-msgstr "回答済"
+msgid "Answer:"
+msgstr "回答："
 
 msgid "Any"
 msgstr "いずれか"
@@ -5419,6 +5446,9 @@ msgstr "昇順"
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0}権限を持つ管理者に最初の{1}を追加するよう依頼してください。"
 
+msgid "Ask the person for a file"
+msgstr "担当者にファイルを依頼"
+
 msgid "Ask your Carbon admin to set up the Implementation Hub for you."
 msgstr "Carbon の管理者に実施ハブの設定を依頼してください。"
 
@@ -5427,6 +5457,9 @@ msgstr "{number} が {options} の場合に質問されます。"
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "この期間の新しい実行が現在減価償却する内容を確認し、期間内で終了する下書き実行を確認します。実行を作成して転記し、期間に減価償却費と減価償却累計額が計上されるようにします。この期間に減価償却が適用されない場合は、理由を指定してスキップしてください。"
+
+msgid "Asks for a file"
+msgstr "ファイルを依頼"
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "収益認識に対して、この期間の新規実行が現在何を認識するか（繰延請求書収益と契約収益）を要求し、期末までに支払期限のある収益を保持する下書き実行をチェックします。実行を作成し、転記して、収益が総勘定元帳に到達するようにします。認識すべきものがない場合は、理由を付けてスキップしてください。"
@@ -5633,6 +5666,9 @@ msgid "Attach"
 msgstr "添付"
 
 msgid "Attach File"
+msgstr "ファイルを添付"
+
+msgid "Attach files"
 msgstr "ファイルを添付"
 
 msgid "Attach Job"
@@ -7166,12 +7202,6 @@ msgstr "カード"
 msgid "Card Holder"
 msgstr "カードホルダー"
 
-msgid "Card options"
-msgstr "カードのオプション"
-
-msgid "Card title"
-msgstr "カードのタイトル"
-
 msgid "Cards"
 msgstr "カード"
 
@@ -7380,6 +7410,9 @@ msgstr "変更ログニュースレター"
 msgid "Changes"
 msgstr "変更"
 
+msgid "Changes to the item's title, details and answers show on every page that has it."
+msgstr "カードのタイトル、詳細、回答への変更は、そのカードを含むすべてのページに表示されます。"
+
 msgid "Changing the base currency converts no amounts"
 msgstr "基準通貨を変更しても、金額は換算されません"
 
@@ -7559,6 +7592,9 @@ msgstr "工場のスケジュールを確認しています…"
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe顧客リンクを確認中…"
 
+msgid "Checklist"
+msgstr "チェックリスト"
+
 msgid "Checkpoint ·"
 msgstr "チェックポイント ·"
 
@@ -7637,6 +7673,12 @@ msgstr "税年度を選択"
 
 msgid "Choose a template"
 msgstr "テンプレートを選択"
+
+msgid "Choose all that apply"
+msgstr "該当するものをすべて選択"
+
+msgid "Choose an answer"
+msgstr "回答を選択"
 
 msgid "Choose an item"
 msgstr "品目を選択"
@@ -12561,6 +12603,9 @@ msgstr "{name}を編集"
 msgid "Edit {riskTitle}"
 msgstr "{riskTitle}を編集"
 
+msgid "Edit {title}"
+msgstr "{title} を編集"
+
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>問題</0>ワークフローを編集"
 
@@ -12575,6 +12620,9 @@ msgstr "アカウントを編集"
 
 msgid "Edit Action"
 msgstr "アクションを編集"
+
+msgid "Edit answer"
+msgstr "回答を編集"
 
 msgid "Edit API Key"
 msgstr "APIキーを編集"
@@ -12602,6 +12650,9 @@ msgstr "属性カテゴリを編集"
 
 msgid "Edit Bank Account"
 msgstr "銀行口座を編集"
+
+msgid "Edit card"
+msgstr "カードを編集"
 
 msgid "Edit Category"
 msgstr "カテゴリを編集"
@@ -13423,6 +13474,9 @@ msgstr "認証器アプリから6桁のコードを入力して再開します�
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr "仕入先に請求された金額を入力してください。差額は端数調整勘定の明細として追加されます（上限 {0}）。他の明細の価格はそのままです。"
+
+msgid "Enter the due date in full"
+msgstr "期日を年月日まで入力"
 
 msgid "Enter the estimate as a number of days"
 msgstr "見積もりを日数で入力してください"
@@ -14706,6 +14760,9 @@ msgstr "フィールド情報"
 msgid "Field Mapping"
 msgstr "フィールドマッピング"
 
+msgid "Field type"
+msgstr "フィールドの種類"
+
 msgid "Fields"
 msgstr "フィールド"
 
@@ -14720,6 +14777,9 @@ msgstr "ファイル拡張子"
 
 msgid "File is already in the selected bucket"
 msgstr "ファイルは既に選択されたバケットに存在しています"
+
+msgid "File requested"
+msgstr "ファイル依頼済"
 
 #. placeholder {0}: ( logo.size / 1024 / 1024 ).toFixed(2)
 msgid "File size exceeds {maxSizeMB}MB limit. Current size: {0}MB"
@@ -15540,17 +15600,20 @@ msgstr "セットアップ中"
 msgid "Give every asset a payment."
 msgstr "すべての資産に支払明細を与えてください。"
 
+msgid "Give every field a label and a value"
+msgstr "すべてのフィールドにラベルと値を入力"
+
 msgid "Give it an owner and a date"
 msgstr "責任者と日付を指定してください"
+
+msgid "Give the card a title"
+msgstr "カードにタイトルを入力"
 
 msgid "Give the lease a <0>fixed duration on its Details step</0>."
 msgstr "リースに<0>詳細ステップで固定期間を設定してください</0>。"
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "マイルストーンに開始日と終了日を指定してバーンダウンを表示します。"
-
-msgid "Give the new section a title"
-msgstr "新しいセクションにタイトルを付けてください"
 
 msgid "GL"
 msgstr "総勘定元帳"
@@ -16489,7 +16552,7 @@ msgid "Implementation Hub 2.0 is off for this company. Add it to the implementat
 msgstr "この会社では実施ハブ 2.0 がオフになっています。先に CSA ダッシュボードの implementation-hub-2 フラグに追加してください。"
 
 msgid "Implementation Hub 2.0 is on for this company. After enrolling, each person sees it once you give them a page."
-msgstr ""
+msgstr "この会社では Implementation Hub 2.0 が有効です。登録後、ページを割り当てた担当者ごとに表示されます。"
 
 msgid "Implementation Hub Settings"
 msgstr "実施ハブの設定"
@@ -16677,7 +16740,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "無効なカテゴリは新しい時間に対してピックできません"
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "単位を選択する際、無効な単位は表示されません"
 
 msgid "inbound customer requests for quote, converted to quotes"
 msgstr "顧客からの見積依頼（受信分）を見積に変換"
@@ -17897,6 +17960,9 @@ msgstr "デモデータを保持する"
 msgid "Keep demo data and delete your previous data?"
 msgstr "デモデータを保持し、以前のデータを削除しますか？"
 
+msgid "Keep each point under 500 characters"
+msgstr "各項目は 500 文字以内にしてください"
+
 msgid "Keep editing"
 msgstr "編集を続ける"
 
@@ -18945,6 +19011,12 @@ msgstr "ロゴ"
 #. placeholder {0}: auditConfig.retentionDays
 msgid "Logs older than {0} days are automatically archived."
 msgstr "{0}日以上前のログは自動的にアーカイブ済になります。"
+
+msgid "Long answer"
+msgstr "長文回答"
+
+msgid "Long answer: answered in the card, not in its row"
+msgstr "長文回答：行ではなくカード内で回答"
 
 msgid "Long Description"
 msgstr "長い説明"
@@ -20129,12 +20201,6 @@ msgstr "アイテムを移動"
 msgid "Move Out of Sub-Assembly"
 msgstr "サブアセンブリから移動"
 
-msgid "Move section down"
-msgstr "セクションを下へ移動"
-
-msgid "Move section up"
-msgstr "セクションを上へ移動"
-
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "数量の一部を新しい処置行に移動して、MRBが各部分を個別に決定できるようにします(例えば一部をスクラップ、一部を手直し)。"
 
@@ -20152,9 +20218,6 @@ msgstr "別の保管ユニットへ移動"
 
 msgid "Move to Group"
 msgstr "グループに移動"
-
-msgid "Move to section"
-msgstr "セクションへ移動"
 
 msgid "Move to tax codes"
 msgstr "税コードに移動"
@@ -20359,7 +20422,11 @@ msgstr "必要なのは、その日にステーションでスケジュールに
 msgid "Needed when the date is before the entry window"
 msgstr "日付が入力ウィンドウより前の場合に必要"
 
-#. placeholder {0}: waitingFor.join(", ")
+#. placeholder {0}: view.waitingFor.join(", ")
+msgid "Needs {0} first"
+msgstr "先に {0} が必要"
+
+#. placeholder {0}: view.waitingFor.join(", ")
 msgid "Needs {0} first."
 msgstr "先に{0}が必要です。"
 
@@ -21452,6 +21519,9 @@ msgstr "このアイテムのファイルはありません。"
 msgid "No files uploaded"
 msgstr "ファイルがアップロードされていません"
 
+msgid "No files yet."
+msgstr "ファイルはまだありません。"
+
 msgid "No findings"
 msgstr "検査結果がありません"
 
@@ -22429,6 +22499,9 @@ msgstr "{taskTitle} のメモ"
 msgid "Notes for {title}"
 msgstr "{title} のメモ"
 
+msgid "Notes, a due date, fields and file requests are added by editing the card."
+msgstr "メモ、期日、フィールド、ファイル依頼は、カードを編集して追加します。"
+
 msgid "Nothing"
 msgstr "なし"
 
@@ -22469,9 +22542,6 @@ msgstr "ここにはまだ何もありません"
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
-msgid "Nothing in this section yet."
-msgstr "このセクションにはまだ何もありません。"
-
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
 msgstr "まだ何も削除されません。依頼は他の管理者の承認に回され、いずれかの管理者が承認した時点で削除されます。"
 
@@ -22499,6 +22569,9 @@ msgstr "検索またはフィルタに一致するものがありません"
 
 msgid "Nothing needs stock"
 msgstr "在庫が必要なものはありません"
+
+msgid "Nothing on this page yet."
+msgstr "このページにはまだ何もありません。"
 
 msgid "Nothing owed"
 msgstr "何も負っていません"
@@ -22875,6 +22948,9 @@ msgstr "1期間は開始日から1か月です。"
 msgid "One person's page as JSON. It replaces any page they already have."
 msgstr "1人分のページをJSONで入力します。既存のページがあれば置き換えられます。"
 
+msgid "One point per line"
+msgstr "1行に1項目"
+
 msgid "One promise per line, in plain words."
 msgstr "1行に1つの約束。平易な言葉で。"
 
@@ -23067,6 +23143,10 @@ msgstr "開く"
 
 msgid "Open ({paymentCurrency})"
 msgstr "オープン({paymentCurrency})"
+
+#. placeholder {0}: view.title
+msgid "Open {0}"
+msgstr "{0} を開く"
 
 #. placeholder {0}: readableId ?? ""
 msgid "Open {0} details"
@@ -23481,6 +23561,9 @@ msgstr "オプション"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "{0}のオプション"
+
+msgid "Options for {title}"
+msgstr "{title} の選択肢"
 
 msgid "Options, one per line (leave empty for a typed answer)"
 msgstr "選択肢（1行に1つ。自由入力の場合は空欄）"
@@ -24276,10 +24359,10 @@ msgid "People"
 msgstr "人員"
 
 msgid "People with a page see the Implementation Hub."
-msgstr ""
+msgstr "ページを持つ人員には Implementation Hub が表示されます。"
 
 msgid "People with a page will see it in Implementation Hub 2.0 instead of Implementation Hub 1.0. Everyone else will see no Implementation Hub. Ticks, answers and rows carry over."
-msgstr ""
+msgstr "ページを持つ人員は、Implementation Hub 1.0 の代わりに Implementation Hub 2.0 で表示されます。それ以外の全員には Implementation Hub は表示されません。チェック、回答、行はそのまま引き継がれます。"
 
 msgid "Per"
 msgstr "あたり"
@@ -24837,6 +24920,9 @@ msgstr "発注書番号（リビジョンなし）"
 
 msgid "PO PDF"
 msgstr "PO PDF"
+
+msgid "Points, one per line"
+msgstr "項目（1行に1つ）"
 
 msgid "Policy"
 msgstr "ポリシー"
@@ -27166,6 +27252,9 @@ msgstr "破損データを除去して復元"
 msgid "Remove Employee"
 msgstr "従業員を削除"
 
+msgid "Remove field"
+msgstr "フィールドを除去"
+
 msgid "Remove filter"
 msgstr "絞り込みを除去"
 
@@ -27223,9 +27312,6 @@ msgstr "PDFを除去"
 msgid "Remove row"
 msgstr "行を除去"
 
-msgid "Remove section"
-msgstr "セクションを除去"
-
 msgid "Remove slide"
 msgstr "スライドを除去"
 
@@ -27275,6 +27361,9 @@ msgstr "ビデオを除去"
 
 msgid "Removed"
 msgstr "削除済み"
+
+msgid "Removed from the Implementation Hub"
+msgstr "Implementation Hub から除去されました"
 
 msgid "Removed line"
 msgstr "除去された明細"
@@ -29325,9 +29414,6 @@ msgstr "セクション E ライン 38、役員給与 QRE：{0}"
 msgid "Section saved"
 msgstr "セクションが保存されました"
 
-msgid "Section title"
-msgstr "セクションタイトル"
-
 msgid "Secure your account with 2FA"
 msgstr "2FAでアカウントを保護"
 
@@ -29916,8 +30002,9 @@ msgstr "シリーズ"
 msgid "Serves requirement"
 msgstr "要求事項を満たす"
 
-msgid "Serves: {serves}"
-msgstr "満たす対象: {serves}"
+#. placeholder {0}: view.serves
+msgid "Serves: {0}"
+msgstr "対象：{0}"
 
 msgid "service"
 msgstr "サービス"
@@ -30711,6 +30798,9 @@ msgstr "各ページの下部に表示されます。"
 
 msgid "Shown to the customer on the invoice"
 msgstr "請求書で顧客に表示されます"
+
+msgid "Shown to the person in the card. A checklist's points are ticked by them, and the card is marked done once every point is ticked."
+msgstr "担当者にカード内で表示されます。チェックリストの項目は担当者がチェックし、すべての項目にチェックが入るとカードは完了になります。"
 
 msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
@@ -32939,8 +33029,8 @@ msgstr "この仕入先の関係について責任があるCarbon ユーザー�
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "このRFQを所有するCarbon ユーザー。仕入先からの回答とリマインダーがこのユーザーに送られます。"
 
-msgid "The card goes at the end of the section."
-msgstr "カードはセクションの末尾に配置されます。"
+msgid "The card goes at the end of the page."
+msgstr "カードはページの末尾に追加されます。"
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "出荷が発送される運送業者とサービス。追跡URLテンプレート（追跡番号をリンクに変換する）と、運賃料金が転記される勘定を提供します。"
@@ -33024,7 +33114,7 @@ msgid "The company template stays the same."
 msgstr "会社のテンプレートは変更されません。"
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling puts the company on Implementation Hub 2.0. Each person sees it once you load their page."
-msgstr ""
+msgstr "会社の人員にはまだ Implementation Hub が表示されません。登録すると、会社は Implementation Hub 2.0 に切り替わります。各担当者は、ページを読み込むと表示されるようになります。"
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 1.0, because Implementation Hub 2.0 is off for this company, and emails the company's admins."
 msgstr "この会社のメンバーにはまだ実施ハブが表示されていません。登録すると、この会社では実施ハブ 2.0 がオフのため、メンバーには実施ハブ 1.0 が表示され、会社の管理者にメールが送信されます。"
@@ -34052,9 +34142,6 @@ msgstr "この資産の原価を耐用年数にわたって配分するために
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "スケジューラは以下の適用される最初のルールを使用し、停止時間とスタッフィングを差し引きます。"
 
-msgid "The section and its cards leave this page. Items on it stay in the catalogue and can be added again."
-msgstr "セクションとそのカードはこのページから外れます。セクション内の項目はカタログに残り、再度追加できます。"
-
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "販売ではなくレンタルアウトするために構築または資本化される単位向けのシード資産クラス。独自のレンタルフリート資産および減価償却累計額勘定にポストされ、品目に紐付けられたすべての資産がフリートレジスターに表示されます。"
 
@@ -35072,6 +35159,9 @@ msgstr "サムネイルがアップロードされました"
 msgid "Thursday"
 msgstr "木曜日"
 
+msgid "Tick every point of the checklist first"
+msgstr "先にチェックリストの項目をすべてチェックしてください"
+
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "出荷を請求書に結びつけ、再入力なしで処理する"
 
@@ -35891,6 +35981,9 @@ msgstr "ワークスペース全体を検索するには入力してください
 
 msgid "Type:"
 msgstr "タイプ:"
+
+msgid "Typed answer"
+msgstr "入力回答"
 
 msgid "Types"
 msgstr "タイプ"
@@ -38424,6 +38517,9 @@ msgstr "ログインが盗まれてもアカウントは安全です"
 
 msgid "Your answer"
 msgstr "回答"
+
+msgid "Your answer: pick all that apply"
+msgstr "あなたの回答：該当するものをすべて選択"
 
 msgid "Your backups"
 msgstr "バックアップ"

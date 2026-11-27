@@ -54,6 +54,14 @@ export type HubMutation =
   // A person's page file, as text. The server parses and checks it.
   | { intent: "setMemberPage"; page: string }
   | { intent: "deleteMemberPage"; userId: string }
+  // Files already stored in the company's bucket, recorded on a card.
+  | {
+      intent: "attachFile";
+      memberId: string;
+      cardId: string;
+      files: { path: string; name: string; size: number }[];
+    }
+  | { intent: "removeFile"; fileId: string }
   // Priority set answers and overrides, as field values (logic/priority-set).
   | { intent: "setPriority"; writes: { fieldKey: string; value: string }[] };
 
@@ -129,6 +137,15 @@ export function toFormFields(m: HubMutation): Record<string, string> {
       return { intent: m.intent, page: m.page };
     case "deleteMemberPage":
       return { intent: m.intent, userId: m.userId };
+    case "attachFile":
+      return {
+        intent: m.intent,
+        memberId: m.memberId,
+        cardId: m.cardId,
+        files: JSON.stringify(m.files)
+      };
+    case "removeFile":
+      return { intent: m.intent, fileId: m.fileId };
     case "setPriority":
       return { intent: m.intent, writes: JSON.stringify(m.writes) };
   }

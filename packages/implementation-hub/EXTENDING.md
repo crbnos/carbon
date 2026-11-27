@@ -44,11 +44,28 @@ optimistically until the loader confirms them.
     { "title": "Next up", "cards": [
       { "item": "setup:suppliers", "due": "2026-10-20" },
       { "item": "task:first-purchase-order", "note": "Start with the blanket order" },
-      { "custom": { "key": "approval-limits", "title": "Agree approval limits", "link": "/x/settings/approval-rules" } }
+      { "custom": { "key": "approval-limits", "title": "Agree approval limits", "link": "/x/settings/approval-rules" },
+        "fields": [
+          { "label": "Owner", "value": "Finance lead" },
+          { "label": "Done when", "points": ["Limits agreed per role", "Limits entered in Carbon"] }
+        ],
+        "askForFile": true }
     ]}
   ]
 }
 ```
+
+- The app shows a page as one table of cards, in file order, and saves its
+  cards in one section. A file with several sections still loads; their titles
+  are not shown, and the editor's first save merges them (`singleSection`).
+- `fields` (up to 20, `memberPageFieldValidator`): a `label` with a `value`, or
+  a `label` with `points`, a checklist the person ticks. A point's tick is
+  `pointKey(userId, cardId, text)` (`logic/page-files.ts`), so a reworded point
+  is ticked afresh. The person marks a card with a checklist done once every
+  point is ticked; Carbon staff mark it either way.
+- `askForFile`: the person attaches files to the card (`attachFile`). Files are
+  stored in the company's bucket under `<companyId>/implementation/<userId>/`
+  and recorded in `implementationFile`.
 
 - `checkMemberPage` (`logic/page.ts`) runs the schema, then `pageProblems`:
   unknown items and cards placed twice. Every problem is listed with its path;
@@ -67,7 +84,7 @@ optimistically until the loader confirms them.
 2. Add its entry in `templateEntries` (`logic/page.ts`): the catalogue key,
    kind, title, the state it ticks, evidence and links. A new kind also needs
    a `PAGE_CARD_KIND_LABEL` (`content/page.ts`) and, if it ticks something
-   new, a label in `CardStatus` (`ui/MemberPageView.tsx`).
+   new, a label in `CardStatus` (`ui/PageCardParts.tsx`).
 3. Add a test in `logic/page.test.ts`.
 
 ## Recipe: deep-link a card to an ERP screen

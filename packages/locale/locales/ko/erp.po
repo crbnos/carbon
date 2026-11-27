@@ -125,6 +125,10 @@ msgstr "{0, plural, one {여유 # 일} other {여유 # 일}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 일 부족} other {# 일 부족}}"
 
+#. placeholder {0}: customization.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr "{0, plural, one {#일} other {#일}}"
+
 #. placeholder {0}: -daysLeft
 msgid "{0, plural, one {# day} other {# days}} past {due}"
 msgstr "{0, plural, one {# 일} other {# 일}} {due} 초과"
@@ -136,6 +140,10 @@ msgstr "{0, plural, one {# 요소 변경됨} other {# 요소들 변경됨}}"
 #. placeholder {0}: baseline.elementCount
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr "{0, plural, one {# 요소} other {# 요소들}}"
+
+#. placeholder {0}: files.length
+msgid "{0, plural, one {# file} other {# files}}"
+msgstr "{0, plural, one {파일 #개} other {파일 #개}}"
 
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
@@ -189,6 +197,10 @@ msgstr "{0, plural, one {이 공법의 # 개 공정은 예약할 수 없습니�
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
 msgstr "{0, plural, one {# 공정} other {# 공정}}"
+
+#. placeholder {0}: question.options.length
+msgid "{0, plural, one {# option} other {# options}}"
+msgstr "{0, plural, one {옵션 #개} other {옵션 #개}}"
 
 #. placeholder {0}: progress.overdue
 msgid "{0, plural, one {# overdue} other {# overdue}}"
@@ -265,6 +277,10 @@ msgstr "{0, plural, one {# 개의 할당 복사됨} other {# 개의 할당 복�
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {Creates # element} other {Creates # elements}}"
 msgstr "{0, plural, one {# 요소를 생성합니다} other {# 요소를 생성합니다}}"
+
+#. placeholder {0}: view.estimateDays
+msgid "{0, plural, one {Estimate # day} other {Estimate # days}}"
+msgstr "{0, plural, one {예상 #일} other {예상 #일}}"
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -534,9 +550,17 @@ msgstr "{0}은 {1}이며 초안 또는 계획됨이 아닙니다"
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0}은(는) 마감됨입니다. 시간을 변경할 수 없습니다."
 
+#. placeholder {0}: file.name
+msgid "{0} is larger than 50 MB"
+msgstr "{0}은(는) 50MB를 초과합니다"
+
 #. placeholder {0}: chipName(active.id)
 msgid "{0} is no longer over a cell"
 msgstr "{0}이(가) 더 이상 칸 위에 있지 않습니다"
+
+#. placeholder {0}: file.name
+msgid "{0} is not a type of file the page takes"
+msgstr "{0}은(는) 이 페이지에서 받을 수 없는 파일 형식입니다"
 
 #. placeholder {0}: chipName(active.id)
 #. placeholder {1}: placeName(over.data.current)
@@ -927,6 +951,9 @@ msgstr "{bucket3Start}~{b3}일"
 msgid "{bucket4Start}+ Days"
 msgstr "{bucket4Start}일 이상"
 
+msgid "{by}, {on}"
+msgstr "{by}, {on}"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{quantity} 수량의 {categoryLabel} 마크업"
 
@@ -1092,9 +1119,6 @@ msgstr "{errors, plural, one {# 행이 수정 필요} other {# 행이 수정 필
 
 msgid "{errors} failed"
 msgstr "{errors} 실패"
-
-msgid "{estimateDays, plural, one {# day} other {# days}}"
-msgstr "{estimateDays, plural, one {#일} other {#일}}"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
@@ -1533,7 +1557,7 @@ msgid "{who} reversed {amount} on {element}"
 msgstr "{warnings}개 경고가 추가 조치 필요"
 
 msgid "{withoutPage, plural, one {# active person has no page yet and will not see the Implementation Hub until you load one.} other {# active people have no page yet and will not see the Implementation Hub until you load one.}}"
-msgstr ""
+msgstr "{withoutPage, plural, one {페이지가 없는 사용자 #명은 페이지를 불러올 때까지 Implementation Hub를 볼 수 없습니다.} other {페이지가 없는 사용자 #명은 페이지를 불러올 때까지 Implementation Hub를 볼 수 없습니다.}}"
 
 msgid "{years}yr"
 msgstr "{years}년"
@@ -1849,6 +1873,9 @@ msgstr "변경 통지는 제어된 엔지니어링 또는 제조 변경사항을
 
 msgid "A chargeable element below a control account that has an earned value technique, such as 0/100, 50/50 or Percent Complete."
 msgstr "0/100, 50/50 또는 완료율과 같은 적립 가치 기법이 있는 통제 계정 아래의 청구 가능한 요소입니다."
+
+msgid "A checklist takes up to {PAGE_CHECKLIST_MAX_POINTS} points"
+msgstr "체크리스트에는 최대 {PAGE_CHECKLIST_MAX_POINTS}개의 항목을 넣을 수 있습니다"
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "수신한 상품이지만 아직 청구되지 않은 상품의 가치를 보유하는 정산 계정이며, 공급업체 송장이 이를 정산합니다."
@@ -2170,9 +2197,6 @@ msgstr "각 공급업체마다 새로운 발주서가 생성됩니다. 또는 �
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "현재 리비전을 복사하여 새 리비전이 생성됩니다"
-
-msgid "A new section at the end of the page, with its first card."
-msgstr "페이지 끝에 첫 카드가 포함된 새 섹션이 추가됩니다."
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "새 서비스 작업 지시는 청구 요금을 복사합니다. 각 시간 항목은 원가 요금으로 그 원가를 전기합니다."
@@ -3276,9 +3300,6 @@ msgstr "행 추가"
 msgid "Add a row for each charge number you worked on."
 msgstr "작업한 각 청구 번호에 대해 라인을 추가하세요."
 
-msgid "Add a section"
-msgstr "섹션 추가"
-
 msgid "Add a step"
 msgstr "단계 추가"
 
@@ -3366,6 +3387,9 @@ msgstr "요금 추가"
 msgid "Add Charge Number"
 msgstr "청구 번호 추가"
 
+msgid "Add checklist"
+msgstr "체크리스트 추가"
+
 msgid "Add child"
 msgstr "자식 추가"
 
@@ -3416,6 +3440,9 @@ msgstr "항목 추가"
 
 msgid "Add Event"
 msgstr "이벤트 추가"
+
+msgid "Add field"
+msgstr "필드 추가"
 
 msgid "Add filter"
 msgstr "필터 추가"
@@ -3613,9 +3640,6 @@ msgstr "라이브러리에서 규칙 추가"
 
 msgid "Add Sample"
 msgstr "샘플 추가"
-
-msgid "Add section"
-msgstr "섹션 추가"
 
 msgid "Add Selector"
 msgstr "선택자 추가"
@@ -4272,9 +4296,6 @@ msgstr "국제 은행 계좌 번호: 국가, 은행, 지점 및 계좌를 포함
 msgid "An introduction for this person (optional)"
 msgstr "이 인원에 대한 소개 (선택 사항)"
 
-msgid "An introduction for this section (optional)"
-msgstr "이 섹션에 대한 소개 (선택 사항)"
-
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "초대가 대기 중입니다. 초대를 수락하면 활성화됩니다."
 
@@ -4484,14 +4505,20 @@ msgstr "이것이 중첩되는 다른 보관 단위 (예: 랙 내의 빈); 같�
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "다른 시스템이 Ramp에 회계 시스템으로 연결되어 있습니다"
 
+msgid "Answer"
+msgstr "답변"
+
+msgid "Answer or status"
+msgstr "답변 또는 상태"
+
 msgid "Answer the priority set questionnaire"
 msgstr "우선순위 세트 설문에 답변하기"
 
 msgid "Answer what you can. Each answer moves Carbon features between categories, and the panel beside the questions shows what your company needs before go-live. \"Not sure\" moves nothing and is kept as an open question."
 msgstr "답할 수 있는 항목에 답변해 주세요. 답변할 때마다 Carbon 기능이 카테고리 사이에서 이동하며, 질문 옆 패널에는 가동 전에 회사에 필요한 항목이 표시됩니다. “잘 모르겠음”을 선택하면 아무것도 이동하지 않고 미결 질문으로 남습니다."
 
-msgid "Answered"
-msgstr "답변함"
+msgid "Answer:"
+msgstr "답변:"
 
 msgid "Any"
 msgstr "아무거나"
@@ -5419,6 +5446,9 @@ msgstr "오름차순"
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} 권한이 있는 관리자에게 첫 {1} 추가를 요청하세요."
 
+msgid "Ask the person for a file"
+msgstr "사용자에게 파일 요청"
+
 msgid "Ask your Carbon admin to set up the Implementation Hub for you."
 msgstr "Carbon 관리자에게 실행 허브를 설정해 달라고 요청하세요."
 
@@ -5427,6 +5457,9 @@ msgstr "{number} 값이 {options}일 때 질문함."
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "이 기간에 새로운 실행이 지금 감가상각할 항목을 요청하고, 기간에서 종료되는 초안 실행을 확인합니다. 실행을 생성하고 전기하여 기간에 감가상각 비용과 감가상각누계액을 포함하도록 합니다. 이 기간에 감가상각이 적용되지 않으면 이유와 함께 건너뜁니다."
+
+msgid "Asks for a file"
+msgstr "파일 요청"
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "수익 인식에 이 기간의 새 실행에서 지금 인식할 내용을 묻습니다 — 이연 송장 수익 및 계약 수익 — 기말까지 인식해야 할 수익을 보유한 초안 실행을 확인합니다. 실행을 생성하고 전기하여 수익이 총계정원장에 도달하도록 합니다. 인식해야 할 내용이 없으면 이유와 함께 건너뜁니다."
@@ -5633,6 +5666,9 @@ msgid "Attach"
 msgstr "첨부"
 
 msgid "Attach File"
+msgstr "파일 첨부"
+
+msgid "Attach files"
 msgstr "파일 첨부"
 
 msgid "Attach Job"
@@ -7166,12 +7202,6 @@ msgstr "카드"
 msgid "Card Holder"
 msgstr "카드 소유자"
 
-msgid "Card options"
-msgstr "카드 옵션"
-
-msgid "Card title"
-msgstr "카드 제목"
-
 msgid "Cards"
 msgstr "카드"
 
@@ -7380,6 +7410,9 @@ msgstr "변경 로그 뉴스레터"
 msgid "Changes"
 msgstr "변경 사항"
 
+msgid "Changes to the item's title, details and answers show on every page that has it."
+msgstr "항목의 제목, 세부 정보, 답변을 변경하면 해당 항목이 있는 모든 페이지에 반영됩니다."
+
 msgid "Changing the base currency converts no amounts"
 msgstr "기준 통화를 변경해도 금액은 환산되지 않습니다"
 
@@ -7559,6 +7592,9 @@ msgstr "생산 일정을 확인하는 중…"
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe 고객 연결 확인 중…"
 
+msgid "Checklist"
+msgstr "체크리스트"
+
 msgid "Checkpoint ·"
 msgstr "체크포인트 ·"
 
@@ -7637,6 +7673,12 @@ msgstr "과세 연도 선택"
 
 msgid "Choose a template"
 msgstr "템플릿 선택"
+
+msgid "Choose all that apply"
+msgstr "해당하는 항목을 모두 선택"
+
+msgid "Choose an answer"
+msgstr "답변 선택"
 
 msgid "Choose an item"
 msgstr "품목 선택"
@@ -12561,6 +12603,9 @@ msgstr "{name} 편집"
 msgid "Edit {riskTitle}"
 msgstr "{riskTitle} 편집"
 
+msgid "Edit {title}"
+msgstr "{title} 편집"
+
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>불출</0> 워크플로 편집"
 
@@ -12575,6 +12620,9 @@ msgstr "계정 편집"
 
 msgid "Edit Action"
 msgstr "작업 편집"
+
+msgid "Edit answer"
+msgstr "답변 편집"
 
 msgid "Edit API Key"
 msgstr "API 키 편집"
@@ -12602,6 +12650,9 @@ msgstr "속성 카테고리 편집"
 
 msgid "Edit Bank Account"
 msgstr "은행 계좌 편집"
+
+msgid "Edit card"
+msgstr "카드 편집"
 
 msgid "Edit Category"
 msgstr "카테고리 편집"
@@ -13423,6 +13474,9 @@ msgstr "계속하려면 인증 앱의 6자리 코드를 입력하세요."
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr "공급업체가 청구한 금액을 입력하세요. 차액은 반올림 계정과목에 라인으로 추가되며, 최대 {0}까지 가능합니다. 다른 라인의 가격은 그대로 유지됩니다."
+
+msgid "Enter the due date in full"
+msgstr "마감일을 전체 날짜로 입력"
 
 msgid "Enter the estimate as a number of days"
 msgstr "예상 기간을 일 수로 입력하세요"
@@ -14706,6 +14760,9 @@ msgstr "필드 정보"
 msgid "Field Mapping"
 msgstr "필드 매핑"
 
+msgid "Field type"
+msgstr "필드 유형"
+
 msgid "Fields"
 msgstr "필드"
 
@@ -14720,6 +14777,9 @@ msgstr "파일 확장자"
 
 msgid "File is already in the selected bucket"
 msgstr "파일이 이미 선택한 버킷에 있습니다"
+
+msgid "File requested"
+msgstr "파일 요청됨"
 
 #. placeholder {0}: ( logo.size / 1024 / 1024 ).toFixed(2)
 msgid "File size exceeds {maxSizeMB}MB limit. Current size: {0}MB"
@@ -15540,17 +15600,20 @@ msgstr "설정하기"
 msgid "Give every asset a payment."
 msgstr "모든 자산에 지불을 지정하세요."
 
+msgid "Give every field a label and a value"
+msgstr "모든 필드에 레이블과 값을 입력"
+
 msgid "Give it an owner and a date"
 msgstr "책임자와 날짜를 지정하세요"
+
+msgid "Give the card a title"
+msgstr "카드에 제목을 입력"
 
 msgid "Give the lease a <0>fixed duration on its Details step</0>."
 msgstr "리스의 <0>세부 정보 단계에서 고정 기간을 지정하세요</0>."
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "마일스톤에 시작 및 종료 날짜를 지정하여 번다운을 확인하세요."
-
-msgid "Give the new section a title"
-msgstr "새 섹션의 제목을 입력하세요"
 
 msgid "GL"
 msgstr "총계정원장"
@@ -16489,7 +16552,7 @@ msgid "Implementation Hub 2.0 is off for this company. Add it to the implementat
 msgstr "이 회사에서는 실행 허브 2.0이 꺼져 있습니다. 먼저 CSA 대시보드의 implementation-hub-2 플래그에 추가하세요."
 
 msgid "Implementation Hub 2.0 is on for this company. After enrolling, each person sees it once you give them a page."
-msgstr ""
+msgstr "이 회사는 Implementation Hub 2.0이 켜져 있습니다. 등록 후에는 페이지를 할당받은 사용자마다 이 버전을 볼 수 있습니다."
 
 msgid "Implementation Hub Settings"
 msgstr "실행 허브 설정"
@@ -16677,7 +16740,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "비활성 카테고리는 새로운 시간을 위해 선택될 수 없습니다."
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "단위를 선택할 때 비활성 단위는 표시되지 않습니다."
 
 msgid "inbound customer requests for quote, converted to quotes"
 msgstr "고객의 견적 요청을 받아 견적서로 전환"
@@ -17897,6 +17960,9 @@ msgstr "데모 데이터 유지"
 msgid "Keep demo data and delete your previous data?"
 msgstr "데모 데이터를 유지하고 이전 데이터를 삭제하시겠습니까?"
 
+msgid "Keep each point under 500 characters"
+msgstr "각 항목은 500자 미만으로 입력"
+
 msgid "Keep editing"
 msgstr "계속 편집"
 
@@ -18945,6 +19011,12 @@ msgstr "로고"
 #. placeholder {0}: auditConfig.retentionDays
 msgid "Logs older than {0} days are automatically archived."
 msgstr "{0}일보다 오래된 로그는 자동으로 보관됩니다."
+
+msgid "Long answer"
+msgstr "장문 답변"
+
+msgid "Long answer: answered in the card, not in its row"
+msgstr "장문 답변: 행이 아닌 카드 안에서 답변"
 
 msgid "Long Description"
 msgstr "상세 설명"
@@ -20129,12 +20201,6 @@ msgstr "품목 이동"
 msgid "Move Out of Sub-Assembly"
 msgstr "부분 조립에서 이동"
 
-msgid "Move section down"
-msgstr "섹션을 아래로 이동"
-
-msgid "Move section up"
-msgstr "섹션을 위로 이동"
-
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "수량의 일부를 새로운 처분 결정 행으로 할당하여 MRB가 각 부분을 별도로 결정할 수 있도록 합니다(예: 일부는 스크랩, 일부는 재작업)."
 
@@ -20152,9 +20218,6 @@ msgstr "다른 보관 단위로 이동"
 
 msgid "Move to Group"
 msgstr "그룹으로 이동"
-
-msgid "Move to section"
-msgstr "섹션으로 이동"
 
 msgid "Move to tax codes"
 msgstr "세금 코드로 이동"
@@ -20359,7 +20422,11 @@ msgstr "필요한 것은 그 날 그 작업장에서 일정이 책정한 셋업 
 msgid "Needed when the date is before the entry window"
 msgstr "날짜가 입력 윈도우보다 빠를 때 필요합니다"
 
-#. placeholder {0}: waitingFor.join(", ")
+#. placeholder {0}: view.waitingFor.join(", ")
+msgid "Needs {0} first"
+msgstr "먼저 필요: {0}"
+
+#. placeholder {0}: view.waitingFor.join(", ")
 msgid "Needs {0} first."
 msgstr "먼저 {0}이(가) 필요합니다."
 
@@ -21452,6 +21519,9 @@ msgstr "이 항목에 대한 파일이 없습니다."
 msgid "No files uploaded"
 msgstr "업로드된 파일이 없습니다"
 
+msgid "No files yet."
+msgstr "아직 파일이 없습니다."
+
 msgid "No findings"
 msgstr "발견 사항 없음"
 
@@ -22429,6 +22499,9 @@ msgstr "{taskTitle} 메모"
 msgid "Notes for {title}"
 msgstr "{title} 메모"
 
+msgid "Notes, a due date, fields and file requests are added by editing the card."
+msgstr "메모, 마감일, 필드, 파일 요청은 카드를 편집하여 추가합니다."
+
 msgid "Nothing"
 msgstr "없음"
 
@@ -22469,9 +22542,6 @@ msgstr "아직 없음"
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
-msgid "Nothing in this section yet."
-msgstr "이 섹션에는 아직 아무것도 없습니다."
-
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
 msgstr "아직 아무것도 삭제되지 않습니다. 요청은 다른 관리자들의 승인 목록으로 전달되며, 그중 한 명이 승인하면 삭제됩니다."
 
@@ -22499,6 +22569,9 @@ msgstr "검색 또는 필터와 일치하는 항목이 없습니다"
 
 msgid "Nothing needs stock"
 msgstr "재고가 필요한 항목이 없습니다."
+
+msgid "Nothing on this page yet."
+msgstr "이 페이지에는 아직 아무것도 없습니다."
 
 msgid "Nothing owed"
 msgstr "빚진 것 없음"
@@ -22875,6 +22948,9 @@ msgstr "한 기간은 시작일부터 한 달입니다."
 msgid "One person's page as JSON. It replaces any page they already have."
 msgstr "한 사람의 페이지를 JSON으로 입력합니다. 이미 있는 페이지는 모두 대체됩니다."
 
+msgid "One point per line"
+msgstr "한 줄에 항목 하나"
+
 msgid "One promise per line, in plain words."
 msgstr "한 줄에 약속 하나씩, 쉬운 말로."
 
@@ -23067,6 +23143,10 @@ msgstr "열림"
 
 msgid "Open ({paymentCurrency})"
 msgstr "미결 ({paymentCurrency})"
+
+#. placeholder {0}: view.title
+msgid "Open {0}"
+msgstr "{0} 열기"
 
 #. placeholder {0}: readableId ?? ""
 msgid "Open {0} details"
@@ -23481,6 +23561,9 @@ msgstr "옵션"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "{0} 옵션"
+
+msgid "Options for {title}"
+msgstr "{title}의 옵션"
 
 msgid "Options, one per line (leave empty for a typed answer)"
 msgstr "선택지, 한 줄에 하나씩 (직접 입력 답변이면 비워 두세요)"
@@ -24276,10 +24359,10 @@ msgid "People"
 msgstr "인원"
 
 msgid "People with a page see the Implementation Hub."
-msgstr ""
+msgstr "페이지가 있는 사용자는 Implementation Hub를 볼 수 있습니다."
 
 msgid "People with a page will see it in Implementation Hub 2.0 instead of Implementation Hub 1.0. Everyone else will see no Implementation Hub. Ticks, answers and rows carry over."
-msgstr ""
+msgstr "페이지가 있는 사용자는 Implementation Hub 1.0 대신 2.0에서 이를 보게 됩니다. 그 밖의 사용자에게는 Implementation Hub가 표시되지 않습니다. 체크 표시, 답변, 행은 그대로 이월됩니다."
 
 msgid "Per"
 msgstr "당"
@@ -24837,6 +24920,9 @@ msgstr "발주서 번호(리비전 제외)"
 
 msgid "PO PDF"
 msgstr "PO PDF"
+
+msgid "Points, one per line"
+msgstr "항목, 한 줄에 하나씩"
 
 msgid "Policy"
 msgstr "정책"
@@ -27166,6 +27252,9 @@ msgstr "손상된 데이터 제거 및 복원"
 msgid "Remove Employee"
 msgstr "직원 제거"
 
+msgid "Remove field"
+msgstr "필드 제거"
+
 msgid "Remove filter"
 msgstr "필터 제거"
 
@@ -27223,9 +27312,6 @@ msgstr "PDF 제거"
 msgid "Remove row"
 msgstr "행 제거"
 
-msgid "Remove section"
-msgstr "섹션 제거"
-
 msgid "Remove slide"
 msgstr "슬라이드 제거"
 
@@ -27275,6 +27361,9 @@ msgstr "비디오 제거"
 
 msgid "Removed"
 msgstr "제거됨"
+
+msgid "Removed from the Implementation Hub"
+msgstr "Implementation Hub에서 제거됨"
 
 msgid "Removed line"
 msgstr "제거된 라인"
@@ -29325,9 +29414,6 @@ msgstr "섹션 E 라인 38, 임원 급여 QREs: {0}"
 msgid "Section saved"
 msgstr "섹션 저장됨"
 
-msgid "Section title"
-msgstr "섹션 제목"
-
 msgid "Secure your account with 2FA"
 msgstr "2FA로 계정 보호"
 
@@ -29916,8 +30002,9 @@ msgstr "시리즈"
 msgid "Serves requirement"
 msgstr "충족 요구사항"
 
-msgid "Serves: {serves}"
-msgstr "충족: {serves}"
+#. placeholder {0}: view.serves
+msgid "Serves: {0}"
+msgstr "대상: {0}"
 
 msgid "service"
 msgstr "서비스"
@@ -30711,6 +30798,9 @@ msgstr "모든 페이지 하단에 표시됩니다."
 
 msgid "Shown to the customer on the invoice"
 msgstr "송장에서 고객에게 표시"
+
+msgid "Shown to the person in the card. A checklist's points are ticked by them, and the card is marked done once every point is ticked."
+msgstr "카드에서 사용자에게 표시됩니다. 체크리스트 항목은 사용자가 체크하며, 모든 항목에 체크하면 카드가 완료로 표시됩니다."
 
 msgid "Shown to the user when this rule fails."
 msgstr "이 규칙이 실패할 때 사용자에게 표시됩니다."
@@ -32939,8 +33029,8 @@ msgstr "이 공급업체 관계를 담당하는 Carbon 사용자로, 이 공급�
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "이 RFQ를 담당하는 Carbon 사용자로, 공급업체 응답과 알림이 이 사용자에게 전달됩니다."
 
-msgid "The card goes at the end of the section."
-msgstr "카드는 섹션 끝에 배치됩니다."
+msgid "The card goes at the end of the page."
+msgstr "카드는 페이지 끝에 추가됩니다."
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "출하가 진행되는 운송업체 및 서비스로, 추적 번호를 링크로 변환하는 추적 URL 템플릿과 계정 운임 요금이 전기되는 기준을 제공합니다."
@@ -33024,7 +33114,7 @@ msgid "The company template stays the same."
 msgstr "회사 템플릿은 그대로 유지됩니다."
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling puts the company on Implementation Hub 2.0. Each person sees it once you load their page."
-msgstr ""
+msgstr "회사의 사용자는 아직 Implementation Hub를 볼 수 없습니다. 등록하면 회사가 Implementation Hub 2.0으로 전환됩니다. 각 사용자는 페이지를 불러온 뒤 이를 볼 수 있습니다."
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 1.0, because Implementation Hub 2.0 is off for this company, and emails the company's admins."
 msgstr "회사 구성원에게는 아직 실행 허브가 보이지 않습니다. 실행 허브 2.0이 이 회사에서 꺼져 있으므로 등록하면 구성원에게 실행 허브 1.0이 표시되고 회사 관리자에게 이메일이 발송됩니다."
@@ -34052,9 +34142,6 @@ msgstr "이 자산의 원가를 내용연수에 걸쳐 배분하는 데 사용�
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "스케줄러는 아래에 적용되는 첫 번째 규칙을 사용한 다음, 비가동 시간 및 인원을 뺍니다."
 
-msgid "The section and its cards leave this page. Items on it stay in the catalogue and can be added again."
-msgstr "섹션과 섹션의 카드가 이 페이지에서 제거됩니다. 섹션의 항목은 카탈로그에 남아 있으며 다시 추가할 수 있습니다."
-
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "판매 대신 임대 목적으로 구축하거나 자본화할 개 단위를 위해 사전 설정된 자산 클래스로서, 자체 임대 차량 자산 및 누적 감가상각 계정에 전기되며, 품목과 연결된 모든 자산이 차량 대장에 표시됩니다."
 
@@ -35072,6 +35159,9 @@ msgstr "썸네일 업로드됨"
 msgid "Thursday"
 msgstr "목요일"
 
+msgid "Tick every point of the checklist first"
+msgstr "체크리스트의 모든 항목을 먼저 체크"
+
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "재입력 없이 출하를 송장과 연결하세요."
 
@@ -35891,6 +35981,9 @@ msgstr "입력하여 워크스페이스 전체를 검색하세요"
 
 msgid "Type:"
 msgstr "유형:"
+
+msgid "Typed answer"
+msgstr "직접 입력 답변"
 
 msgid "Types"
 msgstr "유형"
@@ -38424,6 +38517,9 @@ msgstr "로그인이 도난당해도 계정은 안전하게 유지됩니다"
 
 msgid "Your answer"
 msgstr "귀하의 답변"
+
+msgid "Your answer: pick all that apply"
+msgstr "답변: 해당하는 항목을 모두 선택"
 
 msgid "Your backups"
 msgstr "내 백업"

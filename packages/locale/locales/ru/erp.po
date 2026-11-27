@@ -125,6 +125,10 @@ msgstr "{0, plural, one {# день страхового запаса} few {# д
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# день недостатка} few {# дня недостатка} many {# дней недостатка} other {# дней недостатка}}"
 
+#. placeholder {0}: customization.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr "{0, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
+
 #. placeholder {0}: -daysLeft
 msgid "{0, plural, one {# day} other {# days}} past {due}"
 msgstr "{0, plural, one {# день} other {# дней}} просрочено {due}"
@@ -136,6 +140,10 @@ msgstr "{0, plural, one {# элемент изменён} few {# элемент�
 #. placeholder {0}: baseline.elementCount
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr "{0, plural, one {# элемент} few {# элемента} other {# элементов}}"
+
+#. placeholder {0}: files.length
+msgid "{0, plural, one {# file} other {# files}}"
+msgstr "{0, plural, one {# файл} few {# файла} many {# файлов} other {# файла}}"
 
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
@@ -189,6 +197,10 @@ msgstr "{0, plural, one {# операция этого процесса не м�
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
 msgstr "{0, plural, one {# операция} other {# операций}}"
+
+#. placeholder {0}: question.options.length
+msgid "{0, plural, one {# option} other {# options}}"
+msgstr "{0, plural, one {# вариант} few {# варианта} many {# вариантов} other {# варианта}}"
 
 #. placeholder {0}: progress.overdue
 msgid "{0, plural, one {# overdue} other {# overdue}}"
@@ -265,6 +277,10 @@ msgstr "{0, plural, one {Скопировано # назначение} other {�
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {Creates # element} other {Creates # elements}}"
 msgstr "{0, plural, one {Создает # элемент} other {Создает # элементов}}"
+
+#. placeholder {0}: view.estimateDays
+msgid "{0, plural, one {Estimate # day} other {Estimate # days}}"
+msgstr "{0, plural, one {Оценка: # день} few {Оценка: # дня} many {Оценка: # дней} other {Оценка: # дня}}"
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -534,9 +550,17 @@ msgstr "{0} это {1}, а не Черновик или Запланирован
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} закрыт. Его время нельзя изменять."
 
+#. placeholder {0}: file.name
+msgid "{0} is larger than 50 MB"
+msgstr "{0} больше 50 МБ"
+
 #. placeholder {0}: chipName(active.id)
 msgid "{0} is no longer over a cell"
 msgstr "{0} больше не над ячейкой"
+
+#. placeholder {0}: file.name
+msgid "{0} is not a type of file the page takes"
+msgstr "{0} не относится к типам файлов, которые принимает страница"
 
 #. placeholder {0}: chipName(active.id)
 #. placeholder {1}: placeName(over.data.current)
@@ -927,6 +951,9 @@ msgstr "{bucket3Start}-{b3} дней"
 msgid "{bucket4Start}+ Days"
 msgstr "{bucket4Start}+ дней"
 
+msgid "{by}, {on}"
+msgstr "{by}, {on}"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel}: наценка для количества {quantity}"
 
@@ -1092,9 +1119,6 @@ msgstr "{errors, plural, one {# строка требует исправлени
 
 msgid "{errors} failed"
 msgstr "{errors} не удалось"
-
-msgid "{estimateDays, plural, one {# day} other {# days}}"
-msgstr "{estimateDays, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# строка исключена} other {# строк исключено}}"
@@ -1533,7 +1557,7 @@ msgid "{who} reversed {amount} on {element}"
 msgstr "{warnings} требуют дальнейших действий"
 
 msgid "{withoutPage, plural, one {# active person has no page yet and will not see the Implementation Hub until you load one.} other {# active people have no page yet and will not see the Implementation Hub until you load one.}}"
-msgstr ""
+msgstr "{withoutPage, plural, one {# человек ещё не имеет страницы и не увидит Implementation Hub, пока вы не добавите ему страницу.} few {# человека ещё не имеют страниц и не увидят Implementation Hub, пока вы не добавите им страницы.} many {# человек ещё не имеют страниц и не увидят Implementation Hub, пока вы не добавите им страницы.} other {# человека ещё не имеют страниц и не увидят Implementation Hub, пока вы не добавите им страницы.}}"
 
 msgid "{years}yr"
 msgstr "{years}год"
@@ -1849,6 +1873,9 @@ msgstr "Извещение об изменении отслеживает кон
 
 msgid "A chargeable element below a control account that has an earned value technique, such as 0/100, 50/50 or Percent Complete."
 msgstr "Расчетный элемент ниже счета контроля, который использует метод заработанной стоимости, такой как 0/100, 50/50 или Процент выполнения."
+
+msgid "A checklist takes up to {PAGE_CHECKLIST_MAX_POINTS} points"
+msgstr "Чек-лист может содержать до {PAGE_CHECKLIST_MAX_POINTS} пунктов"
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Счет, содержащий стоимость полученных товаров, еще не выставленных счетом; счет-фактура поставщика его очищает."
@@ -2170,9 +2197,6 @@ msgstr "Для каждого поставщика будет создан но�
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "Новая ревизия будет создана на основе копии текущей ревизии"
-
-msgid "A new section at the end of the page, with its first card."
-msgstr "Новый раздел в конце страницы с первой карточкой."
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "Новый производственный заказ услуги копирует расценку. Каждая запись времени проводит свою стоимость по расценке стоимости."
@@ -3276,9 +3300,6 @@ msgstr "Добавить строку"
 msgid "Add a row for each charge number you worked on."
 msgstr "Добавьте строку для каждого номера расчета, над которым вы работали."
 
-msgid "Add a section"
-msgstr "Добавить раздел"
-
 msgid "Add a step"
 msgstr "Добавить шаг"
 
@@ -3366,6 +3387,9 @@ msgstr "Добавить плату"
 msgid "Add Charge Number"
 msgstr "Добавить номер затрат"
 
+msgid "Add checklist"
+msgstr "Добавить чек-лист"
+
 msgid "Add child"
 msgstr "Добавить дочерний элемент"
 
@@ -3416,6 +3440,9 @@ msgstr "Добавить запись"
 
 msgid "Add Event"
 msgstr "Добавить событие"
+
+msgid "Add field"
+msgstr "Добавить поле"
 
 msgid "Add filter"
 msgstr "Добавить фильтр"
@@ -3613,9 +3640,6 @@ msgstr "Добавить правило из библиотеки"
 
 msgid "Add Sample"
 msgstr "Добавить образец"
-
-msgid "Add section"
-msgstr "Добавить раздел"
 
 msgid "Add Selector"
 msgstr "Добавить селектор"
@@ -4272,9 +4296,6 @@ msgstr "Международный номер банковского счёта:
 msgid "An introduction for this person (optional)"
 msgstr "Вводная информация о сотруднике (необязательно)"
 
-msgid "An introduction for this section (optional)"
-msgstr "Вводная информация о разделе (необязательно)"
-
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "Приглашение ожидает подтверждения. Они станут активными после его принятия."
 
@@ -4484,14 +4505,20 @@ msgstr "Другая единица хранения, в которую влож
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "Другая система подключена к Ramp как система учета"
 
+msgid "Answer"
+msgstr "Ответ"
+
+msgid "Answer or status"
+msgstr "Ответ или статус"
+
 msgid "Answer the priority set questionnaire"
 msgstr "Ответить на опросник набора приоритетов"
 
 msgid "Answer what you can. Each answer moves Carbon features between categories, and the panel beside the questions shows what your company needs before go-live. \"Not sure\" moves nothing and is kept as an open question."
 msgstr "Отвечайте на то, что знаете. Каждый ответ переносит функции Carbon между категориями, а панель рядом с вопросами показывает, что нужно вашей компании до запуска. «Не уверен» ничего не переносит и сохраняется как открытый вопрос."
 
-msgid "Answered"
-msgstr "Отвечено"
+msgid "Answer:"
+msgstr "Ответ:"
 
 msgid "Any"
 msgstr "Любой"
@@ -5419,6 +5446,9 @@ msgstr "По возрастанию"
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Попросите администратора с правом доступа {0} добавить первую {1}."
 
+msgid "Ask the person for a file"
+msgstr "Запросить у сотрудника файл"
+
 msgid "Ask your Carbon admin to set up the Implementation Hub for you."
 msgstr "Попросите администратора Carbon настроить для вас Центр внедрения."
 
@@ -5427,6 +5457,9 @@ msgstr "Спрашивается, когда {number}: {options}."
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "Запрашивает амортизацию, что новый расчет для этого периода должен амортизировать сейчас, и проверяет наличие черновых расчетов, завершающихся в периоде. Создайте расчет и проведите его, чтобы период имел расход амортизации и накопленную амортизацию. Пропустите с причиной, если амортизация не применяется в этом периоде."
+
+msgid "Asks for a file"
+msgstr "Запрашивает файл"
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Спросите признание выручки, что новое выполнение за этот период было бы признано теперь — отложенная выручка по счету и выручка по контракту — и проверьте черновики выполнения, содержащие выручку, подлежащую оплате к концу периода. Создайте выполнение и проведите его, чтобы выручка попала в главную книгу. Пропустите с причиной, если ничего не должно быть признано."
@@ -5634,6 +5667,9 @@ msgstr "Прикрепить"
 
 msgid "Attach File"
 msgstr "Прикрепить файл"
+
+msgid "Attach files"
+msgstr "Прикрепить файлы"
 
 msgid "Attach Job"
 msgstr "Прикрепить производственный заказ"
@@ -7166,12 +7202,6 @@ msgstr "Карточка"
 msgid "Card Holder"
 msgstr "Держатель карты"
 
-msgid "Card options"
-msgstr "Параметры карточки"
-
-msgid "Card title"
-msgstr "Заголовок карточки"
-
 msgid "Cards"
 msgstr "Карточки"
 
@@ -7380,6 +7410,9 @@ msgstr "Рассылка журнала изменений"
 msgid "Changes"
 msgstr "Изменения"
 
+msgid "Changes to the item's title, details and answers show on every page that has it."
+msgstr "Изменения названия, описания и ответов карточки отображаются на всех страницах, где она есть."
+
 msgid "Changing the base currency converts no amounts"
 msgstr "Смена базовой валюты не пересчитывает суммы"
 
@@ -7559,6 +7592,9 @@ msgstr "Проверка графика цеха…"
 msgid "Checking the Stripe customer link…"
 msgstr "Проверка связи с клиентом Stripe…"
 
+msgid "Checklist"
+msgstr "Чек-лист"
+
 msgid "Checkpoint ·"
 msgstr "Контрольная точка ·"
 
@@ -7637,6 +7673,12 @@ msgstr "Выберите налоговый год"
 
 msgid "Choose a template"
 msgstr "Выберите шаблон"
+
+msgid "Choose all that apply"
+msgstr "Выберите все подходящие"
+
+msgid "Choose an answer"
+msgstr "Выберите ответ"
 
 msgid "Choose an item"
 msgstr "Выберите номенклатуру"
@@ -12561,6 +12603,9 @@ msgstr "Изменить {name}"
 msgid "Edit {riskTitle}"
 msgstr "Изменить {riskTitle}"
 
+msgid "Edit {title}"
+msgstr "Изменить: {title}"
+
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Изменить рабочий процесс <0>списания в производство</0>"
 
@@ -12575,6 +12620,9 @@ msgstr "Изменить счет"
 
 msgid "Edit Action"
 msgstr "Изменить действие"
+
+msgid "Edit answer"
+msgstr "Изменить ответ"
 
 msgid "Edit API Key"
 msgstr "Изменить API-ключ"
@@ -12602,6 +12650,9 @@ msgstr "Изменить категорию атрибутов"
 
 msgid "Edit Bank Account"
 msgstr "Изменить банковский счёт"
+
+msgid "Edit card"
+msgstr "Изменить карточку"
 
 msgid "Edit Category"
 msgstr "Изменить категорию"
@@ -13423,6 +13474,9 @@ msgstr "Введите 6-значный код из приложения-аут�
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr "Введите сумму, которую выставил поставщик. Разница добавляется строкой на счет округления, но не более {0}. Остальные строки сохраняют свои цены."
+
+msgid "Enter the due date in full"
+msgstr "Введите срок выполнения полностью"
 
 msgid "Enter the estimate as a number of days"
 msgstr "Укажите оценку в днях"
@@ -14706,6 +14760,9 @@ msgstr "Информация о поле"
 msgid "Field Mapping"
 msgstr "Сопоставление полей"
 
+msgid "Field type"
+msgstr "Тип поля"
+
 msgid "Fields"
 msgstr "Поля"
 
@@ -14720,6 +14777,9 @@ msgstr "Расширение файла"
 
 msgid "File is already in the selected bucket"
 msgstr "Файл уже находится в выбранном хранилище"
+
+msgid "File requested"
+msgstr "Файл запрошен"
 
 #. placeholder {0}: ( logo.size / 1024 / 1024 ).toFixed(2)
 msgid "File size exceeds {maxSizeMB}MB limit. Current size: {0}MB"
@@ -15540,17 +15600,20 @@ msgstr "Начало работы"
 msgid "Give every asset a payment."
 msgstr "Назначьте платеж для каждого актива."
 
+msgid "Give every field a label and a value"
+msgstr "Укажите для каждого поля название и значение"
+
 msgid "Give it an owner and a date"
 msgstr "Назначьте ответственного и дату"
+
+msgid "Give the card a title"
+msgstr "Укажите название карточки"
 
 msgid "Give the lease a <0>fixed duration on its Details step</0>."
 msgstr "Установите для аренды <0>фиксированный срок в шаге «Детали»</0>."
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "Задайте дату начала и дату окончания этапа, чтобы увидеть его сгорание."
-
-msgid "Give the new section a title"
-msgstr "Дайте новому разделу название"
 
 msgid "GL"
 msgstr "Главная книга"
@@ -16489,7 +16552,7 @@ msgid "Implementation Hub 2.0 is off for this company. Add it to the implementat
 msgstr "Центр внедрения 2.0 отключён для этой организации. Сначала добавьте её в флаг implementation-hub-2 на панели CSA."
 
 msgid "Implementation Hub 2.0 is on for this company. After enrolling, each person sees it once you give them a page."
-msgstr ""
+msgstr "Implementation Hub 2.0 включён для этой организации. После подключения каждый сотрудник увидит его, когда вы добавите ему страницу."
 
 msgid "Implementation Hub Settings"
 msgstr "Настройки Центра внедрения"
@@ -16677,7 +16740,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "Неактивные категории не могут быть выбраны для новых отметок времени"
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "Неактивные единицы не предлагаются при выборе единицы"
 
 msgid "inbound customer requests for quote, converted to quotes"
 msgstr "входящие запросы покупателей на коммерческое предложение, преобразованные в коммерческие предложения"
@@ -17897,6 +17960,9 @@ msgstr "Сохранить демонстрационные данные"
 msgid "Keep demo data and delete your previous data?"
 msgstr "Сохранить демонстрационные данные и удалить ваши предыдущие данные?"
 
+msgid "Keep each point under 500 characters"
+msgstr "Каждый пункт не длиннее 500 символов"
+
 msgid "Keep editing"
 msgstr "Продолжить редактирование"
 
@@ -18945,6 +19011,12 @@ msgstr "Логотипы"
 #. placeholder {0}: auditConfig.retentionDays
 msgid "Logs older than {0} days are automatically archived."
 msgstr "Логи старше {0} дней автоматически архивируются."
+
+msgid "Long answer"
+msgstr "Развёрнутый ответ"
+
+msgid "Long answer: answered in the card, not in its row"
+msgstr "Развёрнутый ответ: отвечается в карточке, а не в строке"
 
 msgid "Long Description"
 msgstr "Подробное описание"
@@ -20129,12 +20201,6 @@ msgstr "Переместить элемент"
 msgid "Move Out of Sub-Assembly"
 msgstr "Переместить из подсборки"
 
-msgid "Move section down"
-msgstr "Переместить раздел вниз"
-
-msgid "Move section up"
-msgstr "Переместить раздел вверх"
-
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Переместить часть количества в новую строку решения, чтобы MRB мог решить каждую часть отдельно (например, отправить на брак, отправить на доработку)."
 
@@ -20152,9 +20218,6 @@ msgstr "Переместить в другую единицу хранения"
 
 msgid "Move to Group"
 msgstr "Переместить в группу"
-
-msgid "Move to section"
-msgstr "Переместить в раздел"
 
 msgid "Move to tax codes"
 msgstr "Переместить в коды налога"
@@ -20359,7 +20422,11 @@ msgstr "Требуемое количество — это часы наладк
 msgid "Needed when the date is before the entry window"
 msgstr "Требуется, когда дата находится перед окном ввода"
 
-#. placeholder {0}: waitingFor.join(", ")
+#. placeholder {0}: view.waitingFor.join(", ")
+msgid "Needs {0} first"
+msgstr "Сначала нужно: {0}"
+
+#. placeholder {0}: view.waitingFor.join(", ")
 msgid "Needs {0} first."
 msgstr "Сначала требуется: {0}."
 
@@ -21452,6 +21519,9 @@ msgstr "Нет файлов для этого элемента."
 msgid "No files uploaded"
 msgstr "Файлы не загружены"
 
+msgid "No files yet."
+msgstr "Файлов пока нет."
+
 msgid "No findings"
 msgstr "Нет выводов"
 
@@ -22429,6 +22499,9 @@ msgstr "Примечания к задаче {taskTitle}"
 msgid "Notes for {title}"
 msgstr "Примечания к {title}"
 
+msgid "Notes, a due date, fields and file requests are added by editing the card."
+msgstr "Примечания, срок выполнения, поля и запросы файлов добавляются при редактировании карточки."
+
 msgid "Nothing"
 msgstr "Ничего"
 
@@ -22469,9 +22542,6 @@ msgstr "Ничего здесь пока"
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
 
-msgid "Nothing in this section yet."
-msgstr "В этом разделе пока ничего нет."
-
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
 msgstr "Пока ничего не удалено. Запрос отправляется на утверждение другим администраторам, и он будет удалён, когда один из них его утвердит."
 
@@ -22499,6 +22569,9 @@ msgstr "Ничего не найдено по поиску или фильтру
 
 msgid "Nothing needs stock"
 msgstr "Ничему не нужен запас"
+
+msgid "Nothing on this page yet."
+msgstr "На этой странице пока ничего нет."
 
 msgid "Nothing owed"
 msgstr "Нечего платить"
@@ -22875,6 +22948,9 @@ msgstr "Один период — это месяц от даты начала."
 msgid "One person's page as JSON. It replaces any page they already have."
 msgstr "Страница одного человека в JSON. Она заменяет любую страницу, которая у него уже есть."
 
+msgid "One point per line"
+msgstr "Один пункт на строку"
+
 msgid "One promise per line, in plain words."
 msgstr "Одно обещание в строке, простыми словами."
 
@@ -23067,6 +23143,10 @@ msgstr "Открыть"
 
 msgid "Open ({paymentCurrency})"
 msgstr "Открыто ({paymentCurrency})"
+
+#. placeholder {0}: view.title
+msgid "Open {0}"
+msgstr "Открыть {0}"
 
 #. placeholder {0}: readableId ?? ""
 msgid "Open {0} details"
@@ -23481,6 +23561,9 @@ msgstr "Параметры"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "Параметры для {0}"
+
+msgid "Options for {title}"
+msgstr "Варианты для {title}"
 
 msgid "Options, one per line (leave empty for a typed answer)"
 msgstr "Варианты, по одному в строке (оставьте пустым для ответа с клавиатуры)"
@@ -24276,10 +24359,10 @@ msgid "People"
 msgstr "Сотрудники"
 
 msgid "People with a page see the Implementation Hub."
-msgstr ""
+msgstr "Сотрудники со страницей видят Implementation Hub."
 
 msgid "People with a page will see it in Implementation Hub 2.0 instead of Implementation Hub 1.0. Everyone else will see no Implementation Hub. Ticks, answers and rows carry over."
-msgstr ""
+msgstr "Сотрудники со страницей будут видеть её в Implementation Hub 2.0 вместо Implementation Hub 1.0. У остальных Implementation Hub не будет. Отметки, ответы и строки переносятся."
 
 msgid "Per"
 msgstr "За"
@@ -24837,6 +24920,9 @@ msgstr "Номер ПО (без ревизии)"
 
 msgid "PO PDF"
 msgstr "ПО PDF"
+
+msgid "Points, one per line"
+msgstr "Пункты, по одному в строке"
 
 msgid "Policy"
 msgstr "Политика"
@@ -27166,6 +27252,9 @@ msgstr "Убрать поврежденные данные и восстанов
 msgid "Remove Employee"
 msgstr "Удалить сотрудника"
 
+msgid "Remove field"
+msgstr "Убрать поле"
+
 msgid "Remove filter"
 msgstr "Убрать фильтр"
 
@@ -27223,9 +27312,6 @@ msgstr "Убрать PDF"
 msgid "Remove row"
 msgstr "Убрать строку"
 
-msgid "Remove section"
-msgstr "Убрать раздел"
-
 msgid "Remove slide"
 msgstr "Убрать слайд"
 
@@ -27275,6 +27361,9 @@ msgstr "Удалить видео"
 
 msgid "Removed"
 msgstr "Удалено"
+
+msgid "Removed from the Implementation Hub"
+msgstr "Удалено из Implementation Hub"
 
 msgid "Removed line"
 msgstr "Убранная строка"
@@ -29325,9 +29414,6 @@ msgstr "Раздел E строка 38, зарплата должностных 
 msgid "Section saved"
 msgstr "Раздел сохранен"
 
-msgid "Section title"
-msgstr "Заголовок раздела"
-
 msgid "Secure your account with 2FA"
 msgstr "Защитите свою учетную запись с помощью 2FA"
 
@@ -29916,8 +30002,9 @@ msgstr "Серия"
 msgid "Serves requirement"
 msgstr "Удовлетворяет требованию"
 
-msgid "Serves: {serves}"
-msgstr "Удовлетворяет: {serves}"
+#. placeholder {0}: view.serves
+msgid "Serves: {0}"
+msgstr "Для: {0}"
 
 msgid "service"
 msgstr "услуга"
@@ -30711,6 +30798,9 @@ msgstr "Отображается внизу каждой страницы."
 
 msgid "Shown to the customer on the invoice"
 msgstr "Показано покупателю на счет-фактуре"
+
+msgid "Shown to the person in the card. A checklist's points are ticked by them, and the card is marked done once every point is ticked."
+msgstr "Показывается сотруднику в карточке. Пункты чек-листа он отмечает сам, и карточка отмечается как выполненная, когда отмечены все пункты."
 
 msgid "Shown to the user when this rule fails."
 msgstr "Показано пользователю при ошибке этого правила."
@@ -32939,8 +33029,8 @@ msgstr "Пользователь Carbon, ответственный за вза�
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "Пользователь Carbon, который владеет этой RFQ; ответы поставщика и напоминания направляются им."
 
-msgid "The card goes at the end of the section."
-msgstr "Карточка помещается в конец раздела."
+msgid "The card goes at the end of the page."
+msgstr "Карточка добавляется в конец страницы."
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "Перевозчик и сервис, через которые отправляется отгрузка, предоставляя шаблон URL отслеживания, который преобразует номер отслеживания в ссылку, и счет, на который проводятся почтовые сборы."
@@ -33024,7 +33114,7 @@ msgid "The company template stays the same."
 msgstr "Шаблон организации останется без изменений."
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling puts the company on Implementation Hub 2.0. Each person sees it once you load their page."
-msgstr ""
+msgstr "Сотрудники организации пока не видят Implementation Hub. Подключение переводит организацию на Implementation Hub 2.0. Каждый сотрудник увидит его, когда вы добавите ему страницу."
 
 msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 1.0, because Implementation Hub 2.0 is off for this company, and emails the company's admins."
 msgstr "Сотрудники организации пока не видят Центр внедрения. Подключение покажет им Центр внедрения 1.0, потому что Центр внедрения 2.0 отключён для этой организации, и отправит письмо администраторам организации."
@@ -34052,9 +34142,6 @@ msgstr "График, используемый для распределения
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "Планировщик применяет первое подходящее правило ниже, затем вычитает время простоя и укомплектование."
 
-msgid "The section and its cards leave this page. Items on it stay in the catalogue and can be added again."
-msgstr "Раздел и его карточки исчезают с этой страницы. Элементы в нём остаются в каталоге и могут быть добавлены снова."
-
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "Класс основных средств, заранее созданный для единиц, которые вы строите или капитализируете для сдачи в аренду вместо продажи; переводится на собственные счета активов парка проката и накопленной амортизации, и каждый актив, связанный с номенклатурой, появляется в реестре парка."
 
@@ -35072,6 +35159,9 @@ msgstr "Миниатюра загружена"
 msgid "Thursday"
 msgstr "Четверг"
 
+msgid "Tick every point of the checklist first"
+msgstr "Сначала отметьте все пункты чек-листа"
+
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Свяжите отгрузки со счетом-фактурой без повторного ввода данных"
 
@@ -35891,6 +35981,9 @@ msgstr "Введите текст для поиска в вашем рабоче
 
 msgid "Type:"
 msgstr "Тип:"
+
+msgid "Typed answer"
+msgstr "Ответ текстом"
 
 msgid "Types"
 msgstr "Типы"
@@ -38424,6 +38517,9 @@ msgstr "Ваша учетная запись остается в безопас�
 
 msgid "Your answer"
 msgstr "Ваш ответ"
+
+msgid "Your answer: pick all that apply"
+msgstr "Ваш ответ: выберите все подходящие"
 
 msgid "Your backups"
 msgstr "Ваши резервные копии"

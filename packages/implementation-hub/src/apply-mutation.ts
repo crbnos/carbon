@@ -19,7 +19,13 @@ import {
   hasPriorityCard,
   prioritySetHolder
 } from "./logic/page";
-import { type PageTarget, placeCard, rowItem } from "./logic/page-edit";
+import {
+  findPageCard,
+  type PageTarget,
+  placeCard,
+  rowItem
+} from "./logic/page-edit";
+import { attachedFileProblem, canRemovePageFile } from "./logic/page-files";
 import {
   checkPriorityWrite,
   isPriorityAnswerKey,
@@ -30,19 +36,24 @@ import {
 } from "./logic/priority-set";
 import { answerQuestionPayload } from "./logic/question";
 import {
+  attachedFilesValidator,
   type MemberPage,
+  type MemberPageCard,
   memberPageValidator,
   type StateAction
 } from "./models";
 import {
   deleteFieldValue,
   deleteImplementationAssignment,
+  deleteImplementationFile,
   deleteImplementationMember,
   deleteImplementationRow,
   getImplementationAssignment,
+  getImplementationFile,
   getImplementationMember,
   getImplementationMembers,
   getImplementationRows,
+  insertImplementationFiles,
   insertImplementationRow,
   setCheckStatesVerified,
   updateImplementationHub,
@@ -80,6 +91,9 @@ export interface HubMutationResult {
   toggled: { itemKey: string; kind: StateKind; value: string }[];
   // The person whose page a setMemberPage wrote.
   memberId?: string;
+  // The bucket key of the file a removeFile took off a page: the caller
+  // removes the stored file.
+  removedPath?: string;
 }
 
 // The only collection a customer may add rows to: their own objectives. Every
@@ -167,6 +181,11 @@ export function refusalFor(
     case "setMemberPage":
     case "deleteMemberPage":
       return "Only Carbon staff can set up a person's page";
+    case "attachFile":
+    case "removeFile":
+      // Decided against the page and the file (`attachFileRefusal`,
+      // `canRemovePageFile`), which the mutation reads.
+      return null;
     case "setPriority":
       // Anyone in the company answers the questionnaire; setting a feature by
       // hand is Carbon staff work, like a person's page.
@@ -176,6 +195,20 @@ export function refusalFor(
         ? "Only Carbon staff can set a feature by hand"
         : null;
   }
+}
+
+// Pure: may this actor attach a file to the card? Carbon staff attach to any
+// card of any page; a person only to a card of their own page that asks for
+// a file.
+export function attachFileRefusal(
+  actor: Pick<HubActor, "isInternal" | "userId">,
+  target: { memberId: string; card: MemberPageCard }
+): string | null {
+  if (actor.isInternal) return null;
+  if (target.memberId !== actor.userId) {
+    return "You can attach files to your own page only";
+  }
+  return target.card.askForFile ? null : "This card does not ask for a file";
 }
 
 // The most writes one save may carry: every answer and override at once.
@@ -291,6 +324,15 @@ export function parsePlacement(
     return { page: page.data, target: { section: target.section } };
   }
   return { error: "The section to add the item to is not on the page" };
+}
+
+// Pure: parse JSON text; undefined when it is not JSON.
+function parseJson(json: string): unknown {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return undefined;
+  }
 }
 
 // Pure: parse a JSON-encoded object; null when it is not one.
@@ -647,6 +689,60 @@ export async function applyHubMutation(
         memberId: action.userId
       });
       return result.error ? failed(result.error) : ok();
+    }
+
+    case "attachFile": {
+      // Refused before another person's page is read.
+      if (!isInternal && action.memberId !== userId) {
+        return forbidden("You can attach files to your own page only");
+      }
+      const member = await getImplementationMember(client, {
+        companyId,
+        memberId: action.memberId
+      });
+      if (member.error) return failed(member.error);
+      const page = memberPageValidator.safeParse(member.data?.page);
+      const card = page.success
+        ? findPageCard(page.data, action.cardId)
+        : undefined;
+      if (!card) return failed({ message: "The card is not on this page" });
+      const refusal = attachFileRefusal(actor, {
+        memberId: action.memberId,
+        card
+      });
+      if (refusal) return forbidden(refusal);
+      const files = attachedFilesValidator.safeParse(parseJson(action.files));
+      if (!files.success) return failed({ message: "Invalid files" });
+      const problem = files.data
+        .map((file) => attachedFileProblem(file, companyId, action.memberId))
+        .find(Boolean);
+      if (problem) return failed({ message: problem });
+      const inserted = await insertImplementationFiles(client, {
+        companyId,
+        memberId: action.memberId,
+        cardId: action.cardId,
+        files: files.data,
+        userId
+      });
+      return inserted.error ? failed(inserted.error) : ok();
+    }
+
+    case "removeFile": {
+      const file = await getImplementationFile(client, {
+        companyId,
+        fileId: action.fileId
+      });
+      if (file.error) return failed(file.error);
+      if (!file.data) return failed({ message: "The file is not on the page" });
+      if (!canRemovePageFile(file.data, actor)) {
+        return forbidden("You can remove only the files you attached");
+      }
+      const removed = await deleteImplementationFile(client, {
+        companyId,
+        fileId: action.fileId
+      });
+      if (removed.error) return failed(removed.error);
+      return { error: null, toggled: [], removedPath: file.data.path };
     }
 
     case "setPriority": {

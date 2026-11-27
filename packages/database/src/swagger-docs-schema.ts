@@ -7308,6 +7308,195 @@ export default {
         tags: ["nonConformanceSalesOrderLine"]
       }
     },
+    "/implementationFile": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.cardId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.path"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.size"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/implementationFile"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["implementationFile"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.implementationFile"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["implementationFile"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.cardId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.path"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.size"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["implementationFile"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.cardId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.path"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.size"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.implementationFile.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.implementationFile"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["implementationFile"]
+      }
+    },
     "/companyAccountsPayableBillingAddress": {
       get: {
         parameters: [
@@ -148150,6 +148339,77 @@ export default {
       },
       type: "object"
     },
+    implementationFile: {
+      required: [
+        "id",
+        "companyId",
+        "userId",
+        "cardId",
+        "path",
+        "name",
+        "size",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        cardId: {
+          format: "text",
+          type: "string"
+        },
+        path: {
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        size: {
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     companyAccountsPayableBillingAddress: {
       required: ["id"],
       properties: {
@@ -208072,6 +208332,81 @@ export default {
     },
     "rowFilter.nonConformanceSalesOrderLine.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.implementationFile": {
+      name: "implementationFile",
+      description: "implementationFile",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/implementationFile"
+      }
+    },
+    "rowFilter.implementationFile.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.implementationFile.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.implementationFile.userId": {
+      name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.implementationFile.cardId": {
+      name: "cardId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.implementationFile.path": {
+      name: "path",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.implementationFile.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.implementationFile.size": {
+      name: "size",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.implementationFile.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.implementationFile.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.implementationFile.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.implementationFile.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

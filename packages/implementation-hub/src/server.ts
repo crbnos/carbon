@@ -136,6 +136,68 @@ export function deleteImplementationMember(
     .eq("userId", args.memberId);
 }
 
+// The files on the company's pages, or on one person's.
+export function getImplementationFiles(
+  client: Client,
+  args: { companyId: string; memberId?: string }
+) {
+  const query = client
+    .from("implementationFile")
+    .select("id, userId, cardId, path, name, size, createdBy, createdAt")
+    .eq("companyId", args.companyId);
+  return (args.memberId ? query.eq("userId", args.memberId) : query).order(
+    "createdAt"
+  );
+}
+
+export function getImplementationFile(
+  client: Client,
+  args: { companyId: string; fileId: string }
+) {
+  return client
+    .from("implementationFile")
+    .select("id, userId, path, createdBy")
+    .eq("companyId", args.companyId)
+    .eq("id", args.fileId)
+    .maybeSingle();
+}
+
+// One statement, so the files of one upload are recorded together or not at
+// all.
+export function insertImplementationFiles(
+  client: Client,
+  args: {
+    companyId: string;
+    memberId: string;
+    cardId: string;
+    files: { path: string; name: string; size: number }[];
+    userId: string;
+  }
+) {
+  return client.from("implementationFile").insert(
+    args.files.map((file) => ({
+      companyId: args.companyId,
+      userId: args.memberId,
+      cardId: args.cardId,
+      path: file.path,
+      name: file.name,
+      size: file.size,
+      createdBy: args.userId
+    }))
+  );
+}
+
+export function deleteImplementationFile(
+  client: Client,
+  args: { companyId: string; fileId: string }
+) {
+  return client
+    .from("implementationFile")
+    .delete()
+    .eq("companyId", args.companyId)
+    .eq("id", args.fileId);
+}
+
 // Cheap existence probes that back the nested product steps' auto-detection.
 // Never persisted — overlaid on stored manual state at read time.
 //

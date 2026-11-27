@@ -8,6 +8,7 @@ import {
   editCard,
   editPage,
   editSection,
+  findPageCard,
   moveCard,
   moveCardToSection,
   moveSection,
@@ -17,7 +18,8 @@ import {
   placeCard,
   removeCard,
   removeSection,
-  rowItem
+  rowItem,
+  singleSection
 } from "./page-edit";
 
 const base = (overrides: Partial<MemberPage> = {}): MemberPage => ({
@@ -264,5 +266,74 @@ describe("page helpers", () => {
 
   it("reads options one per line, without blanks or repeats", () => {
     expect(parseOptionLines(" Yes \n\nNo\nYes\n")).toEqual(["Yes", "No"]);
+  });
+});
+
+describe("editCard fields", () => {
+  it("keeps fields with a label and something in them, and drops the rest", () => {
+    const edited = editCard(base(), 0, 0, {
+      fields: [
+        { label: " Owner ", value: " Finance lead " },
+        { label: "", value: "No label" },
+        { label: "Empty", value: "  " },
+        { label: "Done when", points: ["Agreed", " ", "Agreed", "Entered"] },
+        { label: "No points", points: [" "] }
+      ]
+    });
+    expect(edited.sections[0]?.cards[0]).toEqual({
+      item: "setup:locations",
+      fields: [
+        { label: "Owner", value: "Finance lead" },
+        { label: "Done when", points: ["Agreed", "Entered"] }
+      ]
+    });
+  });
+
+  it("removes the fields and the file request when they are cleared", () => {
+    const withBoth = editCard(base(), 0, 0, {
+      fields: [{ label: "Owner", value: "Finance lead" }],
+      askForFile: true
+    });
+    expect(withBoth.sections[0]?.cards[0]).toEqual({
+      item: "setup:locations",
+      fields: [{ label: "Owner", value: "Finance lead" }],
+      askForFile: true
+    });
+    expect(
+      editCard(withBoth, 0, 0, { fields: [], askForFile: false }).sections[0]
+        ?.cards[0]
+    ).toEqual({ item: "setup:locations" });
+  });
+});
+
+describe("singleSection", () => {
+  it("puts every card in the first section, in page order", () => {
+    expect(singleSection(base()).sections).toEqual([
+      {
+        title: "Before go-live",
+        cards: [
+          { item: "setup:locations" },
+          { item: "task:first-quote" },
+          { custom: { key: "walk-the-floor", title: "Walk the floor" } }
+        ]
+      }
+    ]);
+  });
+
+  it("returns a page in one section as it is", () => {
+    const page = base({ sections: [base().sections[0]!] });
+    expect(singleSection(page)).toBe(page);
+  });
+});
+
+describe("findPageCard", () => {
+  it("finds a hub item by its key and a custom card by custom:<key>", () => {
+    expect(findPageCard(base(), "task:first-quote")).toEqual({
+      item: "task:first-quote"
+    });
+    expect(findPageCard(base(), "custom:walk-the-floor")?.custom?.title).toBe(
+      "Walk the floor"
+    );
+    expect(findPageCard(base(), "setup:parts")).toBeUndefined();
   });
 });

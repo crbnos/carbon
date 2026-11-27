@@ -60,11 +60,13 @@ describe("opensImplementationHub2", () => {
 });
 
 describe("changesImplementationHub1", () => {
-  it("lets page files, assignments and the priority set through before a switch", () => {
+  it("lets page files, their files, assignments and the priority set through before a switch", () => {
     expect(changesImplementationHub1("setMemberPage")).toBe(false);
     expect(changesImplementationHub1("deleteMemberPage")).toBe(false);
     expect(changesImplementationHub1("setAssignee")).toBe(false);
     expect(changesImplementationHub1("setPriority")).toBe(false);
+    expect(changesImplementationHub1("attachFile")).toBe(false);
+    expect(changesImplementationHub1("removeFile")).toBe(false);
   });
 
   it("holds back every write Implementation Hub 1.0 reads", () => {

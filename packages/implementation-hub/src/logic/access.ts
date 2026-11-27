@@ -55,14 +55,21 @@ export const UNENROLLED_HUB: {
   contacts: {}
 };
 
-// The writes that touch only Implementation Hub 2.0 records: page files, their
-// assignments and the priority set's own field values. Every other write
+// The writes that touch only Implementation Hub 2.0 records: page files, the
+// files on a page, assignments and the priority set's own field values. Every other write
 // changes records Implementation Hub 1.0 also reads (ticks, fill-in fields,
 // rows, the hub row), so it is refused until the company uses 2.0, and a
 // company on 1.0 keeps exactly the Implementation Hub it had.
 const HUB_2_ONLY_INTENTS: ReadonlySet<StateAction["intent"]> = new Set<
   StateAction["intent"]
->(["setMemberPage", "deleteMemberPage", "setAssignee", "setPriority"]);
+>([
+  "setMemberPage",
+  "deleteMemberPage",
+  "attachFile",
+  "removeFile",
+  "setAssignee",
+  "setPriority"
+]);
 
 export function changesImplementationHub1(
   intent: StateAction["intent"]

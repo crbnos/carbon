@@ -119,6 +119,7 @@ export const attachments = {
   implementationAssignment: { statement: ["broadcast_table_changes"] },
   implementationCheckState: { statement: ["broadcast_table_changes"] },
   implementationFieldValue: { statement: ["broadcast_table_changes"] },
+  implementationFile: { statement: ["broadcast_table_changes"] },
   implementationHub: { statement: ["broadcast_table_changes"] },
   implementationMember: { statement: ["broadcast_table_changes"] },
   implementationRow: { statement: ["broadcast_table_changes"] },
