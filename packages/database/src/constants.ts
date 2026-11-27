@@ -759,6 +759,8 @@ export const Constants = {
         "Partial",
       ],
       pickMethodSortMethod: ["Default", "FEFO", "FIFO", "LIFO"],
+      plannedOrderStatus: ["Planned", "Firm", "Converted"],
+      plannedOrderType: ["Make", "Buy", "Transfer"],
       planningActionStatus: ["Open", "Dismissed", "Actioned"],
       planningActionType: [
         "Order",

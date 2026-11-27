@@ -2180,6 +2180,9 @@ msgstr "작업자가 이 단계에서 보는 사진 또는 PDF"
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "실제 풀 신호로 재고와 함께 있는 인쇄된 카드 또는 QR 코드로 스캔되는 순간 발주서 또는 작업 지시를 생성하여 빈을 보충합니다."
 
+msgid "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP."
+msgstr "사용자가 잠근 계획 오더는 MRP가 수량이나 날짜를 더 이상 변경하지 않으며, 여전히 공급으로 계산하고 불일치가 생기면 조치 항목을 만듭니다. 계획 오더의 수량이나 마감일을 편집하면 확정되며, 확정 해제를 하면 MRP가 다시 관리합니다."
+
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Carbon 자체 흐름의 한 지점으로 워크플로가 감시할 수 있습니다 — 작업 지시 릴리스됨, 견적서 수락됨, 출하 전기됨 — 원시 필드 변경과는 다릅니다; 워크플로에 관련 레코드를 ID로 제공합니다."
 
@@ -2564,8 +2567,8 @@ msgstr "작업장 또는 작업자의 한 공정의 배치 시간 범위에 대�
 msgid "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 msgstr "부분 CLIN: 동일한 계약의 상위 CLIN의 4자리 숫자에 2개의 문자 또는 숫자(예: 0001AA)를 더한 것입니다."
 
-msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
-msgstr "MRP가 각 실행 후 작성하는 제안입니다: 새로운 공급을 발주하거나 생산하거나, 미결 발주서 라인 또는 작업 지시를 가속화, 연기, 증가, 감소 또는 취소합니다. 계획 페이지에서 적용하거나, 무시하거나, 할당할 수 있습니다."
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
+msgstr "MRP가 실행할 때마다 작성하는 제안입니다: 신규 공급을 발주 또는 사내 생산하거나, 미결 발주서 라인, 작업 지시 또는 계획 주문을 앞당기기, 연기, 증가, 감소 또는 취소합니다. 계획 페이지에서 적용하거나, 무시하거나, 할당할 수 있습니다."
 
 msgid "A supplier contact and location are optional"
 msgstr "공급업체 담당자 및 사업장은 선택사항입니다"
@@ -6673,6 +6676,9 @@ msgstr "주문 취소"
 msgid "Cancel Picking List"
 msgstr "피킹 리스트 취소"
 
+msgid "Cancel planned order"
+msgstr "계획 주문 취소"
+
 msgid "Cancel Purchase Order"
 msgstr "발주서 취소"
 
@@ -9006,6 +9012,9 @@ msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
 msgid "Could not read the document: {0}"
 msgstr "문서를 읽을 수 없습니다: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "계획 주문을 읽을 수 없습니다. 대신 계획 조치를 기준으로 주문 수량을 정했습니다."
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
@@ -10239,6 +10248,9 @@ msgstr "{fieldLabel} 감소"
 msgid "Decrease job {target} to {amount}"
 msgstr "작업 지시 {target}을(를) {amount}로 감소"
 
+msgid "Decrease planned order to {amount}"
+msgstr "계획 주문을 {amount}(으)로 감소"
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "발주서 {target}을(를) {amount}로 감소"
 
@@ -10403,6 +10415,9 @@ msgstr "연기"
 
 msgid "Defer job {target} to {date}"
 msgstr "작업 지시 {target}을(를) {date}로 연기"
+
+msgid "Defer planned order to {date}"
+msgstr "계획 주문을 {date}(으)로 연기"
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "발주서 {target}을(를) {date}로 연기"
@@ -13352,6 +13367,9 @@ msgstr "앞당기기"
 msgid "Expedite job {target} to {date}"
 msgstr "작업 지시 {target}을(를) {date}로 앞당기기"
 
+msgid "Expedite planned order to {date}"
+msgstr "계획 주문을 {date}(으)로 앞당김"
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "발주서 {target}을(를) {date}로 앞당기기"
 
@@ -13454,6 +13472,9 @@ msgstr "유통기한은 선택된 공법이 시작될 때 시작됩니다."
 
 msgid "Expiry trace"
 msgstr "유통기한 추적"
+
+msgid "explode {explode}"
+msgstr "전개 {explode}"
 
 msgid "Export"
 msgstr "내보내기"
@@ -13815,6 +13836,9 @@ msgstr "공급업체 반품을 로드하지 못했습니다"
 msgid "Failed to load the rental rates"
 msgstr "렌탈 요금을 로드하지 못했습니다."
 
+msgid "Failed to load the suppliers"
+msgstr "공급업체를 불러오지 못했습니다"
+
 msgid "Failed to load tracked entities"
 msgstr "추적 개체를 불러오지 못했습니다"
 
@@ -13938,6 +13962,9 @@ msgstr "공급업체 견적 라인을 업데이트하지 못했습니다"
 msgid "Failed to update the items"
 msgstr "품목 업데이트 실패"
 
+msgid "Failed to update the planned order"
+msgstr "계획 주문을 업데이트하지 못했습니다"
+
 msgid "Failed to update the setting"
 msgstr "설정 업데이트 실패"
 
@@ -14039,6 +14066,9 @@ msgstr "수수료"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO(유효기한 임박 순 출고)"
+
+msgid "Fence"
+msgstr "기간 펜스"
 
 msgid "Fetch"
 msgstr "가져오기"
@@ -14218,6 +14248,9 @@ msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "견적 라인, 수주 라인 및 매출 송장 라인에서 실행합니다."
+
+msgid "Firm"
+msgstr "확정"
 
 msgid "First {count}"
 msgstr "처음 {count}"
@@ -15437,6 +15470,12 @@ msgstr "계산 날짜 이후 선급 할인을 사용할 수 있는 일 수입니
 msgid "How many days after the calculation date the full amount is due."
 msgstr "계산일로부터 전체 금액이 만기되는 일수입니다."
 
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "MRP가 계획 주문을 건드리지 않는 기간(일 수)입니다. 계획 타임 펜스 안에서 릴리스되는 계획 주문은 수량과 날짜가 유지되며, MRP는 해당 주문에 대한 변경만 제안합니다. 계획 타임 펜스 안에 생긴 새 소요는 펜스가 끝나는 시점에 릴리스되도록 계획되며, 앞당기기를 적용해 일정을 당길 수 있습니다. 펜스를 두지 않으려면 0을 입력하십시오."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "MRP가 이 품목의 계획 주문을 건드리지 않는 기간(일 수)입니다. 계획 타임 펜스 안에서 릴리스되는 계획 주문은 수량과 날짜가 유지되며, MRP는 해당 주문에 대한 변경만 제안합니다. 계획 타임 펜스 안에 생긴 새 소요는 펜스가 끝나는 시점에 릴리스되도록 계획되며, 앞당기기를 적용해 일정을 당길 수 있습니다. 비워 두면 사업장의 계획 타임 펜스를 사용하며, 이 품목에만 펜스를 두지 않으려면 0을 입력하십시오."
+
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "미결 발주가 필요한 날짜로부터 이 일수의 범위 내에 도착하면 MRP가 일정 변경을 제안하지 않습니다. 설정 → 계획에서 설정하며, 기본값은 7일입니다."
 
@@ -15958,6 +15997,9 @@ msgstr "{fieldLabel} 증가"
 
 msgid "Increase job {target} to {amount}"
 msgstr "작업 지시 {target}을(를) {amount}로 증가"
+
+msgid "Increase planned order to {amount}"
+msgstr "계획 주문을 {amount}(으)로 증가"
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "발주서 {target}을(를) {amount}로 증가"
@@ -17053,6 +17095,9 @@ msgstr "일치하는 품목 유지"
 msgid "Keep mine"
 msgstr "내 변경 사항 유지"
 
+msgid "Keep my numbers"
+msgstr "내 번호 유지"
+
 msgid "Keep navigation open"
 msgstr "탐색 열어 두기"
 
@@ -17070,6 +17115,9 @@ msgstr "열린 상태 유지"
 
 msgid "Keep picking"
 msgstr "피킹 유지"
+
+msgid "Keep your numbers through plan updates?"
+msgstr "계획 업데이트 후에도 번호를 유지할까요?"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "주문, 견적 및 설정을 이중 확인으로 보호합니다"
@@ -17959,6 +18007,15 @@ msgstr "위치 / 항목"
 
 msgid "Location code"
 msgstr "사업장 코드"
+
+msgid "Location default"
+msgstr "사업장 기본값"
+
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "사업장 설정값: {locationTimeFenceDays, plural, one {# 일} other {# 일}}"
+
+msgid "Location default: no fence"
+msgstr "사업장 설정값: 펜스 없음"
 
 msgid "Location Name"
 msgstr "위치 이름"
@@ -22249,7 +22306,7 @@ msgid "operation"
 msgstr "공정"
 
 msgid "Operation"
-msgstr "공정작업"
+msgstr "작업"
 
 msgctxt "workflow data step"
 msgid "Operation"
@@ -23506,6 +23563,15 @@ msgstr "계획 주문"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "계획된 주문 = 품목의 재주문 정책(또는 수동으로 추가됨)에 따라 예상 소요량을 충당하기 위한 MRP 제안."
 
+msgid "Planned order firmed"
+msgstr "계획 주문 확정됨"
+
+msgid "Planned order returned to MRP"
+msgstr "계획 주문을 MRP로 되돌림"
+
+msgid "Planned Orders"
+msgstr "계획 주문"
+
 msgid "Planned purchase order"
 msgstr "계획된 발주서"
 
@@ -23577,6 +23643,15 @@ msgstr "계획은 제안된 보충 수량을 이 숫자의 배수로 반올림�
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "계획은 이 많은 날짜 내에 필요한 조치 및 제안된 주문만 표시합니다. 회사 기본값을 사용하려면 공란으로 두거나, 이 품목의 모든 것을 표시하려면 0을 입력하세요."
+
+msgid "Planning time fence"
+msgstr "계획 타임 펜스"
+
+msgid "Planning time fence (days)"
+msgstr "계획 타임 펜스 (일)"
+
+msgid "Planning time fence days"
+msgstr "계획 타임 펜스 (일)"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "계획에서 제안하는 보충 수량의 하한선으로, 공급업체-부품 레코드에 있는 공급업체의 MOQ와는 별개입니다."
@@ -24289,6 +24364,9 @@ msgstr "주별 예상 현재고"
 
 msgid "Projected stock"
 msgstr "예상 재고"
+
+msgid "Projected stock {stock}"
+msgstr "예상 재고 {stock}"
 
 msgid "Projected stock by week"
 msgstr "주별 예상 재고"
@@ -25711,6 +25789,9 @@ msgstr "릴리스 제어 설정 업데이트됨"
 msgid "Release date"
 msgstr "릴리스 날짜"
 
+msgid "Release Date"
+msgstr "릴리스 날짜"
+
 msgid "Release Items"
 msgstr "릴리스 항목"
 
@@ -25734,6 +25815,9 @@ msgstr "릴리즈됨"
 
 msgid "Released date"
 msgstr "출시일"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr "계획 타임 펜스 안에서 릴리스됨: MRP가 수량과 날짜를 유지합니다."
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "릴리스된 항목은 다음 송장 실행 시 해당 라인의 자금 범위 내에서 청구됩니다."
@@ -27547,6 +27631,9 @@ msgstr "저장 중 {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "현재 데이터의 사본 저장 중"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr "이 변경을 저장하면 계획 주문이 확정됩니다. 이후 MRP는 수량과 날짜를 유지하며, 이에 동의하지 않으면 계획 조치를 발생시킵니다. 확정 해제하면 주문이 MRP로 돌아갑니다."
+
 msgid "Saving..."
 msgstr "저장 중..."
 
@@ -27682,6 +27769,9 @@ msgstr "스크랩 {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "스크랩 / 품질 원가"
+
+msgid "scrap +{scrap}"
+msgstr "스크랩 +{scrap}"
 
 msgid "Scrap Percent"
 msgstr "스크랩 비율"
@@ -30640,6 +30730,9 @@ msgstr "공급 및 소요량 차트({weeks}주): 예상 재고는 {start}에서 
 
 msgid "Supply and demand chart: no data."
 msgstr "공급 및 소요량 차트: 데이터가 없습니다."
+
+msgid "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
+msgstr "MRP가 한 품목, 한 사업장, 한 주에 대해 제안하는 공급입니다. 품목의 재주문 정책에 따라 수량이 정해지며, 사내 생산할 작업 지시이거나 구매할 발주 건입니다. 사람이 확정하거나 전환하기 전까지 MRP는 실행할 때마다 이를 변경하거나 삭제할 수 있습니다. 문서인 계획됨 작업 지시나 계획됨 발주서와는 다릅니다."
 
 msgid "Support"
 msgstr "지원"
@@ -34147,6 +34240,9 @@ msgstr "내장 기능을 켜세요"
 msgid "Turn on to create one picking list for each job when it is released."
 msgstr "켜면 작업 지시가 릴리스될 때마다 작업별로 피킹 리스트가 하나씩 생성됩니다."
 
+msgid "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
+msgstr "켜면 작업 지시가 릴리스될 때마다 작업별로 피킹 리스트가 하나씩 생성됩니다."
+
 msgid "Turned off sync"
 msgstr "동기화 꺼짐"
 
@@ -34336,6 +34432,9 @@ msgstr "남은 개월이 부과할 이자를 제외한, 아직 올 할인되지 
 
 msgid "Undo"
 msgstr "실행 취소"
+
+msgid "Unfirm"
+msgstr "확정 해제"
 
 msgid "Unfurl Links"
 msgstr "링크 펼치기"

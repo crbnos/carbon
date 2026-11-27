@@ -183,7 +183,8 @@ Interaction belongs in a browser playbook.
   (`fixtures/local-database.ts`), never a bare delete. CI's database is
   thrown away with the job, so there (`CI` is set) it does nothing and the
   rows stay. Never rely on any cleanup, another test's or your own earlier
-  one: make every id from a random prefix, so a second run cannot collide.
+  one: make every id from a random prefix, so a second run cannot collide. Rows
+  with no company (`period`) are every test's: delete those yourself, always.
   State a later test in the same file needs restored (a shared fixture's
   setting) is not cleanup: restore it directly.
 - A posting run from handles (`invokePosting(handlesOf(…))`) builds its

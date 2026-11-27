@@ -23,7 +23,7 @@ import { distinctItemText } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import {
   LuBookMarked,
   LuCircleCheck,
@@ -32,7 +32,7 @@ import {
   LuSquareChartGantt,
   LuUserCheck
 } from "react-icons/lu";
-import { Link, useSearchParams } from "react-router";
+import { Link } from "react-router";
 import {
   EmployeeAvatarGroup,
   exportOnlyColumn,
@@ -56,13 +56,15 @@ import {
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM
 } from "~/modules/production/production.models";
-import { applyPlanningActionsPermission } from "~/modules/production/production.utils";
+import {
+  applyPlanningActionsPermission,
+  type DrawerPlannedOrder
+} from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import {
   draftsOfRefusedOrders,
   openNewSupplyActions,
-  productionOrdersFromActions,
-  withoutRowDraft
+  productionOrdersFromActions
 } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import {
   PLANNING_SEGMENT_COLUMN,
@@ -85,6 +87,7 @@ import {
 import { useJobPlanningRelease } from "~/modules/production/ui/Planning/useJobPlanningRelease";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
+import { usePlanningRowDrafts } from "~/modules/production/ui/Planning/usePlanningRowDrafts";
 import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
@@ -139,10 +142,34 @@ const ProductionPlanningTable = ({
   const unitOfMeasures = useUnitOfMeasure();
   const itemPostingGroups = useItemPostingGroups();
 
+  const user = useUser();
+  // The drawer's draft orders and the planned orders they stand for, by row.
+  const drafts = usePlanningRowDrafts<ProductionOrder>({
+    orderType: "Make",
+    locationId,
+    companyId: user.company.id,
+    // a Make planned order explodes to its components, so an Apply that
+    // re-planned may have moved any row's suggestions
+    replanDrops: "everyRow"
+  });
+  const {
+    ordersMap,
+    setOrders,
+    plannedOrdersByRowKey,
+    onPlannedOrdersLoaded,
+    draftVersion,
+    dropOrders,
+    dropAllDrafts,
+    clearDrafts,
+    replaceDrafts,
+    dropItemDrafts,
+    readPlannedOrders
+  } = drafts;
+
   const mrpFetcher = useAction<typeof mrpAction>({
     onSettled: (data) => {
-      // the drawer re-seeds from the new run's actions
-      if (data) setOrdersMap({});
+      // the drawer re-seeds from the new run's actions and planned orders
+      if (data) clearDrafts();
     }
   });
   const mrpScheduleDescription = useMrpScheduleDescription();
@@ -175,7 +202,6 @@ const ProductionPlanningTable = ({
   );
 
   // ── Planning actions (the MRP worklist) ──────────────────────────────────
-  const user = useUser();
   const canUpdateActions = permissions.has({
     "production.materialPlanning": "Edit"
   });
@@ -185,7 +211,7 @@ const ProductionPlanningTable = ({
   const {
     actionHandlers: changeActionHandlers,
     isActionsBusy,
-    timeFence,
+    horizon,
     actionsByRowKey,
     fencedActionsByRowKey,
     visibleActionsByRowKey,
@@ -197,7 +223,9 @@ const ProductionPlanningTable = ({
     locationId,
     updatePath: path.to.bulkUpdateProductionPlanning,
     currentUserId: user.id,
-    canUpdate: canUpdateActions
+    canUpdate: canUpdateActions,
+    // an Apply on a planned order re-plans: the drafts are stale
+    onRowsReplanned: drafts.onRowsReplanned
   });
 
   // A job's Release button releases it from here (the jobs table's release
@@ -223,7 +251,8 @@ const ProductionPlanningTable = ({
       if (!data || !("jobs" in data)) return;
       // A refused late order stays a draft as it was sent; every other row
       // re-seeds from the suggestions, which keep what was not ordered.
-      setOrdersMap(
+      // the jobs converted planned orders: they are read again
+      replaceDrafts(
         draftsOfRefusedOrders(submittedRows.current, data.refusedOrders)
       );
       const refusedCount = data.refusedOrders.length;
@@ -293,56 +322,55 @@ const ProductionPlanningTable = ({
     }
   });
 
-  // The drawer's draft orders are page state keyed by item. They are dropped
-  // when the page's scope changes (location, filters, search, sort, page) and
-  // when MRP recalculates (mrpFetcher above) or an order is placed (below) —
-  // NOT on every reload of the loader: Apply, Dismiss and Assign inside the
-  // drawer revalidate it, and that used to wipe the planner's edits in the
-  // suggested-orders table above them.
-  const [searchParams] = useSearchParams();
-  // The open drawer is in the address too, and is not a change of scope.
-  const pageScope = useMemo(() => {
-    const scope = new URLSearchParams(searchParams);
-    scope.delete(PLANNING_DRAWER_PARAM);
-    return scope.toString();
-  }, [searchParams]);
-  useEffect(() => {
-    setOrdersMap({});
-  }, [pageScope]);
-
   const isDisabled =
     !permissions.has({ "production.materialPlanning": "Create" }) ||
     bulkUpdateFetcher.state !== "idle" ||
-    mrpFetcher.state !== "idle";
-
-  // Store orders in a map keyed by item id - calculate on-demand instead of eagerly
-  const [ordersMap, setOrdersMap] = useState<Record<string, ProductionOrder[]>>(
-    {}
-  );
+    mrpFetcher.state !== "idle" ||
+    drafts.isReadingPlannedOrders;
 
   // A row's suggested jobs are its open Make actions: what MRP wrote after it
   // moved expedited supply, folded a shortfall into an open job as an
-  // Increase, and summed each week. They seed the drawer, size the Make
+  // Increase, and summed each week — one job per planned order of the
+  // action's week when it has any. They seed the drawer, size the Make
   // button, and are what a bulk Create Jobs submits for rows never opened.
+  const ordersForRow = useCallback(
+    (row: ProductionPlanningItem, plannedOrders?: DrawerPlannedOrder[]) => {
+      const rowActions = actionsByRowKey.get(planningRowKey(row));
+      return productionOrdersFromActions(
+        openNewSupplyActions(rowActions, "Make"),
+        {
+          item: row,
+          todayDate: locationToday,
+          plannedOrders,
+          rowActions,
+          weeks: periods
+        }
+      );
+    },
+    [actionsByRowKey, locationToday, periods]
+  );
   const ordersByRowKey = useMemo(
     () =>
       new Map(
         loadedRows.map((row) => [
           planningRowKey(row),
-          productionOrdersFromActions(
-            openNewSupplyActions(
-              actionsByRowKey.get(planningRowKey(row)),
-              "Make"
-            ),
-            { item: row, todayDate: locationToday }
-          )
+          ordersForRow(row, plannedOrdersByRowKey[planningRowKey(row)])
         ])
       ),
-    [loadedRows, actionsByRowKey, locationToday]
+    [loadedRows, ordersForRow, plannedOrdersByRowKey]
   );
 
   const onBulkUpdate = useCallback(
-    (selectedRows: ProductionPlanningItem[], action: "order") => {
+    async (selectedRows: ProductionPlanningItem[], action: "order") => {
+      if (drafts.isReading()) return;
+      // A bulk Create Jobs reads the planned orders of the rows it sizes
+      // itself, so a bulk job converts by id as the drawer's does.
+      const plannedOrdersByItem = await readPlannedOrders(selectedRows);
+      const suggestedOrders = (row: ProductionPlanningItem) =>
+        plannedOrdersByItem && !row.planningSegmentId
+          ? ordersForRow(row, plannedOrdersByItem.get(row.id!) ?? [])
+          : (ordersByRowKey.get(planningRowKey(row)) ?? []);
+
       const payload = {
         locationId,
         items: selectedRows
@@ -356,8 +384,8 @@ const ProductionPlanningTable = ({
               planningRowKey(row) in ordersMap
                 ? ordersMap[planningRowKey(row)]!
                 : splitOrdersByFence(
-                    ordersByRowKey.get(planningRowKey(row)) ?? [],
-                    timeFence.fenceDateFor(row)
+                    suggestedOrders(row),
+                    horizon.horizonDateFor(row)
                   ).inside;
             const ordersWithPeriods = sourceOrders.map((order) => {
               // If no due date or due date is before first period, use first period
@@ -403,27 +431,29 @@ const ProductionPlanningTable = ({
     },
 
     // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
-    [bulkUpdateFetcher, locationId, ordersMap, ordersByRowKey, timeFence]
+    [
+      bulkUpdateFetcher,
+      drafts.isReading,
+      readPlannedOrders,
+      locationId,
+      ordersMap,
+      ordersByRowKey,
+      ordersForRow,
+      horizon
+    ]
   );
 
-  // Moving a row's fence changes which suggested orders its drawer opens on.
-  // The drawer's list is kept per item once opened (planner edits win), so a
-  // stale list would neither show the newly included orders nor offer them —
-  // drop it and let the drawer re-seed from the new split.
-  const setFenceDate = timeFence.setFenceDate;
-  const onFenceChange = useCallback(
+  // Moving a row's horizon changes which suggested orders its drawer opens
+  // on. The drawer's list is kept per item once opened (planner edits win),
+  // so a stale list would neither show the newly included orders nor offer
+  // them — drop it and let the drawer re-seed from the new split.
+  const setHorizonDate = horizon.setHorizonDate;
+  const onHorizonChange = useCallback(
     (itemId: string, date: string | null) => {
-      setFenceDate(itemId, date);
-      setOrdersMap((prev) => {
-        // the fence is per item, so every segment row of the item re-seeds
-        const kept = Object.entries(prev).filter(
-          ([key]) => key.split("\u001f")[0] !== itemId
-        );
-        if (kept.length === Object.keys(prev).length) return prev;
-        return Object.fromEntries(kept);
-      });
+      setHorizonDate(itemId, date);
+      dropItemDrafts(itemId);
     },
-    [setFenceDate]
+    [setHorizonDate, dropItemDrafts]
   );
 
   // The drawer stays mounted, on the last selected part, while it slides out.
@@ -438,32 +468,14 @@ const ProductionPlanningTable = ({
     rows: drawerRows
   });
 
-  const setOrders = useCallback(
-    (item: ProductionPlanningItem, orders: ProductionOrder[]) => {
-      if (item.id) {
-        setOrdersMap((prev) => ({
-          ...prev,
-          [planningRowKey(item)]: orders
-        }));
-      }
-    },
-    []
-  );
-
-  // After a Draft job is planned (MRP re-runs) or an order is placed, the
-  // row's draft is stale: drop it so the drawer re-seeds.
-  const dropOrders = useCallback((item: ProductionPlanningItem) => {
-    if (item.id) setOrdersMap((prev) => withoutRowDraft(prev, item));
-  }, []);
-
   // The drawer's own Planning Horizon control: the same on-screen override as
   // the grid cell, for the row the drawer is open on.
   const selectedItemId = selectedItem?.id;
-  const onSelectedFenceChange = useCallback(
+  const onSelectedHorizonChange = useCallback(
     (date: string | null) => {
-      if (selectedItemId) onFenceChange(selectedItemId, date);
+      if (selectedItemId) onHorizonChange(selectedItemId, date);
     },
-    [selectedItemId, onFenceChange]
+    [selectedItemId, onHorizonChange]
   );
 
   // The drawer's suggested orders, split at the selected row's time fence: it
@@ -474,9 +486,9 @@ const ProductionPlanningTable = ({
     if (!selectedItem?.id) return { inside: [], beyond: [] };
     return splitOrdersByFence(
       ordersByRowKey.get(planningRowKey(selectedItem)) ?? [],
-      timeFence.fenceDateFor(selectedItem)
+      horizon.horizonDateFor(selectedItem)
     );
-  }, [selectedItem, ordersByRowKey, timeFence]);
+  }, [selectedItem, ordersByRowKey, horizon]);
 
   // The drawer's Open Orders table shows the selected row's change actions on existing
   // jobs (Expedite, Defer, Increase, …). Order / Make actions are left out —
@@ -504,8 +516,8 @@ const ProductionPlanningTable = ({
       formatQuantity,
       unitOfMeasures,
       itemPostingGroups,
-      timeFence,
-      onFenceChange,
+      horizon,
+      onHorizonChange,
       segmentProjects
     });
 
@@ -629,7 +641,7 @@ const ProductionPlanningTable = ({
       },
       shared.firstNegativeDate,
       shared.latestOrderDate,
-      shared.timeFence,
+      shared.planningHorizon,
       shared.type,
       shared.itemGroup,
       {
@@ -640,7 +652,7 @@ const ProductionPlanningTable = ({
           const orders = row.original.id
             ? splitOrdersByFence(
                 ordersByRowKey.get(planningRowKey(row.original)) ?? [],
-                timeFence.fenceDateFor(row.original)
+                horizon.horizonDateFor(row.original)
               ).inside
             : [];
           const orderQuantity = orders.reduce(
@@ -703,7 +715,7 @@ const ProductionPlanningTable = ({
     people,
     itemPostingGroups,
     ordersByRowKey,
-    timeFence,
+    horizon,
     segmentProjects,
     locationToday,
     weekLabel
@@ -728,7 +740,10 @@ const ProductionPlanningTable = ({
 
           <DropdownMenuItem
             onSelect={() => onBulkUpdate(selectedRows, "order")}
-            disabled={bulkUpdateFetcher.state !== "idle"}
+            disabled={
+              bulkUpdateFetcher.state !== "idle" ||
+              drafts.isReadingPlannedOrders
+            }
           >
             <DropdownMenuIcon icon={<LuSquareChartGantt />} />
             <Trans>Create Jobs</Trans>
@@ -757,6 +772,7 @@ const ProductionPlanningTable = ({
     },
     [
       bulkUpdateFetcher.state,
+      drafts.isReadingPlannedOrders,
       onBulkUpdate,
       visibleActionsByRowKey,
       canApplyActions,
@@ -879,13 +895,16 @@ const ProductionPlanningTable = ({
               : []
           }
           beyondFenceOrders={selectedOrders.beyond}
-          timeFenceDate={timeFence.fenceDateFor(selectedItem)}
-          isTimeFenceOverridden={timeFence.isOverridden(selectedItem)}
-          onTimeFenceChange={onSelectedFenceChange}
+          horizonDate={horizon.horizonDateFor(selectedItem)}
+          isHorizonOverridden={horizon.isOverridden(selectedItem)}
+          onHorizonChange={onSelectedHorizonChange}
           actions={selectedActions}
           actionHandlers={actionHandlers}
           setOrders={setOrders}
           onSuggestionsStale={dropOrders}
+          onPlanReran={dropAllDrafts}
+          draftVersion={draftVersion}
+          onPlannedOrdersLoaded={onPlannedOrdersLoaded}
           periods={periods}
           isOpen={isDrawerOpen}
           onClose={closeDrawer}

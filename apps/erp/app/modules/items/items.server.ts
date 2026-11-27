@@ -38,6 +38,7 @@ import { flattenTree } from "~/components/TreeView";
 import { signRecordFileUrl } from "~/modules/documents/documents.service";
 import { postingFailure } from "~/modules/inventory/inventory.service";
 import { replanAfterItemChange } from "~/modules/production/production.server";
+import { getLocationPlanningTimeFenceDays } from "~/modules/production/production.utils";
 import {
   booleanField,
   itemDescriptionNote,
@@ -765,11 +766,14 @@ export const updateItemManufacturing = defineServiceFn({
  * Save an item's planning settings at a location, then re-plan it.
  *
  * @remarks
- * The reordering policy and its sizing parameters, the planning horizon and
- * the responsible employee. A full replace: an optional field left out is
- * cleared. The responsible employee must be an active employee of the
- * company. MRP then re-plans the item, so the planning pages' suggestions
- * follow the new settings now; a failed run does not fail the save.
+ * The reordering policy and its sizing parameters, the planning horizon, the
+ * planning time fence and the responsible employee. A full replace: an
+ * optional field left out is cleared, except the planning time fence, which
+ * keeps its stored value when left out (null inherits the location's fence,
+ * 0 is no fence), as a location update keeps its own. The responsible
+ * employee must be an active employee of the company. MRP then
+ * re-plans the item, so the planning pages' suggestions follow the new
+ * settings now; a failed run does not fail the save.
  *
  * @mcp
  */
@@ -777,7 +781,7 @@ export const updateItemPlanning = defineServiceFn({
   input: itemPlanningValidator.safeExtend({ customFields: customFieldsInput }),
   permission: service.itemRule("Edit", { id: "itemId" }),
 
-  async run(ctx, { customFields, ...planning }) {
+  async run(ctx, { customFields, planningTimeFenceDays, ...planning }) {
     const client = ctx.asCaller.supabase;
     // The column references the global user table, so the database would
     // take a person from another company, or one since deactivated.
@@ -794,6 +798,9 @@ export const updateItemPlanning = defineServiceFn({
 
     const update = await service.upsertItemPlanning(client, {
       ...planning,
+      // Left out (an API or MCP caller that never heard of the fence), the
+      // stored fence stays: written as null it would undo an item's explicit 0.
+      ...(planningTimeFenceDays !== undefined && { planningTimeFenceDays }),
       ...(customFields && { customFields }),
       updatedBy: ctx.auditUserId
     });
@@ -2818,21 +2825,44 @@ export const getItemManufacturing = defineServiceFn({
 /**
  * Get item planning
  *
+ * @remarks
+ * The item's planning row at the location, with
+ * `locationPlanningTimeFenceDays`: the location's planning time fence, which
+ * an item with no fence of its own inherits (null when it could not be read).
+ *
  * @mcp read
  */
 export const getItemPlanning = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
   permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getItemPlanning(
+    const [planning, location] = await Promise.all([
+      service.getItemPlanning(
         ctx.asCaller.supabase,
         input.itemId as never,
         ctx.company.id,
         input.locationId as never
-      )
-    );
+      ),
+      getLocationPlanningTimeFenceDays(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        locationId: input.locationId
+      })
+    ]);
+    const row = unwrap(ctx, planning);
+    if (row instanceof CarbonError || !row) return row;
+    // The location's fence only labels the item's empty field, so the row
+    // is still answered without it.
+    if (location.error) {
+      logger.warning("Failed to read the location's planning time fence", {
+        locationId: input.locationId,
+        error: location.error
+      });
+    }
+    return {
+      ...row,
+      locationPlanningTimeFenceDays:
+        location.data?.planningTimeFenceDays ?? null
+    };
   }
 });
 

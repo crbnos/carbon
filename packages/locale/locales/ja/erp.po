@@ -2180,6 +2180,9 @@ msgstr "このステップで作業者が見る写真またはPDF"
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "物理的なプルシグナル。在庫に付属する印刷されたカードまたはQRコード。スキャンされた時点で発注書またはジョブを作成してビンを補充します。"
 
+msgid "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP."
+msgstr "担当者がロックした計画オーダーです。MRP は数量や日付を変更せず、供給として計上し続け、内容に不一致がある場合はアクションを発行します。計画オーダーの数量または期日を編集すると確定されます。確定解除すると MRP に戻ります。"
+
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Carbon のワークフロー内のポイント（製造指図がリリース済、見積が承諾済、出荷が転記済など）で、ワークフローが監視できます。生のフィールド変更とは異なり、関連するレコードを ID で提供します。"
 
@@ -2564,8 +2567,8 @@ msgstr "作業区または作業者の予約で、1つの工程の配置され�
 msgid "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 msgstr "SubCLIN：同じ契約上の親CLINの4桁に2文字または数字を加えたもの（例：0001AA）。"
 
-msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
-msgstr "MRPが各実行後に生成する提案：新しい供給を発注または内製する、もしくはオープン状態の発注書明細または製造指図を早める、延期する、数量を増やす、減らす、またはキャンセルする。計画ページから適用するか、却下するか、割り当ててください。"
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
+msgstr "MRPが実行ごとに作成する提案です。新規の供給（発注または内製）、または未完了の発注書明細、製造指図、計画オーダーに対する前倒し、延期、増加、減少、キャンセルのいずれかです。計画画面から適用するか、却下するか、割り当てます。"
 
 msgid "A supplier contact and location are optional"
 msgstr "仕入先の担当者と拠点は任意です"
@@ -6673,6 +6676,9 @@ msgstr "注文をキャンセル"
 msgid "Cancel Picking List"
 msgstr "ピッキングリストをキャンセル"
 
+msgid "Cancel planned order"
+msgstr "計画オーダーをキャンセル"
+
 msgid "Cancel Purchase Order"
 msgstr "発注書をキャンセル"
 
@@ -9006,6 +9012,9 @@ msgstr "分析用の領域画像を準備できませんでした"
 msgid "Could not read the document: {0}"
 msgstr "文書が読み込めません: {0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "計画オーダーを読み込めませんでした。代わりに計画提案から数量を決定しました。"
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
@@ -10239,6 +10248,9 @@ msgstr "{fieldLabel}を減らす"
 msgid "Decrease job {target} to {amount}"
 msgstr "製造指図{target}を{amount}に減少"
 
+msgid "Decrease planned order to {amount}"
+msgstr "計画オーダーを {amount} に減少"
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "発注書{target}を{amount}に減少"
 
@@ -10403,6 +10415,9 @@ msgstr "延期"
 
 msgid "Defer job {target} to {date}"
 msgstr "製造指図{target}を{date}に延期"
+
+msgid "Defer planned order to {date}"
+msgstr "計画オーダーを {date} に延期"
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "発注書{target}を{date}に延期"
@@ -13352,6 +13367,9 @@ msgstr "前倒し"
 msgid "Expedite job {target} to {date}"
 msgstr "製造指図{target}を{date}に前倒し"
 
+msgid "Expedite planned order to {date}"
+msgstr "計画オーダーを {date} に前倒し"
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "発注書{target}を{date}に前倒し"
 
@@ -13454,6 +13472,9 @@ msgstr "選択した工法が開始すると使用期限が開始します。"
 
 msgid "Expiry trace"
 msgstr "使用期限トレース"
+
+msgid "explode {explode}"
+msgstr "展開 {explode}"
 
 msgid "Export"
 msgstr "エクスポート"
@@ -13815,6 +13836,9 @@ msgstr "仕入先返品の読み込みに失敗しました"
 msgid "Failed to load the rental rates"
 msgstr "レンタル料金の読み込みに失敗しました"
 
+msgid "Failed to load the suppliers"
+msgstr "仕入先を読み込めませんでした"
+
 msgid "Failed to load tracked entities"
 msgstr "追跡対象エンティティの読み込みに失敗しました"
 
@@ -13938,6 +13962,9 @@ msgstr "仕入先見積行の更新に失敗しました"
 msgid "Failed to update the items"
 msgstr "品目の更新に失敗しました"
 
+msgid "Failed to update the planned order"
+msgstr "計画オーダーの更新に失敗しました"
+
 msgid "Failed to update the setting"
 msgstr "設定の更新に失敗"
 
@@ -14039,6 +14066,9 @@ msgstr "手数料"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (先期限先出)"
+
+msgid "Fence"
+msgstr "フェンス"
 
 msgid "Fetch"
 msgstr "取得"
@@ -14218,6 +14248,9 @@ msgstr "すべてのラインがピックされるか「短い」とマークさ
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "見積明細、受注明細、売上請求書明細で発動します。"
+
+msgid "Firm"
+msgstr "確定"
 
 msgid "First {count}"
 msgstr "最初の {count} 件"
@@ -15437,6 +15470,12 @@ msgstr "計算日の後、早期支払割引が利用可能な日数。"
 msgid "How many days after the calculation date the full amount is due."
 msgstr "計算日から何日後に全額が期日となるか。"
 
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "MRPが計画オーダーに手を加えない期間を日数で指定します。計画タイムフェンス内にリリースされる計画オーダーは、数量と日付を維持します。MRPはそれらに対して変更を提案するだけです。計画タイムフェンス内の新規需要は、計画タイムフェンスの終了時にリリースされるよう計画されます。前倒しを適用すると、リリースを早めることができます。0を入力すると計画タイムフェンスなしになります。"
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "MRPがこの品目の計画オーダーに手を加えない期間を日数で指定します。計画タイムフェンス内にリリースされる計画オーダーは、数量と日付を維持します。MRPはそれらに対して変更を提案するだけです。計画タイムフェンス内の新規需要は、計画タイムフェンスの終了時にリリースされるよう計画されます。前倒しを適用すると、リリースを早めることができます。空欄のままにすると拠点の計画タイムフェンスを使用します。0を入力すると、この品目には計画タイムフェンスを設けません。"
+
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "MRPが移動を提案する前に、オープン状態の発注がそれが必要とされる日付から到着できる日数。設定 → 計画で設定します。デフォルトは7日です。"
 
@@ -15958,6 +15997,9 @@ msgstr "{fieldLabel}を増やす"
 
 msgid "Increase job {target} to {amount}"
 msgstr "製造指図{target}を{amount}に増加"
+
+msgid "Increase planned order to {amount}"
+msgstr "計画オーダーを {amount} に増加"
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "発注書{target}を{amount}に増加"
@@ -17053,6 +17095,9 @@ msgstr "一致する品目を保持"
 msgid "Keep mine"
 msgstr "自分の変更を保持"
 
+msgid "Keep my numbers"
+msgstr "自分の数値を維持"
+
 msgid "Keep navigation open"
 msgstr "ナビゲーションを開いたままにする"
 
@@ -17070,6 +17115,9 @@ msgstr "開いたままにする"
 
 msgid "Keep picking"
 msgstr "ピッキングを続ける"
+
+msgid "Keep your numbers through plan updates?"
+msgstr "計画の更新後も自分の数値を維持しますか？"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "注文、見積、設定を2段階認証で保護します"
@@ -17959,6 +18007,15 @@ msgstr "場所 / 品目"
 
 msgid "Location code"
 msgstr "拠点コード"
+
+msgid "Location default"
+msgstr "拠点の既定値"
+
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "拠点の既定値: {locationTimeFenceDays, plural, one {# 日} other {# 日}}"
+
+msgid "Location default: no fence"
+msgstr "拠点の既定値: 計画タイムフェンスなし"
 
 msgid "Location Name"
 msgstr "ロケーション名"
@@ -22249,7 +22306,7 @@ msgid "operation"
 msgstr "工程"
 
 msgid "Operation"
-msgstr "操作"
+msgstr "処理"
 
 msgctxt "workflow data step"
 msgid "Operation"
@@ -23506,6 +23563,15 @@ msgstr "計画注文"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "計画済注文 = 品目の発注ポリシーに基づいて予測所要量をカバーするためのMRP提案(または手動追加)。"
 
+msgid "Planned order firmed"
+msgstr "計画オーダーを確定"
+
+msgid "Planned order returned to MRP"
+msgstr "計画オーダーをMRPに戻す"
+
+msgid "Planned Orders"
+msgstr "計画オーダー"
+
 msgid "Planned purchase order"
 msgstr "計画済み発注書"
 
@@ -23577,6 +23643,15 @@ msgstr "計画ラウンドは、この数の整数倍まで補充を提案しま
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "計画はこの日数以内に期限が到来するアクションと提案注文のみを表示します。会社のデフォルトを使用する場合は空のままにするか、この品目のすべてを表示する場合は0を入力してください。"
+
+msgid "Planning time fence"
+msgstr "計画タイムフェンス"
+
+msgid "Planning time fence (days)"
+msgstr "計画タイムフェンス（日数）"
+
+msgid "Planning time fence days"
+msgstr "計画タイムフェンス（日数）"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "計画の発注提案数量の下限。仕入先部品レコードにある仕入先のMOQとは別。"
@@ -24289,6 +24364,9 @@ msgstr "週ごとの予測手持在庫"
 
 msgid "Projected stock"
 msgstr "予測在庫"
+
+msgid "Projected stock {stock}"
+msgstr "予測在庫 {stock}"
 
 msgid "Projected stock by week"
 msgstr "週別予想在庫"
@@ -25711,6 +25789,9 @@ msgstr "リリース制御設定が更新されました"
 msgid "Release date"
 msgstr "リリース日"
 
+msgid "Release Date"
+msgstr "リリース日"
+
 msgid "Release Items"
 msgstr "品目をリリース"
 
@@ -25734,6 +25815,9 @@ msgstr "リリース済み"
 
 msgid "Released date"
 msgstr "リリース日"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr "計画タイムフェンス内でリリース済の場合、MRPは数量と日付を維持します。"
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "リリース済み品目は次の請求書実行時に、明細の予算内で請求されます。"
@@ -27547,6 +27631,9 @@ msgstr "保存中 {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "現在のデータのコピーを保存中"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr "この変更を保存すると計画オーダーが確定されます。その後MRPは数量と日付を維持し、不一致がある場合は計画アクションを発行します。確定を解除すると、オーダーはMRPに戻ります。"
+
 msgid "Saving..."
 msgstr "保存中..."
 
@@ -27682,6 +27769,9 @@ msgstr "スクラップ {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "スクラップ/品質原価"
+
+msgid "scrap +{scrap}"
+msgstr "スクラップ +{scrap}"
 
 msgid "Scrap Percent"
 msgstr "スクラップ率"
@@ -30640,6 +30730,9 @@ msgstr "需給グラフ（{weeks} 週間）: 予測在庫は {start} から始�
 
 msgid "Supply and demand chart: no data."
 msgstr "需給グラフ: データがありません。"
+
+msgid "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
+msgstr "MRPが1つの拠点・1週について1品目に提案する供給です。品目の再発注方針に基づいて数量が決まり、製造指図または発注のいずれかになります。担当者が確定または変換するまで、MRPは毎回の実行でこれを変更または削除することがあります。計画済の製造指図や計画済の発注書（ドキュメント）とは異なります。"
 
 msgid "Support"
 msgstr "サポート"
@@ -34147,6 +34240,9 @@ msgstr "組み込み機能をオンにする"
 msgid "Turn on to create one picking list for each job when it is released."
 msgstr "有効にすると、製造指図のリリース時に製造指図ごとにピッキングリストを1つ作成します。"
 
+msgid "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
+msgstr "有効にすると、製造指図のリリース時に製造指図ごとにピッキングリストを1つ作成します。"
+
 msgid "Turned off sync"
 msgstr "同期がオフになりました"
 
@@ -34336,6 +34432,9 @@ msgstr "今後の割引前支払額（会計年度ごと）から、残りの月
 
 msgid "Undo"
 msgstr "元に戻す"
+
+msgid "Unfirm"
+msgstr "確定解除"
 
 msgid "Unfurl Links"
 msgstr "リンクを展開"

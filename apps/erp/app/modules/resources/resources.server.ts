@@ -10,7 +10,12 @@ import { trigger } from "@carbon/jobs";
 import { postSuggestionToCarbonSlack } from "@carbon/lib/slack.server";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { datetime, requireAffected, unchecked } from "@carbon/utils";
+import {
+  datetime,
+  NOT_APPLIED_CODE,
+  requireAffected,
+  unchecked
+} from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -246,6 +251,7 @@ export const createLocation = defineServiceFn({
   permission: { "resources.locations": "Create" },
 
   async run(ctx, { id: _id, ...location }) {
+    // a location created with no time fence has none (0)
     const insert = await service.upsertLocation(ctx.asCaller.supabase, {
       ...location,
       companyId: ctx.company.id,
@@ -289,11 +295,16 @@ export const updateLocation = defineServiceFn({
         previous.error
       );
     }
+    // A caller that sends no time fence (the API, MCP) leaves it as it is.
     const update = await service.upsertLocation(ctx.asCaller.supabase, {
       id,
       ...location,
+      companyId: ctx.company.id,
       updatedBy: ctx.auditUserId
     });
+    if (update.error?.code === NOT_APPLIED_CODE) {
+      return ctx.error("notFound", "The location could not be found");
+    }
     if (update.error) {
       return ctx.error("internal", "Failed to update location.", update.error);
     }

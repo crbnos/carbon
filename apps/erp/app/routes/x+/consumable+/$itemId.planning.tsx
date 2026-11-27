@@ -61,7 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let consumablePlanning = await api.items.getItemPlanning({
+  const consumablePlanning = await api.items.getItemPlanning({
     itemId,
     locationId
   });
@@ -76,8 +76,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const { locationPlanningTimeFenceDays, ...planning } =
+    consumablePlanning.data;
   return {
-    consumablePlanning: consumablePlanning.data,
+    consumablePlanning: planning,
+    // the placeholder of the item's empty fence; a failed read shows none
+    locationTimeFenceDays: locationPlanningTimeFenceDays ?? undefined,
     locationId
   };
 }
@@ -91,6 +95,8 @@ export async function action(args: ActionFunctionArgs) {
   const { api } = await authorize(args.request);
   const result = await api.items.updateItemPlanning({
     ...input.data,
+    // the form always posts the fence: an emptied field inherits
+    planningTimeFenceDays: input.data.planningTimeFenceDays ?? null,
     itemId,
     customFields: input.formData && setCustomFields(input.formData)
   });
@@ -113,7 +119,8 @@ export default function ConsumablePlanningRoute() {
     locations: ListItem[];
   }>(path.to.consumableRoot);
 
-  const { consumablePlanning, locationId } = useLoaderData<typeof loader>();
+  const { consumablePlanning, locationTimeFenceDays, locationId } =
+    useLoaderData<typeof loader>();
 
   if (!sharedConsumablesData)
     throw new Error("Could not load shared consumables data");
@@ -126,6 +133,7 @@ export default function ConsumablePlanningRoute() {
           ...consumablePlanning,
           ...getCustomFields(consumablePlanning.customFields)
         }}
+        locationTimeFenceDays={locationTimeFenceDays}
         locations={sharedConsumablesData.locations ?? []}
         type="Consumable"
       />

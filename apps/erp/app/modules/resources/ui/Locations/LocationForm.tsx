@@ -26,6 +26,7 @@ import {
   CustomFormFields,
   Hidden,
   Input,
+  Number,
   Submit,
   Timezone
 } from "~/components/Form";
@@ -108,6 +109,12 @@ const LocationForm = ({
                   name="timezone"
                   label={t`Timezone`}
                   termId="location-timezone"
+                />
+                <Number
+                  name="planningTimeFenceDays"
+                  label={t`Planning time fence (days)`}
+                  termId="planning-time-fence"
+                  minValue={0}
                 />
                 {/* <Number name="latitude" label="Latitude" minValue={-90} maxValue={90} />
               <Number name="longitude" label="Longitude" minVale={-180} maxValue={180} /> */}

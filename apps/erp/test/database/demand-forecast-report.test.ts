@@ -6,7 +6,7 @@ import { expect } from "vitest";
 import { getDemandForecastReport } from "../../app/modules/production/production.service";
 import { decodeCursor } from "../../app/utils/cursor";
 import { alwaysPostFixture, USER } from "./fixtures/always-post";
-import { databaseTest, removeTestRows } from "./fixtures/local-database";
+import { databaseTest } from "./fixtures/local-database";
 
 databaseTest(
   "forecast filters and cursor pages return dated rows in order",
@@ -153,13 +153,15 @@ databaseTest(
       });
     } finally {
       try {
-        await removeTestRows(f.db, async (trx) => {
-          await trx
-            .deleteFrom("demandProjection")
-            .where("companyId", "=", f.companyId)
-            .execute();
-          await trx.deleteFrom("period").where("id", "in", periodIds).execute();
-        });
+        // Always: `period` has no company, so its rows are every test's.
+        await f.db
+          .deleteFrom("demandProjection")
+          .where("companyId", "=", f.companyId)
+          .execute();
+        await f.db
+          .deleteFrom("period")
+          .where("id", "in", periodIds)
+          .execute();
       } finally {
         await f.cleanup();
       }

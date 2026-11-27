@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 import {
+  CATCH_UP_RETRY_MS,
   type Cursor,
   expiredStoredKeys,
   type LoggedChanges,
@@ -21,7 +22,8 @@ import {
   storedAtKey,
   storedListKey,
   storedListKeys,
-  upsertRows
+  upsertRows,
+  withRetries
 } from "./liveList";
 import type { BroadcastChange } from "./useRealtime";
 import { useTableChanges } from "./useRealtime";
@@ -401,6 +403,31 @@ export function LiveLists({
     [lists, userId, companyId]
   );
 
+  // True while the last catch-up failed every try: the lists may miss rows.
+  const behind = useRef(false);
+  // A failed request (a server blip) is tried again in a few seconds, not at
+  // the hourly check: until then a picker lacks every row added elsewhere.
+  const catchUp = useCallback(
+    async (stopped: () => boolean) => {
+      try {
+        await withRetries(() => sync(lists), {
+          delays: CATCH_UP_RETRY_MS,
+          stopped,
+          onRetry: (attempt, error) =>
+            logger.warning("live list catch-up failed; trying again", {
+              attempt,
+              error
+            })
+        });
+        behind.current = false;
+      } catch (error) {
+        behind.current = true;
+        throw error;
+      }
+    },
+    [lists, sync]
+  );
+
   // Cold load: IndexedDB first so pickers have options at once, then the log.
   useEffect(() => {
     let cancelled = false;
@@ -429,7 +456,7 @@ export function LiveLists({
         logger.warning("stored live lists not read", { error });
       }
       if (cancelled || !ready) return;
-      await sync(lists);
+      await catchUp(() => cancelled || active.current !== companyId);
     })().catch((error) => logger.error("live list load failed", { error }));
     return () => {
       cancelled = true;
@@ -442,7 +469,7 @@ export function LiveLists({
     storage,
     queryClient,
     rowsOf,
-    sync,
+    catchUp,
     prune
   ]);
 
@@ -467,6 +494,27 @@ export function LiveLists({
     }, BACKGROUND_CHECK_MS);
     return () => clearInterval(timer);
   }, [ready, lists, storage, sync, prune]);
+
+  // A catch-up that failed every try runs again when the network or the tab
+  // comes back, not an hour later.
+  useEffect(() => {
+    if (!ready) return;
+    const companyAtStart = companyId;
+    const tryAgain = () => {
+      if (!behind.current || document.visibilityState !== "visible") return;
+      // One run at a time: a failed run sets it again.
+      behind.current = false;
+      catchUp(() => active.current !== companyAtStart).catch((error) =>
+        logger.error("live list catch-up failed", { error })
+      );
+    };
+    window.addEventListener("online", tryAgain);
+    document.addEventListener("visibilitychange", tryAgain);
+    return () => {
+      window.removeEventListener("online", tryAgain);
+      document.removeEventListener("visibilitychange", tryAgain);
+    };
+  }, [ready, companyId, catchUp]);
 
   // Every (list, table) pair has its own topic, and so its own channel.
   const topicCount = lists.reduce(

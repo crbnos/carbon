@@ -17,14 +17,10 @@ import { settleNewSupplyPlanningActions } from "../../app/modules/production/pro
 import {
   alwaysPostFixture,
   type Fixture,
-  seed,
   USER
 } from "./fixtures/always-post";
-import {
-  databaseTest,
-  hasLocalDatabase,
-  removeTestRows
-} from "./fixtures/local-database";
+import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
+import { seedPlanningAction, seedPlanningWeeks } from "./fixtures/planning";
 
 type ActionType = "Order" | "Make";
 type Status = "Open" | "Dismissed" | "Actioned";
@@ -32,9 +28,10 @@ type Status = "Open" | "Dismissed" | "Actioned";
 let f: Fixture;
 let week1: string;
 let week2: string;
+let removeWeeks: () => Promise<void>;
 
 /** One new-supply action (no target order), Open in week 1 by default. */
-async function action(
+function action(
   overrides: {
     type?: ActionType;
     status?: Status;
@@ -46,27 +43,12 @@ async function action(
   },
   key: string
 ): Promise<string> {
-  const id = `${f.prefix}-action-${key}`;
-  await seed(f, (trx) =>
-    trx
-      .insertInto("planningAction")
-      .values({
-        id,
-        companyId: f.companyId,
-        type: overrides.type ?? "Make",
-        status: overrides.status ?? "Open",
-        itemId: overrides.itemId ?? f.partId,
-        locationId: overrides.locationId ?? f.locationId,
-        periodId: overrides.periodId ?? week1,
-        planningSegmentId: overrides.planningSegmentId ?? "",
-        suggestedQuantity: overrides.suggestedQuantity,
-        suggestedDate: f.today,
-        horizonDate: f.today,
-        createdBy: USER
-      })
-      .execute()
-  );
-  return id;
+  return seedPlanningAction(f, {
+    key,
+    type: "Make",
+    periodId: week1,
+    ...overrides
+  });
 }
 
 async function read(id: string) {
@@ -107,35 +89,13 @@ function settle(
 describe.skipIf(!hasLocalDatabase)("settleNewSupplyPlanningActions", () => {
   beforeEach(async () => {
     f = await alwaysPostFixture();
-    week1 = `${f.prefix}-week-1`;
-    week2 = `${f.prefix}-week-2`;
-    // `period` has no company: these two are the test's own, removed after.
-    await seed(f, (trx) =>
-      trx
-        .insertInto("period")
-        .values([
-          {
-            id: week1,
-            startDate: "2299-01-01",
-            endDate: "2299-01-07",
-            periodType: "Week"
-          },
-          {
-            id: week2,
-            startDate: "2299-01-08",
-            endDate: "2299-01-14",
-            periodType: "Week"
-          }
-        ])
-        .execute()
-    );
+    const seeded = await seedPlanningWeeks(f, 2, "2293-01-01");
+    [week1, week2] = seeded.weeks.map((week) => week.id);
+    removeWeeks = seeded.cleanup;
   });
 
   afterEach(async () => {
-    // the actions go with the periods (ON DELETE CASCADE)
-    await removeTestRows(f.db, (trx) =>
-      trx.deleteFrom("period").where("id", "in", [week1, week2]).execute()
-    );
+    await removeWeeks();
     await f.cleanup();
   });
 

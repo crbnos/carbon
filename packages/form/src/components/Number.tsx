@@ -33,6 +33,7 @@ type FormNumberProps = NumberFieldProps & {
   isOptional?: boolean;
   isRequired?: boolean;
   helperText?: string;
+  placeholder?: string;
   onConfigure?: () => void;
 };
 
@@ -49,6 +50,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
       isReadOnly: isReadOnlyProp,
       isDisabled: isDisabledProp,
       helperText,
+      placeholder,
       onConfigure,
       ...rest
     },
@@ -100,6 +102,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
             <NumberInput
               isReadOnly={isReadOnly}
               isDisabled={isDisabled}
+              placeholder={placeholder}
               ref={ref}
               size={size}
             />

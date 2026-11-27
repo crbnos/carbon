@@ -61,7 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let materialPlanning = await api.items.getItemPlanning({
+  const materialPlanning = await api.items.getItemPlanning({
     itemId,
     locationId
   });
@@ -76,8 +76,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const { locationPlanningTimeFenceDays, ...planning } = materialPlanning.data;
   return {
-    materialPlanning: materialPlanning.data,
+    materialPlanning: planning,
+    // the placeholder of the item's empty fence; a failed read shows none
+    locationTimeFenceDays: locationPlanningTimeFenceDays ?? undefined,
     locationId
   };
 }
@@ -91,6 +94,8 @@ export async function action(args: ActionFunctionArgs) {
   const { api } = await authorize(args.request);
   const result = await api.items.updateItemPlanning({
     ...input.data,
+    // the form always posts the fence: an emptied field inherits
+    planningTimeFenceDays: input.data.planningTimeFenceDays ?? null,
     itemId,
     customFields: input.formData && setCustomFields(input.formData)
   });
@@ -105,12 +110,13 @@ export async function action(args: ActionFunctionArgs) {
   );
 }
 
-export default function MateriallanningRoute() {
+export default function MaterialPlanningRoute() {
   const sharedMaterialsData = useRouteData<{
     locations: ListItem[];
   }>(path.to.materialRoot);
 
-  const { materialPlanning, locationId } = useLoaderData<typeof loader>();
+  const { materialPlanning, locationTimeFenceDays, locationId } =
+    useLoaderData<typeof loader>();
 
   if (!sharedMaterialsData)
     throw new Error("Could not load shared materials data");
@@ -123,6 +129,7 @@ export default function MateriallanningRoute() {
           ...materialPlanning,
           ...getCustomFields(materialPlanning.customFields)
         }}
+        locationTimeFenceDays={locationTimeFenceDays}
         locations={sharedMaterialsData.locations ?? []}
         type="Material"
       />

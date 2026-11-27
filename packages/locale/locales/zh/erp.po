@@ -2180,6 +2180,9 @@ msgstr "操作员在此步骤中看到的照片或 PDF"
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "一个物理拉动信号——一张印刷卡片或 QR 码与库存一起放置——在扫描时立即提高采购订单或工单以补充料箱。"
 
+msgid "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP."
+msgstr "人工已锁定的计划订单：MRP 不再更改其数量或日期，仍将其计入供应，并在其与实际情况不符时生成一条操作。编辑计划订单的数量或到期日会将其固定；取消固定则将其交还给 MRP。"
+
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Carbon 自身流程中的一个点，工作流可以监控——工单已下达、报价单已接受、发货已过账——相对于原始字段更改；它通过 ID 将所涉及的记录传递给工作流。"
 
@@ -2564,8 +2567,8 @@ msgstr "工作中心或操作员在某个工序预定时间段内的预约记录
 msgid "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 msgstr "子 CLIN：同一合同中其父 CLIN 的 4 位数字加上 2 个字母或数字，如 0001AA。"
 
-msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
-msgstr "MRP在每次运行后写入的建议：订购或自制新供应，或加急、延期、增加、减少或取消未结的采购订单行或工单。从计划页面应用它、关闭它或分配它。"
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
+msgstr "MRP 每次运行后生成的建议：新增采购或自制供应，或对未结采购订单行、工单或计划订单进行提前、推迟、增加、减少或取消。可在计划页面应用、忽略或分配该建议。"
 
 msgid "A supplier contact and location are optional"
 msgstr "供应商联系人和地点是可选的"
@@ -6673,6 +6676,9 @@ msgstr "取消订单"
 msgid "Cancel Picking List"
 msgstr "取消拣货单"
 
+msgid "Cancel planned order"
+msgstr "取消计划订单"
+
 msgid "Cancel Purchase Order"
 msgstr "取消采购订单"
 
@@ -9006,6 +9012,9 @@ msgstr "无法准备区域图像以进行分析"
 msgid "Could not read the document: {0}"
 msgstr "无法读取文件：{0}"
 
+msgid "Could not read the planned orders. The orders were sized from the planning actions instead."
+msgstr "无法读取计划订单。已改为根据计划行动确定订单数量。"
+
 #. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
 #. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
@@ -10239,6 +10248,9 @@ msgstr "减少{fieldLabel}"
 msgid "Decrease job {target} to {amount}"
 msgstr "减少工单 {target} 至 {amount}"
 
+msgid "Decrease planned order to {amount}"
+msgstr "将计划订单减少至 {amount}"
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "减少采购订单 {target} 至 {amount}"
 
@@ -10403,6 +10415,9 @@ msgstr "延后"
 
 msgid "Defer job {target} to {date}"
 msgstr "推迟工单 {target} 至 {date}"
+
+msgid "Defer planned order to {date}"
+msgstr "将计划订单推迟至 {date}"
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "推迟采购订单 {target} 至 {date}"
@@ -13352,6 +13367,9 @@ msgstr "加急"
 msgid "Expedite job {target} to {date}"
 msgstr "加快工单 {target} 至 {date}"
 
+msgid "Expedite planned order to {date}"
+msgstr "将计划订单提前至 {date}"
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "加快采购订单 {target} 至 {date}"
 
@@ -13454,6 +13472,9 @@ msgstr "有效期从选定的流程开始时开始。"
 
 msgid "Expiry trace"
 msgstr "有效期追踪"
+
+msgid "explode {explode}"
+msgstr "展开 {explode}"
 
 msgid "Export"
 msgstr "导出"
@@ -13815,6 +13836,9 @@ msgstr "加载供应商退货失败"
 msgid "Failed to load the rental rates"
 msgstr "加载租赁费率失败"
 
+msgid "Failed to load the suppliers"
+msgstr "无法加载供应商"
+
 msgid "Failed to load tracked entities"
 msgstr "加载跟踪实体失败"
 
@@ -13938,6 +13962,9 @@ msgstr "未能更新供应商报价行"
 msgid "Failed to update the items"
 msgstr "更新物料失败"
 
+msgid "Failed to update the planned order"
+msgstr "更新计划订单失败"
+
 msgid "Failed to update the setting"
 msgstr "更新设置失败"
 
@@ -14039,6 +14066,9 @@ msgstr "费用"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "先到期先出（先到期先出）"
+
+msgid "Fence"
+msgstr "计划时界"
 
 msgid "Fetch"
 msgstr "获取"
@@ -14218,6 +14248,9 @@ msgstr "在所有行都被拣货或标记为短缺后才能完成。"
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "在报价行、销售订单行和销售发票行上触发。"
+
+msgid "Firm"
+msgstr "确认"
 
 msgid "First {count}"
 msgstr "前 {count} 个"
@@ -15437,6 +15470,12 @@ msgstr "计算日期后多少天提前付款折扣仍然可用。"
 msgid "How many days after the calculation date the full amount is due."
 msgstr "计算日期后多少天全额应付。"
 
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "MRP 提前多少天保持其计划订单不变。在时界内下达的计划订单会保留其数量和日期；MRP 只会对其提出变更建议。时界内的新需求会计划在时界结束时下达，您可以应用加急来提前下达。输入 0 表示不设时界。"
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "MRP 提前多少天保持此物料的计划订单不变。在时界内下达的计划订单会保留其数量和日期；MRP 只会对其提出变更建议。时界内的新需求会计划在时界结束时下达，您可以应用加急来提前下达。留空则使用地点的时界，或输入 0 表示此物料不设时界。"
+
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "未结订单可以晚于需要日期多少天到达，MRP才建议移动它。在设置 → 计划中设置；默认为7天。"
 
@@ -15958,6 +15997,9 @@ msgstr "增加{fieldLabel}"
 
 msgid "Increase job {target} to {amount}"
 msgstr "增加工单 {target} 至 {amount}"
+
+msgid "Increase planned order to {amount}"
+msgstr "将计划订单增加至 {amount}"
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "增加采购订单 {target} 至 {amount}"
@@ -17053,6 +17095,9 @@ msgstr "保留匹配的物料"
 msgid "Keep mine"
 msgstr "保留我的"
 
+msgid "Keep my numbers"
+msgstr "保留我的数量和日期"
+
 msgid "Keep navigation open"
 msgstr "保持导航展开"
 
@@ -17070,6 +17115,9 @@ msgstr "保持未结"
 
 msgid "Keep picking"
 msgstr "继续拣货"
+
+msgid "Keep your numbers through plan updates?"
+msgstr "更新计划时是否保留您的数量和日期？"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "让订单、报价单和设置受到第二道检查的保护"
@@ -17959,6 +18007,15 @@ msgstr "位置 / 物品"
 
 msgid "Location code"
 msgstr "地点代码"
+
+msgid "Location default"
+msgstr "地点默认值"
+
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "地点默认值：{locationTimeFenceDays, plural, one {# 天} other {# 天}}"
+
+msgid "Location default: no fence"
+msgstr "地点默认值：无时界"
 
 msgid "Location Name"
 msgstr "位置名称"
@@ -23506,6 +23563,15 @@ msgstr "计划订单"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "计划订单 = MRP建议，用于根据物料的重新订购政策覆盖预计需求（或手动添加）。"
 
+msgid "Planned order firmed"
+msgstr "计划订单已确认"
+
+msgid "Planned order returned to MRP"
+msgstr "计划订单已退回 MRP"
+
+msgid "Planned Orders"
+msgstr "计划订单"
+
 msgid "Planned purchase order"
 msgstr "计划采购订单"
 
@@ -23577,6 +23643,15 @@ msgstr "计划将建议的补货数量舍入至该数字的整数倍。"
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "计划仅显示 X 天内到期的操作和建议订单。留空以使用公司默认值，或输入 0 以显示此物料的所有内容。"
+
+msgid "Planning time fence"
+msgstr "计划时界"
+
+msgid "Planning time fence (days)"
+msgstr "计划时界（天）"
+
+msgid "Planning time fence days"
+msgstr "计划时界（天）"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "计划对建议补货数量的下限；不同于供应商的最小订购量 (MOQ)，该值位于供应商-物料记录上。"
@@ -24289,6 +24364,9 @@ msgstr "按周预计现有库存"
 
 msgid "Projected stock"
 msgstr "预计库存"
+
+msgid "Projected stock {stock}"
+msgstr "预计库存 {stock}"
 
 msgid "Projected stock by week"
 msgstr "按周投影库存"
@@ -25711,6 +25789,9 @@ msgstr "下达控制设置已更新"
 msgid "Release date"
 msgstr "释放日期"
 
+msgid "Release Date"
+msgstr "下达日期"
+
 msgid "Release Items"
 msgstr "下达物料"
 
@@ -25734,6 +25815,9 @@ msgstr "已下达"
 
 msgid "Released date"
 msgstr "下达日期"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr "在计划时界内已下达：MRP 保留其数量和日期。"
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "已下达的物料在下一个发票运行中计费，在行的资金范围内。"
@@ -27547,6 +27631,9 @@ msgstr "正在保存 {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "正在保存您当前数据的副本"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr "保存此更改将确认该计划订单。随后 MRP 保留其数量和日期，并在两者不一致时生成计划操作。取消确认将把该订单退回 MRP。"
+
 msgid "Saving..."
 msgstr "保存中..."
 
@@ -27682,6 +27769,9 @@ msgstr "报废 {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "报废/质量成本"
+
+msgid "scrap +{scrap}"
+msgstr "报废 +{scrap}"
 
 msgid "Scrap Percent"
 msgstr "报废率"
@@ -30640,6 +30730,9 @@ msgstr "{weeks} 周供需图表：预计库存起始为 {start}，结束为 {end
 
 msgid "Supply and demand chart: no data."
 msgstr "供需图表：暂无数据。"
+
+msgid "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
+msgstr "MRP 为某一物料、某一地点和某一周建议的供应：按该物料的补货策略确定数量的自制工单或采购。在人员将其固定或转换之前，MRP 可能在每次运行时更改或删除它。它不是已计划工单或已计划采购订单，这两者属于单据。"
 
 msgid "Support"
 msgstr "支持"
@@ -34147,6 +34240,9 @@ msgstr "启用内置功能"
 msgid "Turn on to create one picking list for each job when it is released."
 msgstr "开启后，工单下达时将为每个工单创建一张拣货单。"
 
+msgid "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
+msgstr "开启后，工单下达时将为每个工单创建一张拣货单。"
+
 msgid "Turned off sync"
 msgstr "已关闭同步"
 
@@ -34336,6 +34432,9 @@ msgstr "仍待支付的未折现支付额，按会计年度列示，扣除剩余
 
 msgid "Undo"
 msgstr "撤销"
+
+msgid "Unfirm"
+msgstr "取消确认"
 
 msgid "Unfurl Links"
 msgstr "展开链接"

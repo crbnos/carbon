@@ -72,6 +72,7 @@ export const PAGES = [
     tables: [],
     readers: [
       "planningAction",
+      "plannedOrder",
       "demandForecast",
       "demandForecastSource",
       "supplyForecast",

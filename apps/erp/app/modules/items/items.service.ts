@@ -431,9 +431,10 @@ async function copyItemPlanningAndPurchasing(
   // A reorder policy is only meaningful with its parameters (Maximum
   // Quantity needs a reorder point and a maximum, and so on), so the policy
   // and its sizing parameters are copied together, location by location.
-  // The planning horizon and the responsible employee are not copied: a new
-  // revision inherits the company defaults for both. A location the source
-  // has no planning row for keeps the defaults.
+  // The planning horizon, the planning time fence and the responsible
+  // employee are not copied: a new revision inherits the company defaults for
+  // the first and last, and the location's fence. A location the source has
+  // no planning row for keeps the defaults.
   await trx
     .updateTable("itemPlanning as target")
     .from("itemPlanning as source")

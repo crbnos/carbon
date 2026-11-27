@@ -27,6 +27,7 @@ import {
   createConsumable,
   createPart,
   createTool,
+  getItemPlanning,
   setChangeNoticeStatus,
   setItemActive,
   setItemPostingGroup,
@@ -805,6 +806,60 @@ describe("updateItemPlanning", () => {
 
     expect(result.error).toMatchObject({ category: "rule" });
     expect(writes).toEqual([]);
+  });
+
+  const planning = {
+    itemId: "i1",
+    locationId: "loc-1",
+    reorderingPolicy: "Manual Reorder" as const
+  };
+  const fenceWritten = async (fence: { planningTimeFenceDays?: number | null }) => {
+    const { client, writes } = fakeClient();
+    await updateItemPlanning(contextFor(client), { ...planning, ...fence });
+    const update = writes.find(
+      (write) => write.table === "itemPlanning" && write.op === "update"
+    );
+    return update?.values as Record<string, unknown>;
+  };
+
+  // An API or MCP caller that never heard of the fence must not undo an
+  // item's explicit 0 (no fence) by resetting it to the location's.
+  it("keeps the stored time fence when the save leaves it out", async () => {
+    expect(await fenceWritten({})).not.toHaveProperty("planningTimeFenceDays");
+  });
+
+  it.each([
+    [null, null],
+    [0, 0],
+    [5, 5]
+  ])("writes a sent time fence of %s", async (sent, stored) => {
+    expect(await fenceWritten({ planningTimeFenceDays: sent })).toMatchObject({
+      planningTimeFenceDays: stored
+    });
+  });
+});
+
+describe("getItemPlanning", () => {
+  it("answers the item's planning row with the location's time fence", async () => {
+    const { client } = fakeClient({
+      itemPlanning: { itemId: "i1", locationId: "loc-1", planningTimeFenceDays: null },
+      location: { planningTimeFenceDays: 3 }
+    });
+
+    const result = await getItemPlanning(contextFor(client), {
+      itemId: "i1",
+      locationId: "loc-1"
+    });
+
+    expect(result).toEqual({
+      data: {
+        itemId: "i1",
+        locationId: "loc-1",
+        planningTimeFenceDays: null,
+        locationPlanningTimeFenceDays: 3
+      },
+      error: null
+    });
   });
 });
 
