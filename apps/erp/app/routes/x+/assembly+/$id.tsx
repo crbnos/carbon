@@ -504,11 +504,11 @@ export default function AssemblyInstructionRoute() {
   // Opening a sub-assembly lands on its first step (the player only plays its
   // steps). Keyed on the opened id alone so picking another step afterwards
   // (its header in Properties, say) isn't bounced back.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs only when a sub-assembly is opened
   useEffect(() => {
     if (!scopeStepIds || scopeStepIds.length === 0) return;
     if (selectedStep && scopeStepIds.includes(selectedStep.id)) return;
     onSelectStep(scopeStepIds[0]);
+    // oxlint-disable-next-line react/exhaustive-deps -- runs only when a sub-assembly is opened
   }, [openSubAssemblyId]);
 
   // Double-clicking a step previews it: select it, then bump the nonce so the

@@ -191,13 +191,13 @@ export function PinInOverlay({
   }, [dismissable, changingPin, onDismiss]);
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop click-to-dismiss; Escape and the labelled close button do the same
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- backdrop click-to-dismiss; Escape and the labelled close button do the same
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stops clicks inside the dialog from reaching the dismissing backdrop */}
+      {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- stops clicks inside the dialog from reaching the dismissing backdrop */}
       <div
         role="dialog"
         aria-modal="true"

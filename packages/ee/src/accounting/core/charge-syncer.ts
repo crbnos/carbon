@@ -181,14 +181,12 @@ export abstract class ChargeSyncerBase<
     const ids = [...new Set(entityIds)];
     if (!this.config.enabled) {
       results.push(
-        ...ids.map(
-          (localId): SyncResult => ({
-            status: "skipped",
-            action: "none",
-            localId,
-            error: "Sync disabled in config"
-          })
-        )
+        ...ids.map((localId): SyncResult => ({
+          status: "skipped",
+          action: "none",
+          localId,
+          error: "Sync disabled in config"
+        }))
       );
     } else if (ids.length > 0) {
       try {

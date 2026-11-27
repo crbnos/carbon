@@ -6,12 +6,10 @@ import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { revokeInviteValidator } from "~/modules/users/users.models";
-import { originOf } from "~/modules/users/users.service";
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(revokeInviteValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const { ip, userAgent } = originOf(args.request);
   const { api } = await authorize(args.request);
-  return api.users.revokeInvites({ userIds: input.data.users, ip, userAgent });
+  return api.users.revokeInvites({ userIds: input.data.users });
 }

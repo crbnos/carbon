@@ -84,12 +84,10 @@ import { fromServerFn, invokePosting } from "../shared/shared.service";
 import {
   isMemoLocked,
   paymentValidator,
-  purchaseInvoiceSupplierChange,
   purchaseInvoiceValidator,
   reimbursementLinesValidator,
   reimbursementPaymentValidator,
   reimbursementUpdateValidator,
-  salesInvoiceCustomerChange,
   salesInvoiceLineValidator,
   salesInvoicePostValidator
 } from "./invoicing.models";
@@ -128,100 +126,36 @@ const salesInvoiceFields = [
  * paid dates. A new invoice customer brings its currency at today's rate
  * (a customer with none keeps the invoice's) and clears the invoice contact
  * and address. A new customer clears the ship-to of each invoice whose
- * customer changes. A new issue date or payment term on a single invoice
- * recomputes its due date; with several invoices nothing is written. A new
- * currency brings today's exchange rate. An empty value clears the field.
+ * customer changes; the customer, the invoice customer and the issue date
+ * cannot be cleared. A new issue date or payment term recomputes the due
+ * date, so it takes one invoice at a time. A new currency brings today's
+ * exchange rate. An empty value clears any other field. A customer, contact,
+ * location or payment term must be the company's. Refused when none of the
+ * invoices is the company's.
+ *
+ * @param ids - The sales invoices to change. See invoicing_getSalesInvoices.
+ * @param field - The field to set.
+ * @param value - The new value: an id, text, a number or a date (YYYY-MM-DD). Empty or null clears the field.
+ *
+ * @mcp
  */
 export const updateSalesInvoiceField = defineServiceFn({
   input: service.fieldUpdate(salesInvoiceFields),
   permission: { "invoicing.salesInvoices": "Edit" },
 
   async run(ctx, { ids, field, value }) {
-    const client = ctx.asCaller.supabase;
-    const companyId = ctx.company.id;
-    const locked = await service.refuseLockedInvoices(
-      ctx,
-      "salesInvoice",
-      ids,
-      field,
-      "Cannot modify a locked sales invoice."
-    );
-    if (locked) return locked;
-    const audit = {
-      updatedBy: ctx.auditUserId,
-      updatedAt: datetime.timestamp()
-    };
-
-    if (field === "invoiceCustomerId") {
-      if (!value)
-        return ctx.error("validation", "Invoice customer is required");
-      const currency = await service.partyCurrency(ctx, "customer", value);
-      if (currency instanceof Error) return currency;
-      const update = await client
-        .from("salesInvoice")
-        .update({ ...salesInvoiceCustomerChange(value, currency), ...audit })
-        .in("id", ids)
-        .eq("companyId", companyId);
-      if (update.error) {
-        return ctx.error(
-          "internal",
-          "Failed to update the invoices",
-          update.error
-        );
-      }
-      return { ids };
-    }
-
     if (field === "customerId") {
-      // A ship-to is one of the old customer's locations, so a customer
-      // change clears it (sales rules would otherwise evaluate an address
-      // that is not the new customer's).
-      if (value) {
-        const changed = await client
-          .from("salesInvoice")
-          .select("id")
-          .in("id", ids)
-          .eq("companyId", companyId)
-          .neq("customerId", value);
-        if (changed.error) {
-          return ctx.error(
-            "internal",
-            "Failed to load the invoices",
-            changed.error
-          );
-        }
-        const changedIds = changed.data.map((row) => row.id);
-        if (changedIds.length > 0) {
-          const cleared = await client
-            .from("salesInvoiceShipment")
-            .update({ customerLocationId: null, ...audit })
-            .in("id", changedIds)
-            .eq("companyId", companyId);
-          if (cleared.error) {
-            return ctx.error(
-              "internal",
-              "Failed to clear the ship-to",
-              cleared.error
-            );
-          }
-        }
-      }
-      const update = await client
-        .from("salesInvoice")
-        .update({ customerId: value || undefined, ...audit })
-        .in("id", ids)
-        .eq("companyId", companyId);
-      if (update.error) {
-        return ctx.error(
-          "internal",
-          "Failed to update the invoices",
-          update.error
-        );
-      }
-      return { ids };
+      // The panel's customer field is required, as the column is.
+      if (!value) return ctx.error("validation", "Customer is required");
+      // A customer's company never changes, so this read needs no lock.
+      const refused = await refuseUnlessOwned(ctx, "customer", { id: value });
+      if (refused) return refused;
+      return service.changeSalesInvoiceCustomer(ctx, {
+        ids,
+        customerId: value
+      });
     }
-
-    return service.writeInvoiceField(ctx, "salesInvoice", {
+    return service.updateInvoiceField(ctx, "salesInvoice", {
       ids,
       field,
       value
@@ -1083,49 +1017,25 @@ const purchaseInvoiceFields = [
  * Refused when any of the invoices is posted, except for the issue, due and
  * paid dates. A new invoice supplier brings its currency at today's rate
  * (a supplier with none keeps the invoice's) and clears the invoice contact
- * and address. A new issue date or payment term on a single invoice
- * recomputes its due date; with several invoices nothing is written. A new
- * currency brings today's exchange rate. An empty value clears the field.
+ * and address; the invoice supplier and the issue date cannot be cleared. A
+ * new issue date or payment term recomputes the due date, so it takes one
+ * invoice at a time.
+ * A new currency brings today's exchange rate. An empty value clears any
+ * other field. A supplier, contact, location or payment term must be the
+ * company's. Refused when none of the invoices is the company's.
+ *
+ * @param ids - The purchase invoices to change. See invoicing_getPurchaseInvoices.
+ * @param field - The field to set.
+ * @param value - The new value: an id, text, a number or a date (YYYY-MM-DD). Empty or null clears the field.
+ *
+ * @mcp
  */
 export const updatePurchaseInvoiceField = defineServiceFn({
   input: service.fieldUpdate(purchaseInvoiceFields),
   permission: { "invoicing.purchaseInvoices": "Edit" },
 
   async run(ctx, { ids, field, value }) {
-    const locked = await service.refuseLockedInvoices(
-      ctx,
-      "purchaseInvoice",
-      ids,
-      field,
-      "Cannot modify a confirmed purchase invoice."
-    );
-    if (locked) return locked;
-
-    if (field === "invoiceSupplierId") {
-      if (!value)
-        return ctx.error("validation", "Invoice supplier is required");
-      const currency = await service.partyCurrency(ctx, "supplier", value);
-      if (currency instanceof Error) return currency;
-      const update = await ctx.asCaller.supabase
-        .from("purchaseInvoice")
-        .update({
-          ...purchaseInvoiceSupplierChange(value, currency),
-          updatedBy: ctx.auditUserId,
-          updatedAt: datetime.timestamp()
-        })
-        .in("id", ids)
-        .eq("companyId", ctx.company.id);
-      if (update.error) {
-        return ctx.error(
-          "internal",
-          "Failed to update the invoices",
-          update.error
-        );
-      }
-      return { ids };
-    }
-
-    return service.writeInvoiceField(ctx, "purchaseInvoice", {
+    return service.updateInvoiceField(ctx, "purchaseInvoice", {
       ids,
       field,
       value

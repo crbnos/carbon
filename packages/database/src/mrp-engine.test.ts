@@ -5,12 +5,14 @@
 import { expect, it } from "vitest";
 import {
   type BomChild,
+  type BomExplosionInput,
   computeLowLevelCodes,
   explodeBom,
   makeActualKey,
   makeKey,
   makeLocationItemKey,
   netConsumeFirstContributors,
+  type PlannedSupplyResult,
   splitActualKey,
   splitKey,
   splitLocationItemKey
@@ -74,19 +76,58 @@ it("explodeBom nets and explodes demand for UUID-id items", () => {
       [parent, "Make"],
       [child, "Buy"]
     ]),
-    leadTimeByItem: new Map([[child, 7]]),
+    leadTimeByItem: new Map([
+      [parent, 7],
+      [child, 7]
+    ]),
     periods,
     onHandByLocationItem: new Map([[makeLocationItemKey(location, parent), 4]]),
     jobSupplyByLocationPeriodItem: new Map(),
     topLevelContributors: new Map()
   });
 
-  // 10 demanded - 4 on hand = 6 to make; child qty 2 => 12, pulled one week
-  // earlier by the 7-day lead time.
+  // 10 demanded - 4 on hand = 6 to make; child qty 2 => 12, needed one week
+  // earlier, when the parent's 7-day job starts.
   const childKey = makeKey(location, "p1", child);
   expect(bomDerivedDemand.get(childKey)).toEqual(12);
   // The key parses back to the full hyphenated ids, not truncated segments.
   expect(splitKey(childKey)).toEqual([location, "p1", child, ""]);
+});
+
+// The child's own order sizing already subtracts the child's lead time from
+// this date, so the child's demand sits where the parent's job starts.
+it("explodeBom places a child's demand at its parent's start, offset by the parent's lead time", () => {
+  const periods = [
+    { id: "p1" },
+    { id: "p2" },
+    { id: "p3" },
+    { id: "p4" },
+    { id: "p5" }
+  ];
+  const { bomDerivedDemand } = explodeBom({
+    grossDemand: new Map([[makeKey("loc", "p5", "parent"), 10]]),
+    bomByItem: new Map<string, BomChild[]>([
+      [
+        "parent",
+        [{ itemId: "child", quantity: 1, methodType: "Pull from Inventory" }]
+      ]
+    ]),
+    replenishmentSystemByItem: new Map([
+      ["parent", "Make"],
+      ["child", "Buy"]
+    ]),
+    leadTimeByItem: new Map([
+      ["parent", 28],
+      ["child", 7]
+    ]),
+    periods,
+    onHandByLocationItem: new Map(),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map()
+  });
+
+  // Needed in p5; the parent takes 4 weeks, so its job starts in p1.
+  expect([...bomDerivedDemand]).toEqual([[makeKey("loc", "p1", "child"), 10]]);
 });
 
 it("splitKey(makeKey(l, p, i)) is in the common segment", () => {
@@ -691,7 +732,9 @@ it("nested: a Consume First sub-sub-assembly nets its stock two levels down", ()
   expect(q("plate-a")).toEqual(undefined);
 });
 
-it("fix 3: the successor's shortfall is pulled earlier by its own longer lead time, never later", () => {
+// The successor's own order sizing subtracts its lead time from this date,
+// so neither part's lead time moves the week it is needed in.
+it("a Consume First successor is needed in the week the parent's job starts, whatever either part's lead time", () => {
   const location = "loc";
   const key = (item: string, p: string) => makeKey(location, p, item);
   const run = (leads: Record<string, number>) =>
@@ -700,7 +743,7 @@ it("fix 3: the successor's shortfall is pulled earlier by its own longer lead ti
       bomByItem: trialBom(),
       replenishmentSystemByItem: trialReplenishment(),
       leadTimeByItem: new Map(
-        Object.entries({ "plate-a": 0, "plate-b": 0, ...leads })
+        Object.entries({ top: 7, "plate-a": 0, "plate-b": 0, ...leads })
       ),
       periods: [{ id: "p0" }, { id: "p1" }, { id: "p2" }, { id: "p3" }],
       onHandByLocationItem: new Map(),
@@ -709,13 +752,14 @@ it("fix 3: the successor's shortfall is pulled earlier by its own longer lead ti
       consumeFirstRedirect: new Map([["old", { to: "new", factor: 1 }]])
     }).bomDerivedDemand;
 
+  // Top is needed in p3 and takes one week, so its job starts in p2.
   const slower = run({ old: 7, new: 14 });
-  expect(slower.get(key("new", "p1"))).toEqual(4);
-  expect(slower.get(key("new", "p2"))).toEqual(undefined);
+  expect(slower.get(key("new", "p2"))).toEqual(4);
+  expect(slower.get(key("new", "p1"))).toEqual(undefined);
 
   const faster = run({ old: 14, new: 7 });
-  expect(faster.get(key("new", "p1"))).toEqual(4);
-  expect(faster.get(key("new", "p2"))).toEqual(undefined);
+  expect(faster.get(key("new", "p2"))).toEqual(4);
+  expect(faster.get(key("new", "p1"))).toEqual(undefined);
 });
 
 it("fix 2: a Consume First chain uses the middle part's stock before moving on", () => {
@@ -831,6 +875,32 @@ it("netConsumeFirstContributors nets demand no contributor accounts for by the u
   expect(out.running).toEqual(0);
 });
 
+// A lot split gives a week's contributors to its first release only: here
+// the first release needs 5 but carries a contributor of 10. It may take
+// only 5 of the 8 in stock, so 3 stay for the second release, and only 2 of
+// the 10 go to the successor in all.
+it("netConsumeFirstContributors takes no more stock than the period's own demand", () => {
+  const out = netConsumeFirstContributors({
+    itemId: "old",
+    contributors: [
+      {
+        sourceType: "Sales Order",
+        salesOrderLineId: "s1",
+        parentItemId: "asm",
+        quantity: 10
+      }
+    ],
+    grossQty: 5,
+    running: 8,
+    factor: 1,
+    perAssemblyOf: (c) => c.perAssemblyQuantity ?? 0
+  });
+  expect(out.consumed).toEqual(5);
+  expect(out.running).toEqual(3);
+  expect(out.kept.map((c) => c.quantity)).toEqual([5]);
+  expect(out.moved).toEqual([]);
+});
+
 it("netConsumeFirstContributors keeps the origin and converts the per-assembly quantity when moving", () => {
   const out = netConsumeFirstContributors({
     itemId: "mid",
@@ -895,7 +965,10 @@ function projectCase(args: {
       ["part", "Make"],
       ["child", "Buy"]
     ]),
-    leadTimeByItem: new Map([["child", 0]]),
+    leadTimeByItem: new Map([
+      ["part", 0],
+      ["child", 0]
+    ]),
     periods,
     onHandByLocationItem: new Map([
       [makeLocationItemKey("loc", "part"), args.commonOnHand],
@@ -954,3 +1027,235 @@ it("common demand beyond the horizon does not hold common stock back", () => {
   });
   expect(commonSurplusDraws.get(makeKey("loc", "w2", "part", "P-101"))).toBe(8);
 });
+
+// MRP v2, the planned-supply hook: a common key's planned orders explode at
+// their release period instead of the raw net requirement.
+function plannedCase(overrides: Partial<BomExplosionInput> = {}) {
+  return explodeBom({
+    grossDemand: new Map([[makeKey("loc", "w3", "asm"), 3]]),
+    bomByItem: new Map<string, BomChild[]>([
+      [
+        "asm",
+        [{ itemId: "part", quantity: 2, methodType: "Pull from Inventory" }]
+      ]
+    ]),
+    replenishmentSystemByItem: new Map([
+      ["asm", "Make"],
+      ["part", "Buy"],
+      ["sub", "Make"]
+    ]),
+    leadTimeByItem: new Map([["part", 7]]),
+    periods: [{ id: "w1" }, { id: "w2" }, { id: "w3" }],
+    onHandByLocationItem: new Map(),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map([
+      [
+        makeKey("loc", "w3", "asm"),
+        [
+          {
+            sourceType: "Sales Order",
+            salesOrderLineId: "sol1",
+            parentItemId: "asm",
+            quantity: 3
+          }
+        ]
+      ]
+    ]),
+    ...overrides
+  });
+}
+
+// Plans `asm` with the given orders and leaves every other key to Phase 1.
+function hookFor(explosions: PlannedSupplyResult["explosions"] | null) {
+  const calls: Parameters<NonNullable<BomExplosionInput["planSupply"]>>[0][] =
+    [];
+  const planSupply: BomExplosionInput["planSupply"] = (args) => {
+    calls.push(args);
+    return args.itemId === "asm" && explosions ? { explosions } : null;
+  };
+  return { calls, planSupply };
+}
+
+it("explodes a planned order of 5 for a need of 3 at the order's release period", () => {
+  const { planSupply } = hookFor([
+    { releasePeriodIndex: 1, quantity: 5, contributorPeriodIndex: 2 }
+  ]);
+  const { bomDerivedDemand, demandContributors } = plannedCase({
+    planSupply
+  });
+  // 5 × 2 per assembly, in w2 (the release), not w3 less the lead time.
+  expect([...bomDerivedDemand]).toEqual([[makeKey("loc", "w2", "part"), 10]]);
+  expect([...demandContributors]).toEqual([
+    [
+      makeKey("loc", "w2", "part"),
+      [
+        {
+          sourceType: "Sales Order",
+          salesOrderLineId: "sol1",
+          parentItemId: "asm",
+          quantity: 6,
+          perAssemblyQuantity: 2
+        }
+      ]
+    ]
+  ]);
+});
+
+it("passes a period's contributors to the child once when two orders cover it", () => {
+  const { planSupply } = hookFor([
+    { releasePeriodIndex: 1, quantity: 5, contributorPeriodIndex: 2 },
+    { releasePeriodIndex: 2, quantity: 5, contributorPeriodIndex: 2 }
+  ]);
+  const { bomDerivedDemand, demandContributors } = plannedCase({
+    planSupply
+  });
+  expect([...bomDerivedDemand]).toEqual([
+    [makeKey("loc", "w2", "part"), 10],
+    [makeKey("loc", "w3", "part"), 10]
+  ]);
+  expect([...demandContributors.keys()]).toEqual([
+    makeKey("loc", "w2", "part")
+  ]);
+});
+
+it("visits a key with a buffer policy and no demand, and explodes its order", () => {
+  const { calls, planSupply } = hookFor([
+    { releasePeriodIndex: 0, quantity: 4, contributorPeriodIndex: 0 }
+  ]);
+  const { bomDerivedDemand } = plannedCase({
+    grossDemand: new Map(),
+    topLevelContributors: new Map(),
+    planSupply,
+    extraPlanningKeys: [makeLocationItemKey("loc", "asm")]
+  });
+  expect([...bomDerivedDemand]).toEqual([[makeKey("loc", "w1", "part"), 8]]);
+  // The child is planned at its own level with its demand complete.
+  expect(calls).toEqual([
+    {
+      locationId: "loc",
+      itemId: "asm",
+      segmentId: "",
+      grossByPeriod: [0, 0, 0],
+      supplyByPeriod: [0, 0, 0],
+      onHand: 0,
+      lowLevelCode: 0
+    },
+    {
+      locationId: "loc",
+      itemId: "part",
+      segmentId: "",
+      grossByPeriod: [8, 0, 0],
+      supplyByPeriod: [0, 0, 0],
+      onHand: 0,
+      lowLevelCode: 1
+    }
+  ]);
+});
+
+it("adds a child's scrap to a planned explosion, except for a made Make to Order child", () => {
+  const { planSupply } = hookFor([
+    { releasePeriodIndex: 1, quantity: 5, contributorPeriodIndex: 2 }
+  ]);
+  const { grossDemand, bomDerivedDemand } = plannedCase({
+    bomByItem: new Map<string, BomChild[]>([
+      [
+        "asm",
+        [
+          { itemId: "part", quantity: 2, methodType: "Pull from Inventory" },
+          { itemId: "sub", quantity: 2, methodType: "Make to Order" }
+        ]
+      ]
+    ]),
+    scrapRateByItem: new Map([
+      ["part", 0.1],
+      ["sub", 0.1]
+    ]),
+    planSupply
+  });
+  // Target 10 each: the part adds 10 × 0.1 = 1; the sub's own job adds its scrap.
+  expect([...bomDerivedDemand]).toEqual([[makeKey("loc", "w2", "part"), 11]]);
+  expect(grossDemand.get(makeKey("loc", "w2", "sub"))).toBe(10);
+});
+
+it("runs the Phase 1 path for a key the hook returns null for", () => {
+  const stocked = {
+    onHandByLocationItem: new Map([[makeLocationItemKey("loc", "asm"), 1]]),
+    jobSupplyByLocationPeriodItem: new Map([[makeKey("loc", "w2", "asm"), 1]])
+  };
+  const { calls, planSupply } = hookFor(null);
+  const withHook = plannedCase({ ...stocked, planSupply });
+  expect(withHook).toEqual(plannedCase(stocked));
+  // 3 − 1 on hand − 1 from the job = 1, × 2, one week early for the lead time.
+  expect([...withHook.bomDerivedDemand]).toEqual([
+    [makeKey("loc", "w2", "part"), 2]
+  ]);
+  expect(calls[0]).toEqual({
+    locationId: "loc",
+    itemId: "asm",
+    segmentId: "",
+    grossByPeriod: [0, 0, 3],
+    supplyByPeriod: [0, 1, 0],
+    onHand: 1,
+    lowLevelCode: 0
+  });
+});
+
+// A need of 10 for the parent (scrap 10%) is made as a job of 10 + 1 = 11:
+// the bought child (2 per, scrap 15%) needs 22 + ceil(3.3) = 26; the made
+// Make to Order child gets 11 with no scrap, and its own subjob adds
+// ceil(2.2) = 3, so its leaf needs 14. Without rates nothing adds scrap.
+it.each([
+  ["with scrap rates", true, { bought: 26, made: 11, leaf: 14 }],
+  ["without scrap rates (getMethod)", false, { bought: 20, made: 10, leaf: 10 }]
+] as const)(
+  "explodeBom sizes a raw need's children as job creation does, %s",
+  (_name, withRates, expected) => {
+    const { grossDemand } = explodeBom({
+      grossDemand: new Map([[makeKey("loc", "p1", "parent"), 10]]),
+      bomByItem: new Map<string, BomChild[]>([
+        [
+          "parent",
+          [
+            {
+              itemId: "bought",
+              quantity: 2,
+              methodType: "Pull from Inventory"
+            },
+            { itemId: "made", quantity: 1, methodType: "Make to Order" }
+          ]
+        ],
+        [
+          "made",
+          [{ itemId: "leaf", quantity: 1, methodType: "Pull from Inventory" }]
+        ]
+      ]),
+      replenishmentSystemByItem: new Map([
+        ["parent", "Make"],
+        ["bought", "Buy"],
+        ["made", "Make"],
+        ["leaf", "Buy"]
+      ]),
+      leadTimeByItem: new Map([
+        ["bought", 0],
+        ["made", 0],
+        ["leaf", 0]
+      ]),
+      periods: [{ id: "p1" }],
+      onHandByLocationItem: new Map(),
+      jobSupplyByLocationPeriodItem: new Map(),
+      topLevelContributors: new Map(),
+      scrapRateByItem: withRates
+        ? new Map([
+            ["parent", 0.1],
+            ["bought", 0.15],
+            ["made", 0.2]
+          ])
+        : undefined
+    });
+    expect({
+      bought: grossDemand.get(makeKey("loc", "p1", "bought")),
+      made: grossDemand.get(makeKey("loc", "p1", "made")),
+      leaf: grossDemand.get(makeKey("loc", "p1", "leaf"))
+    }).toEqual(expected);
+  }
+);

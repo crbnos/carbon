@@ -7,8 +7,8 @@ import ShipmentForm from "./ShipmentForm";
 import ShipmentHeader from "./ShipmentHeader";
 import ShipmentLines from "./ShipmentLines";
 import ShipmentNotes from "./ShipmentNotes";
-import ShipmentStatus from "./ShipmentStatus";
 import ShipmentsTable from "./ShipmentsTable";
+import ShipmentStatus from "./ShipmentStatus";
 
 export {
   ShipmentDocuments,

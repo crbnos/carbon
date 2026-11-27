@@ -27,20 +27,20 @@ import type { Activity, TrackedEntity } from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 import { capitalize, copyToClipboard } from "~/utils/string";
 import { AttributeList, hasRenderedAttributes } from "./attributeRenderers";
-import { ContainmentList } from "./ContainmentList";
 import type { ClusterMember, EntityCluster } from "./cluster";
 import { edgeKey, sharedMemberAttributes } from "./cluster";
+import { ContainmentList } from "./ContainmentList";
 import {
   ACTIVITY_KIND_META,
   activityKindFor,
   isInspectActivity,
   isMovementActivity
 } from "./metadata";
-import { StepRecordsList } from "./StepRecordsList";
 import {
   type ActivityMeasurements,
   stepRecordsForSelection
 } from "./stepRecords";
+import { StepRecordsList } from "./StepRecordsList";
 import TrackedEntityStatus from "./TrackedEntityStatus";
 import {
   activityHeadline,

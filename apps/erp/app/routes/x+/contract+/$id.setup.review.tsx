@@ -189,6 +189,7 @@ export default function ContractSetupReviewRoute() {
     lines,
     schedule,
     computedSchedule,
+    plannedInvoices,
     residuals,
     revenueResiduals
   } = routeData;
@@ -234,6 +235,7 @@ export default function ContractSetupReviewRoute() {
             lines={lines}
             schedule={schedule}
             computedSchedule={computedSchedule}
+            plannedInvoices={plannedInvoices}
           />
         </div>
       </SetupSection>

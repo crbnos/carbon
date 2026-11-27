@@ -5,6 +5,7 @@
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { describe, expect, it } from "vitest";
 import {
+  createFiscalYearPeriods,
   importChartOfAccounts,
   reopenPeriod,
   reverseJournalEntry,
@@ -32,7 +33,11 @@ const accountingWithout = (...pages: string[]) => {
   return claims;
 };
 
-const context = (permissions = accountingWithout()) =>
+const context = (
+  permissions = accountingWithout(),
+  caller: unknown = {},
+  system: unknown = unreachable
+) =>
   createServiceContext({
     actor: {
       type: "user",
@@ -41,8 +46,8 @@ const context = (permissions = accountingWithout()) =>
       permissions
     },
     company: { id: "company-1", groupId: "group-1" },
-    caller: {} as never,
-    system: unreachable,
+    caller: caller as never,
+    system: (system === unreachable ? unreachable : () => system) as never,
     pg: unreachable,
     kv: unreachable
   });
@@ -192,4 +197,84 @@ describe("reverseJournalEntry", () => {
     });
     expect(result.error).toMatchObject({ category: "forbidden" });
   });
+});
+
+describe("createFiscalYearPeriods", () => {
+  const january = { data: { startMonth: "January" }, error: null };
+
+  /** A fiscal year read as `settings`, with periods `existing`; an insert
+   *  answers each row's id from its period number. */
+  function periodsClient(
+    existing: number[],
+    settings: { data: unknown; error: unknown } = january,
+    inserts: unknown[][] = []
+  ) {
+    return {
+      from(table: string) {
+        let inserted: { periodNumber: number }[] | null = null;
+        const answer = () => {
+          if (table === "fiscalYearSettings") return settings;
+          if (inserted) {
+            return {
+              data: inserted.map((row) => ({ id: `p-${row.periodNumber}` })),
+              error: null
+            };
+          }
+          return {
+            data: existing.map((periodNumber) => ({ periodNumber })),
+            error: null
+          };
+        };
+        const chain: Record<string, unknown> = {
+          select: () => chain,
+          eq: () => chain,
+          insert: (rows: { periodNumber: number }[]) => {
+            inserted = rows;
+            inserts.push(rows);
+            return chain;
+          },
+          single: async () => answer(),
+          maybeSingle: async () => answer(),
+          then: (resolve: (value: unknown) => unknown) => resolve(answer())
+        };
+        return chain;
+      }
+    };
+  }
+
+  it("answers the ids of the periods it created", async () => {
+    const client = periodsClient([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    const result = await createFiscalYearPeriods(context(undefined, client, client), {
+      fiscalYear: 2026
+    });
+    expect(result).toEqual({ data: { ids: ["p-11", "p-12"] }, error: null });
+  });
+
+  // A failed read of the start month must not start the year in January.
+  it("creates no period when the fiscal year settings cannot be read", async () => {
+    const inserts: unknown[][] = [];
+    const client = periodsClient(
+      [],
+      {
+        data: null,
+        error: { code: "08006", message: "connection failure" }
+      },
+      inserts
+    );
+    const result = await createFiscalYearPeriods(context(undefined, client, client), {
+      fiscalYear: 2026
+    });
+    expect(result.error).not.toBeNull();
+    expect(inserts).toEqual([]);
+  });
+
+  it.each([1999, 2026.5])(
+    "refuses fiscal year %s, which the Generate Fiscal Year form refuses",
+    async (fiscalYear) => {
+      const result = await createFiscalYearPeriods(context(undefined, unreachable), {
+        fiscalYear
+      });
+      expect(result.error).toMatchObject({ category: "validation" });
+    }
+  );
 });

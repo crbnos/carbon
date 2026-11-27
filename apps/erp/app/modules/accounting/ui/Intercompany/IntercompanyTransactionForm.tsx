@@ -139,7 +139,6 @@ function PostingDate({
 
   // Keyed on sourceCompanyId (not just timezone) so switching between two
   // companies in the SAME zone still re-defaults a manually edited date.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: sourceCompanyId intentionally re-triggers the default
   useEffect(() => {
     if (timezone) setPostingDate(today(timezone).toString());
   }, [sourceCompanyId, timezone, setPostingDate]);

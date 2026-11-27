@@ -96,11 +96,7 @@ export {
   usableSubAssemblies,
   validateSubAssemblies
 } from "./subassembly";
-export {
-  motionDuration,
-  motionTravelDistance,
-  stepClipTiming
-} from "./timing";
+export { motionDuration, motionTravelDistance, stepClipTiming } from "./timing";
 export type {
   AssemblyGraph,
   AssemblyGraphNode,

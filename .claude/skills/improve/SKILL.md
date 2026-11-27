@@ -17,10 +17,10 @@ This is the Carbon-adapted variant. Carbon is a pnpm + turbo monorepo (`apps/erp
 ## Hard Rules
 
 1. **Never modify source code yourself.** No edits, no fixes, no "quick wins while you're in there." The ONLY files you may create or modify live under `.ai/plans/improve/` (create it if absent). Never write to `.claude/rules/` — that's the committed-knowledge base, and plans describe uncommitted future work (per `AGENTS.md`: never cache plans or not-yet-committed code). The `execute` variant dispatches a *separate executor subagent* that edits code in an isolated git worktree — you review its diff and render a verdict; you still never edit code directly, and you never merge, push, or commit to the user's branch.
-2. **Never run commands that mutate the user's working tree or environment** — no installs in the main tree, no builds, no `pnpm format`/`biome ... --write`, no git commits. Read, search, and run read-only analysis only. **Carbon-specific command rules:**
+2. **Never run commands that mutate the user's working tree or environment** — no installs in the main tree, no builds, no `pnpm format`/`oxlint --fix`, no git commits. Read, search, and run read-only analysis only. **Carbon-specific command rules:**
    - **NEVER run a whole-repo typecheck** (`pnpm typecheck`, `turbo run typecheck --filter='*'`, or `tsc --noEmit` across the repo) — it OOMs the machine. Scope every typecheck to one package: `turbo run typecheck --filter=<pkg>` (e.g. `--filter=erp`, `--filter=@carbon/react`). erp/mes typecheck via `tsc --noEmit`.
    - **NEVER touch the database.** Do not run `pnpm db:migrate` (`crbn migrate`), `db:seed`, `db:migrate:new`, `db:types`, or anything that rebuilds/resets/reseeds the DB. Per `AGENTS.md`, the user rebuilds the DB; you wait. Audit migrations by reading the SQL only.
-   - Lint read-only: `pnpm exec biome lint <paths>` or `biome check <paths>` (no `--write`). Carbon uses **Biome**, not ESLint/Prettier.
+   - Lint read-only: `pnpm exec oxlint <paths>` (no `--fix`). Carbon lints with **oxlint** and formats with **oxfmt**, not ESLint/Prettier.
    - Tests are fine if cheap and side-effect free: `pnpm --filter <pkg> test` (vitest), or `pnpm --filter <pkg> exec vitest run <file>`.
    - Two scoped exceptions: verification commands inside an executor's disposable worktree during `execute` review, and `gh issue create` under an explicit `--issues` flag.
 3. **Every plan must be fully self-contained.** The executor has not seen this conversation, this survey, `.claude/rules/`, or any other plan. If a plan references "the pattern discussed above" or "see the rules," it is broken — inline the relevant excerpt.
@@ -44,10 +44,10 @@ Map the territory before judging it. **In Carbon, recon means reading the `.clau
 - Identify the exact **build / test / lint / typecheck** commands (these become verification gates in every plan). From recon of `package.json` + `turbo.json`:
   - Install: `pnpm install`
   - Typecheck (SCOPED ONLY): `turbo run typecheck --filter=<pkg>`
-  - Lint (read-only): `pnpm exec biome lint <paths>` / `biome check <paths>`
+  - Lint (read-only): `pnpm exec oxlint <paths>`
   - Test: `pnpm --filter <pkg> test` (vitest; present in most `packages/*` and `apps/erp`)
   - Build (executor worktree only): `turbo run build --filter=<app>`
-- Note the stack: **pnpm 10 + turbo**, **React Router 7** (erp/mes — not Next.js), **Biome**, **Kysely + Supabase/Postgres**, **Lingui** i18n, **vitest**. Note which packages have tests and which don't.
+- Note the stack: **pnpm 10 + turbo**, **React Router 7** (erp/mes — not Next.js), **oxlint** + **oxfmt**, **Kysely + Supabase/Postgres**, **Lingui** i18n, **vitest**. Note which packages have tests and which don't.
 - Check git signal where useful (`git log --oneline -30`, churn hotspots). Branch naming is `feat/*` / `fix/*`; commits are conventional (`fix: …`, `feat: …`).
 
 If a target package has no working verification command (no tests, typecheck broken), record that — "establish a verification baseline for `<pkg>`" is often finding #1, and it must precede risky plans in the dependency order.

@@ -167,9 +167,9 @@ describe("applyLicenseHeader", () => {
     );
   });
 
-  it("goes above @ts-nocheck, triple-slash references and biome-ignore", () => {
+  it("goes above @ts-nocheck, triple-slash references and oxlint-disable", () => {
     const src =
-      '// @ts-nocheck\n/// <reference types="node" />\n// biome-ignore-all lint/x: y\nexport {};\n';
+      '// @ts-nocheck\n/// <reference types="node" />\n// oxlint-disable no-x -- y\nexport {};\n';
     expect(applyLicenseHeader(src, "commercial")).toBe(
       `${COMMERCIAL}\n\n${src}`
     );

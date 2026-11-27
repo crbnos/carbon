@@ -22,18 +22,21 @@ import { effectiveFenceDate } from "./planning-fence";
 // fence on screen to look further out (or closer in); that lives in page state
 // only, never on the item, and is gone after a reload.
 
-export type FenceRow = { id: string; timeFenceDate: string | null };
+/** A grid row's saved planning horizon date (the grid RPC's
+ *  `timeFenceDate`). Not the MRP planning time fence. */
+export type HorizonRow = { id: string; timeFenceDate: string | null };
 
 /**
- * Per-row fence overrides, keyed by item id. `fenceDateFor` is the row's
- * effective fence: the override when there is one, else the saved horizon.
- * A `null` override is a cleared fence: the row shows every week. Picking the
- * saved date again, or a reload, returns the row to its saved horizon.
+ * Per-row planning horizon overrides, keyed by item id. `horizonDateFor` is
+ * the row's effective horizon: the override when there is one, else the
+ * saved one. A `null` override is a cleared horizon: the row shows every
+ * week. Picking the saved date again, or a reload, returns the row to its
+ * saved horizon.
  */
-export function useTimeFenceOverrides() {
+export function usePlanningHorizonOverrides() {
   const [overrides, setOverrides] = useState<Record<string, string | null>>({});
 
-  const setFenceDate = useCallback((itemId: string, date: string | null) => {
+  const setHorizonDate = useCallback((itemId: string, date: string | null) => {
     setOverrides((prev) => {
       if (itemId in prev && prev[itemId] === date) return prev;
       return { ...prev, [itemId]: date };
@@ -42,13 +45,13 @@ export function useTimeFenceOverrides() {
 
   return useMemo(
     () => ({
-      setFenceDate,
-      fenceDateFor: (row: FenceRow) =>
+      setHorizonDate,
+      horizonDateFor: (row: HorizonRow) =>
         effectiveFenceDate(row.timeFenceDate, overrides[row.id]),
-      isOverridden: (row: FenceRow) =>
+      isOverridden: (row: HorizonRow) =>
         row.id in overrides && overrides[row.id] !== (row.timeFenceDate ?? null)
     }),
-    [overrides, setFenceDate]
+    [overrides, setHorizonDate]
   );
 }
 
@@ -56,12 +59,12 @@ export function useTimeFenceOverrides() {
  * The grid's Planning Horizon cell: the row's fence date with a calendar to
  * move it. Clearing the picker removes the fence for this view.
  */
-export const TimeFenceCell = memo(function TimeFenceCell({
-  fenceDate,
+export const PlanningHorizonCell = memo(function PlanningHorizonCell({
+  horizonDate,
   isOverridden,
   onChange
 }: {
-  fenceDate: string | null;
+  horizonDate: string | null;
   isOverridden: boolean;
   /** `null` = no fence for this view. */
   onChange: (date: string | null) => void;
@@ -73,7 +76,7 @@ export const TimeFenceCell = memo(function TimeFenceCell({
     <DatePicker
       aria-label={t`Planning horizon`}
       closeOnSelect
-      value={fenceDate ? parseDate(fenceDate) : null}
+      value={horizonDate ? parseDate(horizonDate) : null}
       onChange={(value) => onChange(value ? value.toString() : null)}
       helperText={
         isOverridden
@@ -84,11 +87,11 @@ export const TimeFenceCell = memo(function TimeFenceCell({
         <span
           className={cn(
             "whitespace-nowrap tabular-nums",
-            !fenceDate && "text-muted-foreground",
+            !horizonDate && "text-muted-foreground",
             isOverridden && "font-medium"
           )}
         >
-          {fenceDate ? formatDate(fenceDate, undefined, locale) : t`None`}
+          {horizonDate ? formatDate(horizonDate, undefined, locale) : t`None`}
         </span>
       }
     />

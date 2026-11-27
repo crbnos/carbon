@@ -189,8 +189,13 @@ export function EmailThemeProvider({
               <meta name="theme-color" content="#ffffff" />
               <HeadStyle
                 css={`
-                  :root { color-scheme: light only; supported-color-schemes: light; }
-                  * { color-scheme: light !important; }
+                  :root {
+                    color-scheme: light only;
+                    supported-color-schemes: light;
+                  }
+                  * {
+                    color-scheme: light !important;
+                  }
                 `}
               />
             </>

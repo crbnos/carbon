@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import LeaseAccounting from "./LeaseAccounting";
-import LeaseAssetSummary from "./LeaseAssetSummary";
 import LeaseAssetsGrid from "./LeaseAssetsGrid";
+import LeaseAssetSummary from "./LeaseAssetSummary";
 import { LeaseClassificationPreview } from "./LeaseClassificationPreview";
 import { LeaseCommencementPreview } from "./LeaseCommencementPreview";
 import LeaseDetailsForm from "./LeaseDetailsForm";
@@ -20,8 +20,8 @@ import LeaseSetupSteps, {
   type LeaseSetupStep,
   leaseSetupSteps
 } from "./LeaseSetupSteps";
-import LeaseSummary from "./LeaseSummary";
 import LeasesTable from "./LeasesTable";
+import LeaseSummary from "./LeaseSummary";
 import { useLesseeClassificationLabel } from "./LesseeClassificationBadge";
 import OpenEndedExpedientNotice from "./OpenEndedExpedientNotice";
 import { useLeaseActivateText } from "./useLeaseLabels";

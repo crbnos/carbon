@@ -16,15 +16,22 @@ import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { useItems } from "~/stores";
-import { getJobOrderStatusCategory } from "../../production.models";
+import {
+  getJobOrderStatusCategory,
+  shortfallAction
+} from "../../production.models";
 import type { ItemOrderStatus } from "../../types";
 
 // Presentation only — precedence lives in getJobOrderStatusCategory (shared with
 // the status filter); this maps the resolved category to an icon + label.
 export function JobOrderStatusBadge({
-  status
+  status,
+  itemId,
+  methodType
 }: {
   status: ItemOrderStatus | undefined;
+  itemId: string | null;
+  methodType: string | null;
 }) {
   const badge = (icon: ReactNode, label: ReactNode) => (
     <Tooltip>
@@ -57,10 +64,25 @@ export function JobOrderStatusBadge({
           <Trans>In stock</Trans>
         )
       );
-    case "needsOrder":
+    case "needsOrder": {
+      // The substitute is what will be supplied, so it decides make vs order.
+      const suppliedItemId = status?.substituteItemId ?? itemId;
+      const isMade =
+        shortfallAction(
+          methodType,
+          items.find((i) => i.id === suppliedItemId)?.replenishmentSystem
+        ) === "make";
       return badge(
         <LuCircleAlert className="text-red-500" />,
-        substitute ? (
+        isMade ? (
+          substitute ? (
+            <Trans>
+              Make {status?.shortfall} × {substitute} for this job
+            </Trans>
+          ) : (
+            <Trans>Make {status?.shortfall} for this job</Trans>
+          )
+        ) : substitute ? (
           <Trans>
             Order {status?.shortfall} × {substitute} for this job
           </Trans>
@@ -68,6 +90,7 @@ export function JobOrderStatusBadge({
           <Trans>Order {status?.shortfall} for this job</Trans>
         )
       );
+    }
     case "needsJob":
       return badge(
         <LuClock className="text-red-500" />,

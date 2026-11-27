@@ -29,6 +29,7 @@ import {
   CardHeader,
   CardTitle,
   Copy,
+  Count,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -170,7 +171,7 @@ import ItemThumbnail from "../ItemThumbnail";
 import { MesAppBar } from "../MesAppBar";
 import { BatchCompleteModal } from "./components/BatchCompleteModal";
 import { BatchOverview } from "./components/BatchOverview";
-import { OperationChat } from "./components/Chat";
+import { OperationChat, useOperationNotes } from "./components/Chat";
 import {
   Controls,
   IconButtonWithTooltip,
@@ -600,7 +601,7 @@ export const JobOperation = ({
           ? (["setup", "machine", "labor"] as const)
           : (["setup", "labor", "machine"] as const)
         ).find((type) => active[type]);
-  // Chat is one job's thread, so a Chat tab left open in the job scope falls
+  // Notes are one job's thread, so a Notes tab left open in the job scope falls
   // back to Details on the batch.
   const tab = scope === "batch" && activeTab === "chat" ? "details" : activeTab;
   // Phones on Details show the context row and meters in the scrolling pane.
@@ -660,7 +661,6 @@ export const JobOperation = ({
   const fetcher = useFetcher<Result>();
 
   // Lazy creation of Inspection steps for non-conformance actions
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     async function createInspectionStepsForNonConformanceActions() {
       if (!carbon || !operationId) return;
@@ -721,6 +721,7 @@ export const JobOperation = ({
     }
 
     createInspectionStepsForNonConformanceActions();
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [
     carbon,
     operationId,
@@ -807,6 +808,7 @@ export const JobOperation = ({
   const item = items.find((it) => it.id === operation.itemId);
 
   const scrapParts = useScrapParts(operation.id);
+  const notes = useOperationNotes(operation.id);
 
   const openIssueModal = (material: JobMaterial | null) => {
     flushSync(() => {
@@ -1362,9 +1364,14 @@ export const JobOperation = ({
                     <Trans>Instructions</Trans>
                   </TabsTrigger>
                   {/* Notes are kept per job operation — on the batch there is no
-                    one thread to show, so Chat opens from a job. */}
+                    one thread to show, so Notes opens from a job. */}
                   <TabsTrigger value="chat" disabled={scope === "batch"}>
-                    <Trans>Chat</Trans>
+                    <span className="flex items-center gap-1.5">
+                      <Trans>Notes</Trans>
+                      {notes.messages.length > 0 && (
+                        <Count count={notes.messages.length} />
+                      )}
+                    </span>
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -2799,7 +2806,7 @@ export const JobOperation = ({
           value="chat"
           className="[grid-area:main] mt-0 h-full min-h-0"
         >
-          <OperationChat operation={operation} />
+          <OperationChat operation={operation} notes={notes} />
         </TabsContent>
         {showControls && (
           <Controls

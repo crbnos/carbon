@@ -70,7 +70,6 @@ export function ExternalSourceCard({
     unitOfMeasureCode: t`Unit of Measure`
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reload re-reads the link
   useEffect(() => {
     if (!carbon) return;
     let cancelled = false;
@@ -91,7 +90,6 @@ export function ExternalSourceCard({
     };
   }, [carbon, company.id, itemId, reload]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the labels follow the locale, not the read
   useEffect(() => {
     if (!carbon || !mapping) return;
     let cancelled = false;
@@ -137,6 +135,7 @@ export function ExternalSourceCard({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- the labels follow the locale, not the read
   }, [carbon, company.id, mapping]);
 
   if (!mapping) return null;

@@ -57,7 +57,8 @@ export function contextFromAuthed(context: AuthedContext): ServiceContext {
     companyId: context.companyId,
     companyGroupId: context.companyGroupId,
     client: scopedToCompany(context.client, context.companyId, COMPANY_TABLES),
-    role: context.role
+    role: context.role,
+    origin: context.origin
   });
 }
 

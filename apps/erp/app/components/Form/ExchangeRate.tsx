@@ -9,8 +9,9 @@ import { LuLoaderCircle } from "react-icons/lu";
 import { ExchangeRateUpdatedAt } from "~/components";
 import { NumberControlled } from "~/components/Form";
 
-interface ExchangeRateProps
-  extends React.ComponentProps<typeof NumberControlled> {
+interface ExchangeRateProps extends React.ComponentProps<
+  typeof NumberControlled
+> {
   inline?: boolean;
   onRefresh?: () => void;
   exchangeRateUpdatedAt: string | undefined;

@@ -147,7 +147,6 @@ const useLinearTeams = (
     defaults?: IssueDefaults | null;
   }>();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     const params = new URLSearchParams({
       actionId: record.taskId,
@@ -155,6 +154,7 @@ const useLinearTeams = (
     });
     if (teamId) params.set("teamId", teamId);
     fetcher.load(`${path.to.api.linearCreateIssue}?${params}`);
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [teamId]);
 
   return {

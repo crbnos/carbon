@@ -541,7 +541,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       filteredOperations.reduce(
         (acc, op) => {
           if (op.tags) {
-            // biome-ignore lint/suspicious/useIterableCallbackReturn: suppressed due to migration
+            // oxlint-disable-next-line array-callback-return -- suppressed due to migration
             op.tags.forEach((tag) => (acc[tag] = true));
           }
           return acc;
@@ -1062,12 +1062,12 @@ function useProgressByOperation(
     setProgressByOperation(progress);
   }, 5000);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (Object.keys(productionEventsByOperation).length > 0) {
       const { progress } = getProgress();
       setProgressByOperation(progress);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [productionEventsByOperation]);
 
   useChangedRows<{ id: string; workCenterId: string; priority: number }>({

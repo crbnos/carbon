@@ -43,7 +43,7 @@ To add an entity, a moment, an action or an operation, edit the one hand-written
 and run:
 
 ```bash
-pnpm run generate:workflow-catalog   # generates + biome-normalises the three outputs
+pnpm run generate:workflow-catalog   # generates, then oxlint fixes + oxfmt formats the outputs
 pnpm run check:workflow-catalog      # the CI `catalog` job
 ```
 

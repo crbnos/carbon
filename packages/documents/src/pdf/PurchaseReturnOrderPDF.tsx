@@ -17,8 +17,8 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
-import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
+import { DocumentPage } from "./blocks/DocumentPage";
 import type {
   PurchaseReturnOrderData,
   PurchaseReturnOrderPdfLine,

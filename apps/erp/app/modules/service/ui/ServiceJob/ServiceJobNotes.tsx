@@ -69,7 +69,6 @@ const logger = getLogger("erp", "servicejobnotes");
 /** Saves one header field of the job through `update.tsx`. */
 function useUpdateServiceJobField(id: string) {
   const fetcher = useAction<typeof updateAction>({});
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   return useCallback(
     (field: string, value: string | null) => {
       const formData = new FormData();
@@ -81,6 +80,7 @@ function useUpdateServiceJobField(id: string) {
         action: path.to.serviceJobUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id]
   );
 }

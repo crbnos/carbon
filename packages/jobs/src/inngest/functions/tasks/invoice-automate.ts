@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { invoiceAutomationPosts } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
 import {
   attachPostedInvoicePdf,
@@ -45,7 +46,7 @@ export const invoiceAutomateFunction = inngest.createFunction(
         ? configured
         : "Post and Email"
       : configured;
-    if (!mode || mode === "Draft Only") return { mode, outcome: "skipped" };
+    if (!invoiceAutomationPosts(mode)) return { mode, outcome: "skipped" };
 
     const posted = await step.run("post", () =>
       postSalesInvoiceUnattended({

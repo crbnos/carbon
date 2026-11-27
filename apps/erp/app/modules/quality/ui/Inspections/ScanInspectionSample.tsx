@@ -97,9 +97,9 @@ function ScanInspectionSampleBody({
     );
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keep findMatch around for future UI without re-introducing unused-variable churn
   useEffect(() => {
     setSelected(findMatch(serial));
+    // oxlint-disable-next-line react/exhaustive-deps -- keep findMatch around for future UI without re-introducing unused-variable churn
   }, [serial, remaining]);
 
   useEffect(() => {

@@ -38,7 +38,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: id is absent on create
   const { id, ...rest } = validation.data;
 
   let created: { id: string };

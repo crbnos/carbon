@@ -168,11 +168,13 @@ export {
 
 /**
  * When a produced unit draws its serial number: `jobCreation` (the default)
- * numbers every unit when the job is created; `jobRelease` when the job is
- * released to the shop floor; `production` leaves the job's units unnumbered
- * and numbers each one the first time it is touched (its first production
- * event, its first operation completion, its scrap, or the receipt that
- * completes the job).
+ * numbers the job's own units when the job is created; `jobRelease` when the
+ * job is released to the shop floor; `production` leaves the job's units
+ * unnumbered and numbers each one the first time it is touched (its first
+ * production event, its first operation completion, its scrap, or the receipt
+ * that completes the job). Neither creation nor release numbers a Make to
+ * Order sub-assembly's units: each is numbered at its first touch, or at its
+ * spawn unless the timing is `production`.
  *
  * With an item, its serial sequence's own timing wins and the company's is the
  * default. Anything unreadable falls back to `jobCreation`, which is what every
@@ -219,9 +221,10 @@ export async function resolveSerialNumberTiming(
  *
  * Every call site is a "first touch" hook. It does not read the serial number
  * timing: under `production` it is how a unit gets its number, and under the
- * other timings it numbers only a unit left unnumbered (a job created under
- * `production` before its timing changed). Every call site must be safe to
- * fire repeatedly on the same unit:
+ * other timings it numbers only a unit left unnumbered (a Make to Order
+ * sub-assembly's unit, which job creation and release never number, or a job
+ * created under `production` before its timing changed). Every call site must
+ * be safe to fire repeatedly on the same unit:
  * hence the `readableId IS NULL` guard and the row lock. Two operators touching
  * the same unit at once serialize on the entity row, and the second sees the
  * first one's number instead of reserving and burning another. Runs inside the

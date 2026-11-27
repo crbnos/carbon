@@ -22,13 +22,14 @@ export function PartiesBlock({
 }) {
   const tw = useTw();
   const t = makeText(salesOrderTexts.parties, block, data.vars);
-  const { customerCountryName, paymentCustomerName } = data.salesOrderLocations;
+  const { customerCountryName, paymentCustomerName, shipToCustomerName } =
+    data.salesOrderLocations;
   const { row } = useTextRows(t);
 
   return (
     <View style={tw("border border-gray-200 mb-4")}>
       <View style={tw("flex flex-row")}>
-        {/* LEFT — Customer block */}
+        {/* LEFT — Customer, then Ship To */}
         <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
             {t("customer")}
@@ -39,6 +40,18 @@ export function PartiesBlock({
             {row("vat")}
             {row("eori")}
           </View>
+          {shipToCustomerName ? (
+            <View style={tw("mt-3 pt-3 border-t border-gray-200")}>
+              <Text
+                style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
+              >
+                {t("shipTo")}
+              </Text>
+              <View style={tw("text-[9px] text-gray-800")}>
+                <AddressRows t={t} prefix="shipTo" />
+              </View>
+            </View>
+          ) : null}
         </View>
 
         {/* RIGHT — Order Details + Bill To stacked */}

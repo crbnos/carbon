@@ -18,6 +18,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { NO_ORIGIN } from "@carbon/api/service-fn.server";
 import { getUserScopedClient } from "@carbon/auth/client.server";
 import { today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -277,7 +278,8 @@ describe("every read tool, against real data", () => {
                 companyGroupId,
                 authKind: "oauth",
                 permissions: claims.permissions,
-                role: "employee"
+                role: "employee",
+                origin: NO_ORIGIN
               },
               args
             )

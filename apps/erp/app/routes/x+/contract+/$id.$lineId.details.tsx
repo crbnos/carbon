@@ -17,8 +17,7 @@ import {
 } from "~/modules/sales/sales.models";
 import {
   getContract,
-  projectRevenueRefusal,
-  upsertContractLine
+  projectRevenueRefusal
 } from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
@@ -108,7 +107,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
+  const { api, client, companyId } = await authorize(request, {
     "sales.serviceContracts": "Edit"
   });
 
@@ -144,15 +143,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw redirect(back, await flash(request, error(null, upgrade)));
   }
 
-  // `upsertContractLine` refuses a line of another contract, a contract that
-  // is not a Draft and an item that is not a Service, and decides the tax.
-  const update = await upsertContractLine(client, {
-    ...line,
+  // The form posts the whole line, so a field it left empty is cleared, not
+  // kept. `updateContractLine` refuses a line of another contract, a
+  // contract that is not a Draft and an item its basis does not take, and
+  // decides the tax.
+  const update = await api.sales.updateContractLine({
+    ...clearedLineFields(),
+    ...withoutUndefined(line),
     // The form always posts the field: an empty one clears the code.
     taxCodeId: formData.has("taxCodeId") ? (line.taxCodeId ?? null) : undefined,
     customerContractId: id,
-    id: lineId,
-    updatedBy: userId
+    id: lineId
   });
   if (update.error) {
     throw redirect(
@@ -162,6 +163,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(back, await flash(request, success("Updated line")));
+}
+
+/** Every field of a line, cleared. */
+function clearedLineFields() {
+  return Object.fromEntries(
+    Object.keys(customerContractLineValidator.shape).map((field) => [
+      field,
+      null
+    ])
+  );
+}
+
+function withoutUndefined<T extends object>(values: T) {
+  return Object.fromEntries(
+    Object.entries(values).filter(([, value]) => value !== undefined)
+  );
 }
 
 /** One line of the contract. Editable while the contract is a Draft; an

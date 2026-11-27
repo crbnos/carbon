@@ -1137,7 +1137,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     requiresStaffing: { kind: "primitive", of: "boolean" },
     responsibleEmployee: { kind: "entity", of: "user" },
     inspectionStorageUnitId: { kind: "primitive", of: "string" },
-    rejectedStorageUnitId: { kind: "primitive", of: "string" }
+    rejectedStorageUnitId: { kind: "primitive", of: "string" },
+    planningTimeFenceDays: { kind: "primitive", of: "number" }
   },
   nonConformance: {
     id: { kind: "primitive", of: "string" },
@@ -1258,7 +1259,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     opportunityId: { kind: "primitive", of: "string" },
     completedDate: { kind: "primitive", of: "date" },
     customerEngineeringContactId: { kind: "primitive", of: "string" },
-    emailOrderOnAcceptance: { kind: "primitive", of: "boolean" }
+    emailOrderOnAcceptance: { kind: "primitive", of: "boolean" },
+    sendViaEmail: { kind: "primitive", of: "boolean" }
   },
   receipt: {
     id: { kind: "primitive", of: "string" },

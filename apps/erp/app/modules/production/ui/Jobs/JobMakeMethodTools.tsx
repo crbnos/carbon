@@ -312,7 +312,7 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     (isJobMethod || isJobMakeMethod);
   const hasPrintLabel = Boolean(
     makeMethod &&
-      (makeMethod.requiresSerialTracking || makeMethod.requiresBatchTracking)
+    (makeMethod.requiresSerialTracking || makeMethod.requiresBatchTracking)
   );
   const openGetMethod = () => {
     // The modal's Item picker opens empty — clear any versions loaded on a

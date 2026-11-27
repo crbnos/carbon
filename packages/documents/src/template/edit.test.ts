@@ -412,3 +412,126 @@ describe("unsaved notes", () => {
     expect("draftNotes" in parsed).toBe(false);
   });
 });
+
+describe("a custom block's own content on one document", () => {
+  const template = resolveTemplate("purchaseOrder", {
+    ...toDocumentTemplate(null, "purchaseOrder"),
+    blocks: [
+      {
+        id: "cf",
+        type: "customField",
+        visible: true,
+        fieldId: "f1",
+        label: "Project"
+      },
+      {
+        id: "kv",
+        type: "keyValue",
+        visible: true,
+        title: "Shipping",
+        rows: [{ label: "Carrier", value: "Ground" }]
+      },
+      {
+        id: "rt",
+        type: "richText",
+        visible: true,
+        content: { type: "doc", content: [] }
+      }
+    ]
+  });
+  const editBlocks = (patch: Record<string, object>) => ({
+    ...template,
+    blocks: template.blocks.map((b) =>
+      patch[b.id] ? ({ ...b, ...patch[b.id] } as typeof b) : b
+    )
+  });
+
+  it("keeps only the changed label, value and rows, and prints them", () => {
+    const edited = editBlocks({
+      cf: { label: "Job", value: "Line 4" },
+      kv: { rows: [{ label: "Carrier", value: "Air" }] }
+    });
+    const edit = diffDocumentEdit("purchaseOrder", template, edited);
+    expect(edit.blocks).toEqual({
+      cf: { label: "Job", value: "Line 4" },
+      kv: { rows: [{ label: "Carrier", value: "Air" }] }
+    });
+    const printed = applyDocumentEdit(template, edit);
+    expect(block(printed, "cf")).toMatchObject({
+      label: "Job",
+      value: "Line 4"
+    });
+    expect(block(printed, "kv")).toMatchObject({
+      title: "Shipping",
+      rows: [{ label: "Carrier", value: "Air" }]
+    });
+  });
+
+  it("leaves no key when the content is typed back to the template's", () => {
+    const edited = editBlocks({ cf: { label: "Project", value: undefined } });
+    expect(
+      isEmptyDocumentEdit(diffDocumentEdit("purchaseOrder", template, edited))
+    ).toBe(true);
+  });
+
+  it("leaves no key when a Rich Text title is typed and cleared", () => {
+    const edited = editBlocks({ rt: { title: "" } });
+    expect(
+      isEmptyDocumentEdit(diffDocumentEdit("purchaseOrder", template, edited))
+    ).toBe(true);
+  });
+
+  it("drops a custom field's own value from a stored template", () => {
+    const stored = toDocumentTemplate(
+      {
+        blocks: [
+          {
+            id: "cf",
+            type: "customField",
+            visible: true,
+            fieldId: "f1",
+            label: "Project",
+            value: "Typed on the template"
+          }
+        ]
+      },
+      "purchaseOrder"
+    );
+    expect(stored?.blocks).toEqual([
+      {
+        id: "cf",
+        type: "customField",
+        visible: true,
+        fieldId: "f1",
+        label: "Project"
+      }
+    ]);
+  });
+
+  it("reports an unknown variable in an edited row, not the template's", () => {
+    const templateRow = { label: "Broken", value: "{gone.y}" };
+    const withBadRow = editBlocks({
+      kv: { rows: [{ label: "Carrier", value: "Ground" }, templateRow] }
+    });
+    const edit = {
+      blocks: {
+        kv: { rows: [{ label: "Carrier", value: "{gone.x}" }, templateRow] }
+      },
+      settings: {}
+    };
+    expect(
+      validateDocumentEdit("purchaseOrder", withBadRow, edit).map(
+        (p) => p.field
+      )
+    ).toEqual(["rows.0.value"]);
+  });
+
+  it("leaves the template's broken row out when the edit moves it", () => {
+    const templateRow = { label: "Broken", value: "{gone.y}" };
+    const withBadRow = editBlocks({
+      kv: { rows: [{ label: "Carrier", value: "Ground" }, templateRow] }
+    });
+    const edit = { blocks: { kv: { rows: [templateRow] } }, settings: {} };
+    expect(validateDocumentEdit("purchaseOrder", withBadRow, edit)).toEqual([]);
+  });
+});

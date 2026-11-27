@@ -27,7 +27,7 @@ The partition key *is the table name* — there is **no `companyId` column**. Co
 - `operation` TEXT CHECK IN (`INSERT`,`UPDATE`,`DELETE`)
 - `actorId` TEXT | null — user who made the change; null = system/service-role. Captured via `auth.uid()` in `dispatch_event_batch`, which is NULL on a direct Kysely connection (no `request.jwt.claims` GUC). The handler therefore falls back to the row's own audit columns — `record.actorId ?? new.updatedBy ?? new.createdBy ?? old.updatedBy ?? old.createdBy` (`packages/jobs/src/inngest/functions/events/audit.ts`) — so a Kysely write is still attributed, provided it stamps `updatedBy`/`createdBy`. A write that stamps neither logs as "System"
 - `diff` JSONB | null — `{ field: { old, new, snapshot? } }`
-- `metadata` JSONB | null — `ipAddress`, `userAgent`, `origin`, `requestId`
+- `metadata` JSONB | null — `ipAddress`, `userAgent`, `origin`, `requestId`. A service function that writes its own entries (`insertAuditLogEntries`, the invite revocation in `users.server.ts`) takes `ipAddress` and `userAgent` from `ctx.origin`, which the entry point reads from the request's headers (`originOf`, `@carbon/api/service-fn.server`), never from its input. The IP is the entry our proxy wrote; the user agent, and the city off Vercel, are what the caller sent
 - `createdAt` TIMESTAMPTZ — original event time (handler passes `event.timestamp`; falls back to `clock_timestamp()` per row)
 
 Indexes on `(entityType,entityId)`, `tableName`, `recordId`, `actorId`, `createdAt DESC`.

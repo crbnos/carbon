@@ -155,17 +155,19 @@ async function resolveAuth(request: Request): Promise<{
           throw make429Response(rl.reset, rl.remaining);
         }
 
-        const ctx = await oauthContext(identity);
+        const ctx = await oauthContext(identity, request);
         if (ctx) return { ctx, request };
       }
 
       throw make401Response(request);
     }
 
-    // Fall back to carbon-key auth
+    // Fall back to carbon-key auth. Same helper as the v1 HTTP transport; the
+    // MCP engine gets the request with the key as its `carbon-key` header.
+    const ctx = await apiKeyContext(request, token);
     const headers = new Headers(request.headers);
     headers.set("carbon-key", token);
-    request = new Request(request, { headers });
+    return { ctx, request: new Request(request, { headers }) };
   }
 
   // No Authorization header at all — return 401 for OAuth discovery
@@ -173,8 +175,6 @@ async function resolveAuth(request: Request): Promise<{
     throw make401Response(request);
   }
 
-  // `request` here carries the carbon-key header for both entry forms
-  // (`Bearer crbn_…` was rewritten above). Same helper as the v1 HTTP transport.
   const rawKey = request.headers.get("carbon-key") ?? "";
   return {
     ctx: await apiKeyContext(request, rawKey),

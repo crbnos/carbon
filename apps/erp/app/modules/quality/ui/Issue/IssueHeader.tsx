@@ -213,8 +213,9 @@ const IssueHeader = () => {
         action={path.to.deleteIssue(id)}
         isOpen={deleteIssueModal.isOpen}
         name={routeData?.nonConformance?.nonConformanceId!}
-        text={t`Are you sure you want to delete ${routeData?.nonConformance
-          ?.nonConformanceId!}? This cannot be undone.`}
+        text={t`Are you sure you want to delete ${
+          routeData?.nonConformance?.nonConformanceId!
+        }? This cannot be undone.`}
         onCancel={() => {
           deleteIssueModal.onClose();
         }}

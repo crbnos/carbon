@@ -91,6 +91,76 @@ const isWidenedRead = (t: Tool) => {
 
 // Operations pinned exactly, and excluded from the general assertions below.
 const OVERRIDES: Record<string, Tool["permission"]> = {
+  // Operations this branch published. A job or purchase order made from a
+  // project material needs the project and the document's page.
+  projects_createJobFromMaterial: allOf(
+    ["view", "create"],
+    ["production.jobs", "Create"],
+    ["projects.projects", "View"]
+  ),
+  projects_createProjectElementJob: allOf(
+    ["view", "create"],
+    ["production.jobs", "Create"],
+    ["projects.projects", "View"]
+  ),
+  projects_createPurchaseOrderLineFromMaterial: allOf(
+    ["view", "create"],
+    ["projects.projects", "View"],
+    ["purchasing.purchaseOrders", "Create"]
+  ),
+  projects_updateTimesheetRequired: allOf(
+    EDIT,
+    ["people.employees", "Edit"],
+    ["projects.reports", "View"]
+  ),
+  settings_writeMissingJournals: allOf(
+    EDIT,
+    ["accounting.journalEntries", "Edit"],
+    ["settings.accounting", "Edit"]
+  ),
+  // Gated on "employee": `run` checks the page the data decides, and an API
+  // key is refused without it (`refuseKeyWithout`).
+  inventory_scanKanban: { module: null, actions: [] },
+  quality_createRisk: { module: null, actions: [] },
+  settings_setRecordCustomFields: { module: null, actions: [] },
+  projects_upsertIndirectPool: { module: null, actions: [] },
+  projects_upsertPlanningGroup: { module: null, actions: [] },
+  shared_getPlanningPeriods: { module: null, actions: [] },
+  // Indirect pools and rates are Accounting pages, though the tools are projects'.
+  projects_getIndirectPools: read("accounting.indirectPools"),
+  projects_getIndirectPool: read("accounting.indirectPools"),
+  projects_getIndirectRates: read("accounting.indirectRates"),
+  projects_getIndirectRateRuns: read("accounting.indirectRates"),
+  projects_deleteIndirectPool: {
+    module: "accounting",
+    page: "accounting.indirectPools",
+    actions: ["view", "create", "update", "delete"]
+  },
+  projects_upsertIndirectPoolAccount: {
+    module: "accounting",
+    page: "accounting.indirectPools",
+    actions: EDIT
+  },
+  projects_deleteIndirectPoolAccount: {
+    module: "accounting",
+    page: "accounting.indirectPools",
+    actions: EDIT
+  },
+  projects_setIndirectRate: {
+    module: "accounting",
+    page: "accounting.indirectRates",
+    actions: EDIT
+  },
+  projects_runIndirectRatePeriod: {
+    module: "accounting",
+    page: "accounting.indirectRates",
+    actions: EDIT
+  },
+  projects_runFinalTrueUp: {
+    module: "accounting",
+    page: "accounting.indirectRates",
+    actions: EDIT
+  },
   // The page registry moved these tables to a page of another module, and
   // the gate follows the page. Each is pinned so the move stays visible.
   // Parts → Parts keeps writing storageType (alsoWrittenBy).
@@ -144,72 +214,6 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     actions: ["view", "create", "update", "delete"],
     oneOf: byItemType("Full")
   },
-  // Failure modes, dispatches and schedules are Resources pages (was
-  // production; the tables' RLS was already resources).
-  production_getFailureMode: read("resources.failureModes"),
-  production_getFailureModes: read("resources.failureModes"),
-  production_getFailureModesList: read("resources.failureModes"),
-  production_createFailureMode: {
-    module: "resources", page: "resources.failureModes",
-    actions: ["view", "create"]
-  },
-  production_updateFailureMode: {
-    module: "resources", page: "resources.failureModes",
-    actions: ["view", "create", "update"]
-  },
-  production_deleteFailureMode: {
-    module: "resources", page: "resources.failureModes",
-    actions: ["view", "create", "update", "delete"]
-  },
-  production_getMaintenanceDispatch: read("resources.dispatches"),
-  production_deleteMaintenanceDispatch: {
-    module: "resources", page: "resources.dispatches",
-    actions: ["view", "create", "update", "delete"]
-  },
-  production_getMaintenanceDispatchComments: read("resources.dispatches"),
-  production_createMaintenanceDispatchComment: {
-    module: "resources", page: "resources.dispatches",
-    actions: ["view", "create"]
-  },
-  production_updateMaintenanceDispatchComment: {
-    module: "resources", page: "resources.dispatches",
-    actions: ["view", "create", "update"]
-  },
-  production_getMaintenanceDispatchEvents: read("resources.dispatches"),
-  production_createMaintenanceDispatchEvent: {
-    module: "resources", page: "resources.dispatches",
-    actions: ["view", "create"]
-  },
-  production_updateMaintenanceDispatchEvent: {
-    module: "resources", page: "resources.dispatches",
-    actions: ["view", "create", "update"]
-  },
-  production_deleteMaintenanceDispatchEvent: {
-    module: "resources", page: "resources.dispatches",
-    actions: ["view", "create", "update", "delete"]
-  },
-  production_getMaintenanceDispatchItems: read("resources.dispatches"),
-  production_createMaintenanceDispatchItem: {
-    module: "resources", page: "resources.dispatches",
-    actions: ["view", "create"]
-  },
-  production_updateMaintenanceDispatchItem: {
-    module: "resources", page: "resources.dispatches",
-    actions: ["view", "create", "update"]
-  },
-  production_getMaintenanceSchedule: read("resources.schedules"),
-  production_createMaintenanceSchedule: {
-    module: "resources", page: "resources.schedules",
-    actions: ["view", "create"]
-  },
-  production_updateMaintenanceSchedule: {
-    module: "resources", page: "resources.schedules",
-    actions: ["view", "create", "update"]
-  },
-  production_deleteMaintenanceSchedule: {
-    module: "resources", page: "resources.schedules",
-    actions: ["view", "create", "update", "delete"]
-  },
   // A kanban's job link is on Inventory → Kanbans (was production).
   production_updateKanbanJob: {
     module: "inventory", page: "inventory.kanbans",
@@ -239,6 +243,17 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   production_runMRP: {
     module: "production", page: "production.materialPlanning",
     actions: ["view", "create", "update"]
+  },
+  // Applying a purchasing action needs Edit on either page: the body checks
+  // each action's own page (a PO line needs Purchase Orders).
+  purchasing_applyPlanningActions: {
+    module: "purchasing",
+    actions: ["view", "create", "update"],
+    oneOf: {
+      pages: ["purchasing.purchaseOrders", "purchasing.materialPlanning"],
+      level: "Edit",
+      by: []
+    }
   },
   // API keys are on Settings → API Keys (was users).
   settings_getApiKeys: {
@@ -299,7 +314,8 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     ["sales.returns", "Edit"]
   ),
   // A rental unit on a shipment or receipt: Rental Agreements AND Shipments
-  // or Receipts. Selling it: Rental Agreements AND Sales Invoices.
+  // or Receipts. Selling it, or invoicing periods ahead: Rental Agreements AND
+  // Sales Invoices.
   sales_deliverRentalUnit: allOf(
     EDIT,
     ["inventory.shipments", "Create"],
@@ -311,6 +327,11 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     ["sales.rentalAgreements", "Edit"]
   ),
   sales_sellRentalUnit: allOf(
+    EDIT,
+    ["invoicing.salesInvoices", "Create"],
+    ["sales.rentalAgreements", "Edit"]
+  ),
+  sales_invoiceRentalAgreementPeriods: allOf(
     EDIT,
     ["invoicing.salesInvoices", "Create"],
     ["sales.rentalAgreements", "Edit"]

@@ -31,7 +31,6 @@ type ActionResult<T> = Exclude<ActionData<T>, { fieldErrors: unknown }>;
  * The cache needs nothing from the caller: the root middleware marks every
  * loader entry stale after the action.
  */
-// biome-ignore lint/suspicious/noExplicitAny: an untyped fetcher's data is `any`, as with useFetcher
 export function useAction<T = any>(
   options: {
     key?: string;

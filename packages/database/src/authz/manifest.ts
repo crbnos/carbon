@@ -988,6 +988,8 @@ export const manifest = {
     insert: owner("userId")
   }),
   location: company({ read: "employee" }),
+  // The scheduler's newest-read-wins marker, written over Kysely only.
+  locationScheduleRun: serviceOnly(),
   // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
   // functions, over Kysely and under the device lock: read-only through the API.
   machineStateChange: policies({ select: inCompany("companyId", "employee") }),
@@ -1210,6 +1212,14 @@ export const manifest = {
   }),
   pickMethod: company({ delete: false }),
   plan: policies({ select: authenticated }),
+  // Read-only through the API, like planningAction. MRP writes it (Kysely);
+  // the planning routes firm, edit and convert it with the service role after
+  // their own checks.
+  plannedOrder: company({
+    create: false,
+    update: false,
+    delete: false
+  }),
   // Read-only through the API. MRP writes it (Kysely) and the planning routes
   // change it with the service role after their own checks; an API write could
   // point an action's jobId / purchaseOrderLineId at another company's row

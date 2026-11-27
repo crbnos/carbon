@@ -277,7 +277,7 @@ export function createNameComparator(
     const tokens = splitWords(tool.name).split(" ");
     const tokenSet = new Set(tokens);
     const used = new Set<string>();
-    const use = (term: string) => {
+    const markUsed = (term: string) => {
       for (const token of tokens) {
         if (sameWord(token, term)) used.add(token);
       }
@@ -292,7 +292,7 @@ export function createNameComparator(
       if (present.length === 0) return false;
       covered++;
       if (present.length === aliases.length) full++;
-      present.forEach(use);
+      present.forEach(markUsed);
       return true;
     };
 
@@ -303,12 +303,12 @@ export function createNameComparator(
       if (tokenSet.has(word) || action) {
         covered++;
         full++;
-        use(action ?? word);
+        markUsed(action ?? word);
       } else if (SEARCH_ALIASES[word] && matchAliases(SEARCH_ALIASES[word]!)) {
         // counted by matchAliases
       } else if (hasStem(word)) {
         covered++;
-        use(word);
+        markUsed(word);
       }
     }
     for (const aliases of phrases) matchAliases(aliases);

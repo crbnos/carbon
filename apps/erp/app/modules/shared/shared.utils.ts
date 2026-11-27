@@ -161,3 +161,27 @@ export const supplierQuoteToPurchaseOrderPermission = {
   "purchasing.supplierQuotes": "Edit",
   "purchasing.purchaseOrders": "Create"
 } satisfies PageGate;
+
+/**
+ * The work center an operation keeps when its process changes: the current one
+ * while it runs the new process (at the picker's location, when it filters by
+ * one), else none. The picker only lists those work centers, so any other value
+ * would be saved while the field shows empty.
+ */
+export function workCenterForProcess({
+  workCenterId,
+  processWorkCenters,
+  locationId
+}: {
+  workCenterId: string | null | undefined;
+  processWorkCenters: { id: string; locationId: string | null }[];
+  locationId?: string | null;
+}): string {
+  if (!workCenterId) return "";
+  const runsProcess = processWorkCenters.some(
+    (workCenter) =>
+      workCenter.id === workCenterId &&
+      (!locationId || workCenter.locationId === locationId)
+  );
+  return runsProcess ? workCenterId : "";
+}

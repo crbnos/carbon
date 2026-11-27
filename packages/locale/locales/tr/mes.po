@@ -254,7 +254,7 @@ msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} iş emirleri"
 
 msgid "{scrapped} scrapped"
-msgstr ""
+msgstr "{scrapped} hurda"
 
 msgid "{serialNumber} is on hold"
 msgstr "{serialNumber} askıda"
@@ -706,9 +706,6 @@ msgstr "Grafik"
 
 msgid "Chart of {series}"
 msgstr "{series} grafiği"
-
-msgid "Chat"
-msgstr "Sohbet"
 
 msgid "Check your email"
 msgstr "E-postanızı kontrol edin"
@@ -1335,7 +1332,7 @@ msgid "Flag issue"
 msgstr "Sorunu işaretle"
 
 msgid "Flow chart view"
-msgstr ""
+msgstr "Akış şeması görünümü"
 
 msgid "Forgot to Clock Out?"
 msgstr "İş bitişini unutmuş musunuz?"
@@ -1728,7 +1725,7 @@ msgid "Log completed for {0}"
 msgstr "Log completed for {0}"
 
 msgid "Log completed for {trackedEntityReadableId}"
-msgstr ""
+msgstr "{trackedEntityReadableId} için kayıt tamamlandı"
 
 msgid "Log Rework"
 msgstr "Yeniden İşlem Kaydet"
@@ -2148,7 +2145,7 @@ msgid "No unit"
 msgstr "Adet yok"
 
 msgid "No unit selected"
-msgstr ""
+msgstr "Adet seçilmedi"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
@@ -2312,7 +2309,7 @@ msgid "Open sub-assembly {0}: {1}"
 msgstr "Alt derlemeyi aç {0}: {1}"
 
 msgid "Open the operation to pick the unit"
-msgstr ""
+msgstr "Adedi seçmek için operasyonu açın"
 
 msgid "Operation"
 msgstr "Operasyon"
@@ -2472,10 +2469,10 @@ msgid "Pick a style, a color and a face."
 msgstr "Bir stil, renk ve yüz seçin."
 
 msgid "Pick an open unit to issue parts."
-msgstr ""
+msgstr "Parça malzeme çıkışı yapmak için açık bir adet seçin."
 
 msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
-msgstr ""
+msgstr "Parça malzeme çıkışı yapmak için açık bir adet seçin. Bu adetteki parçalar için tüketim hâlâ geri alınabilir."
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "İş emrini seçin. Saat ekleyene kadar saatsiz görünecektir."
@@ -3069,10 +3066,10 @@ msgid "Select a serial number to continue with this operation"
 msgstr "Bu işlemle devam etmek için bir seri numarası seçin"
 
 msgid "Select a unit"
-msgstr ""
+msgstr "Bir adet seçin"
 
 msgid "Select a unit first"
-msgstr ""
+msgstr "Önce bir adet seçin"
 
 msgid "Select an issue type"
 msgstr "Bir sorun türü seçin"
@@ -3554,7 +3551,7 @@ msgid "This job has no bill rate. Ask the office to set it before the time is bi
 msgstr "Bu iş emrinin fatura oranı yoktur. Zaman faturalandırılmadan önce ofis tarafından ayarlanmasını isteyin."
 
 msgid "This job has no operations"
-msgstr ""
+msgstr "Bu iş emrinin operasyonu yok"
 
 msgid "This label does not belong to a unit in this company"
 msgstr "Bu etiket bu şirketteki bir birime ait değil"
@@ -3584,10 +3581,10 @@ msgid "This unit has used this correction its limit number of times. Scrap it or
 msgstr "Bu adet bu düzeltmeyi sınır sayısı kadar kullandı. Bunun yerine adedi fireye ayırın ya da bir kalite sorunu bildirin."
 
 msgid "This unit is complete here"
-msgstr ""
+msgstr "Bu adet burada tamamlandı"
 
 msgid "This unit is not part of this operation"
-msgstr ""
+msgstr "Bu adet bu operasyona dahil değil"
 
 msgid "This unit is on hold"
 msgstr "Bu birim askıda"
@@ -3791,7 +3788,7 @@ msgid "Until <0/>"
 msgstr "<0/> kadar"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Başlıksız"
 
 msgid "Up next"
 msgstr "Sırada"

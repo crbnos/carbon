@@ -20,7 +20,7 @@ one registration per scope, so anything a worker does (push, offline, caching) g
 into that file. Both `entry.client.tsx` files register it on every page load,
 immediately when `document.readyState` is already `complete` (the dev server
 imports the entry after `load`), else on `load`. Workers in `public/` are plain JS:
-no Biome, no typecheck, no bundling. Check them with `node --check`.
+no oxlint, no typecheck, no bundling. Check them with `node --check`.
 
 ## ERP (`apps/erp/public/service-worker.js`)
 

@@ -8,6 +8,7 @@
 // rest.carbon.ms proxy uses) or the raw `carbon-key` header. The per-operation check
 // is the service function's gate, which reads the permissions the key holds.
 // The MCP endpoint also accepts an OAuth connector token (`authenticateOAuthToken`).
+import { originOf } from "@carbon/api/service-fn.server";
 import { authorizeApiKey, hashOAuthSecret } from "@carbon/auth/auth.server";
 import {
   getCarbonServiceRole,
@@ -29,7 +30,7 @@ export async function apiKeyContext(
   request: Request,
   rawKey: string
 ): Promise<AuthedContext> {
-  const { client, companyId, companyGroupId, userId, permissions } =
+  const { client, companyId, companyGroupId, userId, permissions, origin } =
     await authorizeApiKey(rawKey, {}, request);
 
   return {
@@ -39,7 +40,8 @@ export async function apiKeyContext(
     userId,
     authKind: "api-key",
     permissions,
-    role: null
+    role: null,
+    origin
   };
 }
 
@@ -99,10 +101,10 @@ export async function findOAuthToken(
  * turned into a customer/supplier portal account, loses the connector with it),
  * gated per operation on that user's live permissions.
  */
-export async function oauthContext({
-  userId,
-  companyId
-}: OAuthIdentity): Promise<AuthedContext | null> {
+export async function oauthContext(
+  { userId, companyId }: OAuthIdentity,
+  request: Request
+): Promise<AuthedContext | null> {
   const [company, claims, client] = await Promise.all([
     getCarbonServiceRole()
       .from("company")
@@ -134,6 +136,7 @@ export async function oauthContext({
     authKind: "oauth",
     permissions: claims.permissions,
     // `admits(…, "employee")` passed only for the employee role.
-    role: "employee"
+    role: "employee",
+    origin: originOf(request)
   };
 }

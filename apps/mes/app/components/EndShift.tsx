@@ -30,7 +30,6 @@ export function EndShift() {
   // Ending every operation is destructive: open on Cancel, not on the submit.
   const cancelRef = useRef<HTMLButtonElement>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success === true) {
       surface.done();
@@ -40,6 +39,7 @@ export function EndShift() {
     if (fetcher.data?.success === false) {
       toast.error(fetcher.data?.message ?? t`Failed to end operations`);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [fetcher.data?.success]);
 
   const openModal = async () => {

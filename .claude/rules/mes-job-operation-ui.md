@@ -218,7 +218,7 @@ single job: Details (`BatchOverview view="details"`: stats, a load list only whe
 kept apart (the jobs make different items, or each job gets its own output lot)
 — each job's quantity to run with due date/customer and a total — materials grouped "To pick" / "Used automatically at completion",
 and files) and Instructions
-(`view="instructions"`: the batch's steps and process parameters); Chat is
+(`view="instructions"`: the batch's steps and process parameters); Notes is
 disabled on the batch because notes (`jobOperationNote`) belong to one job
 operation. The job scope
 opens with a banner saying the job runs in the batch — timer and completion are
@@ -850,7 +850,7 @@ while its serial or batch materials are not scanned in.
 ## Tabs
 
 `useOperation`'s `activeTab` drives a `Tabs`; exact values: `"details"`, `"model"`,
-`"procedure"`, `"chat"`. The Procedure tab has nested tabs `"attributes"` (Steps) and
+`"procedure"`, `"chat"` (labelled **Notes**, with a `Count` of the operation's notes; `useOperationNotes` in `Chat.tsx` loads them and the tab and `OperationChat` share them; `jobOperationNote.jobOperationId` has no foreign key, so realtime messages carry no operation id and the hook re-reads every note insert and keeps only this operation's). The Procedure tab has nested tabs `"attributes"` (Steps) and
 `"parameters"`. Details renders Steps, Process Parameters, Materials, Files, and (only
 when `parentIsSerial`) Serial Numbers.
 

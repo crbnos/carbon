@@ -72,6 +72,9 @@ UPDATE → `quality_update`; DELETE → `quality_delete`.
   current user and fires a `notify` job (`NotificationEvent.RiskAssignment`) when
   an assignee is set. `updateRisk` (`risks.$id.tsx`) notifies a new
   assignee. `upsertRisk` is the bare row write and is not published.
+- Both operations refuse an `itemId`, or a `sourceId` for its `source` kind, that
+  is not the company's (`riskReferenceRefusal`, `quality.service.ts`): the
+  `itemId` foreign key is on the id alone, so the database does not.
 
 ## Code map (verified)
 
@@ -89,7 +92,9 @@ UPDATE → `quality_update`; DELETE → `quality_delete`.
   `RiskType.tsx`.
 - Routes `apps/erp/app/routes/x+/quality+/`: `risks.tsx` (list, `view: "quality"`),
   `risks.new.tsx` (`createRisk`: company membership, and the table's
-  employee-only INSERT policy — **not** `create: "quality"`; not published),
+  employee-only INSERT policy — **not** `create: "quality"`; published as
+  `quality_createRisk`, where an API key needs `create: quality`
+  (`refuseKeyWithout`); the assignee must be an active employee),
   `risks.$id.tsx` (loader `view`, `updateRisk`: `update: "quality"`),
   `risks.delete.$id.tsx` (`delete: "quality"`).
 - Path helpers (`apps/erp/app/utils/path.ts`): `risks`, `risk(id)`, `newRisk`,

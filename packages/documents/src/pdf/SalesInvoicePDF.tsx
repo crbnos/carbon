@@ -21,8 +21,8 @@ import {
 import type { TaxSummaryEntry } from "../utils/tax-summary";
 import type { SalesInvoiceData, SalesInvoiceLocations } from "./blocks";
 import { buildSalesInvoiceVars, salesInvoiceBlockRegistry } from "./blocks";
-import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
+import { DocumentPage } from "./blocks/DocumentPage";
 
 interface SalesInvoicePDFProps extends PDF {
   valueCollector?: ValueCollector;

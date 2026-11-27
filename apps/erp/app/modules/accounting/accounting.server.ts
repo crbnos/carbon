@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { rowRule } from "@carbon/api/permissions";
-import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import type { Database } from "@carbon/database";
 import {
@@ -3153,16 +3153,35 @@ export const getFiscalCalendarCommitted = defineServiceFn({
 /**
  * Create fiscal year periods
  *
+ * @remarks
+ * Creates the fiscal year's monthly accounting periods that do not exist yet,
+ * from the fiscal year settings' start month, as Generate Fiscal Year does.
+ * Returns the new periods' ids; none when the year is already complete. With
+ * `startMonth`, a call is refused when the settings now start the year in
+ * another month: the dialog sends the month it showed the range from.
+ *
+ * @param fiscalYear - The fiscal year, named by the calendar year it ends in (2000 to 2200).
+ * @param startMonth - The month (1 to 12) the year is expected to start in. Left out, the settings' month is used.
+ *
  * @mcp
  */
 export const createFiscalYearPeriods = defineServiceFn({
-  input: z.looseObject({ fiscalYear: z.number() }),
+  input: z.looseObject({
+    fiscalYear: z.number().int().min(2000).max(2200),
+    startMonth: z.number().int().min(1).max(12).optional()
+  }),
   permission: { "accounting.accountingPeriods": "Create" },
   async run(ctx, input) {
-    return await service.createFiscalYearPeriods(
-      ctx.asCaller.supabase,
-      payload(ctx, input).withUser().forUpsert() as never
+    const created = unwrap(
+      ctx,
+      await service.createFiscalYearPeriods(
+        ctx.asCaller.supabase,
+        payload(ctx, input).withUser().forUpsert() as never,
+        ctx.asSystem.supabase
+      )
     );
+    if (created instanceof CarbonError) return created;
+    return { ids: created.map((period) => period.id) };
   }
 });
 

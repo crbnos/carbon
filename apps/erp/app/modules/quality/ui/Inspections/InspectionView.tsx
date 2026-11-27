@@ -292,7 +292,6 @@ const InspectionView = ({
   const hasUserResizedRef = useRef(false);
   const stackRef = useRef<HTMLDivElement>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: showDrawing re-attaches the observer when hiding and showing the drawing replaces the stack element.
   useEffect(() => {
     if (!stackRef.current) return;
     const el = stackRef.current;

@@ -388,7 +388,6 @@ export default function AuthenticatedRoute() {
   } = loaderData;
   // During render, not in an effect: the first child reads it.
   setClientCompanyId(company?.id ?? null, user?.id ?? null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
   useEffect(() => {
     shellLoadedAt = Date.now();
   }, [loaderData]);

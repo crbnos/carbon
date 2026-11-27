@@ -36,7 +36,7 @@
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "typecheck": "tsc --noEmit"
   }
 }

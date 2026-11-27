@@ -41,8 +41,8 @@ import { PeopleBoard } from "~/modules/production/ui/Schedule/People/PeopleBoard
 import { PeopleCapacity } from "~/modules/production/ui/Schedule/People/PeopleCapacity";
 import { PeopleHeader } from "~/modules/production/ui/Schedule/People/PeopleHeader";
 import { PeopleMatrix } from "~/modules/production/ui/Schedule/People/PeopleMatrix";
-import { PeopleWeekBoard } from "~/modules/production/ui/Schedule/People/PeopleWeekBoard";
 import { assignmentMatchesShift } from "~/modules/production/ui/Schedule/People/peopleShared";
+import { PeopleWeekBoard } from "~/modules/production/ui/Schedule/People/PeopleWeekBoard";
 import { TimeOffDialog } from "~/modules/production/ui/Schedule/People/TimeOffDialog";
 import { getWorkCentersByLocation } from "~/modules/resources/resources.service";
 import {
@@ -436,16 +436,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }
       const holidayDates = holidays.data;
       capacityHolidayDates = [...holidayDates];
-      const ladderWorkCenters = (workCenters.data ?? []).flatMap(
-        (workCenter) =>
-          workCenter.id
-            ? [
-                {
-                  id: workCenter.id as string,
-                  alwaysOn: (workCenter.alwaysOn ?? false) as boolean
-                }
-              ]
-            : []
+      const ladderWorkCenters = (workCenters.data ?? []).flatMap((workCenter) =>
+        workCenter.id
+          ? [
+              {
+                id: workCenter.id as string,
+                alwaysOn: (workCenter.alwaysOn ?? false) as boolean
+              }
+            ]
+          : []
       );
       const windows = withoutOutages(
         getWorkCenterWorkingWindows({

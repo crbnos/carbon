@@ -705,10 +705,11 @@ function IssueMaterialBody({
       setActiveTab("select");
     }
   };
-  // biome-ignore lint/correctness/useExhaustiveDependencies: seeds once, when the async reads land
   useEffect(() => {
     if (!hasSeededSuggestionRef.current) seedSelection();
+    // oxlint-disable-next-line react/exhaustive-deps -- seeds once, when the async reads land
   }, [
+    // oxlint-disable-next-line react/exhaustive-deps -- seeds once, when the async reads land
     seedAllocation,
     trackingType,
     selectedBatchNumbers,
@@ -2445,7 +2446,6 @@ function useSuggestedAllocation(args?: {
       ? `${args.itemId}:${args.locationId}:${args.quantity}:${args.operationId ?? ""}`
       : undefined;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on args identity
   useEffect(() => {
     if (args && key) {
       fetcher.load(
@@ -2457,6 +2457,7 @@ function useSuggestedAllocation(args?: {
         )
       );
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed on args identity
   }, [key]);
 
   return { data: fetcher.data?.data ?? [] };
@@ -2467,11 +2468,11 @@ function useSuggestedAllocation(args?: {
 function usePickedAllocation(jobMaterialId?: string) {
   const fetcher = useFetcher<{ data: SuggestedAllocationLot[]; error: null }>();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on jobMaterialId
   useEffect(() => {
     if (jobMaterialId) {
       fetcher.load(path.to.api.pickedAllocation(jobMaterialId));
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed on jobMaterialId
   }, [jobMaterialId]);
 
   return {

@@ -101,7 +101,6 @@ export function PurchaseOrderLineSummaryDates({
   return (
     // The summary row toggles open on click; picking a date must not. The
     // pills' 1px shadow ring sits outside them, so pad them in from the edge.
-    // biome-ignore lint/a11y/noStaticElementInteractions: only stops clicks from bubbling to the summary row; the date pills inside are the controls
     <div
       role="presentation"
       className="mt-2 flex max-w-full flex-wrap items-center justify-end gap-x-4 gap-y-1 self-end pr-px text-sm whitespace-nowrap"

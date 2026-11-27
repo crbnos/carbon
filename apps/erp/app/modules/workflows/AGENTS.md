@@ -39,7 +39,7 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 ```bash
 pnpm exec turbo run typecheck --filter=erp   # the app package is named `erp`, not @carbon/erp
 pnpm --filter erp exec vitest run app/modules/workflows/ui/Builder/graph.test.ts
-pnpm exec biome check apps/erp/app/modules/workflows apps/erp/app/routes/x+/workflow+ apps/erp/app/routes/x+/workflows+
+pnpm exec oxlint apps/erp/app/modules/workflows apps/erp/app/routes/x+/workflow+ apps/erp/app/routes/x+/workflows+
 pnpm --filter @carbon/checks workflow-events   # trigger-row drift after a publish/unpublish
 ```
 

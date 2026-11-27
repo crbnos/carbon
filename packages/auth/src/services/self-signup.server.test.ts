@@ -2,7 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from "vitest";
 
 const state = vi.hoisted(() => ({ edition: "enterprise" }));
 vi.mock("@carbon/auth", () => ({
@@ -28,6 +36,13 @@ function settings(body: unknown, status = 200) {
     vi.fn(async () => new Response(JSON.stringify(body), { status }))
   );
 }
+
+// The first import transforms @carbon/utils and @carbon/logger from scratch,
+// which takes seconds on a busy CI runner. Load them once here, outside every
+// test's timeout; each test still imports a fresh copy of the module.
+beforeAll(async () => {
+  await import("./self-signup.server");
+}, 30_000);
 
 beforeEach(() => {
   vi.spyOn(console, "warn").mockImplementation(() => {});

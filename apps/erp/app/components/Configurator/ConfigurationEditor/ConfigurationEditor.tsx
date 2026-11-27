@@ -233,7 +233,6 @@ function ConfiguratorBody({
     });
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success === false) {
       toastError(t`Failed to save configuration rule`, fetcher.data);
@@ -242,9 +241,9 @@ function ConfiguratorBody({
     if (fetcher.data?.success === true) {
       onClose();
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [fetcher.data]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: getCodeToSave reads code and parameters
   const runCode = useCallback(async () => {
     try {
       // The stored body, transpiled exactly as get-method transpiles it.
@@ -269,9 +268,8 @@ function ConfiguratorBody({
       );
 
       // Rules run in the same QuickJS sandbox as get-method, never in this page's engine.
-      const { runConfigurationRule } = await import(
-        "@carbon/database/configuration-rule"
-      );
+      const { runConfigurationRule } =
+        await import("@carbon/database/configuration-rule");
       const result: any = await runConfigurationRule(jsCode, parametersObj);
 
       // Verify return type
@@ -320,6 +318,7 @@ function ConfiguratorBody({
     } catch (error) {
       setOutput(`Error: ${(error as Error).message}`);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- getCodeToSave reads code and parameters
   }, [code, parameters, returnType]);
 
   const deleteDialog = useDisclosure();

@@ -188,6 +188,12 @@ export type WorkCenterSelection = {
   // slot was allocated). ISO timestamps.
   placedStart?: string;
   placedEnd?: string;
+  /**
+   * An unplaced op's placeholder end: where its work content would finish.
+   * It counts in the projected finish (`projectedFinishMs`) but is never
+   * applied as a placement, so the op keeps its conflict and null dates.
+   */
+  placeholderEnd?: string;
   conflict?: string | null;
 };
 
@@ -262,4 +268,6 @@ export type OperationWithJobInfo = {
   durationHours?: number | null;
   createdAt?: string | null;
   projectedCompletionAt?: string | null;
+  /** An Outside Processing op takes no place in a work center's queue. */
+  operationType?: OperationType | null;
 };

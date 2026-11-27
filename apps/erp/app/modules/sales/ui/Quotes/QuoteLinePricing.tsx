@@ -887,7 +887,7 @@ const QuoteLinePricing = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {/* biome-ignore lint/a11y/noStaticElementInteractions: stops clicks/keys in the custom-markup input from closing the dropdown menu; the inner NumberField and button are the controls */}
+                  {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- stops clicks/keys in the custom-markup input from closing the dropdown menu; the inner NumberField and button are the controls */}
                   <div
                     className="flex items-center gap-1 px-2 py-1.5 border-b border-border mb-1"
                     onClick={(e) => e.stopPropagation()}
@@ -995,13 +995,22 @@ const QuoteLinePricing = ({
                   label={<Trans>Lead Time</Trans>}
                   badge={
                     isEmployee && hasCalculatedCost ? (
-                      <IconButton
-                        aria-label={t`Predict lead time`}
-                        icon={<LuCalendarClock />}
-                        variant="ghost"
-                        size="sm"
-                        onClick={leadTimeModal.onOpen}
-                      />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <IconButton
+                            aria-label={t`Predict lead time`}
+                            icon={<LuCalendarClock />}
+                            variant="ghost"
+                            size="sm"
+                            onClick={leadTimeModal.onOpen}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <Trans>
+                            Predict lead time from the shop schedule
+                          </Trans>
+                        </TooltipContent>
+                      </Tooltip>
                     ) : undefined
                   }
                 />

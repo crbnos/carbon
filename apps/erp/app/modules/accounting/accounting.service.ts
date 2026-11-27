@@ -3872,25 +3872,66 @@ export async function reopenAccountingPeriod(
   }
 }
 
+/**
+ * The month (1–12) a company's fiscal year starts, for generating its
+ * periods. Read as the system, as `getReportFiscalStartMonth` reads it:
+ * `fiscalYearSettings` needs settings view, which `create: accounting` does
+ * not give, and RLS would hide the row. A failed read is returned, never
+ * read as January; a company with no row starts in January.
+ */
+export async function getFiscalStartMonth(
+  companyId: string,
+  system: SupabaseClient<Database> = getCarbonServiceRole()
+) {
+  const settings = await system
+    .from("fiscalYearSettings")
+    .select("startMonth")
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (settings.error) return { data: null, error: settings.error };
+  return {
+    data: MONTH_NUMBER[settings.data?.startMonth ?? "January"] ?? 1,
+    error: null
+  };
+}
+
+/**
+ * `startMonth` is the month the caller showed the range from: the Generate
+ * Fiscal Year dialog reads it when it opens, so a change saved after that
+ * would create periods other than the ones it showed. A different stored
+ * month is refused; left out, the stored month is used.
+ */
 export async function createFiscalYearPeriods(
   client: SupabaseClient<Database>,
-  args: { companyId: string; fiscalYear: number; userId: string }
+  args: {
+    companyId: string;
+    fiscalYear: number;
+    userId: string;
+    startMonth?: number;
+  },
+  system: SupabaseClient<Database>
 ) {
-  const settings = await getFiscalYearSettings(client, args.companyId);
-  const startMonth = settings.data?.startMonth
-    ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
-    : 1;
+  const fiscalStart = await getFiscalStartMonth(args.companyId, system);
+  if (fiscalStart.error) return { data: null, error: fiscalStart.error };
+  const startMonth = fiscalStart.data;
+  if (args.startMonth !== undefined && args.startMonth !== startMonth) {
+    return {
+      data: null,
+      error: ruleError(
+        `The fiscal year now starts in ${months[startMonth - 1]}, not ${
+          months[args.startMonth - 1]
+        }. Open Generate Fiscal Year again to see the periods it creates.`
+      )
+    };
+  }
 
-  const existing = await (client.from("accountingPeriod") as any)
+  const existing = await client
+    .from("accountingPeriod")
     .select("periodNumber")
     .eq("companyId", args.companyId)
     .eq("fiscalYear", args.fiscalYear);
-  if (existing.error) return existing;
-  const existingNumbers = new Set(
-    ((existing.data ?? []) as { periodNumber: number | null }[]).map(
-      (p) => p.periodNumber
-    )
-  );
+  if (existing.error) return { data: null, error: existing.error };
+  const existingNumbers = new Set(existing.data.map((p) => p.periodNumber));
 
   const rows = fiscalYearPeriodDates(
     args.fiscalYear,
@@ -3900,18 +3941,18 @@ export async function createFiscalYearPeriods(
     companyId: args.companyId,
     startDate: period.startDate,
     endDate: period.endDate,
-    status: "Inactive",
-    closeStatus: "Open",
+    status: "Inactive" as const,
+    closeStatus: "Open" as const,
     fiscalYear: args.fiscalYear,
     periodNumber: period.periodNumber,
     createdBy: args.userId
   }));
 
   if (rows.length === 0) {
-    return { data: [], error: null };
+    return { data: [] as { id: string }[], error: null };
   }
 
-  return (client.from("accountingPeriod") as any).insert(rows).select("id");
+  return client.from("accountingPeriod").insert(rows).select("id");
 }
 
 // A single readiness evaluator, keyed by the autoCheckKey that binds it to an
@@ -4152,23 +4193,20 @@ export async function getPeriodRunPreview(
       { periodEnd, type },
       previewRevenueRecognitionRun
     )
-      .then(
-        (result): RunPreview =>
-          result.error
-            ? {
-                count: 0,
-                amount: 0,
-                error: previewError(result.error, fallback)
-              }
-            : { ...result.data, error: null }
+      .then((result): RunPreview =>
+        result.error
+          ? {
+              count: 0,
+              amount: 0,
+              error: previewError(result.error, fallback)
+            }
+          : { ...result.data, error: null }
       )
-      .catch(
-        (error): RunPreview => ({
-          count: 0,
-          amount: 0,
-          error: previewError(error, fallback)
-        })
-      );
+      .catch((error): RunPreview => ({
+        count: 0,
+        amount: 0,
+        error: previewError(error, fallback)
+      }));
   const [revenue, lease, depreciation] = await Promise.all([
     previewRun("Revenue Recognition", "Failed to preview revenue recognition"),
     previewRun("Lease", "Failed to preview the lease run"),
@@ -4194,13 +4232,11 @@ export async function getPeriodRunPreview(
           error: null
         };
       })
-      .catch(
-        (error): RunPreview => ({
-          count: 0,
-          amount: 0,
-          error: previewError(error, "Failed to calculate depreciation")
-        })
-      )
+      .catch((error): RunPreview => ({
+        count: 0,
+        amount: 0,
+        error: previewError(error, "Failed to calculate depreciation")
+      }))
   ]);
   return { revenue, lease, depreciation };
 }
@@ -9566,8 +9602,8 @@ export async function getLeaseNetInvestment(
     // Not commenced yet on `asOf`.
     if (!agreement?.startDate || agreement.startDate > asOf) continue;
 
-    const lineSchedule = [...(scheduleByLine.get(line.id) ?? [])].sort(
-      (a, b) => (a.periodDate < b.periodDate ? -1 : 1)
+    const lineSchedule = [...(scheduleByLine.get(line.id) ?? [])].sort((a, b) =>
+      a.periodDate < b.periodDate ? -1 : 1
     );
 
     // Accumulate at full precision; round once per figure.
@@ -20497,27 +20533,25 @@ async function loadRecognitionRows(
     if (isAccountClass(account.class)) classById.set(account.id, account.class);
   }
 
-  const rows = scheduled.map(
-    (row): RecognitionRow => ({
-      scheduleId: row.scheduleId,
-      runId: row.runId,
-      runReadableId: row.runReadableId,
-      runPeriodEnd: row.runPeriodEnd,
-      runType: row.runType,
-      // Every journal takes its own month: there is no period yet.
-      postingDate: monthEndOf(row.scheduledDate),
-      type: row.type,
-      amount: Number(row.amount),
-      debitAccountId: row.debitAccountId,
-      creditAccountId: row.creditAccountId,
-      salesInvoiceLineId: row.salesInvoiceLineId,
-      rentalAgreementLineId: row.rentalAgreementLineId,
-      customerContractLineId: row.customerContractLineId,
-      rentalLeaseScheduleLineId: row.rentalLeaseScheduleLineId,
-      leaseId: row.leaseId,
-      leaseScheduleLineId: row.leaseScheduleLineId
-    })
-  );
+  const rows = scheduled.map((row): RecognitionRow => ({
+    scheduleId: row.scheduleId,
+    runId: row.runId,
+    runReadableId: row.runReadableId,
+    runPeriodEnd: row.runPeriodEnd,
+    runType: row.runType,
+    // Every journal takes its own month: there is no period yet.
+    postingDate: monthEndOf(row.scheduledDate),
+    type: row.type,
+    amount: Number(row.amount),
+    debitAccountId: row.debitAccountId,
+    creditAccountId: row.creditAccountId,
+    salesInvoiceLineId: row.salesInvoiceLineId,
+    rentalAgreementLineId: row.rentalAgreementLineId,
+    customerContractLineId: row.customerContractLineId,
+    rentalLeaseScheduleLineId: row.rentalLeaseScheduleLineId,
+    leaseId: row.leaseId,
+    leaseScheduleLineId: row.leaseScheduleLineId
+  }));
   return {
     rows,
     sources: {
@@ -22444,8 +22478,8 @@ async function recostProjectIssues(
   const byIssue = Map.groupBy(issues, (issue) => issue.id);
   const adjustments = [...byIssue.values()].flatMap((rows) => {
     const issue = rows[0]!;
-    const entries = rows.map(
-      (row) => recostByCostLedger.get(row.costLedgerId)!
+    const entries = rows.map((row) =>
+      recostByCostLedger.get(row.costLedgerId)!
     );
     const amount = round(
       entries.reduce((sum, entry) => sum + entry.delta.delta, 0)

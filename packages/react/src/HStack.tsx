@@ -26,8 +26,7 @@ const hStackVariants = cva("flex items-center", {
 });
 
 export interface HStackProps
-  extends ComponentProps<"div">,
-    VariantProps<typeof hStackVariants> {}
+  extends ComponentProps<"div">, VariantProps<typeof hStackVariants> {}
 
 const HStack = forwardRef<HTMLDivElement, HStackProps>(
   ({ className, children, spacing, ...props }, ref) => {

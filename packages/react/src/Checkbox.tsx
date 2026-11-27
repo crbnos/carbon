@@ -10,8 +10,9 @@ import { LuCheck, LuMinus } from "react-icons/lu";
 
 import { cn } from "./utils/cn";
 
-export interface CheckboxProps
-  extends ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> {
+export interface CheckboxProps extends ComponentPropsWithoutRef<
+  typeof CheckboxPrimitive.Root
+> {
   isChecked?: boolean;
   isIndeterminate?: boolean;
 }

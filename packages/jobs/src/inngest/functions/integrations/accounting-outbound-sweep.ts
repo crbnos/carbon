@@ -285,9 +285,10 @@ async function sweepCompanyProvider(args: {
     });
     scanned.journals = journalIds.length;
     refs.push(
-      ...journalIds.map(
-        (id): ReconcileRef => ({ entityType: "journalEntry", entityId: id })
-      )
+      ...journalIds.map((id): ReconcileRef => ({
+        entityType: "journalEntry",
+        entityId: id
+      }))
     );
   } else {
     skippedReasons.push("journals: posting sync disabled");
@@ -314,9 +315,10 @@ async function sweepCompanyProvider(args: {
     scanned.parkedBills = parked.length;
     const billRefIds = new Set([...billIds, ...parked]);
     refs.push(
-      ...[...billRefIds].map(
-        (id): ReconcileRef => ({ entityType: "bill", entityId: id })
-      )
+      ...[...billRefIds].map((id): ReconcileRef => ({
+        entityType: "bill",
+        entityId: id
+      }))
     );
   } else {
     skippedReasons.push("bills: push disabled");
@@ -343,9 +345,10 @@ async function sweepCompanyProvider(args: {
     });
     scanned.invoices = invoiceIds.length;
     refs.push(
-      ...invoiceIds.map(
-        (id): ReconcileRef => ({ entityType: "invoice", entityId: id })
-      )
+      ...invoiceIds.map((id): ReconcileRef => ({
+        entityType: "invoice",
+        entityId: id
+      }))
     );
   } else {
     skippedReasons.push("invoices: push disabled");
@@ -376,9 +379,10 @@ async function sweepCompanyProvider(args: {
     ];
     scanned.payments = sweptPaymentIds.length;
     refs.push(
-      ...sweptPaymentIds.map(
-        (id): ReconcileRef => ({ entityType: "payment", entityId: id })
-      )
+      ...sweptPaymentIds.map((id): ReconcileRef => ({
+        entityType: "payment",
+        entityId: id
+      }))
     );
   } else {
     skippedReasons.push("payments: provider has no outbound payment push");
@@ -416,9 +420,10 @@ async function sweepCompanyProvider(args: {
     const sweptChargeIds = [...new Set([...chargeIds, ...lateVoidedChargeIds])];
     scanned.charges = sweptChargeIds.length;
     refs.push(
-      ...sweptChargeIds.map(
-        (id): ReconcileRef => ({ entityType: "charge", entityId: id })
-      )
+      ...sweptChargeIds.map((id): ReconcileRef => ({
+        entityType: "charge",
+        entityId: id
+      }))
     );
   } else {
     skippedReasons.push("charges: charge sync is disabled");
@@ -457,9 +462,10 @@ async function sweepCompanyProvider(args: {
     ];
     scanned.reimbursements = sweptReimbursementIds.length;
     refs.push(
-      ...sweptReimbursementIds.map(
-        (id): ReconcileRef => ({ entityType: "reimbursement", entityId: id })
-      )
+      ...sweptReimbursementIds.map((id): ReconcileRef => ({
+        entityType: "reimbursement",
+        entityId: id
+      }))
     );
   } else {
     skippedReasons.push("reimbursements: reimbursement sync is disabled");
@@ -515,9 +521,10 @@ async function sweepCompanyProvider(args: {
     const sweptMemoIds = [...new Set([...memoIds, ...lateVoidedMemoIds])];
     scanned.memos += sweptMemoIds.length;
     refs.push(
-      ...sweptMemoIds.map(
-        (id): ReconcileRef => ({ entityType: side.entityType, entityId: id })
-      )
+      ...sweptMemoIds.map((id): ReconcileRef => ({
+        entityType: side.entityType,
+        entityId: id
+      }))
     );
   }
 
@@ -563,9 +570,10 @@ async function sweepCompanyProvider(args: {
     const ids = [...new Set([...unmapped, ...changed])];
     scanned.masterData += ids.length;
     refs.push(
-      ...ids.map(
-        (id): ReconcileRef => ({ entityType: master.entityType, entityId: id })
-      )
+      ...ids.map((id): ReconcileRef => ({
+        entityType: master.entityType,
+        entityId: id
+      }))
     );
   }
 

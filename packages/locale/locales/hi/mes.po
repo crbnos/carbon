@@ -254,7 +254,7 @@ msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} जॉब्स"
 
 msgid "{scrapped} scrapped"
-msgstr ""
+msgstr "{scrapped} स्क्रैप किए गए"
 
 msgid "{serialNumber} is on hold"
 msgstr "{serialNumber} होल्ड पर है"
@@ -706,9 +706,6 @@ msgstr "चार्ट"
 
 msgid "Chart of {series}"
 msgstr "{series} का चार्ट"
-
-msgid "Chat"
-msgstr "चैट"
 
 msgid "Check your email"
 msgstr "अपना ईमेल जांचें"
@@ -1335,7 +1332,7 @@ msgid "Flag issue"
 msgstr "समस्या चिह्नित करें"
 
 msgid "Flow chart view"
-msgstr ""
+msgstr "फ़्लो चार्ट दृश्य"
 
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
@@ -1728,7 +1725,7 @@ msgid "Log completed for {0}"
 msgstr "{0} के लिए पूर्ण लॉग करें"
 
 msgid "Log completed for {trackedEntityReadableId}"
-msgstr ""
+msgstr "{trackedEntityReadableId} के लिए लॉग पूर्ण हुआ"
 
 msgid "Log Rework"
 msgstr "पुनः कार्य लॉग करें"
@@ -2148,7 +2145,7 @@ msgid "No unit"
 msgstr "कोई इकाई नहीं"
 
 msgid "No unit selected"
-msgstr ""
+msgstr "कोई इकाई नहीं चुनी गई"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — ऑन-हैंड नकारात्मक हो जाएगा जब तक गिनती समेकित नहीं हो जाती।"
@@ -2312,7 +2309,7 @@ msgid "Open sub-assembly {0}: {1}"
 msgstr "सब-असेंबली {0} खोलें: {1}"
 
 msgid "Open the operation to pick the unit"
-msgstr ""
+msgstr "इकाई चुनने के लिए ऑपरेशन खोलें"
 
 msgid "Operation"
 msgstr "ऑपरेशन"
@@ -2472,10 +2469,10 @@ msgid "Pick a style, a color and a face."
 msgstr "एक शैली, एक रंग और एक फेस चुनें।"
 
 msgid "Pick an open unit to issue parts."
-msgstr ""
+msgstr "पार्ट्स निर्गत करने के लिए एक खुली इकाई चुनें।"
 
 msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
-msgstr ""
+msgstr "पार्ट्स निर्गत करने के लिए एक खुली इकाई चुनें। इस इकाई में पहले से मौजूद पार्ट्स का उपभोग अब भी रद्द किया जा सकता है।"
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "जॉब चुनें। यह घंटों के बिना दिखाई देता है जब तक आप कुछ न जोड़ दें।"
@@ -3069,10 +3066,10 @@ msgid "Select a serial number to continue with this operation"
 msgstr "इस ऑपरेशन को जारी रखने के लिए एक सीरियल नंबर चुनें"
 
 msgid "Select a unit"
-msgstr ""
+msgstr "एक इकाई चुनें"
 
 msgid "Select a unit first"
-msgstr ""
+msgstr "पहले एक इकाई चुनें"
 
 msgid "Select an issue type"
 msgstr "समस्या प्रकार चुनें"
@@ -3554,7 +3551,7 @@ msgid "This job has no bill rate. Ask the office to set it before the time is bi
 msgstr "इस जॉब की कोई बिलिंग दर नहीं है। समय बिल किए जाने से पहले कार्यालय से इसे सेट करने के लिए कहें।"
 
 msgid "This job has no operations"
-msgstr ""
+msgstr "इस जॉब में कोई ऑपरेशन नहीं है"
 
 msgid "This label does not belong to a unit in this company"
 msgstr "यह लेबल इस कंपनी की किसी इकाई का नहीं है"
@@ -3584,10 +3581,10 @@ msgid "This unit has used this correction its limit number of times. Scrap it or
 msgstr "इस इकाई पर यह सुधार अपनी सीमा तक लागू हो चुका है। इसके बजाय इसे स्क्रैप करें या गुणवत्ता समस्या दर्ज करें।"
 
 msgid "This unit is complete here"
-msgstr ""
+msgstr "यह इकाई यहाँ पूर्ण हो चुकी है"
 
 msgid "This unit is not part of this operation"
-msgstr ""
+msgstr "यह इकाई इस ऑपरेशन का हिस्सा नहीं है"
 
 msgid "This unit is on hold"
 msgstr "यह इकाई होल्ड पर है"
@@ -3791,7 +3788,7 @@ msgid "Until <0/>"
 msgstr "<0/> तक"
 
 msgid "Untitled"
-msgstr ""
+msgstr "शीर्षकहीन"
 
 msgid "Up next"
 msgstr "अगला"

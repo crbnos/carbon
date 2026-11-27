@@ -222,7 +222,6 @@ function useFormControlProvider(props: FormControlContextType) {
       "data-invalid": dataAttr(isInvalid),
       "data-readonly": dataAttr(isReadOnly)
     }),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     [htmlProps, isDisabled, isFocused, isInvalid, isReadOnly]
   );
 
@@ -257,8 +256,7 @@ function useFormControlProvider(props: FormControlContextType) {
 }
 
 export interface FormControlProps
-  extends ComponentProps<"div">,
-    FormControlContextType {}
+  extends ComponentProps<"div">, FormControlContextType {}
 
 /**
  * FormControl provides context such as
