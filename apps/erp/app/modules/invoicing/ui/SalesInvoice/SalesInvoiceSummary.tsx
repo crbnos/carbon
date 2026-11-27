@@ -28,6 +28,7 @@ import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { CustomerAvatar, DateTime, MethodIcon } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { SummaryHeaderTotal } from "~/components/SummaryHeaderTotal";
 import { SummaryLineList, SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyFormatter,
@@ -453,6 +454,14 @@ const SalesInvoiceSummary = ({
                 />
               </span>
             )}
+            <SummaryHeaderTotal
+              value={formatter.format(total)}
+              secondaryValue={
+                shouldConvertCurrency
+                  ? presentationCurrencyFormatter.format(customerTotal)
+                  : undefined
+              }
+            />
           </div>
         </HStack>
       </CardHeader>

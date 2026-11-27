@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Hidden, Input, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -33,7 +34,7 @@ import type {
   ColumnPinningState
 } from "@tanstack/react-table";
 import type { ReactNode } from "react";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
   LuCheck,
@@ -42,7 +43,6 @@ import {
   LuLayers,
   LuLock
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { SearchFilter } from "~/components";
@@ -173,17 +173,18 @@ const TableHeader = <T extends object>({
   const savedViewDisclosure = useDisclosure();
   const canSaveView = withSavedView && !!table;
 
-  const fetcher = useFetcher<typeof savedViewAction>();
-
-  useEffect(() => {
-    if (fetcher.data?.success && fetcher.data.id) {
-      setParams({ view: fetcher.data.id });
+  // Runs once the revalidation is done, so the shell already lists the view
+  // before `?view=` changes; navigating earlier aborts that revalidation.
+  const fetcher = useAction<typeof savedViewAction>({
+    onSuccess: (data) => {
+      if (!data.id) return;
+      setParams({ view: data.id });
       savedViewDisclosure.onClose();
-    } else if (fetcher.data?.success === false) {
-      toastError(fetcher.data.message, fetcher.data);
+    },
+    onError: (data) => {
+      toastError(data.message, data);
     }
-    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
-  }, [fetcher.state, fetcher.data?.success]);
+  });
 
   const { currentView, hasView } = useSavedViews();
   const viewTitle = currentView?.name ?? title;

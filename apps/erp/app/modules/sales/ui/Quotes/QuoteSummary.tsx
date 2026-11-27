@@ -36,6 +36,7 @@ import {
   MotionMoney,
   RevisionSuffix
 } from "~/components";
+import { SummaryHeaderTotal } from "~/components/SummaryHeaderTotal";
 import { SummaryLineList, SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyDecimals,
@@ -770,6 +771,15 @@ const QuoteSummary = ({
                 />
               </span>
             )}
+            <SummaryHeaderTotal
+              value={
+                <MotionMoney
+                  value={total}
+                  currency={routeData?.quote?.currencyCode ?? "USD"}
+                  decimalPlaces={currencyDecimals}
+                />
+              }
+            />
           </div>
         </HStack>
       </CardHeader>

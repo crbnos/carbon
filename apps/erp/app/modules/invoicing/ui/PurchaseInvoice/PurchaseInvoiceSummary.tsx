@@ -29,6 +29,7 @@ import { Link, useParams } from "react-router";
 import { DateTime, MethodIcon, SupplierAvatar } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { SummaryHeaderTotal } from "~/components/SummaryHeaderTotal";
 import { SummaryLineList, SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyFormatter,
@@ -495,6 +496,14 @@ const PurchaseInvoiceSummary = ({
                 />
               </span>
             )}
+            <SummaryHeaderTotal
+              value={formatter.format(total)}
+              secondaryValue={
+                shouldConvertCurrency
+                  ? presentationCurrencyFormatter.format(supplierTotal)
+                  : undefined
+              }
+            />
           </div>
         </HStack>
       </CardHeader>

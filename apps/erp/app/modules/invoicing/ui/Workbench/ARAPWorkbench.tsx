@@ -17,15 +17,9 @@ import {
   PopoverContent,
   PopoverHeader,
   PopoverTrigger,
-  Table as TableBase,
-  Tbody,
-  Td,
-  Th,
-  Thead,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Tr,
   VStack
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
@@ -50,54 +44,19 @@ import {
   daysPastDue
 } from "~/modules/invoicing/invoicing.reports";
 import { path } from "~/utils/path";
+import { CounterpartyDocuments } from "./CounterpartyDocuments";
+import type {
+  AgingRow,
+  OpenInvoiceRow,
+  OpenPaymentRow,
+  WorkbenchRow
+} from "./types";
+import { useWorkbenchSelection } from "./useWorkbenchSelection";
 
 type TieOutResult = {
   subledgerBalance: number;
   glBalance: number;
   variance: number;
-};
-
-type AgingRow = {
-  customerId?: string;
-  supplierId?: string;
-  paymentTerm?: string | null;
-  current: number;
-  bucket1: number;
-  bucket2: number;
-  bucket3: number;
-  bucket4: number;
-  unapplied: number;
-  total: number;
-};
-
-type OpenInvoiceRow = {
-  invoiceId: string;
-  invoiceNumber: string;
-  // 'Invoice' | 'Credit Memo' | 'Debit Memo' — from the open-by drill-down
-  documentType?: string;
-  transactionDate: string | null;
-  dateDue: string | null;
-  originalInBase: number;
-  currencyCode: string;
-  exchangeRate: number;
-  totalAmount: number;
-  settled: number;
-  openInCurrency: number;
-  openInBase: number;
-  customerId?: string;
-  supplierId?: string;
-  supplierReference?: string | null;
-};
-
-type OpenPaymentRow = {
-  paymentId: string;
-  paymentNumber: string;
-  paymentType: string;
-  transactionDate: string | null;
-  originalInBase: number;
-  openInBase: number;
-  customerId?: string;
-  supplierId?: string;
 };
 
 type ARAPWorkbenchProps = {
@@ -118,14 +77,6 @@ type ARAPWorkbenchProps = {
    *  nothing until posted, so they stay out of every bucket and total. */
   pending?: Record<string, number>;
 };
-
-// A counterparty (root) row carries the aging buckets; an invoice (child) row
-// carries the open amount. One union type so a single ColumnDef set can render
-// both, branching on `kind` — the heterogeneous-tree analogue of the
-// StorageUnit tree-table.
-type WorkbenchRow =
-  | ({ kind: "counterparty"; id: string; partyId: string } & AgingRow)
-  | ({ kind: "invoice"; id: string; partyId: string } & OpenInvoiceRow);
 
 // Tolerance mirrors TieOut/Dashboard: swallow floating-point dust in the
 // subledger-vs-GL comparison.
@@ -197,7 +148,6 @@ export function ARAPWorkbench({
   }, [payments, partyIdOf]);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -207,36 +157,6 @@ export function ARAPWorkbench({
       return next;
     });
   }, []);
-
-  // Selecting a counterparty cascades to all its open invoices; selecting
-  // individual invoices is also allowed. Only invoices are selectable — a
-  // payment settles invoices, so the counterparty checkbox is purely a
-  // select-all-its-children affordance.
-  const toggleInvoice = useCallback((invoiceId: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(invoiceId)) next.delete(invoiceId);
-      else next.add(invoiceId);
-      return next;
-    });
-  }, []);
-
-  const toggleCounterparty = useCallback(
-    (partyId: string) => {
-      const kids = childrenByParty[partyId] ?? [];
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        const allSelected =
-          kids.length > 0 && kids.every((k) => next.has(k.invoiceId));
-        for (const k of kids) {
-          if (allSelected) next.delete(k.invoiceId);
-          else next.add(k.invoiceId);
-        }
-        return next;
-      });
-    },
-    [childrenByParty]
-  );
 
   // Flatten counterparties (roots) and, for expanded ones, their invoices.
   const displayRows = useMemo<WorkbenchRow[]>(() => {
@@ -290,30 +210,20 @@ export function ARAPWorkbench({
     side
   ]);
 
-  // The selected invoices, and whether they can become one payment. A payment
-  // has one counterparty and one currency, so the action is enabled only when
-  // the selection is homogeneous on both.
-  const { selectedInvoices, sameParty, payHref } = useMemo(() => {
-    const selectedInvoices = open.filter((inv) =>
-      selectedIds.has(inv.invoiceId)
-    );
-    const selectedPartyIds = new Set(selectedInvoices.map(partyIdOf));
-    const selectedCurrencies = new Set(
-      selectedInvoices.map((inv) => inv.currencyCode)
-    );
-    const sameParty = selectedPartyIds.size === 1;
-    const sameCurrency = selectedCurrencies.size === 1;
-    const partyId = [...selectedPartyIds][0];
-    let payHref: string | null = null;
-    if (sameParty && sameCurrency && partyId) {
-      const params = new URLSearchParams();
-      params.set(side === "ar" ? "customerId" : "supplierId", partyId);
-      for (const inv of selectedInvoices)
-        params.append("invoiceId", inv.invoiceId);
-      payHref = `${path.to.paymentNew}?${params.toString()}`;
-    }
-    return { selectedInvoices, sameParty, payHref };
-  }, [open, selectedIds, partyIdOf, side]);
+  const {
+    selectedIds,
+    selectTreeRow,
+    selectDocument,
+    selectedInvoices,
+    sameParty,
+    payHref
+  } = useWorkbenchSelection({
+    side,
+    open,
+    childrenByParty,
+    displayRows,
+    partyIdOf
+  });
 
   const exportParams = new URLSearchParams({
     asOfDate,
@@ -332,138 +242,26 @@ export function ARAPWorkbench({
   );
 
   const renderExpandedRow = useCallback(
-    (row: WorkbenchRow) => {
-      if (row.kind !== "counterparty") return null;
-      const documents = childrenByParty[row.partyId] ?? [];
-      const partyPayments = paymentsByParty[row.partyId] ?? [];
-      return (
-        <div className="p-3">
-          <TableBase className="min-w-[900px]">
-            <Thead>
-              <Tr>
-                <Th className="w-10 px-2" />
-                <Th>{t`Document`}</Th>
-                <Th>{t`Transaction Date`}</Th>
-                <Th>{t`Type`}</Th>
-                {side === "ap" ? <Th>{t`Supplier Invoice Number`}</Th> : null}
-                <Th>{t`Due Date`}</Th>
-                <Th>{t`Original Amount`}</Th>
-                <Th>{t`Days Past Due`}</Th>
-                <Th>{t`Open Amount`}</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {documents.map((document) => {
-                const documentHref =
-                  document.documentType === "Invoice"
-                    ? side === "ar"
-                      ? path.to.salesInvoiceDetails(document.invoiceId)
-                      : path.to.purchaseInvoiceDetails(document.invoiceId)
-                    : path.to.memo(document.invoiceId);
-                const documentType =
-                  document.documentType === "Invoice"
-                    ? t`Invoice`
-                    : document.documentType === "Credit Memo"
-                      ? t`Credit Memo`
-                      : document.documentType === "Debit Memo"
-                        ? t`Debit Memo`
-                        : document.documentType;
-                return (
-                  <Tr key={document.invoiceId}>
-                    <Td className="px-2">
-                      <IndeterminateCheckbox
-                        checked={selectedIds.has(document.invoiceId)}
-                        indeterminate={false}
-                        onChange={() => toggleInvoice(document.invoiceId)}
-                      />
-                    </Td>
-                    <Td>
-                      <Link to={documentHref} className="hover:underline">
-                        {document.invoiceNumber}
-                      </Link>
-                    </Td>
-                    <Td>
-                      {document.transactionDate ? (
-                        <DateTime
-                          value={document.transactionDate}
-                          variant="date"
-                        />
-                      ) : (
-                        "—"
-                      )}
-                    </Td>
-                    <Td>{documentType}</Td>
-                    {side === "ap" ? (
-                      <Td>{document.supplierReference ?? "—"}</Td>
-                    ) : null}
-                    <Td>
-                      {document.dateDue ? (
-                        <DateTime value={document.dateDue} variant="date" />
-                      ) : (
-                        "—"
-                      )}
-                    </Td>
-                    <Td className="tabular-nums">
-                      {money(document.originalInBase)}
-                    </Td>
-                    <Td className="tabular-nums">
-                      {daysPastDue(asOfDate, document.dateDue) ?? "—"}
-                    </Td>
-                    <Td className="tabular-nums">
-                      {money(document.openInBase)}
-                    </Td>
-                  </Tr>
-                );
-              })}
-              {partyPayments.map((payment) => (
-                <Tr key={payment.paymentId}>
-                  <Td />
-                  <Td>
-                    <Link
-                      to={path.to.payment(payment.paymentId)}
-                      className="hover:underline"
-                    >
-                      {payment.paymentNumber}
-                    </Link>
-                  </Td>
-                  <Td>
-                    {payment.transactionDate ? (
-                      <DateTime
-                        value={payment.transactionDate}
-                        variant="date"
-                      />
-                    ) : (
-                      "—"
-                    )}
-                  </Td>
-                  <Td>
-                    {payment.paymentType === "Receipt"
-                      ? t`Receipt`
-                      : t`Disbursement`}
-                  </Td>
-                  {side === "ap" ? <Td>—</Td> : null}
-                  <Td>—</Td>
-                  <Td className="tabular-nums">
-                    {money(payment.originalInBase)}
-                  </Td>
-                  <Td>—</Td>
-                  <Td className="tabular-nums">{money(payment.openInBase)}</Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </TableBase>
-        </div>
-      );
-    },
+    (row: WorkbenchRow) =>
+      row.kind === "counterparty" ? (
+        <CounterpartyDocuments
+          side={side}
+          asOfDate={asOfDate}
+          documents={childrenByParty[row.partyId] ?? []}
+          payments={paymentsByParty[row.partyId] ?? []}
+          selectedIds={selectedIds}
+          money={money}
+          onSelectDocument={selectDocument}
+        />
+      ) : null,
     [
       asOfDate,
       childrenByParty,
       money,
       paymentsByParty,
+      selectDocument,
       selectedIds,
-      side,
-      t,
-      toggleInvoice
+      side
     ]
   );
 
@@ -486,7 +284,9 @@ export function ARAPWorkbench({
               <IndeterminateCheckbox
                 checked={checked}
                 indeterminate={indeterminate}
-                onChange={() => toggleCounterparty(r.partyId)}
+                onChange={(nextChecked, shiftKey) =>
+                  selectTreeRow(r, nextChecked, shiftKey)
+                }
               />
             );
           }
@@ -494,7 +294,9 @@ export function ARAPWorkbench({
             <IndeterminateCheckbox
               checked={selectedIds.has(r.invoiceId)}
               indeterminate={false}
-              onChange={() => toggleInvoice(r.invoiceId)}
+              onChange={(nextChecked, shiftKey) =>
+                selectTreeRow(r, nextChecked, shiftKey)
+              }
             />
           );
         }
@@ -735,8 +537,7 @@ export function ARAPWorkbench({
     pending,
     pendingByParty,
     toggleExpand,
-    toggleCounterparty,
-    toggleInvoice
+    selectTreeRow
   ]);
 
   const hasVariance = result

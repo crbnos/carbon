@@ -495,7 +495,11 @@ export const savedViewValidator = z.object({
 export const savedViewStateValidator = z.object({
   columnOrder: z.array(z.string()),
   columnPinning: z.any(),
-  columnVisibility: z.record(z.string(), z.boolean()),
+  // Views saved before the fix hold a user id for createdBy/updatedBy; the table shows those columns.
+  columnVisibility: z.record(
+    z.string(),
+    z.unknown().transform((visible) => visible !== false)
+  ),
   filters: z.array(z.string()).optional(),
   sorts: z.array(z.string()).optional()
 });

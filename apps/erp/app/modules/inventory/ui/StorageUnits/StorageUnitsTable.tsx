@@ -46,6 +46,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useStorageTypes } from "~/components/Form/StorageTypes";
 import { IndeterminateCheckbox } from "~/components/Table/components";
+import { useRangeAnchor } from "~/components/Table/rangeSelection";
 import { usePermissions, usePrinting, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -142,6 +143,7 @@ const StorageUnitsTable = memo(
     );
     const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const { rangeTo, clearAnchor } = useRangeAnchor();
 
     // Reset tree state only when the loader payload MEANINGFULLY changes
     // (location switch, search, pagination). Keying on object identity would
@@ -169,6 +171,7 @@ const StorageUnitsTable = memo(
         setExpandedIds(new Set(initialExpanded));
         setLoadingIds(new Set());
         setSelectedIds(new Set());
+        clearAnchor();
         return;
       }
       if (prevData.current === data) return;
@@ -214,7 +217,13 @@ const StorageUnitsTable = memo(
       return () => {
         stale = true;
       };
-    }, [dataSignature, data, initialChildrenCache, initialExpanded]);
+    }, [
+      dataSignature,
+      data,
+      initialChildrenCache,
+      initialExpanded,
+      clearAnchor
+    ]);
 
     const collectDescendantIds = useCallback((id: string): string[] => {
       const cache = childrenCacheRef.current;
@@ -318,7 +327,35 @@ const StorageUnitsTable = memo(
           visible.length > 0 && visible.every((id) => prev.has(id));
         return everyVisibleSelected ? new Set() : new Set(visible);
       });
-    }, [displayRows]);
+      clearAnchor();
+    }, [displayRows, clearAnchor]);
+
+    // Shift-click sets every visible row from the anchor to this one (and
+    // their loaded descendants) to `checked`, as the shared Table does.
+    const selectRow = useCallback(
+      (id: string, checked: boolean, shiftKey: boolean) => {
+        const range = rangeTo(
+          displayRows.map((r) => r.id),
+          id,
+          shiftKey
+        );
+        if (!range) {
+          toggleSelected(id);
+          return;
+        }
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          for (const rangeId of range) {
+            for (const rowId of [rangeId, ...collectDescendantIds(rangeId)]) {
+              if (checked) next.add(rowId);
+              else next.delete(rowId);
+            }
+          }
+          return next;
+        });
+      },
+      [displayRows, collectDescendantIds, toggleSelected, rangeTo]
+    );
 
     const columns = useMemo<ColumnDef<StorageUnit>[]>(() => {
       const renderStorageTypes = (ids: string[]) => (
@@ -428,7 +465,9 @@ const StorageUnitsTable = memo(
               <IndeterminateCheckbox
                 checked={isChecked}
                 indeterminate={isIndeterminate}
-                onChange={() => toggleSelected(id)}
+                onChange={(checked, shiftKey) =>
+                  selectRow(id, checked, shiftKey)
+                }
               />
             );
           }
@@ -544,7 +583,7 @@ const StorageUnitsTable = memo(
       allSelected,
       someSelected,
       toggleAllSelected,
-      toggleSelected,
+      selectRow,
       collectDescendantIds
     ]);
 

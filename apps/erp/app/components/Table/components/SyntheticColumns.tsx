@@ -6,6 +6,7 @@ import { ActionMenu, cn } from "@carbon/react";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import type { MutableRefObject } from "react";
 import { LuChevronRight } from "react-icons/lu";
+import { rangeBetween } from "../rangeSelection";
 import IndeterminateCheckbox from "./IndeterminateCheckbox";
 
 // The columns the Table adds itself: expand, select and actions.
@@ -68,20 +69,18 @@ export function getRowSelectionColumn<T>(
             checked: row.getIsSelected(),
             indeterminate: row.getIsSomeSelected(),
             onChange: (checked: boolean, shiftKey: boolean) => {
-              const rows = table.getRowModel().rows;
-              const clickedIndex = rows.findIndex((r) => r.id === row.id);
-              const anchorIndex =
-                anchorRef.current == null
-                  ? -1
-                  : rows.findIndex((r) => r.id === anchorRef.current);
+              const range = shiftKey
+                ? rangeBetween(
+                    table.getRowModel().rows.map((r) => r.id),
+                    anchorRef.current,
+                    row.id
+                  )
+                : null;
 
-              if (shiftKey && anchorIndex !== -1 && clickedIndex !== -1) {
-                const start = Math.min(anchorIndex, clickedIndex);
-                const end = Math.max(anchorIndex, clickedIndex);
+              if (range) {
                 table.setRowSelection((prev) => {
                   const next = { ...prev };
-                  for (let i = start; i <= end; i++) {
-                    const id = rows[i].id;
+                  for (const id of range) {
                     if (checked) next[id] = true;
                     else delete next[id];
                   }

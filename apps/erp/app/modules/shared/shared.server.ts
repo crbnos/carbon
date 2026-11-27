@@ -1313,9 +1313,13 @@ export const upsertSavedView = defineServiceFn({
       await service.upsertSavedView(
         ctx.asCaller.supabase,
         // The view keeps its creator: an update stamps only who changed it.
-        payload(ctx, input)
-          .withUser()
-          .for(input.id ? "update" : "create") as never
+        {
+          ...payload(ctx, input)
+            .withUser()
+            .for(input.id ? "update" : "create"),
+          // Column ids, not audit fields: payload would stamp the createdBy/updatedBy columns.
+          columnVisibility: input.columnVisibility
+        } as never
       )
     );
   }

@@ -37,6 +37,7 @@ import {
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useShowRecordPanel } from "~/components/Layout/Panels";
+import { SummaryHeaderTotal } from "~/components/SummaryHeaderTotal";
 import { SummaryLineList, SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyFormatter,
@@ -604,6 +605,14 @@ const PurchaseOrderSummary = ({
                 />
               </span>
             )}
+            <SummaryHeaderTotal
+              value={formatter.format(total)}
+              secondaryValue={
+                shouldConvertCurrency
+                  ? presentationCurrencyFormatter.format(supplierTotal)
+                  : undefined
+              }
+            />
           </div>
         </HStack>
       </CardHeader>
