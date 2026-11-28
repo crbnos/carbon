@@ -55,10 +55,15 @@ export function useCollapsibleSidebar() {
   return context;
 }
 
-function CollapsibleSidebarProvider({
-  hasSidebar,
-  children
-}: PropsWithChildren<{ hasSidebar: boolean }>) {
+/**
+ * The module sidebar's state for the app shell. It wraps the top bar as well
+ * as the page, so the top bar can show the toggle on every page that has a
+ * sidebar, not only on pages with a table. A board's sidebar has its own
+ * button (`BoardSidebarToggle`), so the trigger stays off there.
+ */
+export function CollapsibleSidebarProvider({ children }: PropsWithChildren) {
+  const { desktop, isBoard } = useResolvedModuleSidebar();
+  const hasSidebar = Boolean(desktop) && !isBoard;
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
 
@@ -79,20 +84,30 @@ export const CollapsibleSidebarTrigger = forwardRef<
   HTMLButtonElement,
   Omit<ComponentProps<typeof IconButton>, "aria-label" | "icon">
 >(({ className, ...props }, ref) => {
+  const { t } = useLingui();
   const { isOpen, onToggle, hasSidebar } = useCollapsibleSidebar();
 
   if (!hasSidebar) return null;
 
+  // The same words and tooltip as `BoardSidebarToggle`, which takes this
+  // slot in the top bar on boards.
+  const label = isOpen ? t`Hide menu` : t`Show menu`;
   return (
-    <IconButton
-      variant="ghost"
-      ref={ref}
-      onClick={onToggle}
-      {...props}
-      aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-      icon={<LuPanelLeft />}
-      className={cn("-ml-1", className)}
-    />
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <IconButton
+          variant="ghost"
+          ref={ref}
+          onClick={onToggle}
+          {...props}
+          aria-label={label}
+          aria-pressed={isOpen}
+          icon={<LuPanelLeft />}
+          className={cn("-ml-1", className)}
+        />
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
   );
 });
 
@@ -210,23 +225,30 @@ export function BoardSidebarToggle() {
   const { t } = useLingui();
   const { isBoard } = useResolvedModuleSidebar();
   const shown = useBoardSidebarShown();
+  const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
 
   if (!isBoard) return null;
 
-  const label = shown ? t`Hide menu` : t`Show menu`;
+  // A sidebar collapsed on a list page sits at zero width on a board, so it
+  // counts as hidden: one click opens it.
+  const visible = shown && isSidebarOpen;
+  const label = visible ? t`Hide menu` : t`Show menu`;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <IconButton
-          variant={shown ? "active" : "ghost"}
+          variant={visible ? "active" : "ghost"}
           aria-label={label}
-          aria-pressed={shown}
+          aria-pressed={visible}
           icon={<LuPanelLeft />}
           onClick={() => {
-            // A sidebar collapsed on a list page would open at zero width.
-            if (!shown) setSidebarOpen(true);
-            setBoardSidebarShown(!shown);
+            if (visible) {
+              setBoardSidebarShown(false);
+              return;
+            }
+            setSidebarOpen(true);
+            setBoardSidebarShown(true);
           }}
         />
       </TooltipTrigger>
@@ -240,30 +262,29 @@ export function BoardSidebarToggle() {
  * module layout names its sub-navigation on its route handle (`sidebar`) and
  * the shell renders it here, so the sidebar's frame, width and collapsed
  * state stay put from module to module and only its links change. Pages
- * outside a module (detail pages) have none and get the full width.
+ * outside a module (detail pages) have none and get the full width. It
+ * renders inside `CollapsibleSidebarProvider`.
  */
 export function ModuleSidebarLayout({ children }: PropsWithChildren) {
   const Sidebar = useModuleSidebar();
 
   return (
-    <CollapsibleSidebarProvider hasSidebar={Boolean(Sidebar)}>
-      {/* `contents` when there is no sidebar: the page lays out exactly as if
-          this wrapper were not here, and stays in the same place in the tree. */}
-      <div
-        className={
-          Sidebar
-            ? "grid grid-cols-[auto_minmax(0,1fr)] w-full h-full"
-            : "contents"
-        }
-      >
-        {Sidebar ? (
-          <CollapsibleSidebar>
-            <Sidebar />
-          </CollapsibleSidebar>
-        ) : null}
-        {children}
-      </div>
-    </CollapsibleSidebarProvider>
+    // `contents` when there is no sidebar: the page lays out exactly as if
+    // this wrapper were not here, and stays in the same place in the tree.
+    <div
+      className={
+        Sidebar
+          ? "grid grid-cols-[auto_minmax(0,1fr)] w-full h-full"
+          : "contents"
+      }
+    >
+      {Sidebar ? (
+        <CollapsibleSidebar>
+          <Sidebar />
+        </CollapsibleSidebar>
+      ) : null}
+      {children}
+    </div>
   );
 }
 
