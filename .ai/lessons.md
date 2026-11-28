@@ -3726,6 +3726,16 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Applies to:** `packages/database/src/datasets/` (wipe, verify), migrations that add CHECKs over nullable FK columns.
 
+## The drift check only proves the wipe for rows a dataset seeds
+
+**Context:** Re-applying demo data failed once an item had two price overrides: the wipe nulls `customerId` and `customerTypeId`, and `customerItemPriceOverride_all_item_uq` allows one all-customers override per item.
+
+**Problem:** `pnpm db:check:datasets` re-applies each dataset over itself, but each dataset seeded one override per item, so the wipe never met two. The first write-up said the check could not catch it.
+
+**Rule:** When the wipe breaks on a row shape the app writes, add that shape to a dataset (satellite now seeds two overrides on SAT-1000), so the re-apply in the drift check covers it. For a shape a dataset cannot hold, add a case to `wipe-unique-tables.test.ts`.
+
+**Applies to:** `packages/database/src/datasets/` (wipe, data), migrations that add a unique index over a nullable FK.
+
 ## A migration on main can carry a timestamp ahead of UTC
 
 **Context:** `supabase migration new` stamps a migration with the current UTC time. A migration merged to `main` (`20261009141827_link-custom-field-type.sql`) carried a time about 2.5 hours ahead of UTC, likely from a local clock.

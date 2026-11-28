@@ -837,6 +837,14 @@ export const PRICE_OVERRIDES: PriceOverrideSpec[] = [
       { quantity: 1, overridePrice: 1750000 },
       { quantity: 3, overridePrice: 1690000 }
     ]
+  },
+  // A second override on the same item: re-applying the dataset nulls both
+  // customers, and the drift check then proves the wipe still clears them.
+  {
+    item: "SAT-1000",
+    customer: "PolarView Earth",
+    notes: "Single-bus imaging mission pricing per the 2027 launch slot.",
+    breaks: [{ quantity: 1, overridePrice: 1780000 }]
   }
 ];
 

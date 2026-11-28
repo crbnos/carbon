@@ -118,7 +118,15 @@ around its generic FK-null + topological delete, all inside the apply transactio
    Relief schedule row OR a project close journal; `projectStockTransfer`:
    two different project owners, after `projectBorrow`, which references its lines). Missing one fails every
    re-apply with "new row … violates check constraint", while a first apply onto an
-   empty company still works.
+   empty company still works. A table whose unique index counts a NULL foreign key as a
+   value (a partial index on `fk IS NULL`, `COALESCE(fk, '')`, or `NULLS NOT DISTINCT`) goes
+   in `UNIQUE_INDEX_TABLES`, seeded or not (today `customerItemPriceOverride`: one
+   all-customers override per item, so an item with two overrides of any scope collides once
+   `customerId` and `customerTypeId` are nulled; `peopleAssignment` / `peopleAbsence`: keyed
+   on `COALESCE("shiftId", '')`; `jobMaterialScrap`: `NULLS NOT DISTINCT` over
+   `trackedEntityId`). Satellite seeds two overrides on SAT-1000, so the drift check catches
+   the first; the others only the app writes, and `wipe-unique-tables.test.ts` covers them
+   against the local database.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier
    type groups are removed** — the partner interceptors mint one `group` per partner and
    type, and `group` is preserved, so without this every re-apply left the previous
