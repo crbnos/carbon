@@ -7061,6 +7061,9 @@ msgstr "状態を変更"
 msgid "Change status"
 msgstr "ステータスを変更"
 
+msgid "Change status of {taskName}"
+msgstr "{taskName}のステータスを変更"
+
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "品目タイプを変更します（例：部品、材料、工具など）"
 
@@ -23478,6 +23481,9 @@ msgstr "ピン"
 msgid "Pin {0}"
 msgstr "{0}をピン留"
 
+msgid "Pin {label}"
+msgstr "{label}をピン留め"
+
 msgid "Pin or unpin"
 msgstr "ピン留めまたはピン留め解除"
 
@@ -26172,6 +26178,9 @@ msgstr "{itemName}の順序を変更"
 
 msgid "Reorder {itemName} in {listLabel}"
 msgstr "{listLabel}内で{itemName}の順序を変更"
+
+msgid "Reorder {label}"
+msgstr "{label}の順序を変更"
 
 msgid "Reorder Group"
 msgstr "グループを並べ替え"
@@ -33774,9 +33783,6 @@ msgstr "切り替え"
 msgid "Toggle break active"
 msgstr "ブレークアクティブを切り替える"
 
-msgid "Toggle column"
-msgstr "列を切り替える"
-
 msgid "Toggle dark/light mode"
 msgstr "ダーク/ライトモードを切り替え"
 
@@ -34655,6 +34661,9 @@ msgstr "ピック解除 {0}"
 #. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "{0}をピン留め解除"
+
+msgid "Unpin {label}"
+msgstr "{label}をピン留め解除"
 
 msgid "Unposted Documents"
 msgstr "未転記のドキュメント"

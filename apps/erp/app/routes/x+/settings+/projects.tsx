@@ -339,6 +339,7 @@ export default function ProjectsSettingsRoute() {
                 <Trans>Require approval of timesheets</Trans>
               </span>
               <Switch
+                aria-label={t`Require approval of timesheets`}
                 checked={companySettings.timesheetApprovalRequired ?? false}
                 onCheckedChange={(checked) =>
                   toggle("timesheetApproval", checked)
@@ -367,6 +368,7 @@ export default function ProjectsSettingsRoute() {
                 <Trans>Require an element on every project charge</Trans>
               </span>
               <Switch
+                aria-label={t`Require an element on every project charge`}
                 checked={companySettings.requireProjectElement ?? false}
                 onCheckedChange={(checked) => toggle("requireElement", checked)}
                 disabled={isToggling}
@@ -394,6 +396,7 @@ export default function ProjectsSettingsRoute() {
                 <Trans>Use DCAA controls</Trans>
               </span>
               <Switch
+                aria-label={t`Use DCAA controls`}
                 checked={isDcaa}
                 onCheckedChange={toggleGovernmentContracting}
                 disabled={isToggling}

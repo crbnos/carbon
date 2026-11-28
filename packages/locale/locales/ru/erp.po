@@ -7061,6 +7061,9 @@ msgstr "Изменить состояние"
 msgid "Change status"
 msgstr "Изменить статус"
 
+msgid "Change status of {taskName}"
+msgstr "Изменить статус: {taskName}"
+
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Измените тип номенклатуры (например, Деталь, Материал, Инструмент и т. д.)"
 
@@ -23478,6 +23481,9 @@ msgstr "Закрепить"
 msgid "Pin {0}"
 msgstr "Закрепить {0}"
 
+msgid "Pin {label}"
+msgstr "Закрепить {label}"
+
 msgid "Pin or unpin"
 msgstr "Прикрепить или открепить"
 
@@ -26172,6 +26178,9 @@ msgstr "Изменить порядок: {itemName}"
 
 msgid "Reorder {itemName} in {listLabel}"
 msgstr "Изменить порядок: {itemName} в {listLabel}"
+
+msgid "Reorder {label}"
+msgstr "Изменить порядок: {label}"
 
 msgid "Reorder Group"
 msgstr "Переупорядочить группу"
@@ -33774,9 +33783,6 @@ msgstr "Переключить"
 msgid "Toggle break active"
 msgstr "Переключить активность разбиения"
 
-msgid "Toggle column"
-msgstr "Переключить столбец"
-
 msgid "Toggle dark/light mode"
 msgstr "Переключить тёмный/светлый режим"
 
@@ -34655,6 +34661,9 @@ msgstr "Отменить выбор {0}"
 #. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "Открепить {0}"
+
+msgid "Unpin {label}"
+msgstr "Открепить {label}"
 
 msgid "Unposted Documents"
 msgstr "Неопубликованные документы"

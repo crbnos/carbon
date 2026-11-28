@@ -7061,6 +7061,9 @@ msgstr "Zmień stan"
 msgid "Change status"
 msgstr "Zmień status"
 
+msgid "Change status of {taskName}"
+msgstr "Zmień status: {taskName}"
+
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Zmień typ artykułu (np. Część, Materiał, Narzędzie, itp.)"
 
@@ -23478,6 +23481,9 @@ msgstr "Przypnij"
 msgid "Pin {0}"
 msgstr "Przypnij {0}"
 
+msgid "Pin {label}"
+msgstr "Przypnij {label}"
+
 msgid "Pin or unpin"
 msgstr "Przypnij lub odepnij"
 
@@ -26172,6 +26178,9 @@ msgstr "Zmień kolejność: {itemName}"
 
 msgid "Reorder {itemName} in {listLabel}"
 msgstr "Zmień kolejność: {itemName} w {listLabel}"
+
+msgid "Reorder {label}"
+msgstr "Zmień kolejność: {label}"
 
 msgid "Reorder Group"
 msgstr "Zmień kolejność grupy"
@@ -33774,9 +33783,6 @@ msgstr "Przełącz"
 msgid "Toggle break active"
 msgstr "Przełącz aktywność podziału"
 
-msgid "Toggle column"
-msgstr "Przełącz kolumnę"
-
 msgid "Toggle dark/light mode"
 msgstr "Przełącz tryb ciemny/jasny"
 
@@ -34655,6 +34661,9 @@ msgstr "Cofnij {0}"
 #. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "Odepnij {0}"
+
+msgid "Unpin {label}"
+msgstr "Odepnij {label}"
 
 msgid "Unposted Documents"
 msgstr "Nieopublikowane dokumenty"

@@ -7061,6 +7061,9 @@ msgstr "Status ändern"
 msgid "Change status"
 msgstr "Status ändern"
 
+msgid "Change status of {taskName}"
+msgstr "Status von {taskName} ändern"
+
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Ändern Sie die Artikelart (z. B. Teil, Werkstoff, Werkzeug usw.)"
 
@@ -23478,6 +23481,9 @@ msgstr "Anheften"
 msgid "Pin {0}"
 msgstr "Anheften {0}"
 
+msgid "Pin {label}"
+msgstr "Anheften {label}"
+
 msgid "Pin or unpin"
 msgstr "Anheften oder Abheften"
 
@@ -26172,6 +26178,9 @@ msgstr "{itemName} neu anordnen"
 
 msgid "Reorder {itemName} in {listLabel}"
 msgstr "{itemName} in {listLabel} neu anordnen"
+
+msgid "Reorder {label}"
+msgstr "{label} neu anordnen"
 
 msgid "Reorder Group"
 msgstr "Gruppe neu anordnen"
@@ -33774,9 +33783,6 @@ msgstr "Umschalten"
 msgid "Toggle break active"
 msgstr "Pause umschalten"
 
-msgid "Toggle column"
-msgstr "Spalte umschalten"
-
 msgid "Toggle dark/light mode"
 msgstr "Dunklen/hellen Modus umschalten"
 
@@ -34655,6 +34661,9 @@ msgstr "Entnahme rückgängig machen {0}"
 #. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "Abheften {0}"
+
+msgid "Unpin {label}"
+msgstr "Abheften {label}"
 
 msgid "Unposted Documents"
 msgstr "Unveröffentlichte Dokumente"

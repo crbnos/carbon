@@ -7061,6 +7061,9 @@ msgstr "更改状态"
 msgid "Change status"
 msgstr "更改状态"
 
+msgid "Change status of {taskName}"
+msgstr "更改{taskName}的状态"
+
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "更改物料类型（例如零件、原材料、刀具等）"
 
@@ -23478,6 +23481,9 @@ msgstr "固定"
 msgid "Pin {0}"
 msgstr "固定{0}"
 
+msgid "Pin {label}"
+msgstr "固定{label}"
+
 msgid "Pin or unpin"
 msgstr "固定或取消固定"
 
@@ -26172,6 +26178,9 @@ msgstr "重新排序{itemName}"
 
 msgid "Reorder {itemName} in {listLabel}"
 msgstr "在{listLabel}中重新排序{itemName}"
+
+msgid "Reorder {label}"
+msgstr "重新排序{label}"
 
 msgid "Reorder Group"
 msgstr "重新排序组"
@@ -33774,9 +33783,6 @@ msgstr "切换"
 msgid "Toggle break active"
 msgstr "切换休息启用"
 
-msgid "Toggle column"
-msgstr "切换列"
-
 msgid "Toggle dark/light mode"
 msgstr "切换深色/浅色模式"
 
@@ -34655,6 +34661,9 @@ msgstr "取消拣选 {0}"
 #. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "取消固定{0}"
+
+msgid "Unpin {label}"
+msgstr "取消固定{label}"
 
 msgid "Unposted Documents"
 msgstr "未过账文档"

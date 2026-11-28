@@ -7061,6 +7061,9 @@ msgstr "Cambiar estado"
 msgid "Change status"
 msgstr "Cambiar estado"
 
+msgid "Change status of {taskName}"
+msgstr "Cambiar estado de {taskName}"
+
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Cambiar el tipo de artículo (p. ej., Pieza, Material, Herramienta, etc.)"
 
@@ -23478,6 +23481,9 @@ msgstr "Anclar"
 msgid "Pin {0}"
 msgstr "Fijar {0}"
 
+msgid "Pin {label}"
+msgstr "Fijar {label}"
+
 msgid "Pin or unpin"
 msgstr "Fijar o desfijar"
 
@@ -26172,6 +26178,9 @@ msgstr "Reordenar {itemName}"
 
 msgid "Reorder {itemName} in {listLabel}"
 msgstr "Reordenar {itemName} en {listLabel}"
+
+msgid "Reorder {label}"
+msgstr "Reordenar {label}"
 
 msgid "Reorder Group"
 msgstr "Reordenar Grupo"
@@ -33774,9 +33783,6 @@ msgstr "Alternar"
 msgid "Toggle break active"
 msgstr "Alternar descanso activo"
 
-msgid "Toggle column"
-msgstr "Alternar columna"
-
 msgid "Toggle dark/light mode"
 msgstr "Alternar modo oscuro/claro"
 
@@ -34655,6 +34661,9 @@ msgstr "Descartar {0}"
 #. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "Desfijar {0}"
+
+msgid "Unpin {label}"
+msgstr "Desfijar {label}"
 
 msgid "Unposted Documents"
 msgstr "Documentos No Contabilizados"

@@ -7061,6 +7061,9 @@ msgstr "Change state"
 msgid "Change status"
 msgstr "Change status"
 
+msgid "Change status of {taskName}"
+msgstr "Change status of {taskName}"
+
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Change the item type (e.g. Part, Material, Tool, etc.)"
 
@@ -23478,6 +23481,9 @@ msgstr "Pin"
 msgid "Pin {0}"
 msgstr "Pin {0}"
 
+msgid "Pin {label}"
+msgstr "Pin {label}"
+
 msgid "Pin or unpin"
 msgstr "Pin or unpin"
 
@@ -26172,6 +26178,9 @@ msgstr "Reorder {itemName}"
 
 msgid "Reorder {itemName} in {listLabel}"
 msgstr "Reorder {itemName} in {listLabel}"
+
+msgid "Reorder {label}"
+msgstr "Reorder {label}"
 
 msgid "Reorder Group"
 msgstr "Reorder Group"
@@ -33774,9 +33783,6 @@ msgstr "Toggle"
 msgid "Toggle break active"
 msgstr "Toggle break active"
 
-msgid "Toggle column"
-msgstr "Toggle column"
-
 msgid "Toggle dark/light mode"
 msgstr "Toggle dark/light mode"
 
@@ -34655,6 +34661,9 @@ msgstr "Unpick {0}"
 #. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "Unpin {0}"
+
+msgid "Unpin {label}"
+msgstr "Unpin {label}"
 
 msgid "Unposted Documents"
 msgstr "Unposted Documents"

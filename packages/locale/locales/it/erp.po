@@ -7061,6 +7061,9 @@ msgstr "Cambia stato"
 msgid "Change status"
 msgstr "Cambia stato"
 
+msgid "Change status of {taskName}"
+msgstr "Cambia stato di {taskName}"
+
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Cambia il tipo di articolo (ad es. Parte, Materiale, Strumento, ecc.)"
 
@@ -23478,6 +23481,9 @@ msgstr "Fissa"
 msgid "Pin {0}"
 msgstr "Fissa {0}"
 
+msgid "Pin {label}"
+msgstr "Fissa {label}"
+
 msgid "Pin or unpin"
 msgstr "Fissa o scollega"
 
@@ -26172,6 +26178,9 @@ msgstr "Riordina {itemName}"
 
 msgid "Reorder {itemName} in {listLabel}"
 msgstr "Riordina {itemName} in {listLabel}"
+
+msgid "Reorder {label}"
+msgstr "Riordina {label}"
 
 msgid "Reorder Group"
 msgstr "Riordina Gruppo"
@@ -33774,9 +33783,6 @@ msgstr "Attiva/Disattiva"
 msgid "Toggle break active"
 msgstr "Attiva/disattiva interruzione"
 
-msgid "Toggle column"
-msgstr "Attiva/disattiva colonna"
-
 msgid "Toggle dark/light mode"
 msgstr "Attiva/disattiva modalità scura/chiara"
 
@@ -34655,6 +34661,9 @@ msgstr "Annulla prelievo {0}"
 #. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "Rimuovi {0}"
+
+msgid "Unpin {label}"
+msgstr "Rimuovi {label}"
 
 msgid "Unposted Documents"
 msgstr "Documenti Non Registrati"

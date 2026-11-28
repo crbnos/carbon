@@ -25,11 +25,13 @@ const statuses = Object.keys(actionTaskStatusActions) as ActionTaskStatus[];
 // Quality issues and Change Notices so both read identically — and it renders an
 // icon, not the status word, so there's no text to truncate in the card footer.
 export function ActionTaskStatusButton({
+  taskName,
   status,
   onChange,
   isDisabled,
   className
 }: {
+  taskName: string;
   status: ActionTaskStatus;
   onChange: (next: ActionTaskStatus) => void;
   isDisabled?: boolean;
@@ -44,7 +46,9 @@ export function ActionTaskStatusButton({
           size="sm"
           variant="ghost"
           className={className}
-          aria-label={t`Change status`}
+          aria-label={
+            taskName ? t`Change status of ${taskName}` : t`Change status`
+          }
           icon={<IssueTaskStatusIcon status={status} />}
           isDisabled={isDisabled}
         />

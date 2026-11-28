@@ -7061,6 +7061,9 @@ msgstr "Durumu değiştir"
 msgid "Change status"
 msgstr "Durum değiştir"
 
+msgid "Change status of {taskName}"
+msgstr "{taskName} durumunu değiştir"
+
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Stok kartı türünü değiştir (örn. Parça, Malzeme, Takım, vb.)"
 
@@ -23478,6 +23481,9 @@ msgstr "Sabitle"
 msgid "Pin {0}"
 msgstr "Sabitle {0}"
 
+msgid "Pin {label}"
+msgstr "{label} öğesini sabitle"
+
 msgid "Pin or unpin"
 msgstr "Sabitle veya kaldır"
 
@@ -26172,6 +26178,9 @@ msgstr "{itemName} öğesini yeniden sırala"
 
 msgid "Reorder {itemName} in {listLabel}"
 msgstr "{itemName} öğesini {listLabel} içinde yeniden sırala"
+
+msgid "Reorder {label}"
+msgstr "{label} öğesini yeniden sırala"
 
 msgid "Reorder Group"
 msgstr "Grubu Yeniden Sırala"
@@ -33774,9 +33783,6 @@ msgstr "Açma/Kapama"
 msgid "Toggle break active"
 msgstr "Aralığı etkinleştir"
 
-msgid "Toggle column"
-msgstr "Sütunu değiştir"
-
 msgid "Toggle dark/light mode"
 msgstr "Koyu/açık modu değiştir"
 
@@ -34655,6 +34661,9 @@ msgstr "Çıkart {0}"
 #. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "Sabitlemeyi Kaldır {0}"
+
+msgid "Unpin {label}"
+msgstr "{label} öğesinin sabitlemesini kaldır"
 
 msgid "Unposted Documents"
 msgstr "Deftere Geçmemiş Belgeler"
