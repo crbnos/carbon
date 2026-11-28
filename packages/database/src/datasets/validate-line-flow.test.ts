@@ -169,6 +169,35 @@ describe("line-flow validation", () => {
     expect(violations[0]).toContain("openingStock 483");
   });
 
+  it("refuses a tracked item's opening stock on a shelf no tracked entry names", () => {
+    const violations = violationsOn(
+      withLineFlow({
+        inventory: {
+          openingStock: [
+            ...motor.inventory.openingStock,
+            { item: "MAG-NDFB-38", qty: 12, shelf: "A1-L3" }
+          ]
+        }
+      }),
+      "no inventory.onHandTracked entry"
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toContain(
+      '"MAG-NDFB-38": Batch-tracked stock at "A1-L3"'
+    );
+  });
+
+  it("refuses a tracked item's opening stock when its tracked entry has no shelf", () => {
+    const violations = violationsOn(
+      withTracked("ENC-INC-2048", { shelf: undefined }),
+      "no inventory.onHandTracked entry"
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toContain(
+      '"ENC-INC-2048": Serial-tracked stock at "A1-L3"'
+    );
+  });
+
   it("accepts tracked lots that sum to the opening stock", () => {
     expect(
       violationsOn(
