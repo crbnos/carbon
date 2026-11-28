@@ -45,6 +45,7 @@ import {
   SHARED_REDIS_VOLUME
 } from "../topology.js";
 import { type JwtCreds, listSlugs, sameWorktreePath } from "../worktree.js";
+import { startLocalDocker } from "./docker-runtime.js";
 
 /** What a compose command needs to know about a worktree's stack. */
 export type StackRef = Pick<Stack, "root" | "slug" | "mode">;
@@ -97,6 +98,7 @@ export async function ensureSlugAvailable(slug: string, worktreeRoot: string) {
 export async function ensureDockerRunning() {
   if (await dockerResponds()) return;
   if (await startDockerDaemon()) return;
+  if (!isCloudDev() && (await startLocalDocker(dockerResponds))) return;
   throw new Error(
     isCloudDev()
       ? `Docker isn't running and dockerd did not start — see ${DOCKERD_LOG}.`
@@ -106,8 +108,12 @@ export async function ensureDockerRunning() {
 
 const DOCKERD_LOG = join(homedir(), ".carbon", "dockerd.log");
 
-async function dockerResponds(): Promise<boolean> {
-  const r = await execa("docker", ["info"], { reject: false, stdio: "ignore" });
+async function dockerResponds(timeoutMs?: number): Promise<boolean> {
+  const r = await execa("docker", ["info"], {
+    reject: false,
+    stdio: "ignore",
+    timeout: timeoutMs
+  });
   return r.exitCode === 0;
 }
 
