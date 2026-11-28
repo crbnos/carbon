@@ -97,7 +97,8 @@ around its generic FK-null + topological delete, all inside the apply transactio
    `Seed: this company has N posted or voided card transaction(s) …` error, which the
    template job writes to its marker as `failed`. Then it **voids posted document
    journals** (`reverseDocumentJournals`): every Posted journal of a `DOCUMENT_JOURNAL_SOURCES`
-   type (invoices, payments, memos, receipts, shipments, `Inventory Adjustment`) whose
+   type (invoices, payments, memos, receipts, shipments, `Inventory Adjustment`, a lessee
+   lease's `Lease` and `Lease Run` journals) whose
    lines — or `payment`/`memo.journalId` — point at a row it is about to delete gets a
    negated Posted `VOID …` entry dated today, the original left Posted, as the posting
    functions void. The select takes `status = 'Posted'` only: a `Provisional` journal of a
@@ -112,11 +113,14 @@ around its generic FK-null + topological delete, all inside the apply transactio
 3. The existing header-first deletes (invoices, orders, quotes, RFQs), MRP output, and
    the four model-only step-slide tables (`MODEL_SLIDE_TABLES`) — their
    `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. Any other
-   seeded table with a CHECK that needs
-   one of several nullable FKs set goes in `PARENT_CHECK_TABLES` (today
+   table, seeded or not, with a CHECK that needs
+   one of several nullable FKs set, or two set or null together, goes in `PARENT_CHECK_TABLES` (today
    `customerContractInvoiceLine`: an invoice OR a credit memo; `projectCostRelief`: a Cost
    Relief schedule row OR a project close journal; `projectStockTransfer`:
-   two different project owners, after `projectBorrow`, which references its lines). Missing one fails every
+   two different project owners, after `projectBorrow`, which references its lines;
+   `revenueRecognitionSchedule`: a lessee lease and its schedule line, or neither, after
+   `revenueRecognitionRun`, whose lines reference it ON DELETE RESTRICT; no dataset seeds it,
+   so the drift check cannot catch it). Missing one fails every
    re-apply with "new row … violates check constraint", while a first apply onto an
    empty company still works.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier

@@ -108,9 +108,12 @@ const MODEL_SLIDE_TABLES = [
   "quoteOperationStepSlide"
 ];
 
-// Other tables whose CHECK needs one of several nullable FKs to stay set, so
-// the FK-nulling pass would empty all of them and trip the CHECK. A new table
-// with a CHECK like that goes here (see .claude/rules/onboarding-company-templates.md).
+// Other tables whose CHECK the FK-nulling pass would trip: one that needs one
+// of several nullable FKs to stay set, or two of them set or null together
+// (the pass nulls one FK per statement). A new table with a CHECK like that
+// goes here, whether a dataset seeds it or only the app writes it: demo data
+// is also applied over a company people have used (see
+// .claude/rules/onboarding-company-templates.md).
 const PARENT_CHECK_TABLES = [
   // customerContractInvoiceLine_parent_check: an invoice OR a credit memo
   "customerContractInvoiceLine",
@@ -124,6 +127,11 @@ const PARENT_CHECK_TABLES = [
   // projectCostRelief_source_check: a Cost Relief schedule row OR a project
   // close journal (journal is preserved, the schedule row is not)
   "projectCostRelief",
+  // revenueRecognitionSchedule_lease_pairing_check: a lessee lease row names
+  // its lease and its schedule line, or neither. A run line references its
+  // schedule row ON DELETE RESTRICT, so the runs go first; their lines cascade.
+  "revenueRecognitionRun",
+  "revenueRecognitionSchedule",
   // shipmentFixedAssetLine_source_check: a sales order line OR a rental line
   "shipmentFixedAssetLine"
 ];
@@ -321,7 +329,11 @@ const DOCUMENT_JOURNAL_SOURCES = [
   "Sales Shipment",
   "Inventory Adjustment",
   "Reimbursement",
-  "Service Job"
+  "Service Job",
+  // A lessee lease's commencement, lifecycle and lease run journals, matched
+  // by the lease their lines name
+  "Lease",
+  "Lease Run"
 ];
 
 /**
@@ -353,7 +365,8 @@ async function reverseDocumentJournals(ctx: Ctx): Promise<void> {
              UNION ALL SELECT id FROM shipment WHERE "companyId" = $1
              UNION ALL SELECT id FROM "reimbursement" WHERE "companyId" = $1
              UNION ALL SELECT id FROM "serviceJob" WHERE "companyId" = $1
-             UNION ALL SELECT id FROM "itemLedger" WHERE "companyId" = $1))
+             UNION ALL SELECT id FROM "itemLedger" WHERE "companyId" = $1
+             UNION ALL SELECT id FROM lease WHERE "companyId" = $1))
          -- a zero-cash payment's journal has no lines to match on
          OR j.id IN (SELECT "journalId" FROM payment WHERE "companyId" = $1)
          OR j.id IN (SELECT "journalId" FROM memo WHERE "companyId" = $1)

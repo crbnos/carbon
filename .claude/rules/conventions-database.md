@@ -170,6 +170,6 @@ Validate in route actions with `validator(schema).validate(formData)` from
 - [ ] Zod validators in `{module}.models.ts`
 - [ ] Applied locally with `pnpm db:migrate` (regenerates types) — never `db:build`
 - [ ] A CHECK that needs one of several nullable FK columns set (`a IS NOT NULL OR b IS NOT NULL`,
-      a discriminator CHECK): if the demo datasets seed the table, add it to `PARENT_CHECK_TABLES`
+      a discriminator CHECK, two FKs set or null together): seeded or not, add it to `PARENT_CHECK_TABLES`
       in `packages/database/src/datasets/wipe.ts`. Re-applying demo data nulls every nullable FK
       into a table it clears, which trips that CHECK (`pnpm db:check:datasets` catches it)
