@@ -57,6 +57,17 @@ export function staleDigests(
   });
 }
 
+/**
+ * A digest written by `notify` carries `payload.sourceEvent`, and `notify`
+ * owns it: the next run of that event finds it by that marker to mark it read.
+ * Merging into it or rewriting its payload erases the marker, so the old
+ * digest is never superseded and stacks beside the new one.
+ */
+export function isCronDigest(payload: unknown): boolean {
+  // `== null`, like the SQL gate's `->> 'sourceEvent' IS NULL`.
+  return (payload as { sourceEvent?: unknown } | null)?.sourceEvent == null;
+}
+
 function digestCount(payload: unknown): number | null {
   const count = (payload as { count?: unknown } | null)?.count;
   return typeof count === "number" ? count : null;
@@ -99,6 +110,8 @@ export const notificationDigestFunction = inngest.createFunction(
           .is("readAt", null)
           .is("digestedInto", null)
           .eq("event", NotificationEvent.Digest)
+          // Before the limit: `notify`'s digests must not fill the window.
+          .is("payload->>sourceEvent", null)
           .order("createdAt", { ascending: true })
           .limit(DIGEST_MAX_CANDIDATES)
       ]);
@@ -127,6 +140,7 @@ export const notificationDigestFunction = inngest.createFunction(
 
       const digests = new Map<string, ExistingDigest[]>();
       for (const row of (digestRows ?? []) as ExistingDigest[]) {
+        if (!isCronDigest(row.payload)) continue;
         const key = bucketKey(row.userId, row.companyId, row.topic);
         const existing = digests.get(key);
         if (existing) {
